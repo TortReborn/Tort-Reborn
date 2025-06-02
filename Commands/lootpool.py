@@ -147,7 +147,7 @@ class LootPool(commands.Cog):
                     x = int(x1 + 28 + i * 156)
                     y = int(y1 + 25)
                     lr_lp.paste(item_img, (x, y), item_img)
-                    if item == shiny_item:
+                    if item == shiny_item and i < 1:
                         lr_lp.paste(shiny, (x, y), shiny)
 
                     # Item name
@@ -165,7 +165,7 @@ class LootPool(commands.Cog):
 
                     # Shiny tracker
                     tracker_font = ImageFont.truetype("images/profile/game.ttf", 18)
-                    if item == shiny_item:
+                    if item == shiny_item and i < 1:
                         lines_in_name = name_text.count("\n") + 1
                         tracker_text_raw = region_data['Shiny']['Tracker']
                         wrapped_tracker = wrap_text(tracker_text_raw, tracker_font, 140, draw)

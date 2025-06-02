@@ -40,16 +40,22 @@ class Guild:
 
         self.all_members = self.get_all_members(self.members)
 
-    def get_all_members(self, members):
+    def get_all_members(self, members: dict) -> list[dict]:
         member_list = []
-        for rank in members:
-            if rank != 'total':
-                for member in members[rank]:
-                    members[rank][member]['rank'] = rank
-                    members[rank][member]['name'] = member
-                    member_list.append(members[rank][member])
+        for rank, group in members.items():
+            if rank == 'total':
+                continue
+            for username, info in group.items():
+                member_list.append({
+                    'uuid':        info.get('uuid'),
+                    'name':        username,
+                    'rank':        rank,
+                    'contributed': info.get('contributed'),
+                    'joined':      info.get('joined'),
+                    'online':      info.get('online'),
+                    'server':      info.get('server')
+                })
         return member_list
-
 
 class PlayerStats:
     def __init__(self, name, days):
@@ -103,7 +109,7 @@ class PlayerStats:
             self.guild_joined = parser.isoparse(guild_stats['joined'])
             now_utc   = datetime.now(timezone.utc)
             delta     = now_utc - self.guild_joined
-            self.in_guild_for = delta + timedelta(days=1) 
+            self.in_guild_for = delta
         else:
             self.guild = None
             self.guild_rank = None

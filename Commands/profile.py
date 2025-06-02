@@ -1,6 +1,7 @@
 import os
 import time
 from io import BytesIO
+import asyncio
 
 import discord
 import requests
@@ -21,8 +22,7 @@ class Profile(commands.Cog):
     @slash_command(description='Displays a guild profile of guild member')
     async def profile(self, ctx: discord.ApplicationContext, name: discord.Option(str, required=True), days: discord.Option(int, min=1, max=30, default=7)):
         await ctx.defer()
-        player = PlayerStats(name, days)
-
+        player = await asyncio.to_thread(PlayerStats, name, days)
         if player.error:
             embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
                                   description=f'Could not retrieve information of `{name}`.\nPlease check your spelling or try again later.',

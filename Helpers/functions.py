@@ -111,11 +111,13 @@ def urlify(in_string):
 
 
 def pretty_date(time=False):
-    now = datetime.datetime.now()
-    if type(time) is int:
-        diff = now - datetime.datetime.fromtimestamp(time)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if isinstance(time, int):
+        diff = now - datetime.datetime.fromtimestamp(time, tz=datetime.timezone.utc)
     elif isinstance(time, datetime.datetime):
-        diff = now - time.replace(tzinfo=None)
+        if time.tzinfo is None:
+            time = time.replace(tzinfo=datetime.timezone.utc)
+        diff = now - time
     elif not time:
         diff = 0
     second_diff = diff.seconds
@@ -646,32 +648,17 @@ def generate_applicant_info(pdata):
     return img
 
 
-def create_progress_bar(width, percentage, scale=1):
-    img = Image.new('RGBA', (math.floor(width/scale), 10), color='#00000000')
-    pbar = Image.open('images/profile/progressbar.png')
-    pbar_bg_start = pbar.crop((0, 0, 6, 10))
-    pbar_bg_filler = pbar.crop((6, 0, 8, 10))
-    pbar_bg_end = pbar.crop((8, 0, 14, 10))
-    pbar_start = pbar.crop((0, 10, 6, 20))
-    pbar_filler = pbar.crop((6, 10, 8, 20))
-    pbar_end = pbar.crop((8, 10, 14, 20))
+def create_progress_bar(width, percentage, color='#2167dd', scale=1):
+    img = Image.new('RGBA', (400, 10), color='#00000000')
+    progbar = colorize(Image.open('images/profile/progressbar.png'), color)
 
-    img.paste(pbar_bg_start, (0, 0), pbar_bg_start)
-    for i in range(int((img.width - 12) / 2)):
-        img.paste(pbar_bg_filler, (6 + (i * 2), 0), pbar_bg_filler)
-    img.paste(pbar_bg_end, (img.width - 6, 0), pbar_bg_end)
+    pbar_bg = progbar.crop((0, 0, 400, 10))
+    img.paste(pbar_bg, (0, 0), pbar_bg)
 
-    progress = Image.new('RGBA', (width, 10), color='#00000000')
+    pbar = progbar.crop((0, 10, math.floor(4 * percentage), 20))
+    img.paste(pbar, (0,0), pbar)
 
-    progress.paste(pbar_start, (0, 0), pbar_start)
-    for i in range(int((img.width - 12) / 2)):
-        progress.paste(pbar_filler, (6 + (i * 2), 0), pbar_filler)
-    progress.paste(pbar_end, (img.width - 6, 0), pbar_end)
-
-    progress = progress.crop((0, 0, math.floor(img.width / 100 * percentage), 10))
-
-    img.paste(progress, (0, 0), progress)
-
+    img = img.resize((int(img.width * (width/img.width)), img.height), resample=Image.Resampling.NEAREST)
     img = img.resize((img.width * scale, img.height * scale), resample=Image.Resampling.NEAREST)
 
     return img
@@ -701,3 +688,34 @@ def get_multiline_text_size(text, font, spacing=0):
     line_height = font.getbbox("Hg")[3] + 2
     total_height = len(lines) * line_height + spacing * (len(lines) - 1)
     return (int(max_width), total_height)
+
+
+def colorize(img, rgb_color):
+    if rgb_color[0] != '#':
+        rgb_color = '#' + rgb_color
+    match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', rgb_color)
+    if not match:
+        return False
+    r, g, b = [int(rgb_color[i:i+2], 16)/255 for i in (1, 3, 5)]
+
+    img = img.convert("RGBA")  # Ensure alpha channel
+    alpha = img.getchannel("A")
+
+    # Convert to grayscale for lightness
+    gray = img.convert("L")
+
+    # Prepare output image
+    output = Image.new("RGBA", img.size)
+    output_pixels = output.load()
+
+    # Extract hue and saturation from the target RGB color
+    hue, _, sat = colorsys.rgb_to_hls(r, g, b)
+
+    for y in range(img.height):
+        for x in range(img.width):
+            l = gray.getpixel((x, y)) / 255.0
+            r_c, g_c, b_c = colorsys.hls_to_rgb(hue, l, sat)
+            a = alpha.getpixel((x, y))
+            output_pixels[x, y] = (int(r_c * 255), int(g_c * 255), int(b_c * 255), a)
+
+    return output

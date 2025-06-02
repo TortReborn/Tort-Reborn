@@ -44,7 +44,7 @@ class UpdateMemberData(commands.Cog):
         self.member_file = "member_list.json"
         self.previous_members = self._load_json("member_list.json", {})
         self.member_file_exists = os.path.exists(self.member_file)
-        # track users: raid_name -> { uuid: {"name": str, "first_seen": datetime, "server":str} }
+        # track users: raid_name -> { server: { uuid: {"name": str, "first_seen": datetime, "server":str} } }
         self.raid_participants = {raid: {} for raid in self.RAID_NAMES}
         self.cold_start = True
 
@@ -69,8 +69,9 @@ class UpdateMemberData(commands.Cog):
         bar = "█" * filled + "─" * (length - filled)
         return f"[{bar}]"
 
-    async def _announce_raid(self, raid, group, guild, db):
-        names = [self.raid_participants[raid][uid]["name"] for uid in group]
+    async def _announce_raid(self, raid, group, server, guild, db):
+        participants = self.raid_participants[raid][server]
+        names = [participants[uid]["name"] for uid in group]
         bolded = [f"**{n}**" for n in names]
         if len(bolded) > 1:
             *first, last = bolded
@@ -139,17 +140,22 @@ class UpdateMemberData(commands.Cog):
         if self.cold_start:
             print(f"{now} - Starting member tracking (cold start)")
 
-        # Prune stale participants
+        # Prune stale participants per server
         cutoff = now - GUILD_TTL
-        for raid, parts in self.raid_participants.items():
-            for uid, info in list(parts.items()):
-                first_seen = (
-                    datetime.datetime.fromisoformat(info["first_seen"]) if isinstance(info["first_seen"], str)
-                    else info["first_seen"]
-                )
-                if first_seen < cutoff:
-                    print(f"{now} - PRUNE: {info['name']} ({uid}) from {raid} (seen {first_seen})")
-                    parts.pop(uid)
+        for raid, server_queues in self.raid_participants.items():
+            for server, parts in list(server_queues.items()):
+                for uid, info in list(parts.items()):
+                    first_seen = (
+                        datetime.datetime.fromisoformat(info["first_seen"])
+                        if isinstance(info["first_seen"], str)
+                        else info["first_seen"]
+                    )
+                    if first_seen < cutoff:
+                        print(f"{now} - PRUNE: {info['name']} ({uid}) from {raid} on {server}")
+                        parts.pop(uid)
+                # remove empty server-queue
+                if not parts:
+                    server_queues.pop(server)
 
         db = None
         try:
@@ -262,25 +268,23 @@ class UpdateMemberData(commands.Cog):
                         diff = new_count - old_count
 
                         if 0 < diff < 3:
-                            parts = self.raid_participants[raid]
+                            # get (or create) the queue for this raid+server
+                            server_queues = self.raid_participants[raid]
+                            if server not in server_queues:
+                                server_queues[server] = {}
+                            parts = server_queues[server]
 
+                            # add first sighting
                             if uuid not in parts:
-                                if not parts or server == next(iter(parts.values()))["server"]:
-                                    parts[uuid] = {
-                                        "name": name,
-                                        "first_seen": now,
-                                        "server": server
-                                    }
-                                    print(f"{now} - DETECT: {name} in {raid} on server {server}")
-                                else:
-                                    print(f"{now} - SKIP {name}: server mismatch for {raid}")
+                                parts[uuid] = {"name": name, "first_seen": now, "server": server}
+                                print(f"{now} - DETECT: {name} in {raid} on server {server}")
 
+                            # once we have 4 from the same server, announce & clear that server’s queue
                             if len(parts) == 4:
                                 group = frozenset(parts.keys())
-                                print(f"{now} - ANNOUNCING group {group} for {raid}")
-                                await self._announce_raid(raid, group, guild, db)
-                                for uid in group:
-                                    parts.pop(uid)
+                                print(f"{now} - ANNOUNCING group {group} for {raid} on {server}")
+                                await self._announce_raid(raid, group, server, guild, db)
+                                server_queues[server] = {}
 
                 # Full Activity Tracking
                 if (t % 86400) < 300:

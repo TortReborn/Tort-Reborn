@@ -136,20 +136,20 @@ class Progress(commands.Cog):
             overall = lvl + discovery + quests + dungeons + raids
 
             draw.text((50, 630), 'Overall Progress', font=title_font, fill='#fad51e')
-            overall_prgbar = create_progress_bar(600, math.floor(100 * (overall/max_overall)), 2)
+            overall_prgbar = create_progress_bar(300, math.floor(100 * (overall/max_overall)), color='#2dde1f', scale=2)
             bg.paste(overall_prgbar, (50, 670), overall_prgbar)
             draw.text((660, 661), f'{math.floor(100 * (overall/max_overall))}%', font=data_font, fill='#ffffff')
 
             pos = 720
             draw.text((50, pos), 'Combat Level', font=title_font, fill='#fad51e')
             draw.text((50, pos + 33), f'{combat}/{max_combat}', font=data_font, fill='#ffffff')
-            combat_prgbar = create_progress_bar(250, 100 / max_combat * combat, 1)
+            combat_prgbar = create_progress_bar(250, 100 / max_combat * combat, color='#2dde1f', scale=1)
             bg.paste(combat_prgbar, (50, pos + 70), combat_prgbar)
             draw.text((310, pos + 53), f'{math.floor(100 / max_combat * combat)}%', font=data_font, fill='#ffffff')
 
             draw.text((400, pos), 'Professions Level', font=title_font, fill='#fad51e')
             draw.text((400, pos + 33), f'{lvl - combat}/{max_prof * 12}', font=data_font, fill='#ffffff')
-            prof_prgbar = create_progress_bar(250, 100 / (max_prof * 12) * (lvl - combat), 1)
+            prof_prgbar = create_progress_bar(250, 100 / (max_prof * 12) * (lvl - combat), color='#2dde1f', scale=1)
             bg.paste(prof_prgbar, (400, pos + 70), prof_prgbar)
             draw.text((660, pos + 53), f'{math.floor(100 / (max_prof * 12) * (lvl - combat))}%', font=data_font,
                       fill='#ffffff')
@@ -157,13 +157,13 @@ class Progress(commands.Cog):
             pos = 820
             draw.text((50, pos), 'Quests', font=title_font, fill='#fad51e')
             draw.text((50, pos + 33), f'{quests}/{max_quests}', font=data_font, fill='#ffffff')
-            quests_prgbar = create_progress_bar(250, 100 / max_quests * quests, 1)
+            quests_prgbar = create_progress_bar(250, 100 / max_quests * quests, color='#2dde1f', scale=1)
             bg.paste(quests_prgbar, (50, pos + 70), quests_prgbar)
             draw.text((310, pos + 53), f'{math.floor(100 / max_quests * quests)}%', font=data_font, fill='#ffffff')
 
             draw.text((400, pos), 'Discoveries', font=title_font, fill='#fad51e')
             draw.text((400, pos + 33), f'{discovery}/{max_discovery}', font=data_font, fill='#ffffff')
-            discoveries_prgbar = create_progress_bar(250, 100 / max_discovery * discovery, 1)
+            discoveries_prgbar = create_progress_bar(250, 100 / max_discovery * discovery, color='#2dde1f', scale=1)
             bg.paste(discoveries_prgbar, (400, pos + 70), discoveries_prgbar)
             draw.text((660, pos + 53), f'{math.floor(100 / max_discovery * discovery)}%', font=data_font,
                       fill='#ffffff')
@@ -171,13 +171,13 @@ class Progress(commands.Cog):
             pos = 920
             draw.text((50, pos), 'Dungeons', font=title_font, fill='#fad51e')
             draw.text((50, pos + 33), f'{dungeons}/{max_dungeons}', font=data_font, fill='#ffffff')
-            dungeons_prgbar = create_progress_bar(250, 100 / max_dungeons * dungeons, 1)
+            dungeons_prgbar = create_progress_bar(250, 100 / max_dungeons * dungeons, color='#2dde1f', scale=1)
             bg.paste(dungeons_prgbar, (50, pos + 70), dungeons_prgbar)
             draw.text((310, pos + 53), f'{math.floor(100 / max_dungeons * dungeons)}%', font=data_font, fill='#ffffff')
 
             draw.text((400, pos), 'Raids', font=title_font, fill='#fad51e')
             draw.text((400, pos + 33), f'{raids}/{max_raids}', font=data_font, fill='#ffffff')
-            raids_prgbar = create_progress_bar(250, 100 / max_raids * raids, 1)
+            raids_prgbar = create_progress_bar(250, 100 / max_raids * raids, color='#2dde1f', scale=1)
             bg.paste(raids_prgbar, (400, pos + 70), raids_prgbar)
             draw.text((660, pos + 53), f'{math.floor(100 / max_raids * raids)}%', font=data_font,
                       fill='#ffffff')

@@ -60,31 +60,53 @@ class AspectDistribution(commands.Cog):
 
         bl = self.load_json(BLACKLIST_FILE, {"blacklist": []})["blacklist"]
         guild = Guild("The Aquarium")
-        guild_order = [m["uuid"] for m in guild.all_members]
 
-        eligible = [
-            u for u in guild_order
-            if u not in bl and self.get_weekly_playtime(u) >= WEEKLY_THRESHOLD
-        ]
+        # current UTC time
+        now = datetime.datetime.now(datetime.timezone.utc)
 
+        # index members by UUID
+        member_info = {m["uuid"]: m for m in guild.all_members}
+        guild_order = list(member_info.keys())
+
+        eligible = []
+        for uuid in guild_order:
+            if uuid in bl:
+                continue
+
+            info = member_info[uuid]
+            joined_str = info.get("joined")
+            if not joined_str:
+                continue
+
+            # parse "2024-08-20T21:20:22.426000Z" → datetime with UTC
+            joined_dt = datetime.datetime.fromisoformat(joined_str.replace("Z", "+00:00"))
+            if (now - joined_dt) < datetime.timedelta(days=7):
+                continue
+
+            if self.get_weekly_playtime(uuid) < WEEKLY_THRESHOLD:
+                continue
+
+            eligible.append(uuid)
+
+        # find new_marker in the new eligible queue
         new_marker = 0
         if 0 <= old_marker < len(old_queue):
             last_uuid = old_queue[old_marker]
             if last_uuid in eligible:
                 new_marker = eligible.index(last_uuid)
-            else:
-                if last_uuid in guild_order:
-                    start = guild_order.index(last_uuid)
-                    for i in range(1, len(guild_order)):
-                        cand = guild_order[(start + i) % len(guild_order)]
-                        if cand in eligible:
-                            new_marker = eligible.index(cand)
-                            break
+            elif last_uuid in guild_order:
+                start = guild_order.index(last_uuid)
+                for i in range(1, len(guild_order)):
+                    cand = guild_order[(start + i) % len(guild_order)]
+                    if cand in eligible:
+                        new_marker = eligible.index(cand)
+                        break
 
         dist["queue"] = eligible
         dist["marker"] = new_marker
         self.save_json(DISTRIBUTION_FILE, dist)
         return dist
+
 
 
     @aspects.command(
