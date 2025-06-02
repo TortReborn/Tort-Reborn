@@ -12,9 +12,9 @@ class ResetRoles(commands.Cog):
         self.client = client
 
     @user_command(name='Member | Remove', default_member_permissions=discord.Permissions(manage_roles=True), guild_ids=guilds)
-    async def reset_roles(self, message, user):
-        if message.interaction.user.guild_permissions.manage_roles:
-            await message.defer(ephemeral=True)
+    async def reset_roles(self, interaction: discord.Interaction, user: discord.Member):
+        if interaction.user.guild_permissions.manage_roles:
+            await interaction.defer(ephemeral=True)
             db = DB()
             db.connect()
             db.cursor.execute(f'SELECT * FROM discord_links WHERE discord_id = \'{user.id}\'')
@@ -22,7 +22,7 @@ class ResetRoles(commands.Cog):
             pdata = False
             if row:
                 pdata = BasicPlayerStats(row[2])
-            all_roles = message.interaction.guild.roles
+            all_roles = interaction.guild.roles
             to_remove = ['Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', 'Manatee', '★Coastal Waters', 'Piranha',
                          'Barracuda', '★★ Azure Ocean', 'Angler', '★☆☆ Blue Sea', 'Hammerhead', '★★☆Deep Sea',
                          'Sailfish', '★★★Dark Sea', 'Dolphin', 'Trial-Chief', 'Narwhal', '★★★★Abyss Waters',
@@ -39,14 +39,14 @@ class ResetRoles(commands.Cog):
                 if role not in user.roles:
                     roles_to_add.append(role)
 
-            await user.add_roles(*roles_to_add, reason=f'Roles reset (ran by {message.author.name})')
+            await user.add_roles(*roles_to_add, reason=f'Roles reset (ran by {interaction.author.name})')
 
             for remove_role in to_remove:
                 role = discord.utils.find(lambda r: r.name == remove_role, all_roles)
                 if role in user.roles:
                     roles_to_remove.append(role)
 
-            await user.remove_roles(*roles_to_remove, reason=f'Roles reset (ran by {message.author.name})')
+            await user.remove_roles(*roles_to_remove, reason=f'Roles reset (ran by {interaction.author.name})')
             await user.edit(nick='')
 
             # We're just not worrying about preserving war counts right now
@@ -58,9 +58,9 @@ class ResetRoles(commands.Cog):
             db.close()
             embed = discord.Embed(title=':white_check_mark: Roles reset',
                                   description=f'Roles were reset for <@{user.id}>', color=0x3ed63e)
-            await message.respond(embed=embed)
+            await interaction.respond(embed=embed)
         else:
-            await message.respond('You are missing Manage Roles permission(s) to run this command.')
+            await interaction.respond('You are missing Manage Roles permission(s) to run this command.')
 
     @commands.Cog.listener()
     async def on_ready(self):
