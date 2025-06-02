@@ -49,10 +49,11 @@ class ResetRoles(commands.Cog):
             await user.remove_roles(*roles_to_remove, reason=f'Roles reset (ran by {message.author.name})')
             await user.edit(nick='')
 
-            if pdata:
-                db.cursor.execute(
-                    f'UPDATE discord_links SET guild_wars = {pdata.wars - row[5] + row[6]} WHERE discord_id = \'{user.id}\'')
-                db.connection.commit()
+            # We're just not worrying about preserving war counts right now
+            # if pdata:
+            #     db.cursor.execute(
+            #         f'UPDATE discord_links SET guild_wars = {pdata.wars - row[5] + row[6]} WHERE discord_id = \'{user.id}\'')
+            #     db.connection.commit()
 
             db.close()
             embed = discord.Embed(title=':white_check_mark: Roles reset',

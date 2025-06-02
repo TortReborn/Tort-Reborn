@@ -7,7 +7,7 @@ import discord
 
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
-from Helpers.variables import te
+from Helpers.variables import te, guilds
 
 GUILD_ID = te
 BLACKLIST_FILE    = "aspect_blacklist.json"
@@ -19,7 +19,7 @@ class AspectDistribution(commands.Cog):
     aspects = SlashCommandGroup(
         "aspects",
         "Manage aspect distribution",
-        guild_ids=[GUILD_ID]
+        guild_ids=[GUILD_ID, guilds[0]]
     )
     blacklist = aspects.create_subgroup("blacklist", "Manage aspect distribution blacklist")
 
@@ -63,6 +63,7 @@ class AspectDistribution(commands.Cog):
 
         # current UTC time
         now = datetime.datetime.now(datetime.timezone.utc)
+        one_week_ago = now - datetime.timedelta(days=7)
 
         # index members by UUID
         member_info = {m["uuid"]: m for m in guild.all_members}
@@ -78,17 +79,26 @@ class AspectDistribution(commands.Cog):
             if not joined_str:
                 continue
 
-            # parse "2024-08-20T21:20:22.426000Z" → datetime with UTC
-            joined_dt = datetime.datetime.fromisoformat(joined_str.replace("Z", "+00:00"))
-            if (now - joined_dt) < datetime.timedelta(days=7):
+            # 1) parse the string into a datetime, force UTC
+            try:
+                joined_dt = datetime.datetime.fromisoformat(joined_str.replace("Z", "+00:00"))
+                if joined_dt.tzinfo is None:
+                    joined_dt = joined_dt.replace(tzinfo=datetime.timezone.utc)
+            except ValueError:
+                # malformed date → skip
                 continue
 
+            # 2) skip anyone who joined within the last 7 days
+            if joined_dt > one_week_ago:
+                continue
+
+            # 3) check playtime threshold
             if self.get_weekly_playtime(uuid) < WEEKLY_THRESHOLD:
                 continue
 
             eligible.append(uuid)
 
-        # find new_marker in the new eligible queue
+        # find new_marker in the new eligible queue (unchanged)…
         new_marker = 0
         if 0 <= old_marker < len(old_queue):
             last_uuid = old_queue[old_marker]
@@ -107,8 +117,6 @@ class AspectDistribution(commands.Cog):
         self.save_json(DISTRIBUTION_FILE, dist)
         return dist
 
-
-
     @aspects.command(
         name="distribute",
         description="Given N aspects, pick next members in queue to receive them"
@@ -125,7 +133,6 @@ class AspectDistribution(commands.Cog):
         db = DB(); db.connect()
         recipients = []
 
-        # first redeem any uncollected_aspects
         db.cursor.execute(
             "SELECT uuid, uncollected_aspects FROM uncollected_raids WHERE uncollected_aspects > 0"
         )
@@ -142,7 +149,6 @@ class AspectDistribution(commands.Cog):
                 remaining -= take
         db.connection.commit()
 
-        # then distribute the rest from the queue
         if remaining > 0 and queue:
             start = dist["marker"]
             for i in range(remaining):
@@ -150,21 +156,23 @@ class AspectDistribution(commands.Cog):
             dist["marker"] = (start + remaining) % len(queue)
             self.save_json(DISTRIBUTION_FILE, dist)
 
-        # lookup IGNs
         igns = []
+        guild = Guild("The Aquarium")
         for uuid in recipients:
-            db.cursor.execute("SELECT ign FROM discord_links WHERE uuid = %s", (uuid,))
-            row = db.cursor.fetchone()
-            if row and row[0]:
-                igns.append(row[0])
+            matched = next((m for m in guild.all_members if m["uuid"] == uuid), None)
+            if matched and matched.get("name"):
+                igns.append(matched["name"])
             else:
                 raw = getNameFromUUID(uuid)
                 igns.append(raw[0] if isinstance(raw, list) and raw else str(raw))
+
         db.close()
+
+        igns = [name.replace("_", "\\_") for name in igns]
 
         mention_list = "\n".join(f"- {n}" for n in igns)
         await ctx.followup.send(
-            f"🏅 Distributed **{len(recipients)}** aspect(s) to:\n{mention_list}"
+            f"🏅 Distribute **{len(recipients)}** aspect(s) to:\n{mention_list}"
         )
 
     @blacklist.command(

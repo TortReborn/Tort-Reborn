@@ -109,7 +109,7 @@ client.load_extension('Commands.background')
 client.load_extension('Commands.rankcheck')
 #client.load_extension('Commands.bank_admin')
 client.load_extension('Commands.new_member')
-#client.load_extension('Commands.reset_roles')  # Kind of works but needs edits
+client.load_extension('Commands.reset_roles')
 client.load_extension('Commands.manage')
 #client.load_extension('Commands.blacklist')
 client.load_extension('Commands.shell')
@@ -139,7 +139,7 @@ client.load_extension('Commands.restart')
 client.load_extension('UserCommands.new_member')
 client.load_extension('UserCommands.rank_promote')
 client.load_extension('UserCommands.rank_demote')
-#client.load_extension('UserCommands.reset_roles')
+client.load_extension('UserCommands.reset_roles')
 
 # Load message command
 # Think we can remove, redundant
