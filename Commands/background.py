@@ -80,7 +80,7 @@ class Background(commands.Cog):
         db = DB()
         db.connect()
         db.cursor.execute(
-            'SELECT * FROM profile_backgrounds WHERE UPPER(name) = UPPER(%s)', (background,)
+            'SELECT id, public, price, name, description FROM profile_backgrounds WHERE UPPER(name) = UPPER(%s)', (background,)
         )
         bg = db.cursor.fetchone()
         db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))

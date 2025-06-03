@@ -84,6 +84,7 @@ class PlayerStats:
         self.quests = pdata['globalData']['completedQuests']
         self.background = 1
         self.backgrounds_owned = []
+        self.gradient = ['#293786', '#1d275e']
         if self.rank == 'Player':
             self.tag = pdata['supportRank'].upper() if pdata['supportRank'] is not None else 'Player'
         else:
@@ -126,11 +127,12 @@ class PlayerStats:
             self.discord = rows[0][0]
 
             # profile_customization
-            db.cursor.execute('SELECT * FROM profile_customization WHERE "user" = %s', (self.discord,))
+            db.cursor.execute('SELECT "user", background, owned, gradient FROM profile_customization WHERE "user" = %s', (self.discord,))
             row = db.cursor.fetchone()
             if row:
                 self.background = row[1]
                 self.backgrounds_owned = row[2]
+                self.gradient = row[3] if row[3] is not None else ['#293786', '#1d275e']
         # shells
         if self.taq:
             db.cursor.execute('SELECT * FROM shells WHERE "user" = %s', (self.discord,))

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from io import BytesIO
+import re
 
 import discord
 from PIL import Image
@@ -196,6 +197,7 @@ class BackgroundAdmin(commands.Cog):
                                   color=0x34eb40)
             bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
             embed.set_thumbnail(url=f"attachment://{bg_id}.png")
+            await message.respond(embed=embed, file=bg_file)
             return
 
         db.cursor.execute(
@@ -218,6 +220,61 @@ class BackgroundAdmin(commands.Cog):
         embed.set_thumbnail(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)
+        db.close()
+
+    # Forcefully set a user's profile card gradient
+    @background_admin_group.command(description="Forcefully set gradient for discord user whether they own the gradient or not")
+    async def gradient(self, message, user: discord.Option(discord.Member, require=True),
+                       top_color: discord.Option(str, min_length=6, max_length=7, require=True),
+                       bottom_color: discord.Option(str, min_length=6, max_length=7, require=True)
+                       ):
+        await message.defer(ephemeral=True)
+
+        # Validate hex inputs
+        for label, color in [("Top color", top_color), ("Bottom color", bottom_color)]:
+            if color[0] != '#':
+                color = '#' + color
+            match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color)
+            if not match:
+                await message.followup.send(f"❌ {label} `{color}` is not a valid 6-digit hex color.", ephemeral=True)
+                return
+
+        # Normalize hex codes to lowercase with leading #
+        top_color = f"#{top_color.lstrip('#').lower()}"
+        bottom_color = f"#{bottom_color.lstrip('#').lower()}"
+        gradient = [top_color, bottom_color]
+
+        db = DB()
+        db.connect()
+
+        db.cursor.execute("SELECT * FROM profile_customization WHERE \"user\" = %s", (str(user.id),))
+        row = db.cursor.fetchone()
+
+        # Check if user exists in the database, if not insert new entry to table
+        if not row:
+            db.cursor.execute(
+                "INSERT INTO profile_customization(\"user\", background, owned, gradient) VALUES (%s, %s, '[]', %s)",
+                (str(user.id), '1', json.dumps(gradient))
+            )
+            db.connection.commit()
+            db.close()
+            embed = discord.Embed(title=':white_check_mark: Gradient set!',
+                                  description=f'Gradient set with Top Color: {top_color} and Bottom Color: {bottom_color} for <@{user.id}>.',
+                                  color=0x34eb40)
+            await message.respond(embed=embed)
+            return
+
+        db.cursor.execute(
+            "UPDATE profile_customization SET gradient = %s WHERE \"user\" = %s",
+            (json.dumps(gradient), str(user.id))
+        )
+        db.connection.commit()
+
+        embed = discord.Embed(title=':white_check_mark: Gradient set!',
+                              description=f'Gradient set with Top Color: {top_color} and Bottom Color: {bottom_color} for <@{user.id}>.',
+                              color=0x34eb40)
+
+        await message.respond(embed=embed)
         db.close()
 
     @commands.Cog.listener()

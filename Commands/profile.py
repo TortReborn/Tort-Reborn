@@ -35,12 +35,12 @@ class Profile(commands.Cog):
         card = round_corners(card)
         draw = ImageDraw.Draw(card)
 
-        # TODO: Custom card color
         # Card Color/Pattern
-        if player.background == 2:
+        if player.background == 2 and player.gradient == ['#293786', '#1d275e']:    # Set gradient for TAq Sea Turtle BG
             card_color = vertical_gradient(width=850, height=1130, main_color='#4585db', secondary_color='#2f2b73')
         else:
-            card_color = vertical_gradient(width=850, height=1130, main_color="#293786", secondary_color="#1d275e")
+            card_color = vertical_gradient(width=850, height=1130, main_color=player.gradient[0], secondary_color=player.gradient[1])
+
         card.paste(card_color, (25, 25), card_color)
 
         # Background Outline
@@ -173,6 +173,12 @@ class Profile(commands.Cog):
                 addLine(text=str(player.balance), draw=draw, font=data_font, x=781, y=46, drop_x=7, drop_y=7, anchor="rt")
                 card.paste(shells_img, (800, 40), shells_img)
 
+        if player.linked:
+            if str(ctx.author.id) == str(player.discord) and player.in_guild_for.days >= 365 and 3 not in player.backgrounds_owned:
+                player.unlock_background('1 Year Anniversary')
+            if str(ctx.author.id) == str(player.discord) and player.rank.upper() in ['NARWHAL', 'HYDRA'] and 2 not in player.backgrounds_owned:
+                player.unlock_background('TAq Sea Turtle')
+
         with BytesIO() as file:
             card.save(file, format="PNG")
             file.seek(0)
@@ -180,29 +186,6 @@ class Profile(commands.Cog):
             profile_card = discord.File(file, filename=f"profile{t}.png")
 
         await ctx.followup.send(file=profile_card)
-
-        if player.linked:
-            if str(ctx.author.id) == player.discord and player.in_guild_for.days >= 365 and 2 not in player.backgrounds_owned:
-                embed = discord.Embed(title=':tada: New background unlocked!',
-                                      description=f'<@{player.discord}> unlocked the **1 Year Anniversary** background!',
-                                      color=0x34eb40)
-                bg_file = discord.File(f'./images/profile_backgrounds/3.png', filename=f"3.png")
-                embed.set_thumbnail(url=f"attachment://3.png")
-
-                unlock = player.unlock_background('1 Year Anniversary')
-                if unlock:
-                    await ctx.channel.send(embed=embed, file=bg_file)
-
-            if str(ctx.author.id) == player.discord and player.rank.upper() in ['NARWHAL','HYDRA'] and 1 not in player.backgrounds_owned:
-                embed = discord.Embed(title=':tada: New background unlocked!',
-                                      description=f'<@{player.discord}> unlocked the **TAq Sea Turtle** background!',
-                                      color=0x34eb40)
-                bg_file = discord.File(f'./images/profile_backgrounds/2.png', filename=f"2.png")
-                embed.set_thumbnail(url=f"attachment://2.png")
-
-                unlock = player.unlock_background('TAq Sea Turtle')
-                if unlock:
-                    await ctx.channel.send(embed=embed, file=bg_file)
 
     @commands.Cog.listener()
     async def on_ready(self):
