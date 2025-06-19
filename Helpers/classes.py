@@ -40,7 +40,7 @@ class Guild:
 
         self.all_members = self.get_all_members(self.members)
 
-    def get_all_members(self, members: dict) -> list[dict]:
+    def get_all_members(self, members):
         member_list = []
         for rank, group in members.items():
             if rank == 'total':
@@ -391,7 +391,7 @@ class PlaceTemplate:
 
 
 class Page(_Page):
-    def update_files(self) -> list[discord.File] | None:
+    def update_files(self):
         for file in self._files:
             if file.fp.closed and (fn := getattr(file.fp, "name", None)):
                 file.fp = open(fn, "rb")

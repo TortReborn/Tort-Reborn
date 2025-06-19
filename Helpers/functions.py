@@ -719,3 +719,131 @@ def colorize(img, rgb_color):
             output_pixels[x, y] = (int(r_c * 255), int(g_c * 255), int(b_c * 255), a)
 
     return output
+
+
+# Online player list (30s TTL)
+
+def getOnlinePlayers():
+    """Return a mapping of username (case-sensitive as returned by the API)
+    -> server string (e.g. "WC1").  The method first tries the v3 player
+    module online list.  If that fails for any reason, it falls back to the
+    legacy public_api.php endpoint so that the bot can keep working even if
+    the new route temporarily goes down.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of player name to server world (e.g. {"Salted": "WC1"}).
+    """
+
+    # Preferred v3 endpoint (30 seconds TTL)
+    v3_url = "https://api.wynncraft.com/v3/player"
+    try:
+        resp = requests.get(v3_url, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            if 'players' in data and isinstance(data['players'], dict):
+                return data['players']
+    except Exception as e:
+        print(f"V3 endpoint failed: {e}")
+
+    # Fallback to legacy endpoint (using a different timeout for the fallback)
+    legacy_url = "https://api.wynncraft.com/public_api.php?action=onlinePlayers"
+    try:
+        resp = requests.get(legacy_url, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            # Legacy format returns a list of servers, each with a list of players
+            players_dict = {}
+            for server_name, player_list in data.items():
+                if isinstance(player_list, list):
+                    for player in player_list:
+                        players_dict[player] = server_name
+            return players_dict
+    except Exception as e:
+        print(f"Legacy endpoint also failed: {e}")
+
+    # Return empty dict if both fail
+    return {}
+
+
+# Online player list keyed by UUID (30s TTL)
+
+def getOnlinePlayersUUID():
+    """Return a mapping of lowercase UUID -> server string (e.g. "WC1").
+
+    The Wynncraft v3 player endpoint supports different identifier modes. By
+    adding the query parameter ``identifier=uuid`` the response maps UUIDs
+    to the world a player is currently on.  The TTL is ~30 seconds – perfect
+    for getting accurate online status.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of lowercase uuid string to server world.
+    """
+
+    uuid_url = "https://api.wynncraft.com/v3/player?identifier=uuid"
+
+    try:
+        resp = requests.get(uuid_url, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            players = data.get("players", {})
+            # Lower-case the UUID keys so later look-ups are case-insensitive
+            return {uuid.lower(): server for uuid, server in players.items()}
+    except Exception as e:
+        print(f"UUID endpoint failed: {e}")
+
+    # Fall back to the username endpoint and convert to uuid map is not
+    # possible without additional look-ups, so just return empty dict – the
+    # caller can try the username map separately if desired.
+    return {}
+
+
+# ---------------------------------------------------------------------------
+# Mojang profile lookup (UUID -> current username)
+# ---------------------------------------------------------------------------
+
+
+_uuid_name_cache: dict[str, str] = {}
+
+
+def getUsernameFromUUID(uuid: str) -> str | None:
+    """Return the *current* Minecraft IGN for the given UUID.
+
+    Parameters
+    ----------
+    uuid : str
+        The full UUID, with or without dashes.
+
+    Returns
+    -------
+    str | None
+        Latest username if lookup succeeds, otherwise ``None``.
+    """
+
+    if not uuid:
+        return None
+
+    # Normalise – Mojang expects UUID without dashes
+    uuid_nodash = uuid.replace("-", "").lower()
+
+    # Simple in-memory cache to avoid rate-limiting (no expiry needed for runtime)
+    cached = _uuid_name_cache.get(uuid_nodash)
+    if cached is not None:
+        return cached
+
+    url = f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid_nodash}"
+    try:
+        resp = requests.get(url, timeout=8)
+        if resp.status_code == 200:
+            data = resp.json()
+            name = data.get("name")
+            if name:
+                _uuid_name_cache[uuid_nodash] = name
+                return name
+    except Exception as e:
+        print(f"Mojang lookup failed for {uuid}: {e}")
+
+    return None

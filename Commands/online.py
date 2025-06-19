@@ -9,7 +9,7 @@ from discord.commands import slash_command
 
 from Helpers.classes import PlaceTemplate, Guild
 from Helpers.variables import rank_map
-from Helpers.functions import getData, addLine, generate_banner, expand_image
+from Helpers.functions import getOnlinePlayers, getOnlinePlayersUUID, getUsernameFromUUID, addLine, generate_banner, expand_image
 
 
 class Online(commands.Cog):
@@ -26,11 +26,41 @@ class Online(commands.Cog):
                                   description=f'Wasn\'t able to retrieve data for {guild}.', color=0xe33232)
             await message.respond(embed=embed, ephemeral=True)
             return
-        members = []
 
+        # Build the online player lists (UUID-based primary, username fallback)
+        uuid_map = getOnlinePlayersUUID()
+        name_map_raw = getOnlinePlayers()
+        name_map = {n.lower(): s for n, s in name_map_raw.items()}
+
+        members = []
         for member in guild_data.all_members:
-            if member['online']:
+            server = None
+
+            # Prefer UUID match (handles username changes)
+            member_uuid = member.get('uuid')
+            if member_uuid:
+                server = uuid_map.get(member_uuid.lower())
+
+            # Fallback to username lookup if UUID missing or not found
+            if not server:
+                server = name_map.get(member['name'].lower())
+
+            if server:
+                # Fetch up-to-date IGN from Mojang (if different)
+                latest_name = None
+                if member_uuid:
+                    latest_name = getUsernameFromUUID(member_uuid)
+
+                display_name = latest_name if latest_name else member['name']
+
+                member['online'] = True
+                member['server'] = server
+                member['display_name'] = display_name
                 members.append(member)
+
+        # Accurate online count
+        guild_online_count = len(members)
+
         img = Image.new('RGBA', (700, 90), color='#00000000')
         d = ImageDraw.Draw(img)
         d.fontmode = '1'
@@ -48,9 +78,10 @@ class Online(commands.Cog):
         player_data = {'owner': [], 'chief': [], 'strategist': [], 'captain': [], 'recruiter': [], 'recruit': []}
 
         for player in members:
-            player_data[player['rank']].append({'name': player['name'], 'WC': player['server']})
+            pname = player.get('display_name', player['name'])
+            player_data[player['rank']].append({'name': pname, 'WC': player['server']})
 
-        addLine(f'&f{guild_data.online}/{guild_data.members["total"]}', d, gameFont, 55, 70)
+        addLine(f'&f{guild_online_count}/{guild_data.members["total"]}', d, gameFont, 55, 70)
 
         for rank in player_data:
             if player_data[rank]:
