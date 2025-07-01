@@ -10,6 +10,7 @@ if test:
     guilds = [1364751619018850405, 1369134564450107412]
     te = 1364751619018850405
     changelog_channel = 1367276640207507617
+    welcome_channel = 1369134566509514897
     guildbank_channel = unknown_channel_redirect
     log_channel = unknown_channel_redirect
     attention_channel = unknown_channel_redirect
@@ -19,8 +20,8 @@ if test:
     raid_collecting_channel = 1370900136267616339
     raid_log_channel = 1370124586036887652
     member_app_channel = 1367283441850122330
-    military_channel = 1367287144682487828
-    territory_tracker_channel = 1367287144682487828
+    military_channel = 1369134566979403789
+    territory_tracker_channel = 1369134566979403791
     spearhead_role_id = 1367287262068342804
     application_manager_role_id = "<@&1371274399637835837>"
     shell_emoji_id = "<:shells:1371292212729479207>"
@@ -33,6 +34,7 @@ else:
     guilds = [729147655875199017, 1364751619018850405]
     te = 784795827808763904
     changelog_channel = 1367276640207507617
+    welcome_channel = 748900470575071293 
     guildbank_channel = 1213515243041595442
     log_channel = 936679740385931414
     # Below seem unused or old, unsure

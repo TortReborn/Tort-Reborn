@@ -1,4 +1,6 @@
+from collections import Counter
 import datetime
+import discord
 import requests
 import json
 import time
@@ -41,87 +43,104 @@ def timeHeld(date_time_old, date_time_new):
 class TerritoryTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.territory_tracker.start()
+
+    def cog_unload(self):
+        self.territory_tracker.cancel()
 
     @tasks.loop(seconds=10)
     async def territory_tracker(self):
-        try:
-            channel = self.client.get_channel(territory_tracker_channel)
-            military_channel = self.client.get_channel(military_channel)
-            spearhead = spearhead_role_id
-        except:
-            pass
-
-        with open('territories.json', 'r') as f:
-            old_terr_data = json.load(f)
-            f.close()
-        with open('claim.json', 'r') as f:
-            claim = json.load(f)
-            f.close()
-
-        new_terr_data = getTerritoryData()
-        if not new_terr_data:
-            print("Something went wrong with fetching territory data...")
+        if not self.client.is_ready():
             return
-        else:
-            saveTerritoryData(new_terr_data)
 
-            owner_changes = {}
-            terr_count = {'old': [], 'new': []}
+        channel = self.client.get_channel(territory_tracker_channel)
+        if channel is None:
+            return
 
-            for terr in old_terr_data:
-                if old_terr_data[terr]['guild']['name'] not in terr_count['old']:
-                    terr_count['old'].append(old_terr_data[terr]['guild']['name'])
-                    terr_count['old'].append(1)
-                else:
-                    terr_count['old'][terr_count['old'].index(old_terr_data[terr]['guild']['name']) + 1] += 1
+        try:
+            with open('territories.json', 'r') as f:
+                old_data = json.load(f)
+        except FileNotFoundError:
+            old_data = {}
 
-            for terr in new_terr_data:
-                if new_terr_data[terr]['guild']['name'] not in terr_count['new']:
-                    terr_count['new'].append(new_terr_data[terr]['guild']['name'])
-                    terr_count['new'].append(1)
-                else:
-                    terr_count['new'][terr_count['new'].index(new_terr_data[terr]['guild']['name']) + 1] += 1
+        new_data = getTerritoryData()
+        if not new_data:
+            return
 
-                if new_terr_data[terr]['guild']['name'] != old_terr_data[terr]['guild']['name']:
-                    owner_changes.update({terr: {'old': {'owner': old_terr_data[terr]['guild']['name'],
-                                                         'prefix': old_terr_data[terr]['guild']['prefix'],
-                                                         'acquired': old_terr_data[terr]['acquired']},
-                                                 'new': {'owner': new_terr_data[terr]['guild']['name'],
-                                                         'prefix': new_terr_data[terr]['guild']['prefix'],
-                                                         'acquired': new_terr_data[terr]['acquired']}}})
+        saveTerritoryData(new_data)
 
-            for terr in owner_changes:
-                if terr in claim['conns'] and owner_changes[terr]['old']['owner'] == 'The Aquarium':
-                    global last_ping
-                    called = time.time()
+        # Build a count of territories per guild *after* this update
+        new_counts = Counter()
+        for info in new_data.values():
+            new_counts[info['guild']['name']] += 1
 
-                    try:
-                        time_since_ping = called - last_ping
-                    except NameError as e:
-                        last_ping = 0
-                        time_since_ping = called - last_ping
+        # Find only the changes involving The Aquarium
+        owner_changes = {}
+        for terr, new_info in new_data.items():
+            old_info = old_data.get(terr)
+            if not old_info:
+                continue
+            old_owner = old_info['guild']['name']
+            new_owner = new_info['guild']['name']
+            if old_owner != new_owner and ('The Aquarium' in (old_owner, new_owner)):
+                owner_changes[terr] = {
+                    'old': {
+                        'owner': old_owner,
+                        'prefix': old_info['guild']['prefix'],
+                        'acquired': old_info['acquired']
+                    },
+                    'new': {
+                        'owner': new_owner,
+                        'prefix': new_info['guild']['prefix'],
+                        'acquired': new_info['acquired']
+                    }
+                }
 
-                    if time_since_ping > 1800:
-                        last_ping = called
-                        try:
-                            print("Spearhead Ping")
-                            await military_channel.send(f"<@&{spearhead}> {terr} has been taken by {owner_changes[terr]['new']['owner']} [{owner_changes[terr]['new']['prefix']}]!")
-                        except Exception as e:
-                            print(e)
-                            pass
+        for terr, change in owner_changes.items():
+            old = change['old']
+            new = change['new']
 
-                if owner_changes[terr]['old']['owner'] == 'The Aquarium' or owner_changes[terr]['new']['owner'] == 'The Aquarium' or (owner_changes[terr] in claim['territories']):
-                    held_for = timeHeld(owner_changes[terr]['old']['acquired'], owner_changes[terr]['new']['acquired'])
-                    try:
-                        print("Updating Territory")
-                        await channel.send(f'**{terr}**: {owner_changes[terr]["old"]["owner"]} ({str(terr_count["old"][terr_count["old"].index(owner_changes[terr]["old"]["owner"]) + 1])}) → {owner_changes[terr]["new"]["owner"]} ({str(terr_count["new"][terr_count["new"].index(owner_changes[terr]["new"]["owner"]) + 1])}) \n\tTerritory held for {held_for}')
-                    except Exception as e:
-                        print("Could not output to tracking channel.")
-                        pass
+            # Determine gain vs loss
+            if new['owner'] == 'The Aquarium':
+                color = discord.Color.green()
+                title = f"🟢 Territory Gained: **{terr}**"
+            else:
+                color = discord.Color.red()
+                title = f"🔴 Territory Lost: **{terr}**"
 
-    @territory_tracker.before_loop
-    async def territory_tracker_before_loop(self):
-        await self.client.wait_until_ready()
+            taken_dt = datetime.datetime.fromisoformat(new['acquired'].rstrip('Z'))
+            taken_dt = taken_dt.replace(tzinfo=datetime.timezone.utc)
+
+            embed = discord.Embed(
+                title=title,
+                color=color,
+                #timestamp=taken_dt
+            )
+            embed.add_field(
+                name="Old Owner",
+                value=(
+                    f"{old['owner']} [{old['prefix']}]\n"
+                    f"Territories: {new_counts.get(old['owner'], 0)}"
+                ),
+                inline=True
+            )
+
+            embed.add_field(
+                name="\u200b",
+                value="➡️",
+                inline=True
+            )
+
+            embed.add_field(
+                name="New Owner",
+                value=(
+                    f"{new['owner']} [{new['prefix']}]\n"
+                    f"Territories: {new_counts.get(new['owner'], 0)}"
+                ),
+                inline=True
+            )
+
+            await channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_ready(self):

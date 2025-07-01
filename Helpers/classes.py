@@ -11,8 +11,9 @@ from Helpers.database import DB
 from Helpers.functions import getPlayerUUID, getPlayerDatav3, urlify
 from discord.ext.pages import Page as _Page
 
-from Helpers.variables import wynn_ranks
+from Helpers.variables import wynn_ranks, welcome_channel
 
+WELCOME_CHANNEL = welcome_channel
 
 class Guild:
 
@@ -365,6 +366,16 @@ class NewMember(Modal):
         embed = discord.Embed(title=':white_check_mark: New member registered',
                               description=f'<@{self.user.id}> was linked to `{pdata.username}`', color=0x3ed63e)
         await msg.edit('', embed=embed)
+
+        # ─── WELCOME EMBED ────────────────────────────────────────────────────────
+        welcome_location = interaction.guild.get_channel(WELCOME_CHANNEL)
+        if welcome_location:
+            welcome_embed = discord.Embed(
+                description=f":ocean: Dive right in, {self.user.mention}! The water's fine.",
+                color=discord.Color.blue()
+            )
+            welcome_embed.set_author(name="Welcome Aboard!", icon_url=self.user.display_avatar.url)
+            await welcome_location.send(embed=welcome_embed)
 
 
 class PlaceTemplate:

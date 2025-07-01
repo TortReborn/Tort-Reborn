@@ -1,0 +1,9822 @@
+{
+  "Bantisu Air Temple": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bantisu Approach"
+    ],
+    "Location": {
+      "start": [570, -4833],
+      "end": [445, -4692]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Maro Peaks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Tree Island",
+      "Skien's Island"
+    ],
+    "Location": {
+      "start": [-41, -4174],
+      "end": [453, -3793]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Nomads' Refuge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Entrance to Nivla Woods",
+      "Ancient Waterworks",
+      "Farmers Settlement",
+      "Arachnid Woods",
+      "Webbed Fracture"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-435, -1883],
+      "end": [-270, -1653]
+    }
+  },
+  "Path to Thanos": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Thanos",
+      "Secluded Ponds",
+      "Path to Ozoth's Spire",
+      "Gylia Fisherman Camp"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [98, -5049],
+      "end": [35, -5149]
+    }
+  },
+  "Lava Springs": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Black Road",
+      "Ternaves Tunnel",
+      "Savannah Plains",
+      "Essren's Hut"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [775, -1675],
+      "end": [630, -1830]
+    }
+  },
+  "Durum Barley Islet": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nodguj Nation",
+      "Mage Island",
+      "Selchar",
+      "Durum Isles Barn"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [537, -2994],
+      "end": [595, -2924]
+    }
+  },
+  "Selchar": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Skien's Island",
+      "Durum Isles Barn",
+      "Durum Barley Islet",
+      "Durum Malt Islet",
+      "Rooster Island"
+    ],
+    "Location": {
+      "start": [-100, -3070],
+      "end": [210, -3270]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Meteor Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Trunkstump Goblin Camp",
+      "Brigand Outpost",
+      "Cliffhearth Orc Camp",
+      "Sanguine Spider Den"
+    ],
+    "Location": {
+      "start": [-2060, -4831],
+      "end": [-2171, -4909]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wolves' Den": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Nesaak",
+      "Bob's Tomb",
+      "Frigid Crossroads"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [76, -757],
+      "end": [230, -660]
+    }
+  },
+  "Trunkstump Goblin Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar Stables",
+      "Orc Lake",
+      "Stonecave Orc Camp",
+      "Meteor Trail"
+    ],
+    "Location": {
+      "start": [-2059, -4831],
+      "end": [-1937, -4909]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Kander Mines": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Dark Forest Village",
+      "Faltach Manor",
+      "Path to Talor",
+      "Mesquis Tower"
+    ],
+    "Location": {
+      "start": [-785, -5229],
+      "end": [-725, -5102]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Olux Lumberyard": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Olux",
+      "Lizardman Lake",
+      "Fading Forest"
+    ],
+    "Location": {
+      "start": [-1519, -5492],
+      "end": [-1626, -5607]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mine Base Plains": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Silent Road",
+      "Abandoned Mines",
+      "Plains Lake",
+      "Mining Base Camp",
+      "Abandoned Mines Entrance",
+      "Essren's Hut"
+    ],
+    "Location": {
+      "start": [550, -1190],
+      "end": [650, -1430]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Essren's Hut": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lava Springs",
+      "Black Road",
+      "Detlas",
+      "Mine Base Plains"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [545, -1520],
+      "end": [650, -1670]
+    }
+  },
+  "Mangled Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Overtaken Outpost",
+      "Caritat Mansion",
+      "Orc Battlegrounds",
+      "Bloody Trail"
+    ],
+    "Location": {
+      "start": [-1460, -5025],
+      "end": [-1272, -5210]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Felroc Fields": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Aldorei River",
+      "Aldorei Cliffside Waterfalls",
+      "Cinfras's Small Farm"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-337, -4756],
+      "end": [-225, -4657]
+    }
+  },
+  "Llevigar Gate": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar Stables",
+      "Orc Road",
+      "Sanguine Spider Den",
+      "Llevigar"
+    ],
+    "Location": {
+      "start": [-1932, -4648],
+      "end": [-2059, -4746]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Path to the Penitentiary": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Twisted Ridge",
+      "Viscera Pits",
+      "Lexdale Penitentiary",
+      "Entrance to Kander"
+    ],
+    "Location": {
+      "start": [-771, -5504],
+      "end": [-899, -5412]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Sanctuary Bridge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Frosty Spikes",
+      "Time Valley"
+    ],
+    "Location": {
+      "start": [-324, -1130],
+      "end": [-192, -993]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dusty Pit": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cascading Oasis",
+      "Almuj"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [990, -2270],
+      "end": [895, -2140]
+    }
+  },
+  "Farmers Settlement": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nomads' Refuge",
+      "Maltic",
+      "Emerald Trail",
+      "Ragni Countryside South",
+      "Ancient Waterworks"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-564, -1883],
+      "end": [-436, -1653]
+    }
+  },
+  "Savannah Plains": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lava Springs",
+      "Cathedral Harbour",
+      "Bremminglar",
+      "Entrance to Almuj"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [750, -2060],
+      "end": [570, -1870]
+    }
+  },
+  "Mage Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Santa's Hideout",
+      "Half Moon Island",
+      "Durum Barley Islet",
+      "Durum Oat Islet",
+      "Nodguj Nation"
+    ],
+    "Location": {
+      "start": [805, -2960],
+      "end": [983, -2787]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ahmsord": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Temple Island",
+      "Path to Ahmsord",
+      "Sky Island Ascent",
+      "Aerial Descent",
+      "Central Islands"
+    ],
+    "Location": {
+      "start": [1163, -4462],
+      "end": [942, -4604]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Secluded Workshop": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Scorpion Nest",
+      "Infested Sinkhole",
+      "Naga Lake"
+    ],
+    "Location": {
+      "start": [-2127, -5466],
+      "end": [-2066, -5603]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Bob's Tomb": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Wolves' Den",
+      "Florist's Hut",
+      "Nesaak"
+    ],
+    "Location": {
+      "start": [246, -747],
+      "end": [380, -867]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Fallen Factory": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Relos",
+      "Ruined Houses",
+      "Industrial Clearing",
+      "Corkus City Crossroads",
+      "Corkus Sea Cove"
+    ],
+    "Location": {
+      "start": [-1579, -2662],
+      "end": [-1681, -2518]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Perilous Grotto": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Wizard's Warning",
+      "Perilous Passage",
+      "Inhospitable Mountain"
+    ],
+    "Location": {
+      "start": [263, -4973],
+      "end": [199, -5035]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mudspring Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Floral Peaks",
+      "Stonecave Orc Camp",
+      "Collapsed Emerald Mine",
+      "Sunspark Orc Camp"
+    ],
+    "Location": {
+      "start": [-2059, -5003],
+      "end": [-1956, -5074]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Path to Light": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Otherworldly Monolith",
+      "Azure Frontier"
+    ],
+    "Location": {
+      "start": [-775, -6164],
+      "end": [-827, -6010]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corkus City": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Retrofitted Manufactory",
+      "Corkus City Crossroads",
+      "Corkus Castle",
+      "Corkus Forest",
+      "Picnic Pond"
+    ],
+    "Location": {
+      "start": [-1557, -2835],
+      "end": [-1680, -3010]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wayward Split": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cascading Basins",
+      "Perilous Passage",
+      "Harpy's Haunt South",
+      "Turncoat Turnabout"
+    ],
+    "Location": {
+      "start": [200, -4743],
+      "end": [264, -4875]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Silent Road": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Broken Road",
+      "Mine Base Plains"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [540, -1088],
+      "end": [704, -961]
+    }
+  },
+  "Troms": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Temple of Legends",
+      "Sulphuric Hollow",
+      "Troms Lake"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-726, -970],
+      "end": [-899, -826]
+    }
+  },
+  "Gylia Research Cabin": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Fallen Village",
+      "Gylia Lakehouse",
+      "Cosmic Fissures"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-130, -5173],
+      "end": [-241, -5271]
+    }
+  },
+  "Primal Fen": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Field of Life"
+    ],
+    "Location": {
+      "start": [-894, -6244],
+      "end": [-1026, -6066]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wizard's Warning": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "7200",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Perilous Grotto",
+      "Canyon Walkway"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [271, -5039],
+      "end": [337, -4948]
+    }
+  },
+  "Fallen Village": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Gylia Research Cabin",
+      "Cinfras Outskirts",
+      "Weird Clearing"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-290, -5292],
+      "end": [-392, -5116]
+    }
+  },
+  "Elephelk Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cliffside Passage South",
+      "Protector's Pathway"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [445, -4689],
+      "end": [570, -4568]
+    }
+  },
+  "Nested Cliffside": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Webbed Fracture",
+      "Mount Wynn Inn",
+      "Nivla Woods Exit",
+      "Blackstring Den"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [5, -1960],
+      "end": [-100, -1810]
+    }
+  },
+  "Twain Mansion": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Twain Lake"
+    ],
+    "Location": {
+      "start": [95, -407],
+      "end": [140, -310]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ternaves Tunnel": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Lava Springs",
+      "Ternaves",
+      "Entrance to Almuj"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [775, -1675],
+      "end": [890, -1860]
+    }
+  },
+  "Lizardman Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Iron Road",
+      "Entrance to Olux",
+      "Bloody Trail",
+      "Swamp Mountain Arch"
+    ],
+    "Location": {
+      "start": [-1649, -5134],
+      "end": [-1763, -5241]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Bremminglar": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lion Lair",
+      "Savannah Plains"
+    ],
+    "Location": {
+      "start": [760, -2070],
+      "end": [615, -2120]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Road to Light Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Fleris Trail",
+      "Wood Sprite Hideaway",
+      "Centerworld Fortress"
+    ],
+    "Location": {
+      "start": [-1387, -4595],
+      "end": [-1252, -4713]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Maiden Tower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Floral Peaks",
+      "Forgotten Burrows",
+      "Witching Road",
+      "Shady Shack"
+    ],
+    "Location": {
+      "start": [-2059, -5188],
+      "end": [-1955, -5309]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Thanos Underpass": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Troll's Challenge"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [250, -5401],
+      "end": [311, -5315]
+    }
+  },
+  "Entrance to Gavel": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar",
+      "Volcanic Excavation"
+    ],
+    "Location": {
+      "start": [-2048, -4250],
+      "end": [-1932, -4403]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dragonbone Graveyard": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Freezing Heights",
+      "Pyroclastic Flow"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1531, -5637],
+      "end": [1221, -5555]
+    }
+  },
+  "Durum Isles Barn": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Durum Malt Islet",
+      "Selchar",
+      "Durum Barley Islet",
+      "Durum Oat Islet"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [405, -2846],
+      "end": [504, -2972]
+    }
+  },
+  "Panda Path": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Panda Kingdom",
+      "Timeworn Arch"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [115, -4380],
+      "end": [194, -4518]
+    }
+  },
+  "Gelibord Watermill": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Twisted Housing",
+      "Gelibord",
+      "Castle Dullahan",
+      "Fading Forest"
+    ],
+    "Location": {
+      "start": [-1056, -5355],
+      "end": [-1179, -5448]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Pirate Town": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Zhight Island",
+      "Lost Atoll",
+      "Bloody Beach",
+      "Volcanic Isles"
+    ],
+    "Location": {
+      "start": [-750, -3251],
+      "end": [-580, -3006]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Fungal Grove": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Decayed Basin",
+      "Old Crossroads",
+      "Cinfras Outskirts",
+      "Weird Clearing",
+      "Talor Cemetery"
+    ],
+    "Location": {
+      "start": [-489, -5279],
+      "end": [-549, -5398]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Orc Road": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar Stables",
+      "Loamsprout Orc Camp",
+      "Orc Lake",
+      "Llevigar Gate"
+    ],
+    "Location": {
+      "start": [-1927, -4852],
+      "end": [-1815, -4700]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Llevigar Stables": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Trunkstump Goblin Camp",
+      "Cliffhearth Orc Camp",
+      "Orc Road",
+      "Llevigar Gate"
+    ],
+    "Location": {
+      "start": [-2059, -4747],
+      "end": [-1931, -4828]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Old Crossroads": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to Talor",
+      "Lexdale",
+      "Fungal Grove",
+      "Talor Cemetery"
+    ],
+    "Location": {
+      "start": [-648, -5314],
+      "end": [-567, -5400]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Overrun Docks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Avos Territory"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1891, -2997],
+      "end": [-2022, -3274]
+    }
+  },
+  "Panda Kingdom": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Panda Path",
+      "Parasitic Slime Mine"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [200, -4380],
+      "end": [265, -4518]
+    }
+  },
+  "Ahmsord Outskirts": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Central Islands",
+      "Swamp Island",
+      "Angel Refuge",
+      "Wybel Island"
+    ],
+    "Location": {
+      "start": [1336, -4893],
+      "end": [1179, -4730]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Almuj Slums": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ancient Excavation",
+      "Almuj",
+      "Ruined Villa",
+      "Owl Tribe"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1040, -1681],
+      "end": [900, -1870]
+    }
+  },
+  "Ogre Den": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Floral Peaks",
+      "Collapsed Emerald Mine",
+      "Witching Road"
+    ],
+    "Location": {
+      "start": [-2060, -5082],
+      "end": [-2171, -5186]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Krolton's Cave": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Hobgoblin's Hoard",
+      "Wizard Tower",
+      "Harpy's Haunt North",
+      "Bantisu Approach"
+    ],
+    "Location": {
+      "start": [341, -4841],
+      "end": [438, -4962]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Royal Gate": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "7200",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lighthouse Lookout"
+    ],
+    "Location": {
+      "start": [-1822, -1995],
+      "end": [-2015, -1725]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Paths of Sludge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Toxic Drip",
+      "Lutho"
+    ],
+    "Location": {
+      "start": [1040, -767],
+      "end": [892, -870]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Frozen Homestead": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Abandoned Lumberyard",
+      "Nesaak",
+      "Frosty Spikes",
+      "Frigid Crossroads",
+      "Florist's Hut"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [70, -834],
+      "end": [-120, -910]
+    }
+  },
+  "Enchanted River": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Faltach Manor",
+      "Twisted Housing",
+      "Gelibord"
+    ],
+    "Location": {
+      "start": [-942, -5227],
+      "end": [-1050, -5116]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Road to Elkurn": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Blooming Boulders",
+      "Tempo Town",
+      "Elkurn",
+      "Nivla Woods Exit"
+    ],
+    "Location": {
+      "start": [-89, -1481],
+      "end": [2, -1267]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Rooster Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Selchar",
+      "Durum Malt Islet",
+      "Bear Zoo",
+      "Nemract"
+    ],
+    "Location": {
+      "start": [-128, -2448],
+      "end": [-30, -2538]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Fountain of Youth": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Entamis Village",
+      "Iboju Village",
+      "Delnar Manor"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-744, -528],
+      "end": [-965, -264]
+    }
+  },
+  "Shady Shack": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Maiden Tower",
+      "Forgotten Burrows",
+      "Entrance to Olux",
+      "Swamp Mountain Arch"
+    ],
+    "Location": {
+      "start": [-1776, -5246],
+      "end": [-1898, -5396]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Final Step": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bizarre Passage",
+      "Gateway to Nothing"
+    ],
+    "Location": {
+      "start": [1388, -869],
+      "end": [1254, -932]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Tree Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Volcanic Isles",
+      "Lost Atoll",
+      "Light Peninsula",
+      "Maro Peaks"
+    ],
+    "Location": {
+      "start": [-454, -3905],
+      "end": [-323, -3766]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Canyon Dropoff": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Featherfall Cliffs",
+      "Rocky Bend"
+    ],
+    "Location": {
+      "start": [334, -4518],
+      "end": [269, -4395]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ancient Nemract": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cathedral Harbour",
+      "Nemract Cathedral",
+      "Mount Wynn Inn",
+      "Corrupted Tower",
+      "Scorched Trail"
+    ],
+    "Location": {
+      "start": [152, -1832],
+      "end": [290, -1999]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Outer Aldorei Town": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Aldorei Springs",
+      "Aldorei Valley"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-322, -4499],
+      "end": [-557, -4395]
+    }
+  },
+  "Gylia Fisherman Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to Thanos",
+      "Celestial Impact",
+      "Cosmic Fissures"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-127, -5155],
+      "end": [3, -5051]
+    }
+  },
+  "Ancient Waterworks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nomads' Refuge",
+      "Maltic Coast",
+      "Farmers Settlement",
+      "Jagged Foothills",
+      "Maltic"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-472, -1944],
+      "end": [-255, -1887]
+    }
+  },
+  "Katoa Ranch": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "7200",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ragni North Entrance",
+      "Riverbank Knoll"
+    ],
+    "Location": {
+      "start": [-914, -1860],
+      "end": [-748, -1955]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Decayed Basin": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Fungal Grove",
+      "Lexdale",
+      "Mushroom Hill",
+      "Heart of Decay"
+    ],
+    "Location": {
+      "start": [-471, -5405],
+      "end": [-549, -5512]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Riverbank Knoll": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ragni North Entrance",
+      "Katoa Ranch",
+      "Ragni Countryside North"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-817, -1859],
+      "end": [-762, -1761]
+    }
+  },
+  "Durum Malt Islet": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Durum Isles Barn",
+      "Rooster Island",
+      "Selchar",
+      "Cathedral Harbour"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [390, -2851],
+      "end": [347, -2791]
+    }
+  },
+  "Orc Battlegrounds": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mangled Lake",
+      "Centerworld Fortress"
+    ],
+    "Location": {
+      "start": [-1460, -5024],
+      "end": [-1282, -4870]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Thanos": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to Thanos",
+      "Upper Thanos",
+      "Kitrios Armory",
+      "Cosmic Fissures"
+    ],
+    "Location": {
+      "start": [51, -5189],
+      "end": [194, -5295]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Upper Thanos": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Thanos",
+      "Troll's Challenge"
+    ],
+    "Location": {
+      "start": [260, -5298],
+      "end": [199, -5169]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Worm Tunnel": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Broken Road",
+      "Grey Ruins"
+    ],
+    "Location": {
+      "start": [641, -767],
+      "end": [543, -640]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Silverbull Headquarters": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cinfras's Small Farm",
+      "Paper Trail",
+      "Celestial Impact"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-127, -4761],
+      "end": [3, -4895]
+    }
+  },
+  "Tower of Ascension": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Icy Descent"
+    ],
+    "Location": {
+      "start": [-400, -450],
+      "end": [-315, -330]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Skien's Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dreary Docks",
+      "Selchar",
+      "Nodguj Nation",
+      "Maro Peaks"
+    ],
+    "Location": {
+      "start": [527, -3386],
+      "end": [297, -3644]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Pyroclastic Flow": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Freezing Heights",
+      "Dragonbone Graveyard",
+      "Lava Lakes"
+    ],
+    "Location": {
+      "start": [1233, -5553],
+      "end": [1379, -5369]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wanderer's Way": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Canyon High Path"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [440, -5183],
+      "end": [563, -5080]
+    }
+  },
+  "Elefolk Stomping Grounds": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Hobgoblin's Hoard",
+      "Fleris Cranny",
+      "Protector's Pathway",
+      "Featherfall Cliffs"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [435, -4511],
+      "end": [341, -4670]
+    }
+  },
+  "Frozen Fort": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Sky Falls"
+    ],
+    "Location": {
+      "start": [1501, -4513],
+      "end": [1586, -4789]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Path to Cinfras": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "The Forgery",
+      "Entrance to Cinfras",
+      "Mesquis Tower"
+    ],
+    "Location": {
+      "start": [-734, -4842],
+      "end": [-818, -4953]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Temple Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Central Islands",
+      "Swamp Island",
+      "Snail Island",
+      "Ahmsord",
+      "Kandon Ridge"
+    ],
+    "Location": {
+      "start": [991, -4643],
+      "end": [1124, -4750]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Nodguj Nation": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mage Island",
+      "Santa's Hideout",
+      "Dujgon Nation",
+      "Icy Island",
+      "Skien's Island",
+      "Durum Barley Islet"
+    ],
+    "Location": {
+      "start": [695, -3210],
+      "end": [880, -3440]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Webbed Fracture": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Nested Cliffside",
+      "Nomads' Refuge",
+      "Arachnid Woods"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-261, -1881],
+      "end": [-109, -1808]
+    }
+  },
+  "Icy Vigil": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Great Bridge",
+      "Frigid Crossroads"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-115, -630],
+      "end": [-240, -780]
+    }
+  },
+  "Cinfras's Small Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Big Mushroom Cave",
+      "Silverbull Headquarters",
+      "Felroc Fields",
+      "Paper Trail"
+    ],
+    "Location": {
+      "start": [-224, -4793],
+      "end": [-130, -4643]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Blooming Boulders": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Tempo Town",
+      "Nivla Woods",
+      "Alekin",
+      "Road to Time Valley",
+      "Road to Elkurn"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-350, -1440],
+      "end": [-99, -1330]
+    }
+  },
+  "Heart of Decay": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Mushroom Hill",
+      "Lexdale",
+      "Decayed Basin"
+    ],
+    "Location": {
+      "start": [-598, -5580],
+      "end": [-454, -5518]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Regular Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Icy Island",
+      "Dujgon Nation",
+      "Jofash Docks",
+      "Disturbed Crypt"
+    ],
+    "Location": {
+      "start": [1202, -3764],
+      "end": [1458, -3597]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Karoc Quarry": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Shineridge Orc Camp",
+      "Harnort Compound",
+      "Llevigar"
+    ],
+    "Location": {
+      "start": [-1776, -4352],
+      "end": [-1609, -4524]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Pigmen Ravines": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ragni South Entrance",
+      "Abandoned Farm"
+    ],
+    "Location": {
+      "start": [-784, -1398],
+      "end": [-617, -1317]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Witching Road": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Maiden Tower",
+      "Infested Sinkhole",
+      "Ogre Den"
+    ],
+    "Location": {
+      "start": [-2171, -5190],
+      "end": [-2060, -5309]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Sunset Plateau": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Owl Tribe",
+      "Ruined Prospect",
+      "Sunrise Plateau"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1211, -1410],
+      "end": [1000, -1530]
+    }
+  },
+  "Ava's Workshop": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Avos Temple"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1681, -3178],
+      "end": [-1888, -3375]
+    }
+  },
+  "Scorpion Nest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Secluded Workshop"
+    ],
+    "Location": {
+      "start": [-2173, -5466],
+      "end": [-2128, -5603]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Crater Descent": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dogun Ritual Site",
+      "Rodoroc",
+      "Lava Lakes"
+    ],
+    "Location": {
+      "start": [1383, -5238],
+      "end": [1230, -5067]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Jofash Docks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lifeless Forest",
+      "Jofash Tunnel",
+      "Regular Island"
+    ],
+    "Location": {
+      "start": [1178, -4175],
+      "end": [1445, -4012]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Perilous Passage": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Wayward Split",
+      "Perilous Grotto"
+    ],
+    "Location": {
+      "start": [264, -4877],
+      "end": [203, -4971]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ragni Main Entrance": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ragni",
+      "Emerald Trail",
+      "Ragni Countryside South"
+    ],
+    "Location": {
+      "start": [-747, -1530],
+      "end": [-616, -1652]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Fleris Cranny": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Harpy's Haunt South",
+      "Elefolk Stomping Grounds"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [271, -4739],
+      "end": [338, -4630]
+    }
+  },
+  "Llevigar Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Loamsprout Orc Camp",
+      "Shineridge Orc Camp",
+      "Bucie Waterfall",
+      "Goblin Plains West",
+      "Goblin Plains East",
+      "Entrance to Bucie"
+    ],
+    "Location": {
+      "start": [-1663, -4849],
+      "end": [-1556, -4714]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corrupted Orchard": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Akias Ruins",
+      "Detlas Suburbs",
+      "Corrupted Warfront",
+      "Scorched Trail",
+      "Corrupted Tower"
+    ],
+    "Location": {
+      "start": [188, -1657],
+      "end": [300, -1500]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corkus Sea Cove": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Relos",
+      "Corkus City Mine",
+      "Fallen Factory",
+      "Road to Mine"
+    ],
+    "Location": {
+      "start": [-1578, -2662],
+      "end": [-1330, -2513]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Iron Road": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lizardman Camp",
+      "Goblin Plains West",
+      "Meteor Crater",
+      "Forgotten Path"
+    ],
+    "Location": {
+      "start": [-1688, -5099],
+      "end": [-1608, -4969]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Thesead Suburbs": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Thesead",
+      "Ranol's Farm",
+      "Displaced Housing",
+      "Entrance to Molten Heights"
+    ],
+    "Location": {
+      "start": [703, -5374],
+      "end": [810, -5216]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Burning Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Burning Airship",
+      "Evergreen Outbreak"
+    ],
+    "Location": {
+      "start": [107, -4755],
+      "end": [35, -4857]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Gloopy Cave": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Barren Sands",
+      "Ruined Villa",
+      "Cascading Oasis",
+      "Almuj"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1195, -2120],
+      "end": [1060, -1935]
+    }
+  },
+  "Forgotten Town": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Grey Ruins",
+      "Forest of Eyes"
+    ],
+    "Location": {
+      "start": [480, -493],
+      "end": [734, -355]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Blackstring Den": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Rocky Shore",
+      "Mount Wynn Inn",
+      "Nested Cliffside"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-105, -2069],
+      "end": [20, -1960]
+    }
+  },
+  "Corrupted Warfront": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Roots of Corruption",
+      "Akias Ruins",
+      "Detlas Suburbs",
+      "Corrupted Orchard",
+      "Corrupted Road",
+      "Plains Lake"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [115, -1360],
+      "end": [390, -1495]
+    }
+  },
+  "Invaded Barracks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Barren Sands"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1260, -2170],
+      "end": [1450, -2370]
+    }
+  },
+  "Entrance to Almuj": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ternaves Tunnel",
+      "Savannah Plains",
+      "Almuj"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [750, -2060],
+      "end": [820, -1895]
+    }
+  },
+  "Sunspark Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Orc Lake",
+      "Stonecave Orc Camp",
+      "Mudspring Orc Camp",
+      "Swamp Mountain Arch",
+      "Meteor Crater"
+    ],
+    "Location": {
+      "start": [-1930, -5099],
+      "end": [-1816, -4968]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Icy Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Santa's Hideout",
+      "Dujgon Nation",
+      "Regular Island",
+      "Nodguj Nation"
+    ],
+    "Location": {
+      "start": [1001, -3274],
+      "end": [1172, -3430]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Bucie Waterfall": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar Farm",
+      "Shineridge Orc Camp",
+      "Harnort Compound",
+      "Entrance to Bucie"
+    ],
+    "Location": {
+      "start": [-1391, -4664],
+      "end": [-1607, -4526]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Gert Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Jitak's Farm",
+      "Gylia Watchtower"
+    ],
+    "Location": {
+      "start": [30, -5447],
+      "end": [-83, -5605]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Thesead": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Entrance to Thesead",
+      "Thesead Suburbs"
+    ],
+    "Location": {
+      "start": [747, -5104],
+      "end": [872, -4964]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Colourful Mountaintop": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Kitrios Barracks",
+      "Troll's Challenge"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [168, -5408],
+      "end": [250, -5518]
+    }
+  },
+  "Volcanic Isles": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Pirate Town",
+      "Tree Island",
+      "Lost Atoll",
+      "Volcanic Excavation",
+      "Light Peninsula"
+    ],
+    "Location": {
+      "start": [-929, -3831],
+      "end": [-722, -3530]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Entrance to Olux": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lizardman Lake",
+      "Olux",
+      "Bloody Trail",
+      "Lizardman Camp",
+      "Shady Shack"
+    ],
+    "Location": {
+      "start": [-1649, -5246],
+      "end": [-1764, -5396]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Otherworldly Monolith": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to Light",
+      "Azure Frontier"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-775, -6164],
+      "end": [-662, -6003]
+    }
+  },
+  "Lava Lakes": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dogun Ritual Site",
+      "Crater Descent",
+      "Pyroclastic Flow"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1230, -5240],
+      "end": [1379, -5366]
+    }
+  },
+  "Aldorei Valley Outskirts": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "The Shiar",
+      "Mantis Nest",
+      "Aldorei Springs"
+    ],
+    "Location": {
+      "start": [-736, -4428],
+      "end": [-802, -4553]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Kandon-Beda": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Protector's Pathway"
+    ],
+    "Location": {
+      "start": [607, -4579],
+      "end": [760, -4372]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Raiders' Stronghold": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Sky Island Ascent",
+      "Raiders' Airbase"
+    ],
+    "Location": {
+      "start": [1380, -4457],
+      "end": [1551, -4316]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mycelial Expanse": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Collapsed Bridge",
+      "Mantis Nest",
+      "The Shiar",
+      "Dodegar's Forge"
+    ],
+    "Location": {
+      "start": [-926, -4700],
+      "end": [-805, -4552]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Iboju Village": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Apprentice Huts",
+      "Fountain of Youth"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-671, -779],
+      "end": [-810, -630]
+    }
+  },
+  "Disturbed Crypt": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Dreary Docks",
+      "Dujgon Nation",
+      "Lifeless Forest",
+      "Regular Island"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [870, -3920],
+      "end": [1000, -3810]
+    }
+  },
+  "Mesquis Tower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Faltach Manor",
+      "Path to Cinfras",
+      "Entrance to Cinfras",
+      "Kander Mines"
+    ],
+    "Location": {
+      "start": [-834, -5078],
+      "end": [-727, -4999]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dodegar's Forge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Mycelial Expanse",
+      "Wood Sprite Hideaway",
+      "Luxuriant Pond",
+      "Unicorn Trail"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-929, -4552],
+      "end": [-1014, -4706]
+    }
+  },
+  "Kitrios Armory": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Kitrios Barracks",
+      "Thanos"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [51, -5297],
+      "end": [166, -5391]
+    }
+  },
+  "Unicorn Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to the Forgery",
+      "Dodegar's Forge",
+      "Collapsed Bridge",
+      "Guardian of the Forest"
+    ],
+    "Location": {
+      "start": [-1014, -4708],
+      "end": [-935, -4845]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Housing Crisis": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Featherfall Cliffs"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [437, -4314],
+      "end": [336, -4392]
+    }
+  },
+  "Alekin": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Nivla Woods",
+      "Blooming Boulders",
+      "Nivla Woods Exit",
+      "Arachnid Woods"
+    ],
+    "Location": {
+      "start": [-175, -1630],
+      "end": [-105, -1514]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Legendary Island": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Zhight Island",
+      "Southern Outpost"
+    ],
+    "Location": {
+      "start": [-1212, -2576],
+      "end": [-1001, -2342]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Abandoned Pass": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mining Base Camp",
+      "Abandoned Mines Entrance"
+    ],
+    "Location": {
+      "start": [881, -1225],
+      "end": [1019, -1380]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Frosty Spikes": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Frozen Homestead",
+      "Abandoned Lumberyard",
+      "Sanctuary Bridge",
+      "Elkurn",
+      "Florist's Hut"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [70, -950],
+      "end": [-140, -1060]
+    }
+  },
+  "Detlas": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Detlas Suburbs",
+      "Essren's Hut",
+      "Scorched Trail"
+    ],
+    "Location": {
+      "start": [402, -1657],
+      "end": [536, -1518]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Displaced Housing": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cherry Blossom Grove",
+      "Path to the Dojo",
+      "Entrance to Thesead",
+      "Thesead Suburbs"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [574, -5375],
+      "end": [699, -5242]
+    }
+  },
+  "Corkus City Mine": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Founder's Statue",
+      "Corkus Sea Cove",
+      "Road to Mine"
+    ],
+    "Location": {
+      "start": [-1394, -2750],
+      "end": [-1466, -2831]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Rocky Bend": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "7200",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Canyon Dropoff"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [334, -4393],
+      "end": [276, -4314]
+    }
+  },
+  "Lexdale": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Viscera Pits",
+      "Decayed Basin",
+      "Old Crossroads",
+      "Heart of Decay"
+    ],
+    "Location": {
+      "start": [-650, -5511],
+      "end": [-562, -5406]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Cinfras": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cinfras Outskirts",
+      "Guild Hall",
+      "Entrance to Cinfras",
+      "Aldorei River"
+    ],
+    "Location": {
+      "start": [-534, -4807],
+      "end": [-375, -5088]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corkus City Crossroads": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Fallen Factory",
+      "Road to Mine",
+      "Corkus Forest",
+      "Industrial Clearing",
+      "Corkus City"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1559, -2662],
+      "end": [-1679, -2833]
+    }
+  },
+  "Zhight Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Pirate Town",
+      "Legendary Island",
+      "Bear Zoo"
+    ],
+    "Location": {
+      "start": [-727, -2846],
+      "end": [-440, -2629]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Toxic Caves": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Toxic Drip"
+    ],
+    "Location": {
+      "start": [1017, -1146],
+      "end": [844, -993]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Florist's Hut": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Nesaak Transition",
+      "Frosty Spikes",
+      "Bob's Tomb",
+      "Frozen Homestead",
+      "Nesaak"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [110, -873],
+      "end": [240, -1035]
+    }
+  },
+  "Desolate Valley": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nesaak Transition",
+      "Corrupted River",
+      "Plains Lake"
+    ],
+    "Location": {
+      "start": [330, -1040],
+      "end": [450, -1170]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ragni": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ragni North Entrance",
+      "Ragni Main Entrance",
+      "Ragni South Entrance"
+    ],
+    "Location": {
+      "start": [-955, -1415],
+      "end": [-756, -1748]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Field of Life": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Heavenly Ingress",
+      "Azure Frontier",
+      "Luminous Plateau",
+      "Primal Fen"
+    ],
+    "Location": {
+      "start": [-894, -6010],
+      "end": [-827, -6164]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Nemract": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nemract Cathedral",
+      "Rocky Shore",
+      "Mount Wynn Inn",
+      "Rooster Island"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [10, -2070],
+      "end": [210, -2270]
+    }
+  },
+  "Thesead Underpass": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Entrance to Thesead",
+      "Cliffside Passage North",
+      "Workshop Glade"
+    ],
+    "Location": {
+      "start": [572, -4935],
+      "end": [700, -5028]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Akias Ruins": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Corrupted Road",
+      "Corrupted Tower",
+      "Nivla Woods Exit",
+      "Corrupted Warfront",
+      "Corrupted Orchard"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [29, -1657],
+      "end": [188, -1500]
+    }
+  },
+  "Balloon Airbase": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Relos",
+      "Southern Outpost",
+      "Lighthouse Lookout"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1633, -2162],
+      "end": [-1445, -2306]
+    }
+  },
+  "Entrance to Thesead": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Workshop Glade",
+      "Thesead",
+      "Displaced Housing",
+      "Thesead Underpass"
+    ],
+    "Location": {
+      "start": [700, -5030],
+      "end": [574, -5181]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dark Forest Village": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cinfras Outskirts",
+      "Path to Talor",
+      "Kander Mines",
+      "Talor Cemetery"
+    ],
+    "Location": {
+      "start": [-723, -5229],
+      "end": [-574, -5147]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Floral Peaks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mudspring Orc Camp",
+      "Maiden Tower",
+      "Ogre Den",
+      "Swamp Mountain Arch"
+    ],
+    "Location": {
+      "start": [-1955, -5081],
+      "end": [-2059, -5186]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mummy's Tomb": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "7200",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cascading Oasis"
+    ],
+    "Location": {
+      "start": [990, -2270],
+      "end": [1120, -2400]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Delnar Manor": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "7200"
+    },
+    "Trading Routes": [
+      "Fountain of Youth"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-970, -795],
+      "end": [-900, -547]
+    }
+  },
+  "Lexdale Penitentiary": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "7200"
+    },
+    "Trading Routes": [
+      "Twisted Ridge",
+      "Path to the Penitentiary"
+    ],
+    "Location": {
+      "start": [-873, -5518],
+      "end": [-772, -5585]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wybel Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Central Islands",
+      "Ahmsord Outskirts",
+      "Sky Falls"
+    ],
+    "Location": {
+      "start": [1355, -4700],
+      "end": [1253, -4595]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Avos Temple": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bloody Beach",
+      "Ava's Workshop",
+      "Retrofitted Manufactory"
+    ],
+    "Location": {
+      "start": [-1526, -3225],
+      "end": [-1378, -3426]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Lizardman Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Fading Forest",
+      "Olux Lumberyard",
+      "Olux",
+      "Bloody Trail",
+      "Entrance to Olux"
+    ],
+    "Location": {
+      "start": [-1519, -5291],
+      "end": [-1626, -5492]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Owl Tribe": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ancient Excavation",
+      "Almuj Slums",
+      "Eagle Tribe",
+      "Sunset Plateau"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1190, -1665],
+      "end": [975, -1540]
+    }
+  },
+  "Goblin Plains East": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar Farm",
+      "Forgotten Path",
+      "Goblin Plains West",
+      "Entrance to Bucie"
+    ],
+    "Location": {
+      "start": [-1603, -4963],
+      "end": [-1527, -4853]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Azure Frontier": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to Light",
+      "Field of Life",
+      "Nexus of Light",
+      "Otherworldly Monolith"
+    ],
+    "Location": {
+      "start": [-894, -6164],
+      "end": [-684, -6313]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Celestial Impact": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Silverbull Headquarters",
+      "Gylia Fisherman Camp",
+      "Secluded Ponds"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-127, -4896],
+      "end": [3, -5050]
+    }
+  },
+  "Maltic": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Maltic Coast",
+      "Ragni Countryside North",
+      "Ancient Waterworks",
+      "Coastal Trail",
+      "Farmers Settlement"
+    ],
+    "Location": {
+      "start": [-604, -1945],
+      "end": [-475, -1884]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Faltach Manor": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Mesquis Tower",
+      "Enchanted River",
+      "Entrance to Kander",
+      "Kander Mines"
+    ],
+    "Location": {
+      "start": [-896, -5232],
+      "end": [-802, -5102]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Infested Sinkhole": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Witching Road",
+      "Forgotten Burrows",
+      "Naga Lake",
+      "Secluded Workshop"
+    ],
+    "Location": {
+      "start": [-2171, -5312],
+      "end": [-2060, -5419]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ragni Countryside South": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Farmers Settlement",
+      "Ragni Countryside North",
+      "Ragni Main Entrance"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-747, -1653],
+      "end": [-616, -1776]
+    }
+  },
+  "Plains Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Roots of Corruption",
+      "Corrupted Warfront",
+      "Desolate Valley",
+      "Mine Base Plains"
+    ],
+    "Location": {
+      "start": [395, -1365],
+      "end": [550, -1190]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Black Road": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lava Springs",
+      "Abandoned Mines Entrance",
+      "Essren's Hut",
+      "Ternaves"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [770, -1675],
+      "end": [655, -1430]
+    }
+  },
+  "Bloody Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Lizardman Lake",
+      "Overtaken Outpost",
+      "Forgotten Path",
+      "Mangled Lake",
+      "Lizardman Camp",
+      "Entrance to Olux"
+    ],
+    "Location": {
+      "start": [-1519, -5134],
+      "end": [-1631, -5288]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Twisted Housing": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Gelibord",
+      "Gelibord Watermill",
+      "Enchanted River",
+      "Caritat Mansion",
+      "Efilim"
+    ],
+    "Location": {
+      "start": [-1133, -5116],
+      "end": [-1053, -5272]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "The Shiar": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mycelial Expanse",
+      "Light Peninsula",
+      "Aldorei Valley Outskirts",
+      "Luxuriant Pond"
+    ],
+    "Location": {
+      "start": [-926, -4550],
+      "end": [-806, -4428]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Entrance to Cinfras": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cinfras",
+      "Path to Cinfras",
+      "Chasm Chokepoint",
+      "Mesquis Tower"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-555, -4996],
+      "end": [-717, -4868]
+    }
+  },
+  "Detlas Suburbs": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corrupted Warfront",
+      "Corrupted Orchard",
+      "Detlas",
+      "Scorched Trail"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [300, -1657],
+      "end": [389, -1500]
+    }
+  },
+  "Lost Atoll": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "7200",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Volcanic Isles",
+      "Tree Island",
+      "Pirate Town"
+    ],
+    "Location": {
+      "start": [-472, -3590],
+      "end": [-688, -3385]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Twisted Ridge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to the Penitentiary",
+      "Entrance to Kander",
+      "Lexdale Penitentiary"
+    ],
+    "Location": {
+      "start": [-1020, -5603],
+      "end": [-910, -5343]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Workshop Glade": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bantisu Approach",
+      "Entrance to Thesead",
+      "Bandit's Toll",
+      "Thesead Underpass"
+    ],
+    "Location": {
+      "start": [563, -5079],
+      "end": [440, -4975]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corrupted Tower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Akias Ruins",
+      "Razed Inn",
+      "Corrupted Orchard",
+      "Ancient Nemract"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [25, -1660],
+      "end": [200, -1800]
+    }
+  },
+  "Troll Tower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Parasitic Slime Mine",
+      "Featherfall Cliffs"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [338, -4628],
+      "end": [269, -4522]
+    }
+  },
+  "Big Mushroom Cave": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Waterfall Cave",
+      "Cinfras's Small Farm",
+      "Aldorei Cliffside Waterfalls"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-130, -4641],
+      "end": [-222, -4509]
+    }
+  },
+  "Path to Ozoth's Spire": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Inhospitable Mountain",
+      "Molten Passage",
+      "Path to Thanos",
+      "Secluded Ponds"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [194, -5165],
+      "end": [111, -5045]
+    }
+  },
+  "Luxuriant Pond": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "The Shiar",
+      "Path to Light's Secret",
+      "Dodegar's Forge"
+    ],
+    "Location": {
+      "start": [-1014, -4428],
+      "end": [-929, -4549]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Sunrise Plateau": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Eagle Tribe",
+      "Rymek",
+      "Sunset Plateau"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1211, -1410],
+      "end": [1480, -1578]
+    }
+  },
+  "Forgotten Path": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Iron Road",
+      "Bloody Trail",
+      "Goblin Plains East"
+    ],
+    "Location": {
+      "start": [-1603, -4969],
+      "end": [-1529, -5100]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Lusuco": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Icy Descent"
+    ],
+    "Location": {
+      "start": [-267, -348],
+      "end": [-91, -250]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ternaves": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Black Road",
+      "Ternaves Tunnel",
+      "Abandoned Mines Entrance"
+    ],
+    "Location": {
+      "start": [770, -1675],
+      "end": [880, -1540]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Swamp Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Ahmsord Outskirts",
+      "Temple Island",
+      "Astraulus' Tower"
+    ],
+    "Location": {
+      "start": [1178, -4754],
+      "end": [1101, -4915]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Hobgoblin's Hoard": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Krolton's Cave",
+      "Elefolk Stomping Grounds"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [440, -4672],
+      "end": [341, -4838]
+    }
+  },
+  "Gateway to Nothing": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Final Step",
+      "Toxic Drip",
+      "Void Valley"
+    ],
+    "Location": {
+      "start": [1120, -882],
+      "end": [1244, -1058]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Goblin Plains West": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Iron Road",
+      "Goblin Plains East",
+      "Llevigar Farm",
+      "Sablestone Orc Camp"
+    ],
+    "Location": {
+      "start": [-1688, -4962],
+      "end": [-1611, -4854]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Half Moon Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "7200",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mage Island"
+    ],
+    "Location": {
+      "start": [900, -2660],
+      "end": [1100, -2480]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dogun Ritual Site": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Crater Descent",
+      "Freezing Heights",
+      "Lava Lakes",
+      "Molten Reach"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1535, -5067],
+      "end": [1387, -5366]
+    }
+  },
+  "Troms Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Apprentice Huts",
+      "Temple of Legends",
+      "Herb Cave",
+      "Troms"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-601, -791],
+      "end": [-680, -940]
+    }
+  },
+  "Jungle Entrance": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Great Bridge",
+      "Monte's Village",
+      "Herb Cave"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-395, -790],
+      "end": [-515, -610]
+    }
+  },
+  "Cascading Basins": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cyclospordial Hazard",
+      "Wayward Split"
+    ],
+    "Location": {
+      "start": [110, -4869],
+      "end": [194, -4741]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Orc Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Trunkstump Goblin Camp",
+      "Sunspark Orc Camp",
+      "Sablestone Orc Camp",
+      "Orc Road",
+      "Stonecave Orc Camp"
+    ],
+    "Location": {
+      "start": [-1933, -4962],
+      "end": [-1816, -4854]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corkus Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Industrial Clearing",
+      "Corkus City",
+      "Corkus City Crossroads",
+      "Picnic Pond"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1681, -2732],
+      "end": [-1883, -2861]
+    }
+  },
+  "Frigid Crossroads": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Icy Vigil",
+      "Wolves' Den",
+      "Twain Lake",
+      "Frozen Homestead",
+      "Icy Descent",
+      "Nesaak"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [70, -820],
+      "end": [-110, -625]
+    }
+  },
+  "Roots of Corruption": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corrupted Warfront",
+      "Corrupted River",
+      "Corrupted Road",
+      "Plains Lake"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [106, -1341],
+      "end": [260, -1222]
+    }
+  },
+  "Timeworn Arch": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Panda Path",
+      "Pine Pillar Forest"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [33, -4367],
+      "end": [107, -4519]
+    }
+  },
+  "Castle Dullahan": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Fading Forest",
+      "Gelibord Watermill"
+    ],
+    "Location": {
+      "start": [-1027, -5470],
+      "end": [-1180, -5600]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Sanguine Spider Den": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cliffhearth Orc Camp",
+      "Llevigar Gate",
+      "Meteor Trail"
+    ],
+    "Location": {
+      "start": [-2060, -4746],
+      "end": [-2171, -4644]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Cathedral Harbour": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Savannah Plains",
+      "Durum Malt Islet",
+      "Durum Oat Islet",
+      "Ancient Nemract",
+      "Nemract Cathedral",
+      "Scorched Trail"
+    ],
+    "Location": {
+      "start": [385, -2180],
+      "end": [570, -1950]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Great Bridge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Jungle Entrance",
+      "Icy Vigil"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-275, -620],
+      "end": [-390, -790]
+    }
+  },
+  "Lighthouse Lookout": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Royal Gate",
+      "Balloon Airbase"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1633, -2162],
+      "end": [-1842, -2058]
+    }
+  },
+  "Jofash Tunnel": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Sky Island Ascent",
+      "Jofash Docks"
+    ],
+    "Location": {
+      "start": [1304, -4354],
+      "end": [1126, -4176]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Chasm Chokepoint": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Chasm Overlook",
+      "Myconid Descent",
+      "Entrance to Cinfras"
+    ],
+    "Location": {
+      "start": [-733, -4707],
+      "end": [-654, -4848]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Sablestone Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Loamsprout Orc Camp",
+      "Orc Lake",
+      "Goblin Plains West",
+      "Meteor Crater"
+    ],
+    "Location": {
+      "start": [-1800, -4962],
+      "end": [-1695, -4854]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Viscera Pits": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Lexdale",
+      "Path to Talor",
+      "Path to the Penitentiary"
+    ],
+    "Location": {
+      "start": [-659, -5424],
+      "end": [-766, -5508]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Broken Road": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Silent Road",
+      "Worm Tunnel"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [686, -923],
+      "end": [493, -783]
+    }
+  },
+  "Aldorei Cliffside Waterfalls": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Big Mushroom Cave",
+      "Aldorei Valley",
+      "Felroc Fields"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-237, -4514],
+      "end": [-321, -4648]
+    }
+  },
+  "Gylia Lakehouse": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Gylia Research Cabin",
+      "Jitak's Farm",
+      "Gylia Watchtower",
+      "Weird Clearing"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-218, -5427],
+      "end": [-130, -5273]
+    }
+  },
+  "Entamis Village": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Fountain of Youth",
+      "Monte's Village"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-737, -317],
+      "end": [-502, -530]
+    }
+  },
+  "Cosmic Fissures": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Gylia Research Cabin",
+      "Gylia Fisherman Camp",
+      "Gylia Watchtower",
+      "Thanos"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [30, -5157],
+      "end": [-127, -5271]
+    }
+  },
+  "Mushroom Hill": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Decayed Basin",
+      "Heart of Decay",
+      "Weird Clearing",
+      "Jitak's Farm"
+    ],
+    "Location": {
+      "start": [-288, -5411],
+      "end": [-392, -5601]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Forest of Eyes": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Sinister Forest",
+      "Forgotten Town"
+    ],
+    "Location": {
+      "start": [813, -333],
+      "end": [1043, -504]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Void Valley": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Gateway to Nothing"
+    ],
+    "Location": {
+      "start": [1082, -1161],
+      "end": [1250, -1078]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Kandon Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Kandon Ridge"
+    ],
+    "Location": {
+      "start": [710, -4587],
+      "end": [614, -4682]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Meteor Crater": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Iron Road",
+      "Sunspark Orc Camp",
+      "Sablestone Orc Camp"
+    ],
+    "Location": {
+      "start": [-1800, -5099],
+      "end": [-1690, -4969]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Astraulus' Tower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Swamp Island",
+      "Dragonling Nests"
+    ],
+    "Location": {
+      "start": [1102, -5016],
+      "end": [1250, -4916]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Barren Sands": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Invaded Barracks",
+      "Accursed Dunes",
+      "Gloopy Cave"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1260, -2170],
+      "end": [1450, -2020]
+    }
+  },
+  "Path to the Forgery": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Minotaur Barbecue",
+      "The Forgery",
+      "Efilim Crossroads",
+      "Unicorn Trail"
+    ],
+    "Location": {
+      "start": [-949, -4942],
+      "end": [-1014, -4847]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Fading Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Lizardman Lake",
+      "Castle Dullahan",
+      "Olux Lumberyard",
+      "Gelibord Watermill",
+      "Overtaken Outpost"
+    ],
+    "Location": {
+      "start": [-1425, -5407],
+      "end": [-1194, -5589]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Paper Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Silverbull Headquarters",
+      "Waterfall Cave",
+      "Cinfras's Small Farm"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [3, -4760],
+      "end": [-127, -4640]
+    }
+  },
+  "Derelict Mansion": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Dreary Docks",
+      "Lifeless Forest"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [870, -3920],
+      "end": [745, -4040]
+    }
+  },
+  "Cinfras Outskirts": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cinfras",
+      "Dark Forest Village",
+      "Fungal Grove",
+      "Fallen Village",
+      "Talor Cemetery"
+    ],
+    "Location": {
+      "start": [-392, -5116],
+      "end": [-534, -5278]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Rocky Shore": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Jagged Foothills",
+      "Nemract",
+      "Blackstring Den"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [5, -2270],
+      "end": [-320, -2090]
+    }
+  },
+  "Accursed Dunes": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Barren Sands",
+      "Eagle Tribe",
+      "Ruined Villa"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1450, -2020],
+      "end": [1270, -1785]
+    }
+  },
+  "Featherfall Cliffs": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Elefolk Stomping Grounds",
+      "Housing Crisis",
+      "Protector's Pathway",
+      "Troll Tower",
+      "Canyon Dropoff"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [340, -4395],
+      "end": [437, -4508]
+    }
+  },
+  "Stonecave Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Trunkstump Goblin Camp",
+      "Mudspring Orc Camp",
+      "Orc Lake",
+      "Brigand Outpost",
+      "Sunspark Orc Camp"
+    ],
+    "Location": {
+      "start": [-2059, -4912],
+      "end": [-1940, -5000]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Raiders' Airbase": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Raiders' Stronghold"
+    ],
+    "Location": {
+      "start": [1558, -4316],
+      "end": [1305, -4253]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Time Valley": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Tempo Town",
+      "Little Wood",
+      "Abandoned Farm",
+      "Sanctuary Bridge"
+    ],
+    "Location": {
+      "start": [-563, -1261],
+      "end": [-406, -1006]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Naga Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Forgotten Burrows",
+      "Secluded Workshop",
+      "Path to the Grootslangs",
+      "Infested Sinkhole"
+    ],
+    "Location": {
+      "start": [-2065, -5466],
+      "end": [-1982, -5603]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Evergreen Outbreak": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Burning Farm",
+      "Pine Pillar Forest"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [35, -4643],
+      "end": [107, -4753]
+    }
+  },
+  "Arachnid Woods": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Nivla Woods Exit",
+      "Nomads' Refuge",
+      "Alekin",
+      "Webbed Fracture"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-194, -1632],
+      "end": [-86, -1800]
+    }
+  },
+  "Gylia Watchtower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Kitrios Barracks",
+      "Gert Camp",
+      "Cosmic Fissures",
+      "Gylia Lakehouse"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-128, -5416],
+      "end": [21, -5273]
+    }
+  },
+  "Inhospitable Mountain": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to Ozoth's Spire",
+      "Perilous Grotto"
+    ],
+    "Location": {
+      "start": [111, -5043],
+      "end": [194, -4958]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Troll's Challenge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Thanos Underpass",
+      "Colourful Mountaintop",
+      "Upper Thanos"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [244, -5407],
+      "end": [168, -5315]
+    }
+  },
+  "Canyon Walkway": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Molten Passage",
+      "Bandit's Toll",
+      "Wizard's Warning"
+    ],
+    "Location": {
+      "start": [271, -5165],
+      "end": [338, -5041]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mining Base Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Abandoned Mines",
+      "Abandoned Pass",
+      "Abandoned Mines Entrance",
+      "Mine Base Plains"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [880, -1330],
+      "end": [670, -1225]
+    }
+  },
+  "Volcanic Excavation": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Volcanic Isles",
+      "Light Peninsula",
+      "Entrance to Gavel",
+      "Bloody Beach"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1164, -3831],
+      "end": [-930, -3530]
+    }
+  },
+  "Path to the Dojo": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "The Hive",
+      "Canyon High Path",
+      "Illuminant Path",
+      "Displaced Housing",
+      "Cherry Blossom Grove"
+    ],
+    "Location": {
+      "start": [440, -5315],
+      "end": [560, -5449]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Collapsed Emerald Mine": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "7200",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mudspring Orc Camp",
+      "Brigand Outpost",
+      "Ogre Den"
+    ],
+    "Location": {
+      "start": [-2060, -5003],
+      "end": [-2171, -5075]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Road to Mine": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corkus Sea Cove",
+      "Corkus City Crossroads",
+      "Corkus City Mine"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1467, -2834],
+      "end": [-1557, -2691]
+    }
+  },
+  "Llevigar": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Karoc Quarry",
+      "Entrance to Gavel",
+      "Llevigar Gate"
+    ],
+    "Location": {
+      "start": [-1800, -4643],
+      "end": [-2171, -4405]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Entrance to Molten Heights": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Thesead Suburbs",
+      "Eltom",
+      "Rodoroc"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [854, -5257],
+      "end": [1113, -5367]
+    }
+  },
+  "Chasm Overlook": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Mantis Nest",
+      "Collapsed Bridge",
+      "Chasm Chokepoint"
+    ],
+    "Location": {
+      "start": [-738, -4708],
+      "end": [-818, -4840]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corkus Castle": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corkus City"
+    ],
+    "Location": {
+      "start": [-1555, -2968],
+      "end": [-1452, -2835]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Snail Island": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Temple Island",
+      "Dragonling Nests"
+    ],
+    "Location": {
+      "start": [949, -4885],
+      "end": [1057, -4804]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Freezing Heights": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dogun Ritual Site",
+      "Pyroclastic Flow",
+      "Dragonbone Graveyard"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1531, -5553],
+      "end": [1387, -5369]
+    }
+  },
+  "Sky Castle": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to Ahmsord"
+    ],
+    "Location": {
+      "start": [954, -4425],
+      "end": [854, -4340]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Winding Waters": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Parasitic Slime Mine",
+      "Cyclospordial Hazard"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [194, -4649],
+      "end": [115, -4521]
+    }
+  },
+  "Abandoned Mines Entrance": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mine Base Plains",
+      "Black Road",
+      "Abandoned Pass",
+      "Mining Base Camp",
+      "Ternaves"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [655, -1430],
+      "end": [880, -1330]
+    }
+  },
+  "The Gate": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "7200",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bizarre Passage"
+    ],
+    "Location": {
+      "start": [1350, -520],
+      "end": [1265, -410]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Fleris Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "7200"
+    },
+    "Trading Routes": [
+      "Road to Light Forest"
+    ],
+    "Location": {
+      "start": [-1390, -4594],
+      "end": [-1254, -4351]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Picnic Pond": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Avos Territory",
+      "Corkus Forest",
+      "Corkus City"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1888, -2862],
+      "end": [-1682, -2995]
+    }
+  },
+  "Sinister Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Lutho",
+      "Forest of Eyes"
+    ],
+    "Location": {
+      "start": [815, -506],
+      "end": [1059, -629]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Forgotten Burrows": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Maiden Tower",
+      "Path to the Grootslangs",
+      "Infested Sinkhole",
+      "Naga Lake",
+      "Shady Shack"
+    ],
+    "Location": {
+      "start": [-1955, -5311],
+      "end": [-2059, -5419]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ragni South Entrance": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Pigmen Ravines",
+      "Ragni",
+      "Sulphuric Hollow"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-924, -1398],
+      "end": [-784, -1307]
+    }
+  },
+  "Corkus Outskirts": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Founder's Statue",
+      "Retrofitted Manufactory",
+      "Bloody Beach"
+    ],
+    "Location": {
+      "start": [-1502, -2976],
+      "end": [-1230, -3224]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Maltic Coast": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Jagged Foothills",
+      "Maltic",
+      "Ancient Waterworks",
+      "Coastal Trail"
+    ],
+    "Location": {
+      "start": [-564, -2059],
+      "end": [-400, -1946]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Shineridge Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Loamsprout Orc Camp",
+      "Karoc Quarry",
+      "Llevigar Farm",
+      "Bucie Waterfall"
+    ],
+    "Location": {
+      "start": [-1776, -4664],
+      "end": [-1609, -4526]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Guild Hall": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cinfras"
+    ],
+    "Location": {
+      "start": [-349, -5093],
+      "end": [-137, -4814]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Razed Inn": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corrupted Tower",
+      "Mount Wynn Inn"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [151, -1870],
+      "end": [20, -1810]
+    }
+  },
+  "Relos": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corkus Sea Cove",
+      "Fallen Factory",
+      "Ruined Houses",
+      "Balloon Airbase"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1680, -2512],
+      "end": [-1437, -2307]
+    }
+  },
+  "Efilim Crossroads": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to the Forgery",
+      "Efilim",
+      "Guardian of the Forest"
+    ],
+    "Location": {
+      "start": [-1030, -4940],
+      "end": [-1134, -4847]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Path to Talor": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Viscera Pits",
+      "Dark Forest Village",
+      "Entrance to Kander",
+      "Old Crossroads",
+      "Talor Cemetery",
+      "Kander Mines"
+    ],
+    "Location": {
+      "start": [-653, -5231],
+      "end": [-785, -5401]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Caritat Mansion": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Mangled Lake",
+      "Twisted Housing",
+      "Overtaken Outpost"
+    ],
+    "Location": {
+      "start": [-1237, -5116],
+      "end": [-1144, -5268]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Scorched Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cathedral Harbour",
+      "Detlas Suburbs",
+      "Corrupted Orchard",
+      "Detlas",
+      "Ancient Nemract"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [200, -1820],
+      "end": [510, -1675]
+    }
+  },
+  "Minotaur Barbecue": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Efilim",
+      "Path to the Forgery"
+    ],
+    "Location": {
+      "start": [-1014, -4944],
+      "end": [-949, -5079]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wood Sprite Hideaway": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to Light's Secret",
+      "Road to Light Forest",
+      "Dodegar's Forge",
+      "Guardian of the Forest"
+    ],
+    "Location": {
+      "start": [-1040, -4706],
+      "end": [-1134, -4552]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "The Forgery": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to Cinfras",
+      "Path to the Forgery"
+    ],
+    "Location": {
+      "start": [-926, -4842],
+      "end": [-831, -4945]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Eltom": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ranol's Farm",
+      "Entrance to Molten Heights"
+    ],
+    "Location": {
+      "start": [1029, -5581],
+      "end": [828, -5376]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Molten Reach": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dogun Ritual Site",
+      "Angel Refuge"
+    ],
+    "Location": {
+      "start": [1251, -4894],
+      "end": [1500, -4964]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Cliffhearth Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Sanguine Spider Den",
+      "Llevigar Stables",
+      "Meteor Trail"
+    ],
+    "Location": {
+      "start": [-2060, -4746],
+      "end": [-2171, -4828]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mantis Nest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Aldorei Springs",
+      "Aldorei Valley Outskirts",
+      "Chasm Overlook",
+      "Myconid Descent",
+      "Mycelial Expanse"
+    ],
+    "Location": {
+      "start": [-736, -4559],
+      "end": [-802, -4698]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Harnort Compound": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Karoc Quarry",
+      "Bucie Waterfall"
+    ],
+    "Location": {
+      "start": [-1391, -4352],
+      "end": [-1607, -4524]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dragonling Nests": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "7200"
+    },
+    "Trading Routes": [
+      "Snail Island",
+      "Astraulus' Tower"
+    ],
+    "Location": {
+      "start": [925, -4916],
+      "end": [1101, -5016]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Grey Ruins": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Worm Tunnel",
+      "Forgotten Town"
+    ],
+    "Location": {
+      "start": [683, -619],
+      "end": [462, -515]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Avos Territory": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Retrofitted Manufactory",
+      "Overrun Docks",
+      "Picnic Pond"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1888, -2997],
+      "end": [-1683, -3175]
+    }
+  },
+  "Bizarre Passage": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Final Step",
+      "The Gate"
+    ],
+    "Location": {
+      "start": [1187, -680],
+      "end": [1388, -530]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Burning Airship": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bandit Cave",
+      "Burning Farm",
+      "Secluded Ponds"
+    ],
+    "Location": {
+      "start": [35, -4859],
+      "end": [107, -4955]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Bloody Beach": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Avos Temple",
+      "Pirate Town",
+      "Corkus Outskirts",
+      "Volcanic Excavation"
+    ],
+    "Location": {
+      "start": [-1376, -3225],
+      "end": [-1097, -3426]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Nivla Woods Exit": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Akias Ruins",
+      "Alekin",
+      "Road to Elkurn",
+      "Arachnid Woods",
+      "Nested Cliffside"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-74, -1777],
+      "end": [-3, -1485]
+    }
+  },
+  "Nesaak Transition": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corrupted River",
+      "Desolate Valley",
+      "Elkurn",
+      "Florist's Hut"
+    ],
+    "Location": {
+      "start": [330, -1040],
+      "end": [75, -1145]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Road to Time Valley": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Entrance to Nivla Woods",
+      "Nivla Woods",
+      "Blooming Boulders"
+    ],
+    "Location": {
+      "start": [-461, -1525],
+      "end": [-359, -1412]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Light Peninsula": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Volcanic Isles",
+      "Tree Island",
+      "Volcanic Excavation",
+      "The Shiar"
+    ],
+    "Location": {
+      "start": [-951, -4421],
+      "end": [-802, -4108]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Swamp Mountain Arch": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Floral Peaks",
+      "Lizardman Camp",
+      "Shady Shack",
+      "Sunspark Orc Camp"
+    ],
+    "Location": {
+      "start": [-1776, -5134],
+      "end": [-1898, -5240]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Loamsprout Orc Camp": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Llevigar Farm",
+      "Shineridge Orc Camp",
+      "Orc Road",
+      "Sablestone Orc Camp"
+    ],
+    "Location": {
+      "start": [-1800, -4852],
+      "end": [-1670, -4684]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Tempo Town": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Blooming Boulders",
+      "Time Valley",
+      "Elkurn",
+      "Road to Elkurn"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-357, -1325],
+      "end": [-99, -1141]
+    }
+  },
+  "Nexus of Light": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Azure Frontier"
+    ],
+    "Location": {
+      "start": [-645, -6384],
+      "end": [-855, -6561]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Aldorei Valley": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Outer Aldorei Town",
+      "Aldorei Cliffside Waterfalls"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-557, -4501],
+      "end": [-322, -4656]
+    }
+  },
+  "Jitak's Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Gylia Lakehouse",
+      "Mushroom Hill",
+      "Gert Camp"
+    ],
+    "Location": {
+      "start": [-122, -5430],
+      "end": [-218, -5567]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Twain Lake": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Twain Mansion",
+      "Frigid Crossroads"
+    ],
+    "Location": {
+      "start": [0, -330],
+      "end": [80, -530]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Herb Cave": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Jungle Entrance",
+      "Troms Lake"
+    ],
+    "Location": {
+      "start": [-448, -813],
+      "end": [-557, -876]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Durum Oat Islet": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mage Island",
+      "Durum Isles Barn",
+      "Cathedral Harbour"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [482, -2841],
+      "end": [548, -2785]
+    }
+  },
+  "Entrance to Bucie": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Centerworld Fortress",
+      "Goblin Plains East",
+      "Llevigar Farm",
+      "Bucie Waterfall"
+    ],
+    "Location": {
+      "start": [-1553, -4850],
+      "end": [-1476, -4719]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Aldorei River": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Felroc Fields",
+      "Cinfras"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-437, -4656],
+      "end": [-338, -4756]
+    }
+  },
+  "Cliffside Passage North": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Cliffside Passage South",
+      "Thesead Underpass"
+    ],
+    "Location": {
+      "start": [572, -4818],
+      "end": [700, -4933]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Temple of Legends": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Troms",
+      "Troms Lake"
+    ],
+    "Location": {
+      "start": [-631, -973],
+      "end": [-745, -1093]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Lion Lair": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Bremminglar"
+    ],
+    "Location": {
+      "start": [890, -2140],
+      "end": [790, -2320]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Nesaak": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Wolves' Den",
+      "Bob's Tomb",
+      "Florist's Hut",
+      "Frigid Crossroads",
+      "Frozen Homestead"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [75, -850],
+      "end": [160, -760]
+    }
+  },
+  "Path to the Grootslangs": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Forgotten Burrows",
+      "Olux",
+      "Naga Lake"
+    ],
+    "Location": {
+      "start": [-1981, -5466],
+      "end": [-1889, -5603]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Centerworld Fortress": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Orc Battlegrounds",
+      "Road to Light Forest",
+      "Entrance to Bucie"
+    ],
+    "Location": {
+      "start": [-1403, -4869],
+      "end": [-1284, -4748]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corrupted Road": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Roots of Corruption",
+      "Akias Ruins",
+      "Corrupted Warfront",
+      "Elkurn"
+    ],
+    "Location": {
+      "start": [22, -1479],
+      "end": [96, -1261]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Jagged Foothills": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Maltic Coast",
+      "Ancient Waterworks",
+      "Rocky Shore"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-348, -2060],
+      "end": [-254, -1954]
+    }
+  },
+  "Ruined Houses": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Relos",
+      "Fallen Factory",
+      "Industrial Clearing"
+    ],
+    "Location": {
+      "start": [-1684, -2569],
+      "end": [-1793, -2453]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Emerald Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Entrance to Nivla Woods",
+      "Ragni Main Entrance",
+      "Farmers Settlement"
+    ],
+    "Location": {
+      "start": [-615, -1530],
+      "end": [-436, -1652]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Heavenly Ingress": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Field of Life",
+      "Path to Light's Secret"
+    ],
+    "Location": {
+      "start": [-814, -6015],
+      "end": [-894, -5928]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Sky Island Ascent": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Raiders' Stronghold",
+      "Central Islands",
+      "Sky Falls",
+      "Jofash Tunnel",
+      "Ahmsord"
+    ],
+    "Location": {
+      "start": [1180, -4524],
+      "end": [1379, -4355]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Lutho": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Sinister Forest",
+      "Paths of Sludge"
+    ],
+    "Location": {
+      "start": [936, -654],
+      "end": [1027, -754]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Old Coal Mine": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Kandon Ridge"
+    ],
+    "Location": {
+      "start": [719, -4778],
+      "end": [885, -4900]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dreary Docks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dujgon Nation",
+      "Skien's Island",
+      "Derelict Mansion",
+      "Disturbed Crypt"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [870, -3920],
+      "end": [745, -3810]
+    }
+  },
+  "Apprentice Huts": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Monte's Village",
+      "Iboju Village",
+      "Troms Lake"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-600, -610],
+      "end": [-670, -780]
+    }
+  },
+  "Waterfall Cave": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Big Mushroom Cave",
+      "Paper Trail",
+      "Pine Pillar Forest"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-127, -4639],
+      "end": [3, -4509]
+    }
+  },
+  "Path to Light's Secret": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Heavenly Ingress",
+      "Wood Sprite Hideaway",
+      "Luxuriant Pond"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1134, -4548],
+      "end": [-1038, -4426]
+    }
+  },
+  "Cascading Oasis": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Gloopy Cave",
+      "Mummy's Tomb",
+      "Dusty Pit"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [990, -2270],
+      "end": [1195, -2120]
+    }
+  },
+  "Southern Outpost": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Legendary Island",
+      "Balloon Airbase"
+    ],
+    "Location": {
+      "start": [-1258, -2204],
+      "end": [-1444, -2306]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Industrial Clearing": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Fallen Factory",
+      "Corkus Forest",
+      "Ruined Houses",
+      "Corkus City Crossroads"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1683, -2571],
+      "end": [-1798, -2730]
+    }
+  },
+  "Bear Zoo": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Zhight Island",
+      "Rooster Island"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-409, -2539],
+      "end": [-283, -2414]
+    }
+  },
+  "Lifeless Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Jofash Docks",
+      "Derelict Mansion",
+      "Disturbed Crypt"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [870, -3920],
+      "end": [1000, -4040]
+    }
+  },
+  "Cherry Blossom Grove": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to the Dojo",
+      "Ranol's Farm",
+      "Displaced Housing"
+    ],
+    "Location": {
+      "start": [699, -5378],
+      "end": [575, -5551]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Wizard Tower": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Krolton's Cave",
+      "Bandit's Toll"
+    ],
+    "Location": {
+      "start": [438, -5037],
+      "end": [345, -4966]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Protector's Pathway": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Featherfall Cliffs",
+      "Elefolk Stomping Grounds",
+      "Kandon-Beda",
+      "Elephelk Trail"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [443, -4566],
+      "end": [570, -4392]
+    }
+  },
+  "Ruined Prospect": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Rymek",
+      "Sunset Plateau"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1209, -1269],
+      "end": [1020, -1380]
+    }
+  },
+  "Central Islands": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Temple Island",
+      "Wybel Island",
+      "Sky Island Ascent",
+      "Ahmsord Outskirts",
+      "Ahmsord"
+    ],
+    "Location": {
+      "start": [1250, -4718],
+      "end": [1183, -4535]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Cyclospordial Hazard": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cascading Basins",
+      "Winding Waters",
+      "Turncoat Turnabout"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [110, -4736],
+      "end": [194, -4651]
+    }
+  },
+  "Harpy's Haunt South": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Fleris Cranny",
+      "Harpy's Haunt North",
+      "Wayward Split"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [337, -4855],
+      "end": [271, -4741]
+    }
+  },
+  "Kitrios Barracks": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Colourful Mountaintop",
+      "Kitrios Armory",
+      "Gylia Watchtower"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [104, -5393],
+      "end": [166, -5518]
+    }
+  },
+  "Icy Descent": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Lusuco",
+      "Tower of Ascension",
+      "Frigid Crossroads"
+    ],
+    "Location": {
+      "start": [-311, -358],
+      "end": [-104, -496]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Turncoat Turnabout": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Parasitic Slime Mine",
+      "Cyclospordial Hazard",
+      "Wayward Split"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [265, -4652],
+      "end": [200, -4741]
+    }
+  },
+  "Aldorei Springs": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Aldorei Valley Outskirts",
+      "Outer Aldorei Town",
+      "Mantis Nest"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-714, -4395],
+      "end": [-559, -4499]
+    }
+  },
+  "Sulphuric Hollow": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ragni South Entrance",
+      "Little Wood",
+      "Troms"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-898, -1298],
+      "end": [-678, -1221]
+    }
+  },
+  "Ancient Excavation": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Owl Tribe",
+      "Almuj Slums",
+      "Ruined Villa"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1210, -1810],
+      "end": [1040, -1680]
+    }
+  },
+  "Abandoned Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Pigmen Ravines",
+      "Time Valley"
+    ],
+    "Location": {
+      "start": [-577, -1395],
+      "end": [-478, -1335]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Corrupted River": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Roots of Corruption",
+      "Desolate Valley",
+      "Nesaak Transition",
+      "Elkurn"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [75, -1145],
+      "end": [325, -1210]
+    }
+  },
+  "Olux": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Olux Lumberyard",
+      "Entrance to Olux",
+      "Lizardman Lake",
+      "Path to the Grootslangs"
+    ],
+    "Location": {
+      "start": [-1810, -5397],
+      "end": [-1668, -5597]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Gelibord": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Gelibord Watermill",
+      "Twisted Housing",
+      "Enchanted River",
+      "Entrance to Kander"
+    ],
+    "Location": {
+      "start": [-1050, -5244],
+      "end": [-958, -5342]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Abandoned Mines": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mining Base Camp",
+      "Mine Base Plains"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [870, -1130],
+      "end": [670, -1225]
+    }
+  },
+  "Ragni North Entrance": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Riverbank Knoll",
+      "Ragni",
+      "Katoa Ranch"
+    ],
+    "Location": {
+      "start": [-944, -1761],
+      "end": [-818, -1859]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ranol's Farm": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Thesead Suburbs",
+      "Eltom",
+      "Cherry Blossom Grove"
+    ],
+    "Location": {
+      "start": [810, -5551],
+      "end": [701, -5377]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Pine Pillar Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Waterfall Cave",
+      "Timeworn Arch",
+      "Evergreen Outbreak"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [35, -4521],
+      "end": [107, -4641]
+    }
+  },
+  "Guardian of the Forest": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Efilim Crossroads",
+      "Wood Sprite Hideaway",
+      "Unicorn Trail"
+    ],
+    "Location": {
+      "start": [-1134, -4708],
+      "end": [-1030, -4845]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Myconid Descent": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Chasm Chokepoint",
+      "Mantis Nest"
+    ],
+    "Location": {
+      "start": [-646, -4699],
+      "end": [-733, -4559]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Nivla Woods": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Entrance to Nivla Woods",
+      "Blooming Boulders",
+      "Alekin",
+      "Road to Time Valley"
+    ],
+    "Location": {
+      "start": [-325, -1624],
+      "end": [-196, -1460]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Luminous Plateau": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Field of Life"
+    ],
+    "Location": {
+      "start": [-894, -5957],
+      "end": [-962, -6066]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Rymek": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ruined Prospect",
+      "Sunrise Plateau"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1210, -1270],
+      "end": [1400, -1390]
+    }
+  },
+  "Brigand Outpost": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Collapsed Emerald Mine",
+      "Meteor Trail",
+      "Stonecave Orc Camp"
+    ],
+    "Location": {
+      "start": [-2060, -4912],
+      "end": [-2171, -5000]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ruined Villa": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Ancient Excavation",
+      "Almuj",
+      "Almuj Slums",
+      "Gloopy Cave",
+      "Accursed Dunes"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1060, -1935],
+      "end": [1210, -1810]
+    }
+  },
+  "Coastal Trail": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Maltic Coast",
+      "Ragni Countryside North",
+      "Maltic"
+    ],
+    "Location": {
+      "start": [-747, -1946],
+      "end": [-565, -2059]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Illuminant Path": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Bandit's Toll",
+      "The Hive",
+      "Canyon High Path",
+      "Path to the Dojo",
+      "Thanos Exit"
+    ],
+    "Location": {
+      "start": [347, -5313],
+      "end": [438, -5183]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Elkurn": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Tempo Town",
+      "Frosty Spikes",
+      "Corrupted Road",
+      "Road to Elkurn",
+      "Nesaak Transition",
+      "Corrupted River"
+    ],
+    "Location": {
+      "start": [-98, -1250],
+      "end": [62, -1080]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Bandit Cave": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Burning Airship"
+    ],
+    "Location": {
+      "start": [194, -4956],
+      "end": [111, -4872]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Collapsed Bridge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Mycelial Expanse",
+      "Chasm Overlook",
+      "Unicorn Trail"
+    ],
+    "Location": {
+      "start": [-834, -4839],
+      "end": [-926, -4708]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Retrofitted Manufactory": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Corkus City",
+      "Avos Temple",
+      "Avos Territory",
+      "Corkus Outskirts"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1503, -3191],
+      "end": [-1680, -3012]
+    }
+  },
+  "Kandon Ridge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Kandon Farm",
+      "Aerial Descent",
+      "Old Coal Mine",
+      "Temple Island"
+    ],
+    "Location": {
+      "start": [885, -4640],
+      "end": [719, -4777]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Monte's Village": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Apprentice Huts",
+      "Entamis Village",
+      "Jungle Entrance"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-515, -610],
+      "end": [-600, -790]
+    }
+  },
+  "Cliffside Passage South": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Cliffside Passage North",
+      "Elephelk Trail"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [699, -4817],
+      "end": [572, -4691]
+    }
+  },
+  "Founder's Statue": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Corkus Outskirts",
+      "Corkus City Mine"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-1322, -2917],
+      "end": [-1393, -2836]
+    }
+  },
+  "The Hive": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Illuminant Path",
+      "Path to the Dojo"
+    ],
+    "Location": {
+      "start": [381, -5413],
+      "end": [286, -5593]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Dujgon Nation": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Dreary Docks",
+      "Icy Island",
+      "Disturbed Crypt",
+      "Regular Island",
+      "Nodguj Nation"
+    ],
+    "Location": {
+      "start": [1000, -3550],
+      "end": [925, -3380]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Parasitic Slime Mine": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Winding Waters",
+      "Panda Kingdom",
+      "Turncoat Turnabout",
+      "Troll Tower"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [265, -4521],
+      "end": [199, -4649]
+    }
+  },
+  "Sky Falls": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Wybel Island",
+      "Sky Island Ascent",
+      "Frozen Fort"
+    ],
+    "Location": {
+      "start": [1380, -4458],
+      "end": [1466, -4653]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Rodoroc": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Crater Descent",
+      "Entrance to Molten Heights"
+    ],
+    "Location": {
+      "start": [1200, -5067],
+      "end": [965, -5238]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Almuj": {
+    "resources": {
+      "emeralds": "18000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Almuj Slums",
+      "Gloopy Cave",
+      "Entrance to Almuj",
+      "Dusty Pit",
+      "Ruined Villa"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1050, -1900],
+      "end": [840, -2060]
+    }
+  },
+  "Bandit's Toll": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Canyon Walkway",
+      "Wizard Tower",
+      "Workshop Glade",
+      "Illuminant Path"
+    ],
+    "Location": {
+      "start": [439, -5038],
+      "end": [345, -5181]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Toxic Drip": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Toxic Caves",
+      "Paths of Sludge",
+      "Gateway to Nothing"
+    ],
+    "Location": {
+      "start": [893, -876],
+      "end": [1086, -992]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Canyon High Path": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Wanderer's Way",
+      "Illuminant Path",
+      "Path to the Dojo"
+    ],
+    "Location": {
+      "start": [562, -5313],
+      "end": [440, -5191]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Eagle Tribe": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Accursed Dunes",
+      "Sunrise Plateau",
+      "Owl Tribe"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [1479, -1579],
+      "end": [1210, -1780]
+    }
+  },
+  "Secluded Ponds": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Burning Airship",
+      "Path to Thanos",
+      "Celestial Impact",
+      "Path to Ozoth's Spire"
+    ],
+    "Location": {
+      "start": [98, -4957],
+      "end": [35, -5046]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Overtaken Outpost": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Fading Forest",
+      "Mangled Lake",
+      "Caritat Mansion",
+      "Bloody Trail"
+    ],
+    "Location": {
+      "start": [-1452, -5211],
+      "end": [-1272, -5395]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Santa's Hideout": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Mage Island",
+      "Icy Island",
+      "Nodguj Nation"
+    ],
+    "Location": {
+      "start": [1057, -3077],
+      "end": [1221, -3209]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Molten Passage": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Path to Ozoth's Spire",
+      "Canyon Walkway"
+    ],
+    "Location": {
+      "start": [199, -5164],
+      "end": [260, -5042]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Entrance to Nivla Woods": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Nivla Woods",
+      "Road to Time Valley",
+      "Emerald Trail",
+      "Nomads' Refuge"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-435, -1530],
+      "end": [-372, -1652]
+    }
+  },
+  "Path to Ahmsord": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Aerial Descent",
+      "Sky Castle",
+      "Ahmsord"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [779, -4480],
+      "end": [885, -4570]
+    }
+  },
+  "Aerial Descent": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Path to Ahmsord",
+      "Kandon Ridge",
+      "Ahmsord"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [885, -4571],
+      "end": [779, -4639]
+    }
+  },
+  "Harpy's Haunt North": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Harpy's Haunt South",
+      "Krolton's Cave"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [271, -4946],
+      "end": [337, -4857]
+    }
+  },
+  "Bantisu Approach": {
+    "resources": {
+      "emeralds": "1800",
+      "ore": "900",
+      "crops": "900",
+      "fish": "900",
+      "wood": "900"
+    },
+    "Trading Routes": [
+      "Krolton's Cave",
+      "Bantisu Air Temple",
+      "Workshop Glade"
+    ],
+    "Location": {
+      "start": [445, -4972],
+      "end": [563, -4835]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Weird Clearing": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Fallen Village",
+      "Gylia Lakehouse",
+      "Mushroom Hill",
+      "Fungal Grove"
+    ],
+    "Location": {
+      "start": [-288, -5409],
+      "end": [-392, -5294]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Entrance to Kander": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Faltach Manor",
+      "Gelibord",
+      "Path to Talor",
+      "Path to the Penitentiary",
+      "Twisted Ridge"
+    ],
+    "Location": {
+      "start": [-896, -5408],
+      "end": [-792, -5233]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Thanos Exit": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Illuminant Path"
+    ],
+    "Location": {
+      "start": [338, -5310],
+      "end": [262, -5168]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Mount Wynn Inn": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nested Cliffside",
+      "Nemract",
+      "Blackstring Den",
+      "Razed Inn",
+      "Ancient Nemract",
+      "Nemract Cathedral"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [20, -2065],
+      "end": [151, -1871]
+    }
+  },
+  "Angel Refuge": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Molten Reach",
+      "Ahmsord Outskirts"
+    ],
+    "Location": {
+      "start": [1354, -4727],
+      "end": [1484, -4877]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Efilim": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "3600",
+      "crops": "0",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Minotaur Barbecue",
+      "Twisted Housing",
+      "Efilim Crossroads"
+    ],
+    "Location": {
+      "start": [-1134, -5078],
+      "end": [-1020, -4943]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Abandoned Lumberyard": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Frosty Spikes",
+      "Frozen Homestead"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-140, -860],
+      "end": [-180, -980]
+    }
+  },
+  "Nemract Cathedral": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "3600",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Nemract",
+      "Cathedral Harbour",
+      "Mount Wynn Inn",
+      "Ancient Nemract"
+    ],
+    "Location": {
+      "start": [385, -2180],
+      "end": [270, -2030]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Ragni Countryside North": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "3600",
+      "fish": "0",
+      "wood": "0"
+    },
+    "Trading Routes": [
+      "Riverbank Knoll",
+      "Maltic",
+      "Coastal Trail",
+      "Ragni Countryside South"
+    ],
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": "",
+    "Location": {
+      "start": [-747, -1776],
+      "end": [-605, -1945]
+    }
+  },
+  "Talor Cemetery": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Dark Forest Village",
+      "Fungal Grove",
+      "Old Crossroads",
+      "Cinfras Outskirts",
+      "Path to Talor"
+    ],
+    "Location": {
+      "start": [-648, -5311],
+      "end": [-567, -5234]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  },
+  "Little Wood": {
+    "resources": {
+      "emeralds": "9000",
+      "ore": "0",
+      "crops": "0",
+      "fish": "0",
+      "wood": "3600"
+    },
+    "Trading Routes": [
+      "Time Valley",
+      "Sulphuric Hollow"
+    ],
+    "Location": {
+      "start": [-812, -1177],
+      "end": [-636, -1094]
+    },
+    "Guild": {
+      "uuid": "",
+      "name": "",
+      "prefix": ""
+    },
+    "Acquired": ""
+  }
+}

@@ -47,6 +47,11 @@ sys.excepthook = on_crash
 
 @client.event
 async def on_ready():
+    if not getattr(client, 'synced', False):
+        await client.sync_commands()
+        client.synced = True
+        print("✅ Slash commands synced.")
+
     guild = Guild('The Aquarium')
     await client.change_presence(activity=discord.CustomActivity(name=f'{guild.online} members online'))
     print('We have logged in as {0.user}'.format(client))
@@ -124,6 +129,7 @@ client.load_extension('Commands.shell')
 client.load_extension('Commands.raid_collecting')
 client.load_extension('Commands.lootpool')
 client.load_extension('Commands.aspects')
+client.load_extension("Commands.map")
 
 # Load Dev Commands
 client.load_extension('Commands.render_text')
