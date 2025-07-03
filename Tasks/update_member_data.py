@@ -6,7 +6,6 @@ import datetime
 import time
 import traceback
 from datetime import timezone, timedelta, time as dtime
-from collections import deque
 from discord.ext import tasks, commands
 
 from Helpers.classes import Guild, DB
@@ -49,10 +48,9 @@ class UpdateMemberData(commands.Cog):
         self.member_file_exists = os.path.exists(self.member_file)
         # Separate queues for unvalidated and validated participants per raid
         self.raid_participants = {raid: {"unvalidated": {}, "validated": {}} for raid in self.RAID_NAMES}
-        # Rate limiting: track timestamps of API calls
-        self.request_times = deque()
         self.cold_start = True
-        self._semaphore = asyncio.Semaphore(10)
+        # Semaphore for sequential pacing
+        self._semaphore = asyncio.Semaphore(1)
 
     def _load_json(self, path, default):
         try:
@@ -81,10 +79,7 @@ class UpdateMemberData(commands.Cog):
         participants = self.raid_participants[raid]["validated"]
         names = [participants[uid]["name"] for uid in group]
         bolded = [f"**{n}**" for n in names]
-        if len(bolded) > 1:
-            names_str = ", ".join(bolded[:-1]) + ", and " + bolded[-1]
-        else:
-            names_str = bolded[0]
+        names_str = ", and ".join([", ".join(bolded[:-1]), bolded[-1]]) if len(bolded) > 1 else bolded[0]
         emoji = RAID_EMOJIS.get(raid, "")
         now = datetime.datetime.now(timezone.utc)
         channel = self.client.get_channel(RAID_ANNOUNCE_CHANNEL_ID)
@@ -145,7 +140,7 @@ class UpdateMemberData(commands.Cog):
                     print(f"{now} - PRUNE (unvalidated): {info['name']} ({uid}) from {raid}")
                     queues["unvalidated"].pop(uid)
 
-        # Join/leave detection (unchanged)...
+        # Join/leave detection
         prev_map = self.previous_members
         curr_map = {m["uuid"]: {"name": m["name"], "rank": m.get("rank")} for m in guild.all_members}
         joined = set(curr_map) - set(prev_map)
@@ -167,15 +162,17 @@ class UpdateMemberData(commands.Cog):
             if joined:
                 join_names = [getNameFromUUID(u)[0] if isinstance(getNameFromUUID(u), list) else str(getNameFromUUID(u)) for u in joined]
                 ej = discord.Embed(title="Guild Members Joined", timestamp=now, color=0x00FF00)
-                add_chunked(ej, "Joined", join_names); await ch.send(embed=ej)
+                add_chunked(ej, "Joined", join_names)
+                await ch.send(embed=ej)
             if left:
                 leave_names = [prev_map[u]["name"] for u in left]
                 el = discord.Embed(title="Guild Members Left", timestamp=now, color=0xFF0000)
-                add_chunked(el, "Left", leave_names); await ch.send(embed=el)
+                add_chunked(el, "Left", leave_names)
+                await ch.send(embed=el)
         self.previous_members = curr_map
         self._save_json(self.member_file, curr_map)
 
-        # Rank changes, presence update (unchanged)...
+        # Rank changes and presence update
         role_changes = [(u, curr_map[u]["name"], prev_map[u]["rank"], curr_map[u]["rank"]) for u in curr_map if u in prev_map and prev_map[u].get("rank") != curr_map[u]["rank"]]
         if role_changes and not (self.cold_start and not self.member_file_exists):
             ch = self.client.get_channel(LOG_CHANNEL)
@@ -185,25 +182,17 @@ class UpdateMemberData(commands.Cog):
             await ch.send(embed=er)
         await self.client.change_presence(activity=discord.CustomActivity(name=f"{guild.online} members online"))
 
-        # Fetch all members with rate limiting instead of sleep-based waves
+        # Fetch sequentially with small delay to spread 150 calls over 2 minutes
         members = guild.all_members
-        async def fetch(uuid):
+        interval = 120 / max(len(members), 1)
+        results = []
+        for m in members:
             async with self._semaphore:
-                # Rate limit: max 75 calls per minute
-                now_call = datetime.datetime.now(timezone.utc)
-                # Remove timestamps older than 60s
-                while self.request_times and now_call - self.request_times[0] > timedelta(minutes=1):
-                    self.request_times.popleft()
-                if len(self.request_times) >= 75:
-                    wait_secs = 60 - (now_call - self.request_times[0]).total_seconds()
-                    print(f"Rate limit reached, waiting {wait_secs:.1f}s...")
-                    await asyncio.sleep(wait_secs)
-                self.request_times.append(datetime.datetime.now(timezone.utc))
-                return await asyncio.to_thread(getPlayerDatav3, uuid)
+                res = await asyncio.to_thread(getPlayerDatav3, m["uuid"])
+            results.append(res)
+            await asyncio.sleep(interval)
 
-        results = await asyncio.gather(*(fetch(m["uuid"]) for m in members), return_exceptions=True)
-
-        # Raid detection and validation logic (unchanged)...
+        # Raid detection and validation
         prev_saved = self.previous_data
         contribs = {r["uuid"]: r.get("contributed", 0) for r in results if isinstance(r, dict)}
         new_data = {}
@@ -222,8 +211,7 @@ class UpdateMemberData(commands.Cog):
                         base = prev_saved.get(uid, {}).get("contributed", 0)
                         self.raid_participants[raid]["unvalidated"][uid] = {"name": name, "first_seen": now, "baseline_contrib": base}
                         print(f"{now} - DETECT (unvalidated): {name} in {raid}")
-        
-        # Move to validated and announce
+
         for raid, queues in self.raid_participants.items():
             for uid, info in list(queues["unvalidated"].items()):
                 if contribs.get(uid, 0) - info["baseline_contrib"] >= CONTRIBUTION_THRESHOLD:
@@ -245,35 +233,41 @@ class UpdateMemberData(commands.Cog):
 
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
     async def daily_activity_snapshot(self):
-        # unchanged
         print("Starting daily activity snapshot")
         db = DB(); db.connect()
         guild = Guild("The Aquarium")
-        t = int(time.time())
-        snapshot = {'time': t, 'members': []}
+        snapshot = {'time': int(time.time()), 'members': []}
         members = guild.all_members
-        async def fetch(uuid):
+        for m in members:
             async with self._semaphore:
-                return await asyncio.to_thread(getPlayerDatav3, uuid)
-        profiles = await asyncio.gather(*(fetch(m["uuid"]) for m in members), return_exceptions=True)
-        for m in profiles:
-            if not isinstance(m, dict):
+                profile = await asyncio.to_thread(getPlayerDatav3, m["uuid"])
+            if not isinstance(profile, dict):
                 continue
-            uuid = m['uuid']
+            uuid = profile['uuid']
+            db.cursor.execute(
+                "SELECT COALESCE(s.shells,0) FROM discord_links dl LEFT JOIN shells s ON dl.discord_id=s.user WHERE dl.uuid=%s",
+                (uuid,)
+            )
+            shells = db.cursor.fetchone()[0]
+            db.cursor.execute(
+                "SELECT COALESCE(ur.uncollected_raids,0)+COALESCE(ur.collected_raids,0) FROM discord_links dl LEFT JOIN uncollected_raids ur ON dl.uuid=ur.uuid WHERE dl.uuid=%s",
+                (uuid,)
+            )
+            raids = db.cursor.fetchone()[0]
             snapshot['members'].append({
-                'name': m['username'],
+                'name': profile['username'],
                 'uuid': uuid,
-                'playtime': m.get('playtime'),
-                'contributed': m.get('contributed'),
-                'wars': m.get('globalData',{}).get('wars'),
-                'shells': (db.cursor.execute("SELECT COALESCE(s.shells,0) FROM discord_links dl LEFT JOIN shells s ON dl.discord_id=s.user WHERE dl.uuid=%s",(uuid,)), db.cursor.fetchone()[0])[1],
-                'raids': sum((db.cursor.execute("SELECT COALESCE(ur.uncollected_raids,0),COALESCE(ur.collected_raids,0) FROM discord_links dl LEFT JOIN uncollected_raids ur ON dl.uuid=ur.uuid WHERE dl.uuid=%s",(uuid,)), db.cursor.fetchone()))
+                'playtime': profile.get('playtime'),
+                'contributed': profile.get('contributed'),
+                'wars': profile.get('globalData', {}).get('wars'),
+                'shells': shells,
+                'raids': raids
             })
         path = "player_activity.json"
         old = self._load_json(path, [])
         old.insert(0, snapshot)
-        with open(path,'w') as f:
-            json.dump(old[:60],f,indent=2)
+        with open(path, 'w') as f:
+            json.dump(old[:60], f, indent=2)
         db.close()
         print("Daily activity snapshot complete")
 
