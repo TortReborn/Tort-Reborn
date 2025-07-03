@@ -6,6 +6,7 @@ import datetime
 import time
 import traceback
 from datetime import timezone, timedelta, time as dtime
+from collections import deque
 from discord.ext import tasks, commands
 
 from Helpers.classes import Guild, DB
@@ -31,7 +32,6 @@ RAID_EMOJIS = {
     "Orphion's Nexus of Light": nol_emoji_id
 }
 
-
 class UpdateMemberData(commands.Cog):
     RAID_NAMES = [
         "Nest of the Grootslangs",
@@ -47,7 +47,10 @@ class UpdateMemberData(commands.Cog):
         self.member_file = "member_list.json"
         self.previous_members = self._load_json(self.member_file, {})
         self.member_file_exists = os.path.exists(self.member_file)
-        self.raid_participants = {raid: {} for raid in self.RAID_NAMES}
+        # Separate queues for unvalidated and validated participants per raid
+        self.raid_participants = {raid: {"unvalidated": {}, "validated": {}} for raid in self.RAID_NAMES}
+        # Rate limiting: track timestamps of API calls
+        self.request_times = deque()
         self.cold_start = True
         self._semaphore = asyncio.Semaphore(10)
 
@@ -75,7 +78,7 @@ class UpdateMemberData(commands.Cog):
         return f"[{bar}]"
 
     async def _announce_raid(self, raid, group, guild, db):
-        participants = self.raid_participants[raid]
+        participants = self.raid_participants[raid]["validated"]
         names = [participants[uid]["name"] for uid in group]
         bolded = [f"**{n}**" for n in names]
         if len(bolded) > 1:
@@ -124,25 +127,25 @@ class UpdateMemberData(commands.Cog):
             )
         db.connection.commit()
 
-    @tasks.loop(minutes=2)  # run every 2 minutes, splitting fetches into two waves
+    @tasks.loop(minutes=2)
     async def update_member_data(self):
         now = datetime.datetime.now(timezone.utc)
         print(f"STARTING LOOP - {now}")
         db = DB(); db.connect()
         guild = Guild("The Aquarium")
 
-        # Prune stale participants
+        # Prune stale unvalidated participants
         cutoff = now - GUILD_TTL
-        for raid, parts in list(self.raid_participants.items()):
-            for uid, info in list(parts.items()):
+        for raid, queues in self.raid_participants.items():
+            for uid, info in list(queues["unvalidated"].items()):
                 first = info["first_seen"]
                 if isinstance(first, str):
                     first = datetime.datetime.fromisoformat(first)
-                if first < cutoff and not info.get("validated", False):
-                    print(f"{now} - PRUNE: {info['name']} ({uid}) from {raid}")
-                    parts.pop(uid)
+                if first < cutoff:
+                    print(f"{now} - PRUNE (unvalidated): {info['name']} ({uid}) from {raid}")
+                    queues["unvalidated"].pop(uid)
 
-        # Join/leave detection
+        # Join/leave detection (unchanged)...
         prev_map = self.previous_members
         curr_map = {m["uuid"]: {"name": m["name"], "rank": m.get("rank")} for m in guild.all_members}
         joined = set(curr_map) - set(prev_map)
@@ -162,7 +165,7 @@ class UpdateMemberData(commands.Cog):
                 if chunk:
                     embed.add_field(name=title, value=chunk, inline=False)
             if joined:
-                join_names = [getNameFromUUID(u)[0] if isinstance(getNameFromUUID(u),list) else str(getNameFromUUID(u)) for u in joined]
+                join_names = [getNameFromUUID(u)[0] if isinstance(getNameFromUUID(u), list) else str(getNameFromUUID(u)) for u in joined]
                 ej = discord.Embed(title="Guild Members Joined", timestamp=now, color=0x00FF00)
                 add_chunked(ej, "Joined", join_names); await ch.send(embed=ej)
             if left:
@@ -172,7 +175,7 @@ class UpdateMemberData(commands.Cog):
         self.previous_members = curr_map
         self._save_json(self.member_file, curr_map)
 
-        # Rank changes
+        # Rank changes, presence update (unchanged)...
         role_changes = [(u, curr_map[u]["name"], prev_map[u]["rank"], curr_map[u]["rank"]) for u in curr_map if u in prev_map and prev_map[u].get("rank") != curr_map[u]["rank"]]
         if role_changes and not (self.cold_start and not self.member_file_exists):
             ch = self.client.get_channel(LOG_CHANNEL)
@@ -180,60 +183,59 @@ class UpdateMemberData(commands.Cog):
             for _, name, old, new in role_changes:
                 er.add_field(name=name, value=f"{old} → {new}", inline=False)
             await ch.send(embed=er)
-
-        # Presence update
         await self.client.change_presence(activity=discord.CustomActivity(name=f"{guild.online} members online"))
 
-        # Concurrent fetch of player data in two waves to respect rate limits (max 75 requests/min)
+        # Fetch all members with rate limiting instead of sleep-based waves
         members = guild.all_members
         async def fetch(uuid):
             async with self._semaphore:
+                # Rate limit: max 75 calls per minute
+                now_call = datetime.datetime.now(timezone.utc)
+                # Remove timestamps older than 60s
+                while self.request_times and now_call - self.request_times[0] > timedelta(minutes=1):
+                    self.request_times.popleft()
+                if len(self.request_times) >= 75:
+                    wait_secs = 60 - (now_call - self.request_times[0]).total_seconds()
+                    print(f"Rate limit reached, waiting {wait_secs:.1f}s...")
+                    await asyncio.sleep(wait_secs)
+                self.request_times.append(datetime.datetime.now(timezone.utc))
                 return await asyncio.to_thread(getPlayerDatav3, uuid)
 
-        # First wave (up to 75 members)
-        wave1 = members[:75]
-        results1 = await asyncio.gather(*(fetch(m["uuid"]) for m in wave1), return_exceptions=True)
-        # Pause to avoid exceeding 120 calls/min
-        await asyncio.sleep(60)
-        # Second wave (remaining members)
-        wave2 = members[75:]
-        results2 = await asyncio.gather(*(fetch(m["uuid"]) for m in wave2), return_exceptions=True)
+        results = await asyncio.gather(*(fetch(m["uuid"]) for m in members), return_exceptions=True)
 
-        # Combine both waves
-        results = results1 + results2
-
-        # Raid detection via XP diff
+        # Raid detection and validation logic (unchanged)...
         prev_saved = self.previous_data
-        contribs = {r["uuid"]: r.get("contributed",0) for r in results if isinstance(r,dict)}
+        contribs = {r["uuid"]: r.get("contributed", 0) for r in results if isinstance(r, dict)}
         new_data = {}
         for m in results:
             if not isinstance(m, dict):
                 continue
             uid, name = m["uuid"], m["username"]
-            raids = m.get("globalData",{}).get("raids",{}).get("list",{})
-            counts = {r: raids.get(r,0) for r in self.RAID_NAMES}
-            cur = m.get("contributed",0)
-            new_data[uid] = {"raids":counts, "contributed":cur}
+            raids = m.get("globalData", {}).get("raids", {}).get("list", {})
+            counts = {r: raids.get(r, 0) for r in self.RAID_NAMES}
+            new_data[uid] = {"raids": counts, "contributed": m.get("contributed", 0)}
             if not self.cold_start:
-                old_counts = prev_saved.get(uid,{}).get("raids",{r:0 for r in self.RAID_NAMES})
+                old_counts = prev_saved.get(uid, {}).get("raids", {r: 0 for r in self.RAID_NAMES})
                 for raid in self.RAID_NAMES:
-                    diff = counts[raid] - old_counts.get(raid,0)
-                    if 0 < diff < 3 and uid not in self.raid_participants[raid]:
-                        base = prev_saved.get(uid,{}).get("contributed",0)
-                        self.raid_participants[raid][uid] = {"name":name,"first_seen":now,"baseline_contrib":base,"validated":False}
-                        print(f"{now} - DETECT: {name} in {raid}")
-
-        # Validation & announcement
-        for raid, parts in list(self.raid_participants.items()):
-            for uid, info in list(parts.items()):
-                if not info.get("validated") and contribs.get(uid,0) - info["baseline_contrib"] >= CONTRIBUTION_THRESHOLD:
-                    parts[uid]["validated"] = True
-            valids = [u for u,i in parts.items() if i.get("validated")]
-            if len(valids) >= 4:
-                group = set(valids[:4])
+                    diff = counts[raid] - old_counts.get(raid, 0)
+                    if 0 < diff < 3 and uid not in self.raid_participants[raid]["unvalidated"] and uid not in self.raid_participants[raid]["validated"]:
+                        base = prev_saved.get(uid, {}).get("contributed", 0)
+                        self.raid_participants[raid]["unvalidated"][uid] = {"name": name, "first_seen": now, "baseline_contrib": base}
+                        print(f"{now} - DETECT (unvalidated): {name} in {raid}")
+        
+        # Move to validated and announce
+        for raid, queues in self.raid_participants.items():
+            for uid, info in list(queues["unvalidated"].items()):
+                if contribs.get(uid, 0) - info["baseline_contrib"] >= CONTRIBUTION_THRESHOLD:
+                    queues["validated"][uid] = info
+                    queues["unvalidated"].pop(uid)
+                    print(f"{now} - VALIDATED: {info['name']} for {raid}")
+            validated_uids = list(queues["validated"].keys())
+            if len(validated_uids) >= 4:
+                group = set(validated_uids[:4])
                 await self._announce_raid(raid, group, guild, db)
                 for u in group:
-                    parts.pop(u)
+                    queues["validated"].pop(u)
 
         self.previous_data = new_data
         self._save_json("previous_data.json", new_data)
@@ -243,6 +245,7 @@ class UpdateMemberData(commands.Cog):
 
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
     async def daily_activity_snapshot(self):
+        # unchanged
         print("Starting daily activity snapshot")
         db = DB(); db.connect()
         guild = Guild("The Aquarium")
