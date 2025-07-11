@@ -101,7 +101,6 @@ class ConvertView(View):
         total_raids = row[0] if row else 0
         current_aspects = row[1] if row else 0
 
-        # how many full aspects we can get
         aspect_count = total_raids // 2
         if aspect_count == 0:
             db.close()
@@ -109,21 +108,23 @@ class ConvertView(View):
                 "❌ You need at least 2 uncollected raids to claim 1 Aspect.",
                 ephemeral=True
             )
-
+        
         remainder_raids = total_raids % 2
+        raids_spent     = aspect_count * 2
 
         db.cursor.execute("""
             UPDATE uncollected_raids
-               SET uncollected_raids     = %s,
-                   uncollected_aspects   = uncollected_aspects + %s
+               SET uncollected_raids   = %s,
+                   uncollected_aspects = uncollected_aspects + %s,
+                   collected_raids     = collected_raids + %s
              WHERE uuid = %s
-        """, (remainder_raids, aspect_count, self.uuid))
+        """, (remainder_raids, aspect_count, raids_spent, self.uuid))
         db.connection.commit()
         db.close()
 
         await interaction.edit_original_response(
             content=(
-                f"✅ Converted **{aspect_count*2}** uncollected raid(s) into "
+                f"✅ Converted **{raids_spent}** uncollected raid(s) into "
                 f"**{aspect_count}** new uncollected aspect(s)!  \n"
                 f"• You now have **{current_aspects + aspect_count}** total uncollected aspect(s).  \n"
                 f"• **{remainder_raids}** raid(s) remain uncollected."
