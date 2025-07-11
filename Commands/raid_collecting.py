@@ -72,14 +72,24 @@ class ConvertView(View):
                    collected_raids   = collected_raids   + %s
              WHERE uuid = %s
         """, (self.count, self.count, self.uuid))
+
+        # Get IGN from discord_links
+        db.cursor.execute(
+            "SELECT ign FROM discord_links WHERE discord_id = %s",
+            (interaction.user.id,)
+        )
+        ign_row = db.cursor.fetchone()
+        ign = ign_row[0] if ign_row else "Unknown"
+
         db.cursor.execute("""
-            INSERT INTO shells AS sh ("user", shells, balance)
-                 VALUES (%s, %s, %s)
-            ON CONFLICT ("user")
-              DO UPDATE SET
-                shells  = sh.shells  + EXCLUDED.shells,
-                balance = sh.balance + EXCLUDED.balance
-        """, (interaction.user.id, self.count, self.count))
+            INSERT INTO shells AS sh ("user", shells, balance, ign)
+                VALUES (%s, %s, %s, %s)
+            ON CONFLICT ("user") DO UPDATE SET
+                shells  = sh.shells + EXCLUDED.shells,
+                balance = sh.balance + EXCLUDED.balance,
+                ign     = EXCLUDED.ign
+        """, (str(interaction.user.id), self.count, self.count, ign))
+
         db.connection.commit()
         db.close()
 
