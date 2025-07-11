@@ -16,3 +16,5 @@ current_activity.json
 credentials.json
 token.json
 player_activity.json
+
+avatar_cache/
