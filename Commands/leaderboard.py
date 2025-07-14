@@ -17,6 +17,11 @@ def create_leaderboard(order_key, key_icon, header, days=7):
     book = []
     with open('player_activity.json', 'r') as f:
         all_days_data = json.load(f)
+    db = DB()
+    db.connect()
+    db.cursor.execute("SELECT uuid, rank FROM discord_links")
+    uuid_to_discord_rank = {row[0]: row[1] for row in db.cursor.fetchall()}
+    db.close()
 
     all_days_data.sort(key=lambda x: x['time'])  # oldest to newest
     newest_day = all_days_data[-1]['members']
@@ -66,7 +71,10 @@ def create_leaderboard(order_key, key_icon, header, days=7):
         for member in newest_day:
             uuid = member['uuid']
             name = member['name']
-            rank = member['rank']
+            # get API-reported rank only as a fallback
+            api_rank = member.get('rank', 'unknown')
+            # override with Discord rank if available
+            rank = uuid_to_discord_rank.get(uuid, api_rank)
             current_value = member.get(order_key, 0)
             history = uuid_to_full_history.get(uuid, [])
 
