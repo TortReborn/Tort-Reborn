@@ -3,6 +3,7 @@ import json
 import sys
 import time
 import traceback
+import logging
 
 from dotenv import load_dotenv
 import os
@@ -13,9 +14,17 @@ from discord import Embed
 from Helpers.classes import Guild
 from Helpers.variables import test
 
+
+
+# Only show INFO+ from root, suppress discord.py’s DEBUG/INFO noise
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(levelname)s] %(message)s'
+)
+logging.getLogger('discord').setLevel(logging.WARNING)
+
 # get bot token
 load_dotenv()
-
 if os.getenv("TEST_MODE", "").lower() == "true":
     print("Starting in TEST mode...")
     token = os.getenv("TEST_TOKEN")
@@ -24,7 +33,7 @@ elif os.getenv("TEST_MODE", "").lower() == "false":
     token = os.getenv("TOKEN")
 else:
     print("Error: Could not get TOKEN. Please check your .env file.")
-    exit(-1)
+    sys.exit(-1)
 
 # Discord intents
 intents = discord.Intents.default()
@@ -36,8 +45,13 @@ intents.message_content = True
 client = discord.Bot(intents=intents)
 
 
-def on_crash(types, value, tb):
-    crash = {"type": str(types), "value": str(value), "tb": str(tb), "timestamp": int(time.time())}
+def on_crash(exc_type, value, tb):
+    crash = {
+        "type": str(exc_type),
+        "value": str(value),
+        "tb": "".join(traceback.format_tb(tb)),
+        "timestamp": int(time.time())
+    }
     with open('last_online.json', 'w') as f:
         json.dump(crash, f)
 
@@ -53,114 +67,147 @@ async def on_ready():
         print("✅ Slash commands synced.")
 
     guild = Guild('The Aquarium')
-    await client.change_presence(activity=discord.CustomActivity(name=f'{guild.online} members online'))
-    print('We have logged in as {0.user}'.format(client))
-    print('\n'.join(guild.name for guild in client.guilds))
+    await client.change_presence(
+        activity=discord.CustomActivity(name=f'{guild.online} members online')
+    )
+    print(f'We have logged in as {client.user}')
+    print('\n'.join(g.name for g in client.guilds))
 
     if not test:
         now = int(time.time())
         crash_report = json.load(open('last_online.json', 'r'))
-
         downtime = now - crash_report['timestamp']
 
-        embed = Embed(title=f'🟢 {client.user} is back online!', description=f'🕙 **Downtime**\n'
-                                                                            f'`{datetime.timedelta(seconds=downtime)}`\n'
-                                                                            f'\n'
-                                                                            f'ℹ️ **Shutdown reason**\n'
-                                                                            f'```\n{crash_report["type"]}\n{crash_report["value"]}```',
-                      colour=0x1cd641)
-
-        # ch = client.get_channel(1053736331404120114) CHANGE TO UNKNOWN
+        embed = Embed(
+            title=f'🟢 {client.user} is back online!',
+            description=(
+                f'🕙 **Downtime**\n'
+                f'`{datetime.timedelta(seconds=downtime)}`\n\n'
+                f'ℹ️ **Shutdown reason**\n'
+                f'```\n{crash_report["type"]}\n{crash_report["value"]}```'
+            ),
+            colour=0x1cd641
+        )
         ch = client.get_channel(1367285315236008036)
         await ch.send(embed=embed)
 
 
 @client.event
 async def on_disconnect():
-    crash = {"type": "Disconnected", "value": "Bot disconnected from Discord", "tb": "Bot disconnected from Discord",
-             "timestamp": int(time.time())}
+    crash = {
+        "type": "Disconnected",
+        "value": "Bot disconnected from Discord",
+        "tb": "Bot disconnected from Discord",
+        "timestamp": int(time.time())
+    }
     with open('last_online.json', 'w') as f:
         json.dump(crash, f)
 
 
 if not test or test:
     @client.event
-    async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException):
+    async def on_application_command_error(
+        ctx: discord.ApplicationContext,
+        error: discord.DiscordException
+    ):
         options = ''
         traceback_string = ''
-        tb = traceback.format_exception(error)
+        tb_list = traceback.format_exception(error)
         if ctx.selected_options:
-            for option in ctx.selected_options:
-                options += f' {option["name"]}:{option["value"]}'
-        if tb:
-            for message in tb:
-                traceback_string += f'{message}'
+            for opt in ctx.selected_options:
+                options += f' {opt["name"]}:{opt["value"]}'
+        traceback_string = ''.join(tb_list)[:1500]
+        if len(traceback_string) >= 1500:
+            traceback_string = "…(truncated)…\n" + traceback_string
 
         ch = client.get_channel(1367285315236008036)
-        if len(traceback_string) > 1500:
-            traceback_string = "…(truncated)…\n" + traceback_string[:1500]
-        await ch.send(f'## {ctx.author} in <#{ctx.channel_id}>:\n```\n/{ctx.command.qualified_name}{options}\n```\n## Traceback:\n```\n{traceback_string}\n```')
+        await ch.send(
+            f'## {ctx.author} in <#{ctx.channel_id}>:\n'
+            f'```\n/{ctx.command.qualified_name}{options}\n```'
+            f'## Traceback:\n'
+            f'```\n{traceback_string}\n```'
+        )
         raise error
 
-# Load Commands
-client.load_extension('Commands.online')
-# client.load_extension('Commands.activity')
-client.load_extension('Commands.profile')  # Profile needs work but has shell count
-client.load_extension('Commands.progress')
-client.load_extension('Commands.worlds')
-client.load_extension('Commands.leaderboard')  # Leaderboard needs work too, functional tho
-client.load_extension('Commands.background_admin')
-client.load_extension('Commands.background')
-client.load_extension('Commands.rankcheck')
-#client.load_extension('Commands.bank_admin')
-client.load_extension('Commands.new_member')
-client.load_extension('Commands.reset_roles')
-client.load_extension('Commands.manage')
-#client.load_extension('Commands.blacklist')
-client.load_extension('Commands.shell')
-#client.load_extension('Commands.contribution')
-#client.load_extension('Commands.recruit')
-#client.load_extension('Commands.build')
-#client.load_extension('Commands.withdraw')
-#client.load_extension('Commands.update_claim')
-#client.load_extension('Commands.welcome_admin')
-#client.load_extension('Commands.suggest_promotion')
-#client.load_extension('Commands.ranking_up_setup')
-client.load_extension('Commands.raid_collecting')
-client.load_extension('Commands.lootpool')
-client.load_extension('Commands.aspects')
-client.load_extension("Commands.map")
 
-# Load Dev Commands
-client.load_extension('Commands.render_text')
-client.load_extension('Commands.send_changelog')
-client.load_extension('Commands.preview_changelog')
-#client.load_extension('Commands.check_app')
-#client.load_extension('Commands.custom_profile')
-client.load_extension('Commands.progress_bar')
-client.load_extension('Commands.rank_badge')
-client.load_extension('Commands.restart')
+# =============================================================================
+# Load Extensions
+# =============================================================================
+extensions = [
+    # Commands
+    'Commands.online',
+    # 'Commands.activity',
+    'Commands.profile',
+    'Commands.progress',
+    'Commands.worlds',
+    'Commands.leaderboard',
+    'Commands.background_admin',
+    'Commands.background',
+    'Commands.rankcheck',
+    # 'Commands.bank_admin',
+    'Commands.new_member',
+    'Commands.reset_roles',
+    'Commands.manage',
+    # 'Commands.blacklist',
+    'Commands.shell',
+    # 'Commands.contribution',
+    # 'Commands.recruit',
+    # 'Commands.build',
+    # 'Commands.withdraw',
+    # 'Commands.update_claim',
+    # 'Commands.welcome_admin',
+    # 'Commands.suggest_promotion',
+    # 'Commands.ranking_up_setup',
+    'Commands.raid_collecting',
+    'Commands.lootpool',
+    'Commands.aspects',
+    'Commands.map',
 
-# Load user commands
-client.load_extension('UserCommands.new_member')
-client.load_extension('UserCommands.rank_promote')
-client.load_extension('UserCommands.rank_demote')
-client.load_extension('UserCommands.reset_roles')
+    # Dev Commands
+    'Commands.render_text',
+    'Commands.send_changelog',
+    'Commands.preview_changelog',
+    # 'Commands.check_app',
+    # 'Commands.custom_profile',
+    'Commands.progress_bar',
+    'Commands.rank_badge',
+    'Commands.restart',
 
-# Load message command
-# Think we can remove, redundant
-# client.load_extension('MessageCommands.notify')
+    # UserCommands
+    'UserCommands.new_member',
+    'UserCommands.rank_promote',
+    'UserCommands.rank_demote',
+    'UserCommands.reset_roles',
 
-# Load events
-client.load_extension('Events.on_message')
-client.load_extension('Events.on_guild_channel_create')
-client.load_extension('Events.on_guild_channel_update')
-client.load_extension('Events.on_raw_reaction_add')
+    # Events
+    'Events.on_message',
+    'Events.on_guild_channel_create',
+    'Events.on_guild_channel_update',
+    'Events.on_raw_reaction_add',
 
-# Load tasks
-client.load_extension('Tasks.guild_log')
-client.load_extension('Tasks.update_member_data')
-client.load_extension('Tasks.check_apps')
-client.load_extension('Tasks.territory_tracker')
+    # Tasks
+    'Tasks.guild_log',
+    'Tasks.update_member_data',
+    'Tasks.check_apps',
+    'Tasks.territory_tracker',
+]
 
-client.run(token)
+for ext in extensions:
+    try:
+        client.load_extension(ext)
+        print(f"✅ Loaded extension {ext}")
+    except Exception:
+        print(f"❌ Failed to load extension {ext}", file=sys.stderr)
+        traceback.print_exc()
+
+
+# =============================================================================
+# Run Client
+# =============================================================================
+if __name__ == '__main__':
+    try:
+        client.run(token)
+    except Exception:
+        print("Fatal error while running client:", file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(1)
