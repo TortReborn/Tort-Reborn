@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import slash_command
 from discord.ui import View, button
+from discord import Permissions
 from pathlib import Path
 from textwrap import dedent
 
@@ -150,6 +151,8 @@ class RaidCollecting(commands.Cog):
     @slash_command(
         guild_ids=[GUILD_ID],
         description="Post the Raid Collecting panel into the designated channel."
+        default_member_permissions=Permissions(administrator=True),
+        dm_permission=False
     )
     async def postraidcollecting(self, ctx: discord.ApplicationContext):
         """Posts the Raid Collecting banner, embed + button."""
