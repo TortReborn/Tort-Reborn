@@ -147,6 +147,7 @@ extensions = [
     # 'Commands.bank_admin',
     'Commands.new_member',
     'Commands.reset_roles',
+    'Commands.raids',
     'Commands.manage',
     # 'Commands.blacklist',
     'Commands.shell',
