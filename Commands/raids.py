@@ -252,15 +252,37 @@ class Raids(commands.Cog):
         g_badge.crop(g_badge.getbbox())
         card.paste(g_badge, (108, 615), g_badge)
 
-        # Guild rank badge color from discord_ranks, fallback to gray
+        # Decide which rank system to use for the badge
+        use_taq = gname.lower() == "the aquarium" or guild_info.get('prefix', '').lower() == 'taq'
+
         gr_text = guild_info.get('rank', '').upper()
-        gr_key = gr_text.lower()
-        gr_color = discord_ranks.get(gr_key, {}).get('color', '#a0aeb0')
+        gr_color = '#a0aeb0'
+
+        if use_taq:
+            # Pull TAq-specific discord rank from backend
+            disc_rank = None
+            try:
+                db = DB(); db.connect()
+                db.cursor.execute("SELECT rank FROM discord_links WHERE uuid = %s", (player.get('uuid'),))
+                row = db.cursor.fetchone()
+                if row:
+                    disc_rank = row[0]
+            finally:
+                try:
+                    db.close()
+                except Exception:
+                    pass
+
+            if disc_rank and disc_rank in discord_ranks:
+                gr_text = disc_rank.upper()
+                gr_color = discord_ranks[disc_rank]['color']
+        else:
+            # Fallback: use Wynn guild rank color mapping (discord_ranks if available)
+            gr_key = gr_text.lower()
+            gr_color = discord_ranks.get(gr_key, {}).get('color', '#a0aeb0')
+
         gr_badge = generate_badge(text=gr_text, base_color=gr_color, scale=3)
         gr_badge.crop(gr_badge.getbbox())
-
-        # Membership badge? (Not available in raw API; skipping unless you track separately)
-        # Paste badges
         card.paste(gr_badge, (108, 667), gr_badge)
 
         # Minecraft-style banner icon
