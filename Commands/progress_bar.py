@@ -33,7 +33,7 @@ class ProgressBar(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('ProgressBar command loaded')
+        pass
 
 
 def setup(client):

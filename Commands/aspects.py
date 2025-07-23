@@ -284,7 +284,7 @@ class AspectDistribution(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Aspects command loaded')
+        pass
 
 
 def setup(client):

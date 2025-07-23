@@ -101,7 +101,7 @@ class WelcomeMessages(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('WelcomeAdmin commands loaded')
+        pass
 
 
 def setup(client):

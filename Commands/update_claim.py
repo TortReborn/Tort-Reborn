@@ -56,7 +56,7 @@ class UpdateClaim(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('UpdateClaim commands loaded')
+        pass
 
 
 def setup(client):

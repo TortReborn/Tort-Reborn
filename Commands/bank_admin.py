@@ -166,7 +166,7 @@ class BankLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('BankLog commands loaded')
+        pass
 
 
 def setup(client):

@@ -23,7 +23,7 @@ class Restart(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Restart command loaded')
+        pass
 
 
 def setup(client):

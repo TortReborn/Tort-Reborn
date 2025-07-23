@@ -218,7 +218,7 @@ class LootPool(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("LootPool cog loaded")
+        pass
 
 
 def setup(client):

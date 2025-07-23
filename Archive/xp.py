@@ -132,7 +132,7 @@ class Xp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Xp command loaded')
+        pass
 
 
 def setup(client):

@@ -97,7 +97,7 @@ class EcoLearningSetup(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.client.add_view(buttonView(self.client))
-        print('EcoLearningSetup command loaded')
+        pass
 
 
 def setup(client):

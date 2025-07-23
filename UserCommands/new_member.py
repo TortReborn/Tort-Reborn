@@ -28,7 +28,7 @@ class GiveMemberRoles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('NewMember user command loaded')
+        pass
 
 
 def setup(client):
