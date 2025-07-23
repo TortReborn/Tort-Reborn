@@ -162,49 +162,67 @@ class Manage(commands.Cog):
 
         if rows:
             await ctx.defer()
+            ign = rows[0][0]
+
+            # Ensure user exists in shells table
+            db.cursor.execute('SELECT shells, balance FROM shells WHERE "user" = %s', (str(user.id),))
+            row2 = db.cursor.fetchone()
+
+            if row2:
+                current_shells, current_balance = row2
+            else:
+                current_shells, current_balance = 0, 0
+                db.cursor.execute(
+                    'INSERT INTO shells ("user", shells, balance, ign) VALUES (%s, %s, %s, %s)',
+                    (str(user.id), 0, 0, ign)
+                )
+                db.connection.commit()
+
             player = PlayerShells(user.id)
-            img = Image.new('RGBA', (375,95), '#100010e2')
-            draw = ImageDraw.Draw(img); draw.fontmode='1'
-            font = ImageFont.truetype('images/profile/game.ttf',19)
+            img = Image.new('RGBA', (375, 95), '#100010e2')
+            draw = ImageDraw.Draw(img); draw.fontmode = '1'
+            font = ImageFont.truetype('images/profile/game.ttf', 19)
+
             try:
                 headers = {'User-Agent': os.getenv("visage_UA")}
                 url = f"https://visage.surgeplay.com/bust/75/{player.UUID}"
                 skin = Image.open(BytesIO(requests.get(url, headers=headers).content))
             except:
                 skin = Image.open('images/profile/X-Steve.webp')
-            img.paste(skin,(10,10),skin)
+
+            img.paste(skin, (10, 10), skin)
+
             if operation == 'add':
-                new_total = player.shells + amount
-                new_bal = player.balance + amount
+                new_total = current_shells + amount
+                new_balance = current_balance + amount
                 diff = f'+{amount}'
                 db.cursor.execute(
-                    "UPDATE shells SET shells = %s, balance = %s WHERE \"user\" = %s",
-                    (new_total, new_bal, str(user.id))
+                    'UPDATE shells SET shells = %s, balance = %s, ign = %s WHERE "user" = %s',
+                    (new_total, new_balance, ign, str(user.id))
                 )
-                addLine(f'&7All-Time: &f{new_total} &7({diff}&7)', draw, font, 95, 61)
             else:
-                new_bal = player.balance - amount
+                new_balance = current_balance - amount
                 diff = f'-{amount}'
                 db.cursor.execute(
-                    "UPDATE shells SET balance = %s WHERE \"user\" = %s",
-                    (new_bal, str(user.id))
+                    'UPDATE shells SET balance = %s, ign = %s WHERE "user" = %s',
+                    (new_balance, ign, str(user.id))
                 )
-                addLine(f'&7All-Time: &f{player.shells}', draw, font, 95, 61)
+                new_total = current_shells
+
             addLine(f'&f{player.username}', draw, font, 95, 15)
-            addLine(f'&7Balance: &f{new_bal} &7({diff}&7)', draw, font, 95, 40)
-            # if reason:
-            #     for line in split_sentence(reason):
-            #         img, draw = expand_image(img)
-            #         addLine(f'&3{line}', draw, font, 10, img.height-25)
+            addLine(f'&7Balance: &f{new_balance} &7({diff}&7)', draw, font, 95, 40)
+            addLine(f'&7All-Time: &f{new_total} &7({diff}&7)', draw, font, 95, 61)
+
             db.connection.commit()
-            # Log
-            with open('shell.log','a') as f:
+
+            with open('shell.log', 'a') as f:
                 ts = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
                 f.write(f'[{ts}] {ctx.user.name} {operation}ed {amount} to {player.username}.\n')
-            img = ImageOps.expand(img,border=(2,2),fill='#100010e2')
+
+            img = ImageOps.expand(img, border=(2,2), fill='#100010e2')
             draw = ImageDraw.Draw(img)
-            draw.rectangle((2,2,img.width-3,img.height-3),outline='#240059',width=2)
-            buf = BytesIO(); img.save(buf,'PNG'); buf.seek(0)
+            draw.rectangle((2, 2, img.width - 3, img.height - 3), outline='#240059', width=2)
+            buf = BytesIO(); img.save(buf, 'PNG'); buf.seek(0)
             file = discord.File(buf, filename=f"shells_{int(time.time())}.png")
             await ctx.followup.send(file=file)
         else:
@@ -266,7 +284,7 @@ class Manage(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Manage commands loaded')
+        pass
 
 
 def setup(client):
