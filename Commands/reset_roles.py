@@ -65,7 +65,7 @@ class ResetRolesCommand(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('ResetRoles command loaded')
+        pass
 
 
 def setup(client):

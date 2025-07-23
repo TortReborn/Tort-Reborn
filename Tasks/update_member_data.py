@@ -135,7 +135,7 @@ class UpdateMemberData(commands.Cog):
         db = DB(); db.connect()
         guild = Guild("The Aquarium")
 
-        # 1: Pull latest guild contributions
+        # 1 Pull latest guild contributions
         contrib_map = {member['uuid']: member.get('contributed', 0) for member in guild.all_members}
 
         # 2: Prune stale unvalidated entries

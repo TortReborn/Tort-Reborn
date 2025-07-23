@@ -131,7 +131,6 @@ class GuildLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('GuildLog task loaded')
         if not self.guild_log.is_running():   
             self.guild_log.start()
 

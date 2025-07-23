@@ -80,7 +80,7 @@ class RankPromote(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('RankPromote user command loaded')
+        pass
 
 
 def setup(client):

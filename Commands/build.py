@@ -94,7 +94,7 @@ class Build(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Build command loaded')
+        pass
 
 
 def setup(client):

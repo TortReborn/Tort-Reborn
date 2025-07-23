@@ -45,7 +45,7 @@ class Recruit(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Recruit command loaded')
+        pass
 
 
 def setup(client):

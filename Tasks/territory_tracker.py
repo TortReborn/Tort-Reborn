@@ -144,7 +144,6 @@ class TerritoryTracker(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('TerritoryTracker task loaded')
         saveTerritoryData(getTerritoryData())
         if not self.territory_tracker.is_running():
             self.territory_tracker.start()
