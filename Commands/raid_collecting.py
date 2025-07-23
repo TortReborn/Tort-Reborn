@@ -150,7 +150,7 @@ class RaidCollecting(commands.Cog):
 
     @slash_command(
         guild_ids=[GUILD_ID],
-        description="Post the Raid Collecting panel into the designated channel."
+        description="Post the Raid Collecting panel into the designated channel.",
         default_member_permissions=Permissions(administrator=True),
         dm_permission=False
     )
