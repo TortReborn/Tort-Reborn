@@ -43,13 +43,18 @@ class RankCheck(commands.Cog):
     if test:
         guild_ids = [guilds[1]]
     else:
-        guild_ids = [te, guilds[1]]
+        guild_ids = [te, guilds[1], guilds[0]]
 
     @slash_command(
         description='Check for game/discord rank & nickname consistency',
-        guild_ids=guild_ids
+        guild_ids=guild_ids,
+        default_member_permissions=discord.Permissions(administrator=True),
+        dm_permission=False
     )
     async def rankcheck(self, interaction):
+        if not interaction.user.guild_permissions.administrator:
+            return await interaction.response.send_message("❌ Admins only.", ephemeral=True)
+
         await interaction.response.defer()
 
         try:
