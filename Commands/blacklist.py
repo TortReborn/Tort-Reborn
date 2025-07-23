@@ -173,7 +173,7 @@ class Blacklist(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Blacklist commands loaded')
+        pass
 
 
 def setup(client):

@@ -90,7 +90,7 @@ class Withdraw(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.client.add_view(itemViewTaken())
-        print('Withdraw command loaded')
+        pass
 
 
 def setup(client):

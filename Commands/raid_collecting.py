@@ -201,7 +201,7 @@ class RaidCollecting(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.client.add_view(ClaimView())
-        print('RaidCollecting command loaded')
+        pass
 
 def setup(client):
     client.add_cog(RaidCollecting(client))

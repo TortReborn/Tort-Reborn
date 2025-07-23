@@ -182,7 +182,7 @@ class Custom_Profile(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Custom Profile command loaded')
+        pass
 
 
 def setup(client):

@@ -70,7 +70,7 @@ class Button(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.client.add_view(buttonView(self.client))
-        print('Button command loaded')
+        pass
 
 
 def setup(client):

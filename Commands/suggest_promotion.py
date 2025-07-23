@@ -139,7 +139,7 @@ class SuggestPromotion(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.client.add_view(LockRecord())
-        print('SuggestPromotion command loaded')
+        pass
 
 
 def setup(client):

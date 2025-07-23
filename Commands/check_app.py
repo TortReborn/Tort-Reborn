@@ -38,7 +38,7 @@ class CheckApp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('CheckApp command loaded')
+        pass
 
 
 def setup(client):

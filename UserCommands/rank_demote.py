@@ -80,7 +80,7 @@ class RankDemote(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('RankDemote user command loaded')
+        pass
 
 
 def setup(client):

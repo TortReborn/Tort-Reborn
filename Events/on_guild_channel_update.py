@@ -80,7 +80,7 @@ class OnGuildChannelUpdate(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("OnGuildChannelUpdate event loaded")
+        pass
 
 
 def setup(client):

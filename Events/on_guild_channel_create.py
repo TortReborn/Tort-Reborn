@@ -114,7 +114,7 @@ class OnGuildChannelCreate(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("OnGuildChannelCreate event loaded")
+        pass
 
 
 def setup(client):

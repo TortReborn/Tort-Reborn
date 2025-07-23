@@ -70,7 +70,7 @@ class CheckApps(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("CheckApps task loaded")
+        pass
         if not self.check_apps.is_running():
             self.check_apps.start()
 

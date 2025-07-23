@@ -156,7 +156,7 @@ class Contribution(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Contribution command loaded')
+        pass
 
 
 def setup(client):

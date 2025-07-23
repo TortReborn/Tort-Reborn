@@ -3,6 +3,7 @@ import traceback
 from discord import Embed, ButtonStyle
 from discord.commands import slash_command
 from discord.ext import commands
+import asyncio
 
 from Helpers.classes import Guild
 from Helpers.database import DB
@@ -35,6 +36,9 @@ class ReportPaginator(discord.ui.View):
 class RankCheck(commands.Cog):
     def __init__(self, client):
         self.client = client
+        # cache for UUID→IGN, and a semaphore to limit concurrency
+        self._name_cache = {}
+        self._sem = asyncio.Semaphore(5)
 
     if test:
         guild_ids = [guilds[1]]
@@ -52,8 +56,10 @@ class RankCheck(commands.Cog):
             data = Guild('The%20Aquarium').all_members
             guild_uuids = {m['uuid'] for m in data}
 
+            # grab Discord members once
             discord_members = {m.id: m for m in interaction.guild.members}
 
+            # DB lookup for links
             db = DB(); db.connect()
             db.cursor.execute("SELECT uuid, discord_id, rank FROM discord_links")
             all_links = db.cursor.fetchall()
@@ -64,21 +70,34 @@ class RankCheck(commands.Cog):
 
             hdr = (
                 '```ansi\n'
-                ' [1;37m{:^16s}   {:^12s}   {:^23s}\n'
+                ' \u001b[1;37m{:^16s}   {:^12s}   {:^23s}\n'
                 '╘═════════════════╪══════════════╪════════════════════════╛\n'
             ).format('Player', 'In-Game Rank', 'Discord Rank')
 
             mismatch, linkage, usernames = [], [], []
 
+            # helper to fetch & cache IGN
+            async def fetch_ign(uuid):
+                if uuid in self._name_cache:
+                    return self._name_cache[uuid]
+                async with self._sem:
+                    raw = await asyncio.get_event_loop().run_in_executor(
+                        None, getNameFromUUID, uuid
+                    )
+                    # slight pause to avoid hammering API
+                    await asyncio.sleep(0.2)
+                ign = raw[0] if isinstance(raw, list) and raw else str(raw)
+                self._name_cache[uuid] = ign
+                return ign
+
             for member in data:
                 uuid = member['uuid']
+                # if the API already has a name, use it; otherwise fetch
+                ign = member.get('name') or await fetch_ign(uuid)
                 stale_api = member.get('name', '')
 
-                raw = getNameFromUUID(uuid)
-                ign = raw[0] if isinstance(raw, list) and raw else str(raw)
-
                 if stale_api and stale_api != ign:
-                    usernames.append(f'[0;36m {ign:16} → {stale_api}')
+                    usernames.append(f'\u001b[0;36m {ign:16} → {stale_api}')
 
                 linked = links_map.get(uuid)
                 if linked and linked[1] != 'None':
@@ -88,15 +107,15 @@ class RankCheck(commands.Cog):
                         expected = discord_ranks[role]['in_game_rank']
                     except KeyError:
                         mismatch.append(
-                            f'[0;31m ERROR: {ign:16} no mapping for role "{role}"'
+                            f'\u001b[0;31m ERROR: {ign:16} no mapping for role "{role}"'
                         )
                         continue
 
                     if member['rank'].upper() != expected:
                         dr = f'{role} ({expected})'
                         mismatch.append(
-                            f'[0;0m {ign:16} [1;37m│ [0;0m'
-                            f'{member["rank"].upper():12} [1;37m│ [0;0m{dr:23}'
+                            f'\u001b[0;0m {ign:16} \u001b[1;37m│ \u001b[0;0m'
+                            f'{member["rank"].upper():12} \u001b[1;37m│ \u001b[0;0m{dr:23}'
                         )
 
                     disc_mem = discord_members.get(discord_id)
@@ -108,25 +127,24 @@ class RankCheck(commands.Cog):
 
                         if prefix.lower() != role.lower():
                             mismatch.append(
-                                f'[0;33m PREFIX MISMATCH: "{prefix}" ≠ "{role}" for {ign}'
+                                f'\u001b[0;33m PREFIX MISMATCH: "{prefix}" ≠ "{role}" for {ign}'
                             )
                         if second and second != ign:
                             mismatch.append(
-                                f'[0;33m NICKNAME MISMATCH: "{second}" ≠ "{ign}"'
+                                f'\u001b[0;33m NICKNAME MISMATCH: "{second}" ≠ "{ign}"'
                             )
                 else:
                     linkage.append(
-                        f'[0;0m {ign:16} [1;37m│ [0;0m'
-                        f'{member["rank"].upper():12} [1;37m│ [0;31mNOT LINKED'
+                        f'\u001b[0;0m {ign:16} \u001b[1;37m│ \u001b[0;0m'
+                        f'{member["rank"].upper():12} \u001b[1;37m│ \u001b[0;31mNOT LINKED'
                     )
 
             orphans = linked_uuids - guild_uuids
             if orphans:
                 linkage.append('')
-                linkage.append('[0;35mLinked but not in guild:')
+                linkage.append('\u001b[0;35mLinked but not in guild:')
                 for uuid in orphans:
-                    raw = getNameFromUUID(uuid)
-                    ign = raw[0] if isinstance(raw, list) and raw else str(raw)
+                    ign = await fetch_ign(uuid)
                     linkage.append(f'  {ign}')
 
             embed_mismatch = Embed(
@@ -140,7 +158,7 @@ class RankCheck(commands.Cog):
 
             hdr3 = (
                 '```ansi\n'
-                ' [1;37m{:^16s} → {:^16s}\n'
+                ' \u001b[1;37m{:^16s} → {:^16s}\n'
                 '╘═════════════════╪════════════════════╛\n'
             ).format('Official IGN', 'Guild API Name')
             embed_usernames = Embed(
@@ -156,7 +174,7 @@ class RankCheck(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('RankCheck command loaded')
+        pass
 
 
 def setup(client):

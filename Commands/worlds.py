@@ -69,7 +69,7 @@ class Worlds(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Worlds command loaded')
+        pass
 
 
 def setup(client):

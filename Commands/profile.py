@@ -189,7 +189,7 @@ class Profile(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('NewProfile command loaded')
+        pass
 
 
 def setup(client):

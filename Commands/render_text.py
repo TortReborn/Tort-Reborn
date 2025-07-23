@@ -36,7 +36,7 @@ class RenderText(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('RankBadge command loaded')
+        pass
 
 
 def setup(client):

@@ -112,7 +112,7 @@ class OnMessage(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('OnMessage event loaded')
+        pass
 
 
 def setup(client):

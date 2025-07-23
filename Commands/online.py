@@ -122,7 +122,7 @@ class Online(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Online command loaded')
+        pass
 
 
 def setup(client):
