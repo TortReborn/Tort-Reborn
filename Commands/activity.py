@@ -15,7 +15,7 @@ from Helpers.database import DB
 from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge
 from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, guilds, te
 
-all_guilds = guilds + te
+all_guilds = guilds + [te]
 
 def _load_json(path: str, default):
     """
