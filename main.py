@@ -136,7 +136,7 @@ if not test or test:
 extensions = [
     # Commands
     'Commands.online',
-    # 'Commands.activity',
+    'Commands.activity',
     'Commands.profile',
     'Commands.progress',
     'Commands.worlds',
@@ -148,6 +148,7 @@ extensions = [
     'Commands.new_member',
     'Commands.reset_roles',
     'Commands.raids',
+    #'Commands.rank',
     'Commands.manage',
     # 'Commands.blacklist',
     'Commands.shell',

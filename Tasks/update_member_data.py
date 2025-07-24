@@ -33,6 +33,7 @@ LOG_CHANNEL = log_channel
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_000_000_000
 RATE_LIMIT = 75  # max calls per minute
+CURRENT_ACTIVITY_FILE = "current_activity.json"
 
 RAID_EMOJIS = {
     "Nest of the Grootslangs": notg_emoji_id,
@@ -127,6 +128,57 @@ class UpdateMemberData(commands.Cog):
                 (uid, ign)
             )
         db.connection.commit()
+
+    def _write_current_snapshot(self, db, guild, contrib_map, rank_map, pf_map):
+        """
+        Write an always-fresh snapshot to CURRENT_ACTIVITY_FILE.
+        pf_map: {uuid: player_full_profile_dict_from_getPlayerDatav3}
+        """
+        snap = {'time': int(time.time()), 'members': []}
+        cur = db.cursor
+
+        for uuid, pf in pf_map.items():
+            if not isinstance(pf, dict):
+                continue
+            username = pf.get('username') or pf.get('name')
+            last_join = pf.get('lastJoin')  # ISO8601 string from API (e.g. "2025-07-23T22:33:40.727000Z")
+
+            # shells
+            cur.execute(
+                "SELECT COALESCE(s.shells, 0) "
+                "FROM discord_links dl "
+                "LEFT JOIN shells s ON dl.discord_id = s.user "
+                "WHERE dl.uuid = %s",
+                (uuid,)
+            )
+            row = cur.fetchone()
+            shells = row[0] if row else 0
+
+            # raids collected/uncollected
+            cur.execute(
+                "SELECT COALESCE(ur.uncollected_raids, 0) + COALESCE(ur.collected_raids, 0) "
+                "FROM discord_links dl "
+                "LEFT JOIN uncollected_raids ur ON dl.uuid = ur.uuid "
+                "WHERE dl.uuid = %s",
+                (uuid,)
+            )
+            row = cur.fetchone()
+            raids_total = row[0] if row else 0
+
+            snap['members'].append({
+                'name': username,
+                'uuid': uuid,
+                'rank': rank_map.get(uuid),
+                'playtime': pf.get('playtime'),
+                'contributed': contrib_map.get(uuid),
+                'wars': pf.get('globalData', {}).get('wars'),
+                'shells': shells,
+                'raids': raids_total,
+                'lastJoin': last_join
+            })
+
+        self._save_json(CURRENT_ACTIVITY_FILE, snap)
+
 
     @tasks.loop(minutes=2)
     async def update_member_data(self):
@@ -260,6 +312,14 @@ class UpdateMemberData(commands.Cog):
         self.previous_data=new_data
         self._save_json("previous_data.json",new_data)
         self.cold_start=False
+
+        # Write constantly-updating snapshot for "today"
+        # Build pf_map from the results list we already have
+        pf_map = {m['uuid']: m for m in results if isinstance(m, dict)}
+        # rank_map already exists as curr_map -> {'uuid': {'name':..., 'rank':...}}
+        rank_map = {u: info.get('rank') for u, info in curr_map.items()}
+        self._write_current_snapshot(db, guild, contrib_map, rank_map, pf_map)
+
         print(f"ENDING LOOP - {datetime.datetime.now(timezone.utc)}",flush=True)
 
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
@@ -321,7 +381,7 @@ class UpdateMemberData(commands.Cog):
         old = self._load_json(pth, [])
         old.insert(0, snap)
         with open(pth, 'w') as f:
-            json.dump(old[:60], f, indent=2)
+            json.dump(old, f, indent=2)
         db.close()
         print("Daily activity snapshot complete", flush=True)
 

@@ -127,7 +127,7 @@ class TerritoryTracker(commands.Cog):
 
             embed.add_field(
                 name="\u200b",
-                value="➡️",
+                value="➜",
                 inline=True
             )
 
