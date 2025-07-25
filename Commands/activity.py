@@ -249,17 +249,26 @@ class Activity(commands.Cog):
             days_since = max(0, days_since)
 
             playtime = member.get('playtime', 0) or 0
-            # find earliest record; if none, skip member
-            earliest_pt = None
-            for day_snap in history:
-                entry = next((p for p in day_snap.get('members', []) if p.get('uuid') == uuid), None)
+
+            # Determine baseline playtime from history
+            baseline_pt = None
+            # Attempt to get playtime from snapshot 'days' ago if available
+            if len(history) >= days:
+                snap = history[-days]
+                entry = next((p for p in snap.get('members', []) if p.get('uuid') == uuid), None)
                 if entry is not None:
-                    earliest_pt = entry.get('playtime', 0)
-                    break
-            if earliest_pt is None:
-                # no baseline data; skip this new member
+                    baseline_pt = entry.get('playtime', 0)
+            # Fallback: find earliest snapshot that includes the player
+            if baseline_pt is None:
+                for day_snap in history:
+                    entry = next((p for p in day_snap.get('members', []) if p.get('uuid') == uuid), None)
+                    if entry is not None:
+                        baseline_pt = entry.get('playtime', 0)
+                        break
+            # no baseline data; skip this new member
+            if baseline_pt is None:
                 continue
-            real_pt = max(0, playtime - earliest_pt)
+            real_pt = max(0, playtime - baseline_pt)
 
             joined = next((p for p in taq_members if p.get('uuid') == uuid), {})
             try:
