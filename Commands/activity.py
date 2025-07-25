@@ -249,26 +249,33 @@ class Activity(commands.Cog):
             days_since = max(0, days_since)
 
             playtime = member.get('playtime', 0) or 0
+            uuid = member.get('uuid', '').lower()
 
-            # Determine baseline playtime from history
             baseline_pt = None
-            # Attempt to get playtime from snapshot 'days' ago if available
+
+            # Step 1: Attempt to get playtime from snapshot 'days' ago
             if len(history) >= days:
-                snap = history[-days]
-                entry = next((p for p in snap.get('members', []) if p.get('uuid') == uuid), None)
+                snap = history[days-1]
+
+                entry = next((p for p in snap.get('members', []) if p.get('uuid', '').lower() == uuid), None)
                 if entry is not None:
                     baseline_pt = entry.get('playtime', 0)
-            # Fallback: find earliest snapshot that includes the player
+
+            # Step 2: Fallback to earliest available snapshot in decreasing order
             if baseline_pt is None:
-                for day_snap in history:
-                    entry = next((p for p in day_snap.get('members', []) if p.get('uuid') == uuid), None)
+                for offset in reversed(range(days)):
+                    if offset >= len(history):
+                        continue
+                    day_snap = history[offset]
+                    entry = next(
+                        (p for p in day_snap.get('members', []) if p.get('uuid', '').lower() == uuid), None
+                    )
                     if entry is not None:
                         baseline_pt = entry.get('playtime', 0)
                         break
-            # no baseline data; skip this new member
-            if baseline_pt is None:
-                continue
-            real_pt = max(0, playtime - baseline_pt)
+
+            # Step 4: Compute actual playtime
+            real_pt = max(0, float(playtime) - float(baseline_pt))
 
             joined = next((p for p in taq_members if p.get('uuid') == uuid), {})
             try:
@@ -282,7 +289,16 @@ class Activity(commands.Cog):
             discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
             raw_stars = RANK_STARS_MAP.get((discord_rank or '').lower(), '')
             star_count = raw_stars if isinstance(raw_stars, int) else (raw_stars.count('*') if isinstance(raw_stars, str) else 0)
-            score = (days_since * 1.4) - (days_since * real_pt) * 1.3 - (member_for / 20) - (star_count * 1.2)
+            
+            adjusted_age_bonus = (member_for / 5) ** 0.8
+            rank_penalty = max(0, 5 - star_count) * 1.5
+
+            score = (
+                (days_since * 2.0)
+                - (real_pt * 4.0)
+                - adjusted_age_bonus
+                + rank_penalty
+            )
 
             if order_by != 'Kick Suitability' or member_for >= 7:
                 playerdata.append({
