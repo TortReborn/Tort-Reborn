@@ -7,10 +7,7 @@ from io import BytesIO
 import asyncio
 import json
 import requests
-import logging
 from typing import Tuple, Optional
-
-logger = logging.getLogger("discord")
 
 
 def coordToPixel(x: int, z: int) -> Tuple[int, int]:
@@ -121,15 +118,19 @@ def mapCreator(guild_prefix: Optional[str] = None):
         overlay_draw.rectangle([xMin, yMin, xMax, yMax], fill=(*color_rgb, 64))
         draw.rectangle([xMin, yMin, xMax, yMax], outline=color_rgb, width=8)
 
-        bbox = font.getbbox(prefix)
-        w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        tx, ty = (xMin + xMax) // 2 - w // 2, (yMin + yMax) // 2 - h // 2
-        # outline text
-        for dx in (-2, 0, 2):
-            for dy in (-2, 0, 2):
-                if dx or dy:
-                    draw.text((tx + dx, ty + dy), prefix, font=font, fill="black")
-        draw.text((tx, ty), prefix, font=font, fill=color_rgb)
+        if prefix:
+            try:
+                bbox = font.getbbox(prefix)
+                w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                tx, ty = (xMin + xMax) // 2 - w // 2, (yMin + yMax) // 2 - h // 2
+                # outline text
+                for dx in (-2, 0, 2):
+                    for dy in (-2, 0, 2):
+                        if dx or dy:
+                            draw.text((tx + dx, ty + dy), prefix, font=font, fill="black")
+                draw.text((tx, ty), prefix, font=font, fill=color_rgb)
+            except Exception as e:
+                pass
 
         rects_drawn += 1
 
@@ -147,8 +148,6 @@ def mapCreator(guild_prefix: Optional[str] = None):
         # Guard against invalid crop box
         if x1 > x0 and y1 > y0:
             mapImg = mapImg.crop((x0, y0, x1, y1))
-        else:
-            logger.warning("Invalid crop box calculated; skipping crop. bounds=%s", bounds)
 
     # Resize
     sf = 0.4
