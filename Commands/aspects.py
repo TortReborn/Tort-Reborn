@@ -251,6 +251,56 @@ class AspectDistribution(commands.Cog):
         buf = self.make_distribution_image(avatars, names)
         await ctx.followup.send(file=discord.File(buf, "distribution.png"))
 
+    @aspects.command(
+        name="queue",
+        description="Show queue of uncollected aspects"
+    )
+    async def queue(self, ctx: discord.ApplicationContext):
+        await ctx.defer()
+
+        # 1) Fetch all uuids with uncollected aspects > 0
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "SELECT uuid, uncollected_aspects FROM uncollected_raids WHERE uncollected_aspects > 0"
+        )
+        rows = db.cursor.fetchall()
+        db.close()
+
+        # 2) If none, inform
+        if not rows:
+            embed = discord.Embed(
+                title="Aspect Queue",
+                description="No uncollected aspects at the moment.",
+                color=0x2F3136
+            )
+            return await ctx.followup.send(embed=embed)
+
+        # 3) Build lines of "Name: count" and sum total
+        guild = Guild("The Aquarium")
+        lines = []
+        total = 0
+        for uuid, count in rows:
+            total += count
+            member = next((m for m in guild.all_members if m["uuid"] == uuid), None)
+            if member:
+                name = member["name"]
+            else:
+                looked_up = await getNameFromUUID(uuid)
+                name = looked_up[0] if isinstance(looked_up, (list, tuple)) else str(looked_up)
+            lines.append(f"{name}: {count}")
+
+        # 4) Create embed
+        description = "\n".join(lines) + f"\n\n**Total: {total}**"
+        embed = discord.Embed(
+            title="Raid Aspect Queue",
+            description=description,
+            color=0x2F3136
+        )
+
+        # 5) Send
+        await ctx.followup.send(embed=embed)
+
+
 
     @blacklist.command(
         name="add",
