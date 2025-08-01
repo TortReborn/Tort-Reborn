@@ -184,8 +184,12 @@ class UpdateMemberData(commands.Cog):
     async def update_member_data(self):
         now = datetime.datetime.now(timezone.utc)
         print(f"STARTING LOOP - {now}", flush=True)
-        db = DB(); db.connect()
-        guild = Guild("The Aquarium")
+        # open DB off the event loop
+        db = DB()
+        await asyncio.to_thread(db.connect)
+
+        # fetch guild over HTTP off the event loop
+        guild = await asyncio.to_thread(Guild, "The Aquarium")
 
         # 1 Pull latest guild contributions
         contrib_map = {member['uuid']: member.get('contributed', 0) for member in guild.all_members}
@@ -320,6 +324,8 @@ class UpdateMemberData(commands.Cog):
         rank_map = {u: info.get('rank') for u, info in curr_map.items()}
         self._write_current_snapshot(db, guild, contrib_map, rank_map, pf_map)
 
+        db.close()
+        
         print(f"ENDING LOOP - {datetime.datetime.now(timezone.utc)}",flush=True)
 
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
@@ -399,6 +405,11 @@ class UpdateMemberData(commands.Cog):
         self._has_started=True
         if not self.update_member_data.is_running(): self.update_member_data.start()
         if not self.daily_activity_snapshot.is_running(): self.daily_activity_snapshot.start()
+
+    @update_member_data.error
+    async def on_update_member_data_error(self, error):
+        print("🚨 update_member_data loop raised:", file=sys.stderr)
+        traceback.print_exc()
 
 
 def setup(client):
