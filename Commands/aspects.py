@@ -30,7 +30,7 @@ LINE_SPACING      = 8
 
 class AspectDistribution(commands.Cog):
     aspects = SlashCommandGroup(
-        "aspects", "Manage aspect distribution", guild_ids=[GUILD_ID, guilds[0]]
+        "aspects", "Manage aspect distribution", guild_ids=[GUILD_ID]
     )
     blacklist = aspects.create_subgroup("blacklist", "Manage aspect distribution blacklist")
 
