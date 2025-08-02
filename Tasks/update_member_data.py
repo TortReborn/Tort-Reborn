@@ -131,53 +131,69 @@ class UpdateMemberData(commands.Cog):
 
     def _write_current_snapshot(self, db, guild, contrib_map, rank_map, pf_map):
         """
-        Write an always-fresh snapshot to CURRENT_ACTIVITY_FILE.
-        pf_map: {uuid: player_full_profile_dict_from_getPlayerDatav3}
+        Write an always‐fresh snapshot to CURRENT_ACTIVITY_FILE,
+        using a single bulk query for shells and raids totals,
+        joining strictly on IDs (no ign).
         """
         snap = {'time': int(time.time()), 'members': []}
         cur = db.cursor
 
+        # 1. Gather all UUIDs we need stats for
+        uuids = list(pf_map.keys())
+        if not uuids:
+            self._save_json(CURRENT_ACTIVITY_FILE, snap)
+            return
+
+        # 2. Bulk‐fetch shells and raids_total for every uuid in one go
+        sql = """
+        SELECT
+        dl.uuid,
+        COALESCE(s.shells, 0) AS shells,
+        COALESCE(ur.uncollected_raids, 0)
+            + COALESCE(ur.collected_raids, 0) AS raids_total
+        FROM discord_links dl
+        LEFT JOIN shells s
+        ON dl.discord_id = s.user
+        LEFT JOIN uncollected_raids ur
+        ON dl.uuid = ur.uuid
+        WHERE dl.uuid = ANY(%s::uuid[]);
+        """
+        cur.execute(sql, (uuids,))
+        rows = cur.fetchall()
+
+        # 3. Build lookup dict by uuid
+        stats_by_uuid = {
+            row[0]: {'shells': row[1], 'raids': row[2]}
+            for row in rows
+        }
+
+        # 4. Populate the snapshot
         for uuid, pf in pf_map.items():
             if not isinstance(pf, dict):
                 continue
-            username = pf.get('username') or pf.get('name')
-            last_join = pf.get('lastJoin')  # ISO8601 string from API (e.g. "2025-07-23T22:33:40.727000Z")
 
-            # shells
-            cur.execute(
-                "SELECT COALESCE(s.shells, 0) "
-                "FROM discord_links dl "
-                "LEFT JOIN shells s ON dl.discord_id = s.user "
-                "WHERE dl.uuid = %s",
-                (uuid,)
-            )
-            row = cur.fetchone()
-            shells = row[0] if row else 0
+            username  = pf.get('username') or pf.get('name')
+            last_join = pf.get('lastJoin')  # ISO8601 string
 
-            # raids collected/uncollected
-            cur.execute(
-                "SELECT COALESCE(ur.uncollected_raids, 0) + COALESCE(ur.collected_raids, 0) "
-                "FROM discord_links dl "
-                "LEFT JOIN uncollected_raids ur ON dl.uuid = ur.uuid "
-                "WHERE dl.uuid = %s",
-                (uuid,)
-            )
-            row = cur.fetchone()
-            raids_total = row[0] if row else 0
+            entry      = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
+            shells     = entry['shells']
+            raids_total= entry['raids']
 
             snap['members'].append({
-                'name': username,
-                'uuid': uuid,
-                'rank': rank_map.get(uuid),
-                'playtime': pf.get('playtime'),
+                'name':        username,
+                'uuid':        uuid,
+                'rank':        rank_map.get(uuid),
+                'playtime':    pf.get('playtime'),
                 'contributed': contrib_map.get(uuid),
-                'wars': pf.get('globalData', {}).get('wars'),
-                'shells': shells,
-                'raids': raids_total,
-                'lastJoin': last_join
+                'wars':        pf.get('globalData', {}).get('wars'),
+                'shells':      shells,
+                'raids':       raids_total,
+                'lastJoin':    last_join
             })
 
+        # 5. Write out JSON
         self._save_json(CURRENT_ACTIVITY_FILE, snap)
+
 
 
     @tasks.loop(minutes=2)
