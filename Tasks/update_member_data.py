@@ -31,7 +31,7 @@ from Helpers.variables import (
 RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
 LOG_CHANNEL = log_channel
 GUILD_TTL = timedelta(minutes=10)
-CONTRIBUTION_THRESHOLD = 2_000_000_000
+CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 75  # max calls per minute
 CURRENT_ACTIVITY_FILE = "current_activity.json"
 
@@ -312,11 +312,16 @@ class UpdateMemberData(commands.Cog):
 
         # 10: Validate via contrib diff
         for raid,queues in self.raid_participants.items():
-            for uid,info in list(queues['unvalidated'].items()):
-                base=info['baseline_contrib']
-                curr=new_data[uid]['contributed']
-                if curr-base>=CONTRIBUTION_THRESHOLD:
-                    queues['validated'][uid]=info
+            for uid, info in list(queues['unvalidated'].items()):
+                base = info['baseline_contrib']
+                # skip if we didn't get fresh data for this uid
+                curr_info = new_data.get(uid)
+                if curr_info is None:
+                    print(f"{datetime.datetime.now(timezone.utc)} - SKIP contrib validation for {uid}: no new_data", flush=True)
+                    continue
+                curr = curr_info.get('contributed', 0)
+                if curr - base >= CONTRIBUTION_THRESHOLD:
+                    queues['validated'][uid] = info
                     queues['unvalidated'].pop(uid)
                     print(f"{now} - VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})",flush=True)
 
@@ -338,7 +343,11 @@ class UpdateMemberData(commands.Cog):
         pf_map = {m['uuid']: m for m in results if isinstance(m, dict)}
         # rank_map already exists as curr_map -> {'uuid': {'name':..., 'rank':...}}
         rank_map = {u: info.get('rank') for u, info in curr_map.items()}
-        self._write_current_snapshot(db, guild, contrib_map, rank_map, pf_map)
+        # offload the DB‐heavy snapshot to a thread
+        await asyncio.to_thread(
+            self._write_current_snapshot,
+            db, guild, contrib_map, rank_map, pf_map
+        )
 
         db.close()
         
@@ -426,6 +435,10 @@ class UpdateMemberData(commands.Cog):
     async def on_update_member_data_error(self, error):
         print("🚨 update_member_data loop raised:", file=sys.stderr)
         traceback.print_exc()
+        # restart the loop after a short pause
+        await asyncio.sleep(5)
+        if not self.update_member_data.is_running():
+            self.update_member_data.start()
 
 
 def setup(client):
