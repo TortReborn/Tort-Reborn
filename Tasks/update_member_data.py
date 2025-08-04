@@ -312,11 +312,16 @@ class UpdateMemberData(commands.Cog):
 
         # 10: Validate via contrib diff
         for raid,queues in self.raid_participants.items():
-            for uid,info in list(queues['unvalidated'].items()):
-                base=info['baseline_contrib']
-                curr=new_data[uid]['contributed']
-                if curr-base>=CONTRIBUTION_THRESHOLD:
-                    queues['validated'][uid]=info
+            for uid, info in list(queues['unvalidated'].items()):
+                base = info['baseline_contrib']
+                # skip if we didn't get fresh data for this uid
+                curr_info = new_data.get(uid)
+                if curr_info is None:
+                    print(f"{datetime.datetime.now(timezone.utc)} - SKIP contrib validation for {uid}: no new_data", flush=True)
+                    continue
+                curr = curr_info.get('contributed', 0)
+                if curr - base >= CONTRIBUTION_THRESHOLD:
+                    queues['validated'][uid] = info
                     queues['unvalidated'].pop(uid)
                     print(f"{now} - VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})",flush=True)
 
