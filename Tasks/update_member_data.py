@@ -31,7 +31,7 @@ from Helpers.variables import (
 RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
 LOG_CHANNEL = log_channel
 GUILD_TTL = timedelta(minutes=10)
-CONTRIBUTION_THRESHOLD = 2_000_000_000
+CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 75  # max calls per minute
 CURRENT_ACTIVITY_FILE = "current_activity.json"
 
@@ -338,7 +338,11 @@ class UpdateMemberData(commands.Cog):
         pf_map = {m['uuid']: m for m in results if isinstance(m, dict)}
         # rank_map already exists as curr_map -> {'uuid': {'name':..., 'rank':...}}
         rank_map = {u: info.get('rank') for u, info in curr_map.items()}
-        self._write_current_snapshot(db, guild, contrib_map, rank_map, pf_map)
+        # offload the DB‐heavy snapshot to a thread
+        await asyncio.to_thread(
+            self._write_current_snapshot,
+            db, guild, contrib_map, rank_map, pf_map
+        )
 
         db.close()
         
@@ -426,6 +430,10 @@ class UpdateMemberData(commands.Cog):
     async def on_update_member_data_error(self, error):
         print("🚨 update_member_data loop raised:", file=sys.stderr)
         traceback.print_exc()
+        # restart the loop after a short pause
+        await asyncio.sleep(5)
+        if not self.update_member_data.is_running():
+            self.update_member_data.start()
 
 
 def setup(client):

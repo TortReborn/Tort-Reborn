@@ -16,7 +16,11 @@ class DB:
                     host=os.getenv("TEST_DB_HOST"),
                     port=int(os.getenv("TEST_DB_PORT")),
                     database=os.getenv("TEST_DB_DATABASE", "postgres"),
-                    sslmode=os.getenv("TEST_DB_SSLMODE")
+                    sslmode=os.getenv("TEST_DB_SSLMODE"),
+                    keepalives=1,
+                    keepalives_idle=30,
+                    keepalives_interval=10,
+                    keepalives_count=5
                 )
                 self.cursor = self.connection.cursor()
             elif os.getenv("TEST_MODE").lower() == "false":
@@ -26,7 +30,11 @@ class DB:
                     host=os.getenv("DB_HOST"),
                     port=int(os.getenv("DB_PORT")),
                     database=os.getenv("DB_DATABASE", "postgres"),
-                    sslmode=os.getenv("DB_SSLMODE")
+                    sslmode=os.getenv("DB_SSLMODE"),
+                    keepalives=1,
+                    keepalives_idle=30,
+                    keepalives_interval=10,
+                    keepalives_count=5
                 )
                 self.cursor = self.connection.cursor()
             else:

@@ -7,6 +7,7 @@ import re
 from io import BytesIO
 from uuid import UUID
 
+import certifi
 import requests
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
@@ -836,7 +837,7 @@ def getUsernameFromUUID(uuid: str) -> str | None:
 
     url = f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid_nodash}"
     try:
-        resp = requests.get(url, timeout=8)
+        resp = requests.get(url, timeout=8, verify=certifi.where())
         if resp.status_code == 200:
             data = resp.json()
             name = data.get("name")
