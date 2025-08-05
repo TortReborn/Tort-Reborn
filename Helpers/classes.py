@@ -199,7 +199,7 @@ class PlayerStats:
         if not row:
             db.cursor.execute(
                 'INSERT INTO profile_customization ("user", background, owned) VALUES (%s, %s, %s)',
-                (self.discord, False, json.dumps([bg_id]))
+                (self.discord, bg_id, json.dumps([bg_id]))
             )
             db.connection.commit()
             db.close()
