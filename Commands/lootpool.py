@@ -9,6 +9,7 @@ from Helpers.variables import mythics
 from Helpers.functions import wrap_text, get_multiline_text_size
 import time
 import os
+import json
 
 
 class LootPool(commands.Cog):
@@ -33,10 +34,12 @@ class LootPool(commands.Cog):
 
     @lootpool.command(
         name="aspects",
-        description="Provides weekly aspects data"
+        description="Provides weekly aspects data as an image"
     )
     async def aspects(self, ctx: discord.ApplicationContext):
         await ctx.defer()
+
+        # Fetch API data
         try:
             resp = requests.get("https://nori.fish/api/aspects")
             resp.raise_for_status()
@@ -50,30 +53,128 @@ class LootPool(commands.Cog):
             await ctx.followup.send(embed=embed)
             return
 
-        timestamp = data.get("Timestamp")
-        embed = discord.Embed(
-            title="Weekly Aspects Lootpool",
-            color=0x4585db,
-            timestamp=datetime.utcfromtimestamp(timestamp)
-        )
         loot = data.get("Loot", {})
-        count = 0
-        for raid_name, rarities in loot.items():
-            if count and count % 2 == 0:
-                embed.add_field(name='\u200b', value='\u200b', inline=False)
-            mythic = self._format_list(rarities.get("Mythic", []))
-            fabled = self._format_list(rarities.get("Fabled", []))
-            legendary = self._format_list(rarities.get("Legendary", []))
-            value = (
-                f"**Mythic**:\n{mythic}\n"
-                f"**Fabled**:\n{fabled}\n"
-                f"**Legendary**:\n{legendary}"
-            )
-            embed.add_field(name=raid_name, value=value, inline=True)
-            count += 1
+        raids = ["TNA", "TCC", "NOL", "NOTG"]
 
-        embed.set_footer(text=f"Last Updated: {datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        await ctx.followup.send(embed=embed)
+        # Load mapping JSON and invert to {aspect_name: class}
+        try:
+            with open('aspect_class_map.json', 'r') as f:
+                class_map = json.load(f)
+        except Exception:
+            class_map = {}
+        aspect_to_class = {name: cls for cls, names in class_map.items() for name in names}
+
+        # Layout settings
+        cols = len(raids)
+        col_w = 300
+        padding = 20
+        line_spacing = 8
+        raid_icon_size = 144
+        class_icon_size = 24
+
+        # Prepare fonts and dummy draw
+        title_font = ImageFont.truetype("images/profile/game.ttf", 18)
+        dummy_img = Image.new('RGBA', (1,1), (0,0,0,0))
+        dummy_draw = ImageDraw.Draw(dummy_img)
+
+        # Compute max lines to determine canvas height
+        max_lines = 0
+        for raid in raids:
+            count = 0
+            for rarity in ["Mythic", "Fabled", "Legendary"]:
+                for aspect in loot.get(raid, {}).get(rarity, []):
+                    text = aspect.replace("Aspect of ", "")
+                    text = text[:1].upper() + text[1:] if text else text
+                    wrapped = wrap_text(text, title_font, col_w - 20, dummy_draw)
+                    count += wrapped.count("\n") + 1
+            max_lines = max(max_lines, count)
+
+        # Canvas size
+        line_h = get_multiline_text_size("Test", title_font)[1]
+        img_h = padding + raid_icon_size + max_lines * (line_h + line_spacing) + padding
+        img_w = cols * col_w + padding * (cols + 1)
+
+        # Create canvas
+        img = Image.new("RGBA", (img_w, img_h), (0,0,0,0))
+        draw = ImageDraw.Draw(img)
+
+        # Draw each raid column
+        for i, raid in enumerate(raids):
+            x0 = padding + i * (col_w + padding)
+            y0 = padding + raid_icon_size // 2
+            y1 = img_h - padding
+
+            # Background panel
+            draw.rounded_rectangle(
+                (x0, y0, x0 + col_w, y1+padding),
+                radius=10,
+                fill=(0,0,0,255),
+                outline=(36,0,89,255),
+                width=4
+            )
+
+            # Raid icon
+            raid_path = f"images/raids/{raid}.png"
+            if os.path.isfile(raid_path):
+                raid_icon = Image.open(raid_path).convert("RGBA")
+                raid_icon.thumbnail((raid_icon_size, raid_icon_size))
+                ix = x0 + (col_w - raid_icon.width) // 2
+                img.paste(raid_icon, (ix, padding), raid_icon)
+
+            # Draw aspects below icon
+            ty = padding + raid_icon_size + line_spacing
+            for rarity, color in [("Mythic",(170,0,170,255)), ("Fabled",(255,85,85,255)), ("Legendary",(85,255,255,255))]:
+                for aspect in loot.get(raid, {}).get(rarity, []):
+                    # Prepare text
+                    if "Aspect of a " in aspect:
+                        text = aspect.replace("Aspect of a ", "")
+                    elif "Aspect of the " in aspect:
+                        text = aspect.replace("Aspect of the ", "")
+                    elif "Aspect of " in aspect:
+                        text = aspect.replace("Aspect of ", "")
+                    else:
+                        text = aspect
+
+                    # Class icon if available
+                    cls = aspect_to_class.get(aspect)
+                    offset = 0
+                    if cls:
+                        icon_path = f"images/raids/aspect_{cls}.png"
+                        if os.path.isfile(icon_path):
+                            ci = Image.open(icon_path).convert("RGBA")
+                            ci.thumbnail((class_icon_size, class_icon_size))
+                            img.paste(ci, (x0+10, ty), ci)
+                            offset = class_icon_size + 5
+
+                    # Wrap and draw
+                    wrapped = wrap_text(text, title_font, col_w - 20 - offset, draw)
+                    draw.multiline_text((x0+10+offset, ty), wrapped, font=title_font, fill=color)
+                    _, h = get_multiline_text_size(wrapped, title_font)
+                    ty += h + line_spacing
+
+        # Try to pull a timestamp from the API (fallback to now if missing)
+        ts = data.get("Timestamp")
+        next_rot = ts + 604800  # one week in seconds
+
+        # Prepare the image file
+        with BytesIO() as buf:
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            file = discord.File(buf, filename="aspects.png")
+
+            # Build the embed
+            embed = discord.Embed(
+                title="Weekly Raid Aspects",
+                color=0x7a187a  # match your lootruns color
+            )
+            embed.add_field(
+                name=":arrows_counterclockwise: Next rotation:",
+                value=f"<t:{next_rot}:f>"  # full datetime format
+            )
+            embed.set_image(url="attachment://aspects.png")
+
+            # Send embed + image together
+            await ctx.followup.send(embed=embed, file=file)
 
     @lootpool.command(
         name="lootruns",
@@ -100,7 +201,6 @@ class LootPool(commands.Cog):
             await ctx.followup.send(embed=embed)
             return
 
-        timestamp = data.get("Timestamp")
         embed = discord.Embed(
             title="Weekly Mythic Lootpool",
             color=0x7a187a,
@@ -213,7 +313,6 @@ class LootPool(commands.Cog):
             lr_lootpool = discord.File(file, filename=f"lootpool{t}.png")
             embed.set_image(url=f"attachment://lootpool{t}.png")
 
-        # await ctx.followup.send(file=lr_lootpool)
         await ctx.followup.send(embed=embed, file=lr_lootpool)
 
     @commands.Cog.listener()

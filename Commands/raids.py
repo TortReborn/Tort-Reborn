@@ -42,7 +42,7 @@ class Raids(commands.Cog):
     # (abbr, full API name, ranking key)
     RAIDS: List[Tuple[str, str, str]] = [
         ("NOTG", "Nest of the Grootslangs", "grootslangSrPlayers"),
-        ("NoL",  "Orphion's Nexus of Light", "orphionSrPlayers"),
+        ("NOL",  "Orphion's Nexus of Light", "orphionSrPlayers"),
         ("TCC",  "The Canyon Colossus", "colossusSrPlayers"),
         ("TNA",  "The Nameless Anomaly", "namelessSrPlayers"),
     ]
