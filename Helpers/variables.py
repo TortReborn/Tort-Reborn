@@ -216,6 +216,7 @@ shadows = {"0": '#000000',
 
 wynn_ranks = {
     "champion": {"color": "#ffa214", "display": "CHAMPION"},
+    "heroplus": {"color": "#bc3c7c", "display": "HERO+"},
     "hero": {"color": "#8b3f8c", "display": "HERO"},
     "vipplus": {"color": "#5a7dbf", "display": "VIP+"},
     "vip": {"color": "#44aa33", "display": "VIP"},

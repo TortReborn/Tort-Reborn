@@ -273,6 +273,9 @@ class Activity(commands.Cog):
                     if entry is not None:
                         baseline_pt = entry.get('playtime', 0)
                         break
+                    
+            if baseline_pt is None:
+                baseline_pt = 0
 
             # Step 4: Compute actual playtime
             real_pt = max(0, float(playtime) - float(baseline_pt))
