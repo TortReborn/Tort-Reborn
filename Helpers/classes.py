@@ -80,7 +80,7 @@ class PlayerStats:
         self.wars = pdata['globalData']['wars']
         self.playtime = pdata['playtime']
         self.rank = pdata['rank']
-        self.mobs = pdata['globalData']['killedMobs']
+        # self.mobs = pdata['globalData']['killedMobs']
         self.chests = pdata['globalData']['chestsFound']
         self.quests = pdata['globalData']['completedQuests']
         self.background = 1
@@ -134,6 +134,8 @@ class PlayerStats:
                 self.background = row[1]
                 self.backgrounds_owned = row[2]
                 self.gradient = row[3] if row[3] is not None else ['#293786', '#1d275e']
+        else:
+            self.discord = None
         # shells
         if self.taq:
             db.cursor.execute('SELECT * FROM shells WHERE "user" = %s', (self.discord,))

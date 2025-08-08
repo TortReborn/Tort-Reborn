@@ -142,8 +142,8 @@ class Profile(commands.Cog):
                 card_entries['Guild Raids'] = str(player.guild_raids)
                 if player.in_guild_for.days >= 1:
                     card_entries[f'Guild Raids / {player.stats_days} D'] = str(player.real_raids)       # TAq only
-            if len(card_entries) < 10:
-                card_entries['Killed Mobs'] = str(player.mobs)
+            # if len(card_entries) < 10:
+            #     card_entries['Killed Mobs'] = str(player.mobs)
             if len(card_entries) < 10:
                 card_entries['Chests Looted'] = str(player.chests)
             if len(card_entries) < 10:
