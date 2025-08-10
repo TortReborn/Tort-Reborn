@@ -32,7 +32,7 @@ RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
 LOG_CHANNEL = log_channel
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
-RATE_LIMIT = 75  # max calls per minute
+RATE_LIMIT = 100  # max calls per minute
 CURRENT_ACTIVITY_FILE = "current_activity.json"
 
 RAID_EMOJIS = {
@@ -41,6 +41,93 @@ RAID_EMOJIS = {
     "The Nameless Anomaly": tna_emoji_id,
     "Orphion's Nexus of Light": nol_emoji_id
 }
+
+# --- thread-safe DB + snapshot helpers ---
+
+def _db_connect_with_retry(max_attempts: int = 3, backoff_first: float = 0.5):
+    attempt, delay, last = 0, backoff_first, None
+    while attempt < max_attempts:
+        try:
+            db = DB()
+            db.connect()
+            return db
+        except Exception as e:
+            last = e
+            time.sleep(delay)
+            delay *= 2
+            attempt += 1
+    raise last
+
+def _upsert_raid_group_sync(uuid_list):
+    if not uuid_list:
+        return
+    db = _db_connect_with_retry()
+    try:
+        for uid in uuid_list:
+            db.cursor.execute("SELECT ign FROM discord_links WHERE uuid = %s", (uid,))
+            row = db.cursor.fetchone()
+            ign = row[0] if row else None
+            db.cursor.execute(
+                """
+                INSERT INTO uncollected_raids AS ur (uuid, ign, uncollected_raids, collected_raids)
+                VALUES (%s, %s, 1, 0)
+                ON CONFLICT (uuid) DO UPDATE
+                  SET uncollected_raids = ur.uncollected_raids + EXCLUDED.uncollected_raids,
+                      ign               = EXCLUDED.ign;
+                """,
+                (uid, ign)
+            )
+        db.connection.commit()
+    finally:
+        db.close()
+
+def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
+    snap = {'time': int(time.time()), 'members': []}
+    uuids = list(pf_map.keys())
+    if not uuids:
+        with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
+            json.dump(snap, f, indent=2)
+        return
+
+    db = _db_connect_with_retry()
+    try:
+        sql = """
+        SELECT
+        dl.uuid,
+        COALESCE(s.shells, 0) AS shells,
+        COALESCE(ur.uncollected_raids, 0) + COALESCE(ur.collected_raids, 0) AS raids_total
+        FROM discord_links dl
+        LEFT JOIN shells s ON dl.discord_id = s.user
+        LEFT JOIN uncollected_raids ur ON dl.uuid = ur.uuid
+        WHERE dl.uuid = ANY(%s::uuid[]);
+        """
+        db.cursor.execute(sql, (uuids,))
+        rows = db.cursor.fetchall()
+        stats_by_uuid = {row[0]: {'shells': row[1], 'raids': row[2]} for row in rows}
+    finally:
+        db.close()
+
+    for uuid, pf in pf_map.items():
+        if not isinstance(pf, dict):
+            continue
+        username  = pf.get('username') or pf.get('name')
+        last_join = pf.get('lastJoin')
+        entry     = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
+        snap['members'].append({
+            'name':        username,
+            'uuid':        uuid,
+            'rank':        rank_map.get(uuid),
+            'playtime':    pf.get('playtime'),
+            'contributed': contrib_map.get(uuid),
+            'wars':        pf.get('globalData', {}).get('wars'),
+            'shells':      entry['shells'],
+            'raids':       entry['raids'],
+            'lastJoin':    last_join
+        })
+
+    with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
+        json.dump(snap, f, indent=2)
+
 
 class UpdateMemberData(commands.Cog):
     RAID_NAMES = [
@@ -85,7 +172,7 @@ class UpdateMemberData(commands.Cog):
         bar = "█" * filled + "─" * (length - filled)
         return f"[{bar}]"
 
-    async def _announce_raid(self, raid, group, guild, db):
+    async def _announce_raid(self, raid, group, guild):
         print(f"Announcing raid {raid}: {group}", flush=True)
         participants = self.raid_participants[raid]["validated"]
         names = [participants[uid]["name"] for uid in group]
@@ -113,21 +200,8 @@ class UpdateMemberData(commands.Cog):
                 embed.add_field(name="Progress", value=self._make_progress_bar(100), inline=False)
             embed.set_footer(text="Guild Raid Tracker")
             await channel.send(embed=embed)
-        for uid in group:
-            db.cursor.execute("SELECT ign FROM discord_links WHERE uuid = %s", (uid,))
-            row = db.cursor.fetchone()
-            ign = row[0] if row else None
-            db.cursor.execute(
-                """
-                INSERT INTO uncollected_raids AS ur (uuid, ign, uncollected_raids, collected_raids)
-                VALUES (%s, %s, 1, 0)
-                ON CONFLICT (uuid) DO UPDATE
-                  SET uncollected_raids = ur.uncollected_raids + EXCLUDED.uncollected_raids,
-                      ign               = EXCLUDED.ign;
-                """,
-                (uid, ign)
-            )
-        db.connection.commit()
+        
+        await asyncio.to_thread(_upsert_raid_group_sync, list(group))
 
     def _write_current_snapshot(self, db, guild, contrib_map, rank_map, pf_map):
         """
@@ -196,13 +270,10 @@ class UpdateMemberData(commands.Cog):
 
 
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(minutes=3)
     async def update_member_data(self):
         now = datetime.datetime.now(timezone.utc)
         print(f"STARTING LOOP - {now}", flush=True)
-        # open DB off the event loop
-        db = DB()
-        await asyncio.to_thread(db.connect)
 
         # fetch guild over HTTP off the event loop
         guild = await asyncio.to_thread(Guild, "The Aquarium")
@@ -275,81 +346,105 @@ class UpdateMemberData(commands.Cog):
                 res=await asyncio.to_thread(getPlayerDatav3,m['uuid'])
             results.append(res)
 
-        prev=self.previous_data
-        new_data={}
-        # 7: Build new snapshot & detect unvalidated
+        prev = self.previous_data
+
+        # --- 7: Build new snapshot (carry forward) & detect unvalidated only with fresh data ---
+        new_data = dict(prev)      # carry forward last-known values for members we didn't fetch
+        fresh = set()              # UUIDs we successfully fetched this iteration
+
         for m in results:
-            if not isinstance(m,dict): continue
-            uid,uname=m['uuid'],m['username']
-            raids=m.get('globalData',{}).get('raids',{}).get('list',{})
-            counts={r:raids.get(r,0) for r in self.RAID_NAMES}
-            contributed=contrib_map.get(uid,0)
-            new_data[uid]={'raids':counts,'contributed':contributed}
-            if not self.cold_start:
-                old_counts=prev.get(uid,{}).get('raids',{r:0 for r in self.RAID_NAMES})
+            if not isinstance(m, dict):
+                continue
+
+            uid, uname = m['uuid'], m['username']
+            fresh.add(uid)
+
+            raids = m.get('globalData', {}).get('raids', {}).get('list', {})
+            counts = {r: raids.get(r, 0) for r in self.RAID_NAMES}
+
+            # Use current contrib if present; otherwise fall back to last-known (carry-forward)
+            carried_contrib = new_data.get(uid, {}).get('contributed', 0)
+            contributed = contrib_map.get(uid, carried_contrib)
+
+            new_data[uid] = {
+                'raids': counts,
+                'contributed': contributed
+            }
+
+            # Only detect “unvalidated” if:
+            #  - we have fresh data for this UID (we do),
+            #  - we are not on cold start,
+            #  - AND we have a previous baseline for this UID.
+            if not self.cold_start and uid in prev:
+                old_counts = prev.get(uid, {}).get('raids', {r: 0 for r in self.RAID_NAMES})
                 for raid in self.RAID_NAMES:
-                    diff=counts[raid]-old_counts.get(raid,0)
-                    if 0<diff<3 and uid not in self.raid_participants[raid]['unvalidated'] and uid not in self.raid_participants[raid]['validated']:
-                        self.raid_participants[raid]['unvalidated'][uid]={'name':uname,'first_seen':now,'baseline_contrib':prev.get(uid,{}).get('contributed',0)}
-                        print(f"{now} - DETECT unvalidated {uname} in {raid}",flush=True)
+                    diff = counts[raid] - old_counts.get(raid, 0)
+                    if (
+                        0 < diff < 3 and
+                        uid not in self.raid_participants[raid]['unvalidated'] and
+                        uid not in self.raid_participants[raid]['validated']
+                    ):
+                        self.raid_participants[raid]['unvalidated'][uid] = {
+                            'name': uname,
+                            'first_seen': now,
+                            'baseline_contrib': prev.get(uid, {}).get('contributed', 0)
+                        }
+                        print(f"{now} - DETECT unvalidated {uname} in {raid}", flush=True)
 
-        # 8: XP jumps
-        xp_jumps=set()
-        for uid,info in new_data.items():
-            old_c=prev.get(uid,{}).get('contributed',0)
-            new_c=info['contributed']
-            if new_c-old_c>=CONTRIBUTION_THRESHOLD:
+        # --- 8: XP jumps (only consider fresh data + existing baseline) ---
+        xp_jumps = set()
+        for uid in fresh:
+            if uid not in prev:   # no baseline => skip
+                continue
+            old_c = prev[uid].get('contributed', 0)
+            new_c = new_data[uid].get('contributed', 0)
+            if new_c - old_c >= CONTRIBUTION_THRESHOLD:
                 xp_jumps.add(uid)
-                print(f"{now} - XP threshold met for {uid} (diff: {new_c-old_c} >= {CONTRIBUTION_THRESHOLD})",flush=True)
+                print(f"{now} - XP threshold met for {uid} (diff: {new_c-old_c} >= {CONTRIBUTION_THRESHOLD})", flush=True)
 
-        # 9: Validate via XP jump
-        for raid,queues in self.raid_participants.items():
+        # --- 9: Validate via XP jump ---
+        for raid, queues in self.raid_participants.items():
             for uid in list(queues['unvalidated']):
                 if uid in xp_jumps:
-                    info=queues['unvalidated'].pop(uid)
-                    queues['validated'][uid]=info
-                    print(f"{now} - VALIDATED {info['name']} for {raid} via XP jump",flush=True)
+                    info = queues['unvalidated'].pop(uid)
+                    queues['validated'][uid] = info
+                    print(f"{now} - VALIDATED {info['name']} for {raid} via XP jump", flush=True)
 
-        # 10: Validate via contrib diff
-        for raid,queues in self.raid_participants.items():
+        # --- 10: Validate via contrib diff (only if we have fresh data this tick) ---
+        for raid, queues in self.raid_participants.items():
             for uid, info in list(queues['unvalidated'].items()):
-                base = info['baseline_contrib']
-                # skip if we didn't get fresh data for this uid
-                curr_info = new_data.get(uid)
-                if curr_info is None:
-                    print(f"{datetime.datetime.now(timezone.utc)} - SKIP contrib validation for {uid}: no new_data", flush=True)
+                if uid not in fresh:
+                    # No fresh data for this UID this tick—don’t try to validate
+                    print(f"{datetime.datetime.now(timezone.utc)} - SKIP contrib validation for {uid}: no fresh data", flush=True)
                     continue
-                curr = curr_info.get('contributed', 0)
+                base = info['baseline_contrib']
+                curr = new_data.get(uid, {}).get('contributed', 0)
                 if curr - base >= CONTRIBUTION_THRESHOLD:
                     queues['validated'][uid] = info
                     queues['unvalidated'].pop(uid)
-                    print(f"{now} - VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})",flush=True)
+                    print(f"{now} - VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})", flush=True)
 
-        # 11: Announce raids
+        # --- 11: Announce raids (unchanged) ---
         for raid in self.RAID_NAMES:
-            vals=self.raid_participants[raid]['validated']
-            if len(vals)>=4:
-                group=set(list(vals)[:4])
-                await self._announce_raid(raid,group,guild,db)
-                for uid in group: vals.pop(uid)
+            vals = self.raid_participants[raid]['validated']
+            if len(vals) >= 4:
+                group = set(list(vals)[:4])
+                await self._announce_raid(raid, group, guild)
+                for uid in group:
+                    vals.pop(uid)
 
-        # 12: Persist
-        self.previous_data=new_data
-        self._save_json("previous_data.json",new_data)
-        self.cold_start=False
+        # --- 12: Persist (unchanged, but now includes carry-forward) ---
+        self.previous_data = new_data
+        self._save_json("previous_data.json", new_data)
+        self.cold_start = False
 
-        # Write constantly-updating snapshot for "today"
-        # Build pf_map from the results list we already have
+        # Build pf_map ONLY from fresh results for the current snapshot write
         pf_map = {m['uuid']: m for m in results if isinstance(m, dict)}
-        # rank_map already exists as curr_map -> {'uuid': {'name':..., 'rank':...}}
         rank_map = {u: info.get('rank') for u, info in curr_map.items()}
-        # offload the DB‐heavy snapshot to a thread
         await asyncio.to_thread(
-            self._write_current_snapshot,
-            db, guild, contrib_map, rank_map, pf_map
+            _write_current_snapshot_sync,
+            contrib_map, rank_map, pf_map
         )
-
-        db.close()
         
         print(f"ENDING LOOP - {datetime.datetime.now(timezone.utc)}",flush=True)
 
