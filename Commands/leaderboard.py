@@ -25,35 +25,45 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         order_key: key in each member record (e.g. 'contributed', 'wars', 'playtime', 'shells', 'raids')
         key_icon: path to the 16x16-ish icon image used next to the numeric stat
         header:   path to the title image pasted at the top of the page
-        days:     number of days to look back to compute "contributed" delta (<=0 => all-time)
+        days:     last N calendar days to sum (<=0 => all-time)
     Returns:
         discord.ext.pages.Paginator instance ready to respond.
     """
+    from collections import defaultdict
+
+    # Keys that are cumulative in player_activity.json and should be turned into per-day via diff
+    CUMULATIVE_KEYS = {"contributed", "wars", "playtime", "shells", "raids"}
+
     book: List[Page] = []
 
-    # Load activity JSON (already sorted oldest->newest later, but we'll sort anyway)
+    # ---- Load & sort activity history (oldest -> newest)
     with open('player_activity.json', 'r') as f:
         all_days_data: List[Dict[str, Any]] = json.load(f)
+    if not all_days_data:
+        return pages.Paginator(pages=[Page(content='No data available.')])
 
-    # Get discord ranks once (still needed for star overlay)
+    all_days_data.sort(key=lambda x: x['time'])
+    num_days = len(all_days_data)
+
+    # ---- Build fast index: for each day index, map uuid -> member dict
+    by_uuid_day: Dict[str, Dict[int, Dict[str, Any]]] = defaultdict(dict)
+    uuids_seen_latest: List[str] = []
+
+    for day_idx, day in enumerate(all_days_data):
+        for m in day.get('members', []):
+            by_uuid_day[m['uuid']][day_idx] = m
+    # We keep the leaderboard membership aligned to the latest snapshot (like your original code)
+    latest_members = all_days_data[-1].get('members', [])
+    uuids_seen_latest = [m['uuid'] for m in latest_members]
+
+    # ---- DB: discord ranks overlay (stars)
     db = DB()
     db.connect()
     db.cursor.execute("SELECT uuid, rank FROM discord_links")
     uuid_to_discord_rank: Dict[str, str] = {row[0]: row[1] for row in db.cursor.fetchall()}
     db.close()
 
-    # Ensure chronological order
-    all_days_data.sort(key=lambda x: x['time'])
-    newest_day_members = all_days_data[-1]['members'] if all_days_data else []
-
-    # Build full history per uuid
-    uuid_to_full_history: Dict[str, List[Dict[str, Any]]] = {}
-    for day in all_days_data:
-        for member in day['members']:
-            uuid = member['uuid']
-            uuid_to_full_history.setdefault(uuid, []).append(member)
-
-    # Assets
+    # ---- Assets
     bg1 = PlaceTemplate('images/profile/first.png')
     bg2 = PlaceTemplate('images/profile/second.png')
     bg3 = PlaceTemplate('images/profile/third.png')
@@ -65,48 +75,74 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     icon.thumbnail((16, 16))
     game_font = ImageFont.truetype('images/profile/game.ttf', 19)
 
+    # ---- Helpers
+    def aligned_cumulative_series(uuid: str, key: str) -> List[int]:
+        """Carry-forward cumulative value across every calendar day."""
+        series: List[int] = []
+        carry = 0
+        seen_any = False
+        for idx in range(num_days):
+            entry = by_uuid_day[uuid].get(idx)
+            if entry and key in entry:
+                carry = entry[key]
+                seen_any = True
+            series.append(carry if seen_any else 0)
+        return series
+
+    def aligned_perday_series(uuid: str, key: str) -> List[int]:
+        """For true per-day keys (not used now, but kept for completeness)."""
+        series: List[int] = []
+        for idx in range(num_days):
+            entry = by_uuid_day[uuid].get(idx)
+            series.append(entry.get(key, 0) if entry else 0)
+        return series
+
+    def to_daily_diffs(series: List[int]) -> List[int]:
+        diffs: List[int] = []
+        prev = 0
+        for v in series:
+            d = v - prev
+            diffs.append(d if d >= 0 else 0)
+            prev = v
+        return diffs
+
+    def sum_window(daily_series: List[int], window_days: int) -> (int, bool):
+        """Return (sum, warning). Warning=True if not enough calendar days to fill window."""
+        if not daily_series:
+            return 0, True
+        if window_days <= 0:
+            return sum(daily_series), False
+        warn = len(daily_series) < window_days  # should never happen with aligned series
+        return sum(daily_series[-window_days:]), warn
+
+    # ---- Build leaderboard rows (use latest snapshot membership for names)
     playerdata: List[Dict[str, Any]] = []
-
-    # Unified path for *all* metrics (shells/raids/etc.). No DB shells lookup anymore.
-    for member in newest_day_members:
-        uuid = member['uuid']
-        name = member['name']
-        api_rank = member.get('rank', 'unknown')  # fallback
+    for m in latest_members:
+        uuid = m['uuid']
+        name = m.get('name', 'Unknown')
+        api_rank = m.get('rank', 'unknown')
         rank = uuid_to_discord_rank.get(uuid, api_rank)
-        current_value = member.get(order_key, 0)
-        history = uuid_to_full_history.get(uuid, [])
 
-        warning = False
-        if days > 0:
-            # Filter history entries that actually contain the key
-            filtered_history = [entry for entry in history if order_key in entry]
-            if len(filtered_history) >= days:
-                old_value = filtered_history[-days].get(order_key, 0)
-                contributed = current_value - old_value
-            elif len(filtered_history) >= 2:
-                old_value = filtered_history[0].get(order_key, 0)
-                contributed = current_value - old_value
-                warning = True
-            else:
-                contributed = 0
-                warning = True
+        # Build a per-day series for the requested key
+        if order_key in CUMULATIVE_KEYS:
+            cum = aligned_cumulative_series(uuid, order_key)
+            daily = to_daily_diffs(cum)
         else:
-            # All-time
-            contributed = current_value
+            daily = aligned_perday_series(uuid, order_key)
 
+        contributed, warning = sum_window(daily, days)
         playerdata.append({
             'name': name,
             'uuid': uuid,
-            'contributed': contributed,
+            'contributed': int(contributed),
             'rank': rank,
             'warning': warning
         })
 
     if not playerdata:
-        # Return an empty paginator to avoid crashes
         return pages.Paginator(pages=[Page(content='No data available.')])
 
-    # Sort & paginate
+    # ---- Sort & paginate
     playerdata.sort(key=lambda x: x['contributed'], reverse=True)
     total_pages = math.ceil(len(playerdata) / 10)
     rank_counter = 1
@@ -122,7 +158,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             img, draw = expand_image(img, border=(0, 0, 0, 36), fill='#00000000')
             bg_color = [bg1, bg2, bg3][rank_counter - 1] if rank_counter <= 3 else bg_other
 
-            # Paste warning icon if data window < days
+            # Warning icon if we didn't have N full calendar days (rare with aligned series, but kept)
             if player['warning']:
                 img.paste(warning_icon, (img.width - 24, row_idx * 36 + 11), warning_icon)
 
@@ -131,7 +167,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             img.paste(bg_color.divider, (55, row_idx * 36 + 3), bg_color.divider)
             addLine(f'&f{rank_counter}.', draw, game_font, 10, row_idx * 36 + 9)
 
-            # Rank stars
+            # Rank stars (based on discord rank mapping)
             rank_key = (player.get('rank') or '').lower()
             general_rank = None
             for rname, info in discord_ranks.items():
@@ -187,6 +223,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     paginator.add_button(pages.PaginatorButton("last", emoji="<:last_arrows:1198703153726627880>", style=discord.ButtonStyle.blurple))
 
     return paginator
+
 
 
 # ============================
