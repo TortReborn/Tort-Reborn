@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 import json
 import requests
+import os
 
 from PIL import Image, ImageOps
 from dateutil import parser
@@ -23,7 +24,7 @@ class Guild:
         else:
             url = f'https://api.wynncraft.com/v3/guild/{urlify(guild)}'
 
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
         resp.raise_for_status()
         guild_data = resp.json()
 
