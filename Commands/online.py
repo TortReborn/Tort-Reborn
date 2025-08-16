@@ -23,11 +23,9 @@ class Online(commands.Cog):
     async def online(self, ctx: discord.ApplicationContext, guild: discord.Option(str, required=True)):
         start = time.perf_counter()
         await ctx.defer()
-        print(f"[online] deferred             +{time.perf_counter()-start:.3f}s")
         try:
             guild_data = Guild(guild)
         except Exception:
-            print(f"[online] Guild() failed        +{time.perf_counter()-start:.3f}s")
             embed = discord.Embed(
                 title=':no_entry: Something went wrong',
                 description=f'Wasn\'t able to retrieve data for {guild}.',
@@ -35,30 +33,25 @@ class Online(commands.Cog):
             )
             await ctx.followup.send(embed=embed, ephemeral=True)
             return
-        print(f"[online] Guild() done          +{time.perf_counter()-start:.3f}s")
 
         # Filter only online members
         online_members = [m for m in guild_data.all_members if m.get('online')]
-        print(f"[online] filtered members      +{time.perf_counter()-start:.3f}s ({len(online_members)} online)")
 
         # Group by rank
         from collections import defaultdict
         players_by_rank = defaultdict(list)
         for m in online_members:
             players_by_rank[m['rank']].append(m)
-        print(f"[online] grouped by rank       +{time.perf_counter()-start:.3f}s")
 
         # Base image
         img = Image.new('RGBA', (700, 90), color=(0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
-        print(f"[online] base image ready      +{time.perf_counter()-start:.3f}s")
 
         # Resources
         rank_star = Image.open('images/profile/rank_star.png')
         world_icon = Image.open('images/profile/world.png')
         world_icon.thumbnail((16, 16))
         bg_template = PlaceTemplate('images/profile/other.png')
-        print(f"[online] resources loaded      +{time.perf_counter()-start:.3f}s")
 
         # Header banner and titles with caching
         # sanitize guild name for filename
@@ -66,18 +59,15 @@ class Online(commands.Cog):
         cache_path = os.path.join(self.cache_dir, f"{safe_name}.png")
         if os.path.exists(cache_path):
             banner = Image.open(cache_path)
-            print(f"[online] loaded banner cache   +{time.perf_counter()-start:.3f}s")
         else:
             banner = generate_banner(guild_data.name, 2, style='2')
             if banner.mode != 'RGBA':
                 banner = banner.convert('RGBA')
             banner.save(cache_path)
-            print(f"[online] cached new banner     +{time.perf_counter()-start:.3f}s")
 
         # Paste banner using its alpha
         alpha = banner.split()[3]
         img.paste(banner, (10, 10), mask=alpha)
-        print(f"[online] banner pasted         +{time.perf_counter()-start:.3f}s")
 
         # Draw text headers
         game_font = ImageFont.truetype('images/profile/game.ttf', 19)
@@ -86,14 +76,12 @@ class Online(commands.Cog):
         addLine(f'&7{guild_data.prefix}', draw, game_font, 55, 10)
         addLine(f'&f{guild_data.name}', draw, guild_font, 55, 30)
         addLine(f'&f{len(online_members)}/{guild_data.members["total"]}', draw, game_font, 55, 70)
-        print(f"[online] header drawn          +{time.perf_counter()-start:.3f}s")
 
         # Draw players in descending rank order
-        for rank in rank_map:
+        for rank in reversed(rank_map):
             members = players_by_rank.get(rank, [])
             if not members:
                 continue
-            print(f"[online] drawing rank '{rank}'    +{time.perf_counter()-start:.3f}s")
 
             # Expand for rank header
             img, draw = expand_image(img, border=(0, 0, 0, 25), fill=(0, 0, 0, 0))
@@ -115,7 +103,6 @@ class Online(commands.Cog):
                 img.paste(world_icon, (x + 250, img.height - 26), world_icon)
                 img.paste(bg_template.divider, (x + 240, img.height - 34), bg_template.divider)
                 x += 345
-            print(f"[online] finished rank '{rank}'   +{time.perf_counter()-start:.3f}s")
 
         # Final wrap and send
         img, draw = expand_image(img, border=(0, 0, 0, 10), fill=(0, 0, 0, 0))
@@ -128,13 +115,11 @@ class Online(commands.Cog):
                           (img.height - bg_img.height) // 2),
                          bg_img.split()[3])
         background.paste(img, (0, 0), img)
-        print(f"[online] image assembled       +{time.perf_counter()-start:.3f}s")
 
         with BytesIO() as buffer:
             background.save(buffer, format='PNG')
             buffer.seek(0)
             await ctx.followup.send(file=discord.File(buffer, f'online_{int(time.time())}.png'))
-        print(f"[online] responded             +{time.perf_counter()-start:.3f}s")
 
     @commands.Cog.listener()
     async def on_ready(self):
