@@ -76,44 +76,72 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     game_font = ImageFont.truetype('images/profile/game.ttf', 19)
 
     # ---- Helpers
-    def aligned_cumulative_series(uuid: str, key: str) -> List[int]:
-        """Carry-forward cumulative value across every calendar day."""
-        series: List[int] = []
-        carry = 0
-        seen_any = False
-        for idx in range(num_days):
-            entry = by_uuid_day[uuid].get(idx)
-            if entry and key in entry:
-                carry = entry[key]
-                seen_any = True
-            series.append(carry if seen_any else 0)
-        return series
+    def get_cumulative_at_exact(uuid: str, key: str, day_idx: int):
+        """Return the cumulative value at the exact day index, or None if no entry."""
+        entry = by_uuid_day[uuid].get(day_idx)
+        if entry is None:
+            return None
+        return entry.get(key)
 
-    def aligned_perday_series(uuid: str, key: str) -> List[int]:
-        """For true per-day keys (not used now, but kept for completeness)."""
-        series: List[int] = []
-        for idx in range(num_days):
-            entry = by_uuid_day[uuid].get(idx)
-            series.append(entry.get(key, 0) if entry else 0)
-        return series
+    def get_latest_cumulative(uuid: str, key: str) -> int:
+        """Return the latest cumulative value (today). If never seen, return 0."""
+        latest_idx = num_days - 1
+        val = get_cumulative_at_exact(uuid, key, latest_idx)
+        return int(val) if isinstance(val, (int, float)) else 0
 
-    def to_daily_diffs(series: List[int]) -> List[int]:
-        diffs: List[int] = []
-        prev = 0
-        for v in series:
-            d = v - prev
-            diffs.append(d if d >= 0 else 0)
-            prev = v
-        return diffs
+    def cumulative_window_delta(uuid: str, key: str, window_days: int) -> (int, bool):
+        """
+        Delta over last `window_days` for cumulative counters.
+        - Start baseline search at (today - window_days), walk forward to find first seen value.
+        - contributed = max(latest - baseline, 0)
+        - If never appears in the window (or ever), contributed=0.
+        - warn=True when the baseline isn’t exactly at the window start (partial window / late joiner).
+        - If window_days <= 0 => All-Time: return latest.
+        """
+        latest_idx = num_days - 1
+        latest_val = get_cumulative_at_exact(uuid, key, latest_idx)
+        if latest_val is None:
+            ever_seen = any(get_cumulative_at_exact(uuid, key, i) is not None for i in range(num_days))
+            return (0, True) if not ever_seen else (0, True)
 
-    def sum_window(daily_series: List[int], window_days: int) -> (int, bool):
-        """Return (sum, warning). Warning=True if not enough calendar days to fill window."""
-        if not daily_series:
-            return 0, True
+        latest_val = int(latest_val)
+
         if window_days <= 0:
-            return sum(daily_series), False
-        warn = len(daily_series) < window_days  # should never happen with aligned series
-        return sum(daily_series[-window_days:]), warn
+            return max(latest_val, 0), False
+
+        start_idx = max(0, latest_idx - window_days)
+        baseline_val = None
+        baseline_found_at = None
+        for i in range(start_idx, latest_idx + 1):
+            v = get_cumulative_at_exact(uuid, key, i)
+            if v is not None:
+                baseline_val = int(v)
+                baseline_found_at = i
+                break
+
+        if baseline_val is None:
+            return 0, True
+
+        warn = baseline_found_at > start_idx
+        delta = latest_val - baseline_val
+        return (delta if delta > 0 else 0), warn
+
+    def perday_window_sum(uuid: str, key: str, window_days: int) -> (int, bool):
+        """
+        For true per-day keys: sum the last `window_days` (or all if window_days<=0).
+        Warn if there’s no data within the window span.
+        """
+        series = []
+        for idx in range(num_days):
+            entry = by_uuid_day[uuid].get(idx)
+            series.append(int(entry.get(key, 0)) if entry else 0)
+
+        if window_days <= 0:
+            return sum(series), False
+
+        start_idx = max(0, (num_days - 1) - window_days)
+        warn = not any(by_uuid_day[uuid].get(i) for i in range(start_idx, num_days))
+        return sum(series[-window_days:]), warn
 
     # ---- Build leaderboard rows (use latest snapshot membership for names)
     playerdata: List[Dict[str, Any]] = []
@@ -123,20 +151,17 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         api_rank = m.get('rank', 'unknown')
         rank = uuid_to_discord_rank.get(uuid, api_rank)
 
-        # Build a per-day series for the requested key
         if order_key in CUMULATIVE_KEYS:
-            cum = aligned_cumulative_series(uuid, order_key)
-            daily = to_daily_diffs(cum)
+            contributed, warning = cumulative_window_delta(uuid, order_key, days)
         else:
-            daily = aligned_perday_series(uuid, order_key)
+            contributed, warning = perday_window_sum(uuid, order_key, days)
 
-        contributed, warning = sum_window(daily, days)
         playerdata.append({
             'name': name,
             'uuid': uuid,
             'contributed': int(contributed),
             'rank': rank,
-            'warning': warning
+            'warning': bool(warning),
         })
 
     if not playerdata:
