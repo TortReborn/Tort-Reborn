@@ -47,7 +47,7 @@ def getPlayerData(name):
 def getPlayerDatav3(uuid):
     url = f'https://api.wynncraft.com/v3/player/{uuid}?fullResult'
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:

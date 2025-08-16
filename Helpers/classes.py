@@ -74,16 +74,28 @@ class PlayerStats:
 
         # player data
         pdata = getPlayerDatav3(self.UUID)
-        self.last_joined = parser.isoparse(pdata['lastJoin'])
+        test_last_joined = pdata['lastJoin']
+        if test_last_joined:
+            self.last_joined = parser.isoparse(test_last_joined)
+        else:
+            # TAq Creation Date
+            self.last_joined = parser.isoparse("2020-03-22T11:11:17.810000Z")
         self.characters = pdata['characters']
         self.online = pdata['online']
         self.server = pdata['server']
-        self.wars = pdata['globalData']['wars']
+        try:
+            self.wars = pdata['globalData']['wars']
+        except:
+            self.wars = 0
         self.playtime = pdata['playtime']
         self.rank = pdata['rank']
         # self.mobs = pdata['globalData']['killedMobs']
-        self.chests = pdata['globalData']['chestsFound']
-        self.quests = pdata['globalData']['completedQuests']
+        try:
+            self.chests = pdata['globalData']['chestsFound']
+            self.quests = pdata['globalData']['completedQuests']
+        except:
+            self.chests = 0
+            self.quests = 9
         self.background = 1
         self.backgrounds_owned = []
         self.gradient = ['#293786', '#1d275e']

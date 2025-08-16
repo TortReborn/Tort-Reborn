@@ -111,7 +111,7 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
         if not isinstance(pf, dict):
             continue
         username  = pf.get('username') or pf.get('name')
-        last_join = pf.get('lastJoin')
+        last_join = pf.get('lastJoin', "2020-03-22T11:11:17.810000Z")
         entry     = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
         snap['members'].append({
             'name':        username,
@@ -247,7 +247,7 @@ class UpdateMemberData(commands.Cog):
                 continue
 
             username  = pf.get('username') or pf.get('name')
-            last_join = pf.get('lastJoin')  # ISO8601 string
+            last_join = pf.get('lastJoin', "2020-03-22T11:11:17.810000Z")  # ISO8601 string
 
             entry      = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
             shells     = entry['shells']

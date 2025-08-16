@@ -73,7 +73,12 @@ class GuildLog(commands.Cog):
                 u_timenow = time.mktime(datetime.datetime.now().timetuple())
                 try:
                     playerdata = getPlayerDatav3(player['uuid'])
-                    lastjoined = dateutil.parser.isoparse(playerdata['lastJoin'])
+                    test_last_joined = playerdata['lastJoin']
+                    if test_last_joined:
+                        lastjoined = dateutil.parser.isoparse(test_last_joined)
+                    else:
+                        # TAq Creation Date
+                        lastjoined = dateutil.parser.isoparse("2020-03-22T11:11:17.810000Z")
                     lastseen = ' | Last seen **' + str(date_diff(lastjoined)) + '** days ago'
                 except:
                     lastseen = ''
