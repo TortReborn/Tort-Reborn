@@ -63,7 +63,10 @@ class AspectDistribution(commands.Cog):
             return 0.0
         recent = next((m.get("playtime",0) for m in data[0]["members"] if m["uuid"]==uuid),0)
         older = next((m.get("playtime",0) for m in data[min(7,len(data)-1)]["members"] if m["uuid"]==uuid),0)
-        return max(0.0, recent - older)
+        if recent and older:
+            return max(0.0, recent - older)
+        else:
+            return 0
 
     def rebuild_queue(self):
         dist = self.load_json(DISTRIBUTION_FILE, {"queue": [], "marker": 0})
