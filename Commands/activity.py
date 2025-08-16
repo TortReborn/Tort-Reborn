@@ -242,6 +242,10 @@ class Activity(commands.Cog):
 
             uuid = member.get('uuid')
             last_join_iso = member['lastJoin']
+            if not last_join_iso:
+                # TAq creation date
+                last_join_iso = "2020-03-22T11:11:17.810000Z"
+
             try:
                 days_since = date_diff(parser.isoparse(last_join_iso))
             except Exception:
