@@ -1,5 +1,5 @@
 import time
-import json
+import os
 from io import BytesIO
 
 import discord
@@ -9,116 +9,132 @@ from discord.commands import slash_command
 
 from Helpers.classes import PlaceTemplate, Guild
 from Helpers.variables import rank_map
-from Helpers.functions import getOnlinePlayers, getOnlinePlayersUUID, getUsernameFromUUID, addLine, generate_banner, expand_image
+from Helpers.functions import addLine, generate_banner, expand_image
 
 
 class Online(commands.Cog):
     def __init__(self, client):
         self.client = client
+        # Ensure cache directory exists
+        self.cache_dir = os.path.join(os.getcwd(), 'banner_cache')
+        os.makedirs(self.cache_dir, exist_ok=True)
 
     @slash_command(description='Sends a list of online guild members')
-    async def online(self, message, guild: discord.Option(str, required=True)):
-        await message.defer()
+    async def online(self, ctx: discord.ApplicationContext, guild: discord.Option(str, required=True)):
+        start = time.perf_counter()
+        await ctx.defer()
+        print(f"[online] deferred             +{time.perf_counter()-start:.3f}s")
         try:
             guild_data = Guild(guild)
-        except:
-            embed = discord.Embed(title=':no_entry: Something went wrong',
-                                  description=f'Wasn\'t able to retrieve data for {guild}.', color=0xe33232)
-            await message.respond(embed=embed, ephemeral=True)
+        except Exception:
+            print(f"[online] Guild() failed        +{time.perf_counter()-start:.3f}s")
+            embed = discord.Embed(
+                title=':no_entry: Something went wrong',
+                description=f'Wasn\'t able to retrieve data for {guild}.',
+                color=0xe33232
+            )
+            await ctx.followup.send(embed=embed, ephemeral=True)
             return
+        print(f"[online] Guild() done          +{time.perf_counter()-start:.3f}s")
 
-        # Build the online player lists (UUID-based primary, username fallback)
-        uuid_map = getOnlinePlayersUUID()
-        name_map_raw = getOnlinePlayers()
-        name_map = {n.lower(): s for n, s in name_map_raw.items()}
+        # Filter only online members
+        online_members = [m for m in guild_data.all_members if m.get('online')]
+        print(f"[online] filtered members      +{time.perf_counter()-start:.3f}s ({len(online_members)} online)")
 
-        members = []
-        for member in guild_data.all_members:
-            server = None
+        # Group by rank
+        from collections import defaultdict
+        players_by_rank = defaultdict(list)
+        for m in online_members:
+            players_by_rank[m['rank']].append(m)
+        print(f"[online] grouped by rank       +{time.perf_counter()-start:.3f}s")
 
-            # Prefer UUID match (handles username changes)
-            member_uuid = member.get('uuid')
-            if member_uuid:
-                server = uuid_map.get(member_uuid.lower())
+        # Base image
+        img = Image.new('RGBA', (700, 90), color=(0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        print(f"[online] base image ready      +{time.perf_counter()-start:.3f}s")
 
-            # Fallback to username lookup if UUID missing or not found
-            if not server:
-                server = name_map.get(member['name'].lower())
-
-            if server:
-                # Fetch up-to-date IGN from Mojang (if different)
-                latest_name = None
-                if member_uuid:
-                    latest_name = getUsernameFromUUID(member_uuid)
-
-                display_name = latest_name if latest_name else member['name']
-
-                member['online'] = True
-                member['server'] = server
-                member['display_name'] = display_name
-                members.append(member)
-
-        # Accurate online count
-        guild_online_count = len(members)
-
-        img = Image.new('RGBA', (700, 90), color='#00000000')
-        d = ImageDraw.Draw(img)
-        d.fontmode = '1'
+        # Resources
         rank_star = Image.open('images/profile/rank_star.png')
-        gameFont = ImageFont.truetype('images/profile/game.ttf', 19)
-        guildFont = ImageFont.truetype('images/profile/game.ttf', 38)
-        titleFont = ImageFont.truetype('images/profile/5x5.ttf', 20)
         world_icon = Image.open('images/profile/world.png')
         world_icon.thumbnail((16, 16))
-        bg = PlaceTemplate('images/profile/other.png')
-        banner = generate_banner(guild_data.name, 2, style='2')
-        img.paste(banner, (10, 10))
-        addLine('&7' + guild_data.prefix, d, gameFont, 55, 10)
-        addLine('&f' + guild_data.name, d, guildFont, 55, 30)
-        player_data = {'owner': [], 'chief': [], 'strategist': [], 'captain': [], 'recruiter': [], 'recruit': []}
+        bg_template = PlaceTemplate('images/profile/other.png')
+        print(f"[online] resources loaded      +{time.perf_counter()-start:.3f}s")
 
-        for player in members:
-            pname = player.get('display_name', player['name'])
-            player_data[player['rank']].append({'name': pname, 'WC': player['server']})
+        # Header banner and titles with caching
+        # sanitize guild name for filename
+        safe_name = ''.join(c for c in guild_data.name if c.isalnum() or c in (' ', '_')).rstrip()
+        cache_path = os.path.join(self.cache_dir, f"{safe_name}.png")
+        if os.path.exists(cache_path):
+            banner = Image.open(cache_path)
+            print(f"[online] loaded banner cache   +{time.perf_counter()-start:.3f}s")
+        else:
+            banner = generate_banner(guild_data.name, 2, style='2')
+            if banner.mode != 'RGBA':
+                banner = banner.convert('RGBA')
+            banner.save(cache_path)
+            print(f"[online] cached new banner     +{time.perf_counter()-start:.3f}s")
 
-        addLine(f'&f{guild_online_count}/{guild_data.members["total"]}', d, gameFont, 55, 70)
+        # Paste banner using its alpha
+        alpha = banner.split()[3]
+        img.paste(banner, (10, 10), mask=alpha)
+        print(f"[online] banner pasted         +{time.perf_counter()-start:.3f}s")
 
-        for rank in player_data:
-            if player_data[rank]:
-                x = 700
-                img, d = expand_image(img, border=(0, 0, 0, 25), fill='#00000000')
-                for s in range(len(rank_map[rank])):
-                    img.paste(rank_star, (10 + (s * 12), img.height - 14), rank_star)
-                addLine('&f' + rank + 'S' if rank != 'OWNER' else '&f' + rank, d, titleFont,
-                        10 + len(rank_map[rank]) * 12 + (5 if rank != 'RECRUIT' else 0), img.height - 22)
-                for player in player_data[rank]:
-                    if x == 700:
-                        img, d = expand_image(img, border=(0, 0, 0, 36), fill='#00000000')
-                        x = 10
-                    bg.add(img, 335, (x, img.height - 34), True)
-                    addLine('&f'+player['name'], d, gameFont, x + 10, img.height - 28)
-                    _, _, w, h = d.textbbox((0, 0), player['WC'], font=gameFont)
-                    addLine('&f' + player['WC'], d, gameFont, x + 325 - w, img.height - 28)
-                    img.paste(world_icon, (x + 250, img.height - 26), world_icon)
-                    img.paste(bg.divider, (x + 240, img.height - 34), bg.divider)
-                    x += 345
+        # Draw text headers
+        game_font = ImageFont.truetype('images/profile/game.ttf', 19)
+        guild_font = ImageFont.truetype('images/profile/game.ttf', 38)
+        title_font = ImageFont.truetype('images/profile/5x5.ttf', 20)
+        addLine(f'&7{guild_data.prefix}', draw, game_font, 55, 10)
+        addLine(f'&f{guild_data.name}', draw, guild_font, 55, 30)
+        addLine(f'&f{len(online_members)}/{guild_data.members["total"]}', draw, game_font, 55, 70)
+        print(f"[online] header drawn          +{time.perf_counter()-start:.3f}s")
 
-        img, d = expand_image(img, border=(0, 0, 0, 10), fill='#00000000')
+        # Draw players in descending rank order
+        for rank in rank_map:
+            members = players_by_rank.get(rank, [])
+            if not members:
+                continue
+            print(f"[online] drawing rank '{rank}'    +{time.perf_counter()-start:.3f}s")
 
-        background = Image.new('RGBA', (img.width, img.height), color='#00000000')
+            # Expand for rank header
+            img, draw = expand_image(img, border=(0, 0, 0, 25), fill=(0, 0, 0, 0))
+            for i in range(len(rank_map[rank])):
+                img.paste(rank_star, (10 + i * 12, img.height - 14), rank_star)
+            label = rank if rank == 'OWNER' else f'{rank}S'
+            addLine(f'&f{label}', draw, title_font,
+                    10 + len(rank_map[rank]) * 12 + (5 if rank != 'RECRUIT' else 0),
+                    img.height - 22)
+
+            # Expand and draw each member
+            x = 10
+            img, draw = expand_image(img, border=(0, 0, 0, 36), fill=(0, 0, 0, 0))
+            for m in members:
+                bg_template.add(img, 335, (x, img.height - 34), True)
+                addLine(f'&f{m["name"]}', draw, game_font, x + 10, img.height - 28)
+                _, _, w, _ = draw.textbbox((0, 0), m.get('server', 'N/A'), font=game_font)
+                addLine(f'&f{m.get("server", "N/A")}', draw, game_font, x + 325 - w, img.height - 28)
+                img.paste(world_icon, (x + 250, img.height - 26), world_icon)
+                img.paste(bg_template.divider, (x + 240, img.height - 34), bg_template.divider)
+                x += 345
+            print(f"[online] finished rank '{rank}'   +{time.perf_counter()-start:.3f}s")
+
+        # Final wrap and send
+        img, draw = expand_image(img, border=(0, 0, 0, 10), fill=(0, 0, 0, 0))
+        background = Image.new('RGBA', (img.width, img.height), color=(0, 0, 0, 0))
         bg_img = Image.open('images/profile/leaderboard_bg.png')
+        if bg_img.mode != 'RGBA':
+            bg_img = bg_img.convert('RGBA')
         background.paste(bg_img,
-                         (int(img.width / 2) - int(bg_img.width / 2),
-                          int(img.height / 2) - int(bg_img.height / 2)))
+                         ((img.width - bg_img.width) // 2,
+                          (img.height - bg_img.height) // 2),
+                         bg_img.split()[3])
         background.paste(img, (0, 0), img)
+        print(f"[online] image assembled       +{time.perf_counter()-start:.3f}s")
 
-        with BytesIO() as file:
-            background.save(file, format="PNG")
-            file.seek(0)
-            t = int(time.time())
-            profile_card = discord.File(file, filename=f"profile{t}.png")
-
-        await message.respond(file=profile_card)
+        with BytesIO() as buffer:
+            background.save(buffer, format='PNG')
+            buffer.seek(0)
+            await ctx.followup.send(file=discord.File(buffer, f'online_{int(time.time())}.png'))
+        print(f"[online] responded             +{time.perf_counter()-start:.3f}s")
 
     @commands.Cog.listener()
     async def on_ready(self):
