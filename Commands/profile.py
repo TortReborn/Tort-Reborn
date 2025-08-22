@@ -120,37 +120,6 @@ class Profile(commands.Cog):
             banner.thumbnail((157, 157))
             card.paste(banner, (41, 562))
 
-        def debug_missing_player_fields(player):
-            checks = {
-                "stats_days": lambda p: getattr(p, "stats_days", None),
-                "in_guild_for.days": lambda p: getattr(getattr(p, "in_guild_for", None), "days", None),
-                "taq": lambda p: getattr(p, "taq", None),
-                "real_pt": lambda p: getattr(p, "real_pt", None),
-                "real_wars": lambda p: getattr(p, "real_wars", None),
-                "real_xp": lambda p: getattr(p, "real_xp", None),
-                "guild_raids": lambda p: getattr(p, "guild_raids", None),
-                "real_raids": lambda p: getattr(p, "real_raids", None),
-                "guild": lambda p: getattr(p, "guild", None),
-                "guild_contributed": lambda p: getattr(p, "guild_contributed", None),
-                "wars": lambda p: getattr(p, "wars", None),
-                "chests": lambda p: getattr(p, "chests", None),
-                "quests": lambda p: getattr(p, "quests", None),
-                "playtime": lambda p: getattr(p, "playtime", None),
-                "last_joined": lambda p: getattr(p, "last_joined", None),
-                "server": lambda p: getattr(p, "server", None),
-                "gradient": lambda p: getattr(p, "gradient", None),
-                "tag_color": lambda p: getattr(p, "tag_color", None),
-            }
-            print("=== Player field diagnostics ===")
-            for k, fn in checks.items():
-                try:
-                    v = fn(player)
-                    print(f"{k}: {type(v).__name__} -> {v}")
-                except Exception as e:
-                    print(f"{k}: <error {e.__class__.__name__}: {e}>")
-
-        debug_missing_player_fields(player)
-
         # Build out data to place in boxes
         card_entries = {}
         try:

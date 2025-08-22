@@ -92,17 +92,34 @@ class Online(commands.Cog):
                     10 + len(rank_map[rank]) * 12 + (5 if rank != 'RECRUIT' else 0),
                     img.height - 22)
 
-            # Expand and draw each member
+            # Expand for the first row of member cards
             x = 10
-            img, draw = expand_image(img, border=(0, 0, 0, 36), fill=(0, 0, 0, 0))
+            card_w = 335
+            gutter = 10
+            row_h = 36
+
+            img, draw = expand_image(img, border=(0, 0, 0, row_h), fill=(0, 0, 0, 0))
+
             for m in members:
-                bg_template.add(img, 335, (x, img.height - 34), True)
-                addLine(f'&f{m["name"]}', draw, game_font, x + 10, img.height - 28)
+                # If this card would overflow horizontally, wrap: new row
+                if x + card_w + gutter > img.width:
+                    x = 10
+                    img, draw = expand_image(img, border=(0, 0, 0, row_h), fill=(0, 0, 0, 0))
+
+                # y depends on current bottom row
+                y = img.height - row_h + 2  # +2 to center vertically in your 32px template row
+
+                bg_template.add(img, card_w, (x, y), True)
+                addLine(f'&f{m["name"]}', draw, game_font, x + 10, y + 6)
+
+                # right-align server tag inside the card
                 _, _, w, _ = draw.textbbox((0, 0), m.get('server', 'N/A'), font=game_font)
-                addLine(f'&f{m.get("server", "N/A")}', draw, game_font, x + 325 - w, img.height - 28)
-                img.paste(world_icon, (x + 250, img.height - 26), world_icon)
-                img.paste(bg_template.divider, (x + 240, img.height - 34), bg_template.divider)
-                x += 345
+                addLine(f'&f{m.get("server", "N/A")}', draw, game_font, x + card_w - 10 - w, y + 6)
+
+                img.paste(world_icon, (x + 250, y + 8), world_icon)
+                img.paste(bg_template.divider, (x + 240, y), bg_template.divider)
+
+                x += card_w + gutter
 
         # Final wrap and send
         img, draw = expand_image(img, border=(0, 0, 0, 10), fill=(0, 0, 0, 0))
