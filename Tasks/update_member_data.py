@@ -521,19 +521,12 @@ class UpdateMemberData(commands.Cog):
             })
 
         # 3: write out json, keeping only last 60 days
-        try:
-            # Reuse `old` from the guard if available; otherwise reload
-            if 'old' not in locals():
-                old = self._load_json(pth, [])
-            old.insert(0, snap)
-            # enforce 60 most recent snapshots (optional but matches the comment)
-            if len(old) > 60:
-                old = old[:60]
-            with open(pth, 'w') as f:
-                json.dump(old, f, indent=2)
-        finally:
-            db.close()
-
+        pth = "player_activity.json"
+        old = self._load_json(pth, [])
+        old.insert(0, snap)
+        with open(pth, 'w') as f:
+            json.dump(old, f, indent=2)
+        db.close()
         print("Daily activity snapshot complete", flush=True)
     
     @update_member_data.before_loop
