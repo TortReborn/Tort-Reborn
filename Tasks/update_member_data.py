@@ -451,6 +451,24 @@ class UpdateMemberData(commands.Cog):
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
     async def daily_activity_snapshot(self):
         print("Starting daily activity snapshot", flush=True)
+
+        # --- Guard: ensure only one snapshot per UTC day (most-recent-first file) ---
+        pth = "player_activity.json"
+        today_utc = datetime.datetime.now(timezone.utc).date()
+        try:
+            old = self._load_json(pth, [])
+            if old:
+                last_ts = old[0].get("time")
+                if isinstance(last_ts, (int, float)):
+                    last_date = datetime.datetime.fromtimestamp(last_ts, tz=timezone.utc).date()
+                    if last_date == today_utc:
+                        print("Daily snapshot already exists for today; skipping duplicate.", flush=True)
+                        return
+        except Exception:
+            traceback.print_exc()
+            # If the file is malformed, proceed to write a fresh snapshot below.
+
+        # --- Build snapshot (unchanged) ---
         db = DB(); db.connect()
         guild = Guild("The Aquarium")
         snap = {'time': int(time.time()), 'members': []}
@@ -503,14 +521,21 @@ class UpdateMemberData(commands.Cog):
             })
 
         # 3: write out json, keeping only last 60 days
-        pth = "player_activity.json"
-        old = self._load_json(pth, [])
-        old.insert(0, snap)
-        with open(pth, 'w') as f:
-            json.dump(old, f, indent=2)
-        db.close()
-        print("Daily activity snapshot complete", flush=True)
+        try:
+            # Reuse `old` from the guard if available; otherwise reload
+            if 'old' not in locals():
+                old = self._load_json(pth, [])
+            old.insert(0, snap)
+            # enforce 60 most recent snapshots (optional but matches the comment)
+            if len(old) > 60:
+                old = old[:60]
+            with open(pth, 'w') as f:
+                json.dump(old, f, indent=2)
+        finally:
+            db.close()
 
+        print("Daily activity snapshot complete", flush=True)
+    
     @update_member_data.before_loop
     async def before_update(self):
         await self.client.wait_until_ready()
