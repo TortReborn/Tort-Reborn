@@ -520,7 +520,7 @@ class UpdateMemberData(commands.Cog):
                 'raids': rd
             })
 
-        # 3: write out json, keeping only last 60 days
+        # 3: write out json
         pth = "player_activity.json"
         old = self._load_json(pth, [])
         old.insert(0, snap)
