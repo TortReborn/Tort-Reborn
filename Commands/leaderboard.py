@@ -19,51 +19,74 @@ from Helpers.variables import rank_map, discord_ranks
 # ============================
 
 def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7) -> pages.Paginator:
-    """Build a paginator filled with leaderboard images for a given metric.
+    """
+    Build a paginator filled with leaderboard images for a given metric.
+
+    Inclusive window rule (most-recent-first snapshots):
+      - For a W-day window, baseline is the (W+1)-th most recent snapshot => index = W.
+      - Value = current_activity (live) - baseline_snapshot (with fallback toward newer indices).
+      - If a member never appears in any snapshot up to index 0, use baseline=current to yield 0 and warn.
 
     Args:
         order_key: key in each member record (e.g. 'contributed', 'wars', 'playtime', 'shells', 'raids')
         key_icon: path to the 16x16-ish icon image used next to the numeric stat
         header:   path to the title image pasted at the top of the page
-        days:     last N calendar days to sum (<=0 => all-time)
+        days:     last N calendar days to sum (<=0 => all-time, i.e., current totals)
     Returns:
         discord.ext.pages.Paginator instance ready to respond.
     """
     from collections import defaultdict
 
-    # Keys that are cumulative in player_activity.json and should be turned into per-day via diff
+    # Keys that are cumulative in our snapshots and should use (current - baseline)
     CUMULATIVE_KEYS = {"contributed", "wars", "playtime", "shells", "raids"}
 
-    book: List[Page] = []
+    # ---------------------------
+    # Load data files
+    # ---------------------------
+    try:
+        with open('current_activity.json', 'r', encoding='utf-8') as f:
+            current_data = json.load(f)
+    except Exception:
+        return pages.Paginator(pages=[Page(content='No current activity available.')])
 
-    # ---- Load & sort activity history (oldest -> newest)
-    with open('player_activity.json', 'r') as f:
-        all_days_data: List[Dict[str, Any]] = json.load(f)
-    if not all_days_data:
-        return pages.Paginator(pages=[Page(content='No data available.')])
+    try:
+        with open('player_activity.json', 'r', encoding='utf-8') as f:
+            activity_days_mrf: List[Dict[str, Any]] = json.load(f)  # most recent first
+    except Exception:
+        # If we can't read historical snapshots, we can still render a "live now" leaderboard
+        activity_days_mrf = []
 
-    all_days_data.sort(key=lambda x: x['time'])
-    num_days = len(all_days_data)
+    if not isinstance(current_data, dict) or not current_data.get('members'):
+        return pages.Paginator(pages=[Page(content='No current activity members found.')])
 
-    # ---- Build fast index: for each day index, map uuid -> member dict
-    by_uuid_day: Dict[str, Dict[int, Dict[str, Any]]] = defaultdict(dict)
-    uuids_seen_latest: List[str] = []
+    # Most-recent-first count
+    num_snapshots = len(activity_days_mrf)
 
-    for day_idx, day in enumerate(all_days_data):
+    # Fast index for historical snapshots: at each snapshot index (most recent first),
+    # map uuid -> the member dict in that snapshot
+    hist_by_uuid_at: List[Dict[str, Dict[str, Any]]] = []
+    for day in activity_days_mrf:
+        idx_map: Dict[str, Dict[str, Any]] = {}
         for m in day.get('members', []):
-            by_uuid_day[m['uuid']][day_idx] = m
-    # We keep the leaderboard membership aligned to the latest snapshot (like your original code)
-    latest_members = all_days_data[-1].get('members', [])
-    uuids_seen_latest = [m['uuid'] for m in latest_members]
+            idx_map[m['uuid']] = m
+        hist_by_uuid_at.append(idx_map)
 
-    # ---- DB: discord ranks overlay (stars)
+    # Current/live membership is source of truth for "who to list" and "names"
+    current_members = current_data.get('members', [])
+    current_by_uuid = {m['uuid']: m for m in current_members}
+
+    # ---------------------------
+    # DB: discord ranks overlay (stars)
+    # ---------------------------
     db = DB()
     db.connect()
     db.cursor.execute("SELECT uuid, rank FROM discord_links")
     uuid_to_discord_rank: Dict[str, str] = {row[0]: row[1] for row in db.cursor.fetchall()}
     db.close()
 
-    # ---- Assets
+    # ---------------------------
+    # Assets
+    # ---------------------------
     bg1 = PlaceTemplate('images/profile/first.png')
     bg2 = PlaceTemplate('images/profile/second.png')
     bg3 = PlaceTemplate('images/profile/third.png')
@@ -75,115 +98,142 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     icon.thumbnail((16, 16))
     game_font = ImageFont.truetype('images/profile/game.ttf', 19)
 
-    # ---- Helpers
-    def get_cumulative_at_exact(uuid: str, key: str, day_idx: int):
-        """Return the cumulative value at the exact day index, or None if no entry."""
-        entry = by_uuid_day[uuid].get(day_idx)
-        if entry is None:
-            return None
-        return entry.get(key)
+    # ---------------------------
+    # Helpers
+    # ---------------------------
+    def get_current_value(uuid: str, key: str) -> int:
+        """Return the current live cumulative value for the uuid/key from current_activity.json."""
+        m = current_by_uuid.get(uuid)
+        if not m:
+            return 0
+        v = m.get(key)
+        try:
+            return int(v) if isinstance(v, (int, float)) else int(v or 0)
+        except Exception:
+            return 0
 
-    def get_latest_cumulative(uuid: str, key: str) -> int:
-        """Return the latest cumulative value (today). If never seen, return 0."""
-        latest_idx = num_days - 1
-        val = get_cumulative_at_exact(uuid, key, latest_idx)
-        return int(val) if isinstance(val, (int, float)) else 0
-
-    def cumulative_window_delta(uuid: str, key: str, window_days: int) -> (int, bool):
+    def find_baseline_value(uuid: str, key: str, window_days: int) -> (int, bool):
         """
-        Delta over last `window_days` for cumulative counters.
-        - Start baseline search at (today - window_days), walk forward to find first seen value.
-        - contributed = max(latest - baseline, 0)
-        - If never appears in the window (or ever), contributed=0.
-        - warn=True when the baseline isn’t exactly at the window start (partial window / late joiner).
-        - If window_days <= 0 => All-Time: return latest.
+        For cumulative keys:
+          - If window_days <= 0: all-time -> baseline = 0, warn=False
+          - Else baseline_idx = window_days (W), i.e., the (W+1)-th most recent snapshot.
+          - If uuid missing at baseline_idx, walk toward newer snapshots (W-1, W-2, ..., 0).
+          - If never appears, use baseline=current to force delta 0 and warn=True.
+        Returns (baseline_value, warn_flag).
         """
-        latest_idx = num_days - 1
-        latest_val = get_cumulative_at_exact(uuid, key, latest_idx)
-        if latest_val is None:
-            ever_seen = any(get_cumulative_at_exact(uuid, key, i) is not None for i in range(num_days))
-            return (0, True) if not ever_seen else (0, True)
+        if window_days <= 0 or num_snapshots == 0:
+            return 0, False
 
-        latest_val = int(latest_val)
+        baseline_idx = min(window_days, num_snapshots - 1)  # clamp in case we have fewer than W+1 snapshots
+        warn = False
+
+        # Try baseline at W
+        hist_map = hist_by_uuid_at[baseline_idx]
+        entry = hist_map.get(uuid)
+        if entry is not None:
+            try:
+                return int(entry.get(key) or 0), False
+            except Exception:
+                return 0, True  # malformed value -> treat as 0 and warn
+
+        # Fallback: walk toward the present (W-1 ... 0)
+        for i in range(baseline_idx - 1, -1, -1):
+            e = hist_by_uuid_at[i].get(uuid)
+            if e is not None:
+                warn = True
+                try:
+                    return int(e.get(key) or 0), True
+                except Exception:
+                    return 0, True
+
+        # Never seen in any of the snapshots -> baseline=current (delta=0) and warn
+        current_val = get_current_value(uuid, key)
+        return current_val, True
+
+    def perday_sum_inclusive(uuid: str, key: str, window_days: int) -> (int, bool):
+        """
+        For genuinely per-day keys (not in CUMULATIVE_KEYS), sum the most-recent-first
+        slice [0 .. window_days] inclusive of today-so-far semantics:
+          - If window_days <= 0: sum all available per-day entries across snapshots.
+          - If a member is missing in parts of the span, treat missing as 0 and warn.
+        """
+        if num_snapshots == 0:
+            # No history -> try current only
+            return get_current_value(uuid, key), True
 
         if window_days <= 0:
-            return max(latest_val, 0), False
+            end_idx = num_snapshots - 1
+        else:
+            end_idx = min(window_days, num_snapshots - 1)
 
-        start_idx = max(0, latest_idx - window_days)
-        baseline_val = None
-        baseline_found_at = None
-        for i in range(start_idx, latest_idx + 1):
-            v = get_cumulative_at_exact(uuid, key, i)
-            if v is not None:
-                baseline_val = int(v)
-                baseline_found_at = i
-                break
+        total = 0
+        warn = False
+        for i in range(0, end_idx + 1):
+            entry = hist_by_uuid_at[i].get(uuid)
+            if entry is None:
+                warn = True
+                continue
+            try:
+                total += int(entry.get(key) or 0)
+            except Exception:
+                warn = True
+        return total, warn
 
-        if baseline_val is None:
-            return 0, True
+    # ---------------------------
+    # Build leaderboard rows using CURRENT membership
+    # ---------------------------
+    player_rows: List[Dict[str, Any]] = []
 
-        warn = baseline_found_at > start_idx
-        delta = latest_val - baseline_val
-        return (delta if delta > 0 else 0), warn
-
-    def perday_window_sum(uuid: str, key: str, window_days: int) -> (int, bool):
-        """
-        For true per-day keys: sum the last `window_days` (or all if window_days<=0).
-        Warn if there’s no data within the window span.
-        """
-        series = []
-        for idx in range(num_days):
-            entry = by_uuid_day[uuid].get(idx)
-            series.append(int(entry.get(key, 0)) if entry else 0)
-
-        if window_days <= 0:
-            return sum(series), False
-
-        start_idx = max(0, (num_days - 1) - window_days)
-        warn = not any(by_uuid_day[uuid].get(i) for i in range(start_idx, num_days))
-        return sum(series[-window_days:]), warn
-
-    # ---- Build leaderboard rows (use latest snapshot membership for names)
-    playerdata: List[Dict[str, Any]] = []
-    for m in latest_members:
+    for m in current_members:
         uuid = m['uuid']
-        name = m.get('name', 'Unknown')
+        name = m.get('name') or m.get('username') or 'Unknown'
         api_rank = m.get('rank', 'unknown')
         rank = uuid_to_discord_rank.get(uuid, api_rank)
 
         if order_key in CUMULATIVE_KEYS:
-            contributed, warning = cumulative_window_delta(uuid, order_key, days)
+            curr_val = get_current_value(uuid, order_key)
+            base_val, warn_flag = find_baseline_value(uuid, order_key, days)
+            contributed = curr_val - base_val
+            if contributed < 0:
+                # In case of data resets or rollbacks, never show negatives
+                contributed = 0
+                warn_flag = True
         else:
-            contributed, warning = perday_window_sum(uuid, order_key, days)
+            # Per-day style metrics (if you ever add them)
+            contributed, warn_flag = perday_sum_inclusive(uuid, order_key, days)
 
-        playerdata.append({
+        player_rows.append({
             'name': name,
             'uuid': uuid,
             'contributed': int(contributed),
             'rank': rank,
-            'warning': bool(warning),
+            'warning': bool(warn_flag),
         })
 
-    if not playerdata:
+    # Nothing to show?
+    if not player_rows:
         return pages.Paginator(pages=[Page(content='No data available.')])
 
-    # ---- Sort & paginate
-    playerdata.sort(key=lambda x: x['contributed'], reverse=True)
-    total_pages = math.ceil(len(playerdata) / 10)
+    # ---------------------------
+    # Sort & paginate
+    # ---------------------------
+    player_rows.sort(key=lambda x: x['contributed'], reverse=True)
+    total_pages = math.ceil(len(player_rows) / 10)
     rank_counter = 1
     widest = 0
+    book: List[Page] = []
 
     for page_index in range(total_pages):
         img = Image.new('RGBA', (560, 0), color='#00000000')
         draw = ImageDraw.Draw(img)
         draw.fontmode = '1'
 
-        page_chunk = playerdata[page_index * 10:(page_index + 1) * 10]
+        page_chunk = player_rows[page_index * 10:(page_index + 1) * 10]
         for row_idx, player in enumerate(page_chunk):
             img, draw = expand_image(img, border=(0, 0, 0, 36), fill='#00000000')
             bg_color = [bg1, bg2, bg3][rank_counter - 1] if rank_counter <= 3 else bg_other
 
-            # Warning icon if we didn't have N full calendar days (rare with aligned series, but kept)
+            # Warning icon for partial window/late join/missing baseline
             if player['warning']:
                 img.paste(warning_icon, (img.width - 24, row_idx * 36 + 11), warning_icon)
 
