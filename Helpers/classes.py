@@ -35,6 +35,7 @@ class Guild:
         self.territories = guild_data['territories']
         self.wars = guild_data['wars']
         self.created = guild_data['created']
+        self.banner = guild_data.get('banner')
 
         self.members = guild_data['members']
 

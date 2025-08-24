@@ -848,3 +848,53 @@ def getUsernameFromUUID(uuid: str) -> str | None:
         print(f"Mojang lookup failed for {uuid}: {e}")
 
     return None
+
+# Online Tab Stuff
+
+def get_guild_color(guild_data):
+    """Extract the primary guild color from banner data."""
+    try:
+        guild_banner = guild_data['banner']
+        if guild_banner['base'] in ['BLACK', 'GRAY', 'BROWN']:
+            for layer in guild_banner['layers']:
+                if layer['colour'] not in ['BLACK', 'GRAY', 'BROWN']:
+                    guild_colour = layer['colour']
+                    break
+                else:
+                    guild_colour = "WHITE"
+        else:
+            guild_colour = guild_banner['base']
+    except:
+        guild_colour = "WHITE"
+    
+    # Convert to hex color
+    return '#{:02x}{:02x}{:02x}'.format(*minecraft_banner_colors[guild_colour])
+
+
+def create_guild_level_progress_bar(level, xp_percent, width=200, height=20, guild_color='#4287f5'):
+    """Create a progress bar showing XP percentage."""
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Background (dark gray)
+    draw.rounded_rectangle([(0, 0), (width, height)], radius=height//2, fill='#2c2c2c')
+    
+    # Progress fill
+    progress_width = int((width - 4) * (xp_percent / 100))
+    if progress_width > 0:
+        draw.rounded_rectangle([(2, 2), (progress_width + 2, height - 2)], 
+                              radius=(height-4)//2, fill=guild_color)
+    
+    return img
+
+def get_rank_stars(rank):
+    """Get the number of stars for a given rank."""
+    star_count = {
+        'owner': 5,
+        'chief': 4,
+        'strategist': 3,
+        'captain': 2,
+        'recruiter': 1,
+        'recruit': 0
+    }
+    return star_count.get(rank.lower(), 0)
