@@ -1,38 +1,57 @@
-import json
+import asyncio
 import discord
 from discord import Embed
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import member_app_channel
 
-class OnGuildChannelUpdate(commands.Cog):
-    def __init__(self, client):
-        self.client = client
+STATUS_COLOURS = {
+    ":green_circle: Opened": 0x3ED63E,
+    ":hourglass: In Queue":  0xFFE019,
+    ":hourglass: Invited":   0xFFE019,
+}
 
-    @commands.Cog.listener()
-    async def on_guild_channel_update(self, before: discord.TextChannel, after: discord.TextChannel):
-        db = DB()
+def _db_fetch_row(channel_id: int):
+    """Blocking DB: fetch row for channel."""
+    db = DB()
+    try:
         db.connect()
         db.cursor.execute(
             """
-            SELECT channel, ticket, status
+            SELECT channel, ticket, status, thread_id
               FROM new_app
              WHERE channel = %s
             """,
-            (before.id,)
+            (channel_id,)
         )
-        row = db.cursor.fetchone()
-        if not row:
-            db.close()
-            return
+        return db.cursor.fetchone()
+    finally:
+        db.close()
 
-        exec_chan = self.client.get_channel(member_app_channel)
-        if not exec_chan:
-            print(f"🚨 Exec channel {member_app_channel} not found")
-            db.close()
-            return
+def _db_update_status(channel_id: int, new_status: str):
+    """Blocking DB: update status."""
+    db = DB()
+    try:
+        db.connect()
+        db.cursor.execute(
+            "UPDATE new_app SET status = %s WHERE channel = %s",
+            (new_status, channel_id)
+        )
+        db.connection.commit()
+    finally:
+        db.close()
 
+
+class OnGuildChannelUpdate(commands.Cog):
+    def __init__(self, client: discord.Client):
+        self.client = client
+        self._queue = asyncio.Queue()
+        self._worker_task: asyncio.Task | None = None
+
+    # -------------- event -> enqueue fast --------------
+    @commands.Cog.listener()
+    async def on_guild_channel_update(self, before: discord.TextChannel, after: discord.TextChannel):
+        # Compute status quickly on loop (pure CPU, trivial)
         if after.category and after.category.name == "Guild Queue":
             new_status = ":hourglass: In Queue"
         elif after.category and after.category.name == "Invited":
@@ -53,34 +72,77 @@ class OnGuildChannelUpdate(commands.Cog):
                 case other:
                     new_status = other.capitalize()
 
-        if new_status in (":hourglass: In Queue", ":hourglass: Invited"):
-            colour = 0xFFE019
-        elif new_status != ":green_circle: Opened":
-            colour = 0xD93232
-        else:
-            colour = 0x3ED63E
-
-        db.cursor.execute(
-            "UPDATE new_app SET status = %s WHERE channel = %s",
-            (new_status, before.id)
+        colour = STATUS_COLOURS.get(
+            new_status,
+            0xD93232 if new_status != ":green_circle: Opened" else 0x3ED63E
         )
-        db.connection.commit()
-        db.close()
 
-        ticket_str = row[1].replace("ticket-", "")
-        embed = Embed(
-            title=f"Application {ticket_str}",
-            description="Status updated — please review below:",
-            colour=colour,
-        )
-        embed.add_field(name="Channel", value=f"<#{before.id}>", inline=True)
-        embed.add_field(name="Status",  value=new_status, inline=True)
+        # Enqueue work so we return ASAP (avoids heartbeat starvation)
+        await self._queue.put((before.id, new_status, colour))
 
-        await exec_chan.send(embed=embed)
+    # -------------- background worker --------------
+    async def _worker(self):
+        while True:
+            channel_id, new_status, colour = await self._queue.get()
+            try:
+                # BLOCKING DB fetch in a thread
+                row = await asyncio.to_thread(_db_fetch_row, channel_id)
+                if not row:
+                    continue
+
+                _, ticket, _, thread_id = row
+                if not thread_id:
+                    print(f"🚨 No thread_id stored for channel {channel_id}; skipping post.")
+                    continue
+
+                # BLOCKING DB update in a thread
+                await asyncio.to_thread(_db_update_status, channel_id, new_status)
+
+                # Build embed
+                ticket_str = ticket.replace("ticket-", "") if ticket else "?"
+                embed = Embed(
+                    title=f"Application {ticket_str}",
+                    description="Status updated — please review below:",
+                    colour=colour,
+                )
+                embed.add_field(name="Channel", value=f"<#{channel_id}>", inline=True)
+                embed.add_field(name="Status",  value=new_status, inline=True)
+
+                # Send into the associated thread (fetch if not cached)
+                thread = self.client.get_channel(thread_id)
+                if thread is None:
+                    try:
+                        thread = await self.client.fetch_channel(thread_id)
+                    except Exception as e:
+                        print(f"🚨 Could not fetch thread {thread_id}: {e}")
+                        continue
+
+                if isinstance(thread, discord.Thread):
+                    try:
+                        if getattr(thread, "archived", False):
+                            # Avoid long hangs: cap edits/sends with a timeout
+                            async with asyncio.timeout(8):
+                                await thread.edit(archived=False)
+                        async with asyncio.timeout(8):
+                            await thread.send(embed=embed)
+                    except asyncio.TimeoutError:
+                        print(f"⚠️ Timed out sending to thread {thread_id}")
+                    except Exception as e:
+                        print(f"🚨 Failed to send update to thread {thread_id}: {e}")
+                else:
+                    print(f"🚨 Channel {thread_id} is not a thread; got {type(thread)}")
+            finally:
+                self._queue.task_done()
 
     @commands.Cog.listener()
     async def on_ready(self):
-        pass
+        # Start worker once
+        if self._worker_task is None or self._worker_task.done():
+            self._worker_task = asyncio.create_task(self._worker())
+
+    def cog_unload(self):
+        if self._worker_task and not self._worker_task.done():
+            self._worker_task.cancel()
 
 
 def setup(client):
