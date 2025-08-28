@@ -4,7 +4,7 @@ from discord import Embed
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import member_app_channel
+# from Helpers.variables import member_app_channel  # <- no longer needed
 
 class OnGuildChannelUpdate(commands.Cog):
     def __init__(self, client):
@@ -16,7 +16,7 @@ class OnGuildChannelUpdate(commands.Cog):
         db.connect()
         db.cursor.execute(
             """
-            SELECT channel, ticket, status
+            SELECT channel, ticket, status, thread_id
               FROM new_app
              WHERE channel = %s
             """,
@@ -27,12 +27,10 @@ class OnGuildChannelUpdate(commands.Cog):
             db.close()
             return
 
-        exec_chan = self.client.get_channel(member_app_channel)
-        if not exec_chan:
-            print(f"🚨 Exec channel {member_app_channel} not found")
-            db.close()
-            return
+        # Unpack DB fields we need
+        _, ticket, _, thread_id = row
 
+        # Determine new status
         if after.category and after.category.name == "Guild Queue":
             new_status = ":hourglass: In Queue"
         elif after.category and after.category.name == "Invited":
@@ -53,6 +51,7 @@ class OnGuildChannelUpdate(commands.Cog):
                 case other:
                     new_status = other.capitalize()
 
+        # Pick colour
         if new_status in (":hourglass: In Queue", ":hourglass: Invited"):
             colour = 0xFFE019
         elif new_status != ":green_circle: Opened":
@@ -60,6 +59,7 @@ class OnGuildChannelUpdate(commands.Cog):
         else:
             colour = 0x3ED63E
 
+        # Update DB
         db.cursor.execute(
             "UPDATE new_app SET status = %s WHERE channel = %s",
             (new_status, before.id)
@@ -67,7 +67,8 @@ class OnGuildChannelUpdate(commands.Cog):
         db.connection.commit()
         db.close()
 
-        ticket_str = row[1].replace("ticket-", "")
+        # Prepare embed
+        ticket_str = ticket.replace("ticket-", "") if ticket else "?"
         embed = Embed(
             title=f"Application {ticket_str}",
             description="Status updated — please review below:",
@@ -76,7 +77,30 @@ class OnGuildChannelUpdate(commands.Cog):
         embed.add_field(name="Channel", value=f"<#{before.id}>", inline=True)
         embed.add_field(name="Status",  value=new_status, inline=True)
 
-        await exec_chan.send(embed=embed)
+        # Send to the associated thread (not the general/exec channel)
+        if not thread_id:
+            print("🚨 No thread_id stored for this application; cannot post update.")
+            return
+
+        thread = self.client.get_channel(thread_id)  # Threads are Channels in discord.py
+        if thread is None:
+            # Try fetching if not cached
+            try:
+                thread = await self.client.fetch_channel(thread_id)
+            except Exception as e:
+                print(f"🚨 Could not fetch thread {thread_id}: {e}")
+                return
+
+        # Ensure it's a thread and unarchive if necessary
+        if isinstance(thread, discord.Thread):
+            try:
+                if getattr(thread, "archived", False):
+                    await thread.edit(archived=False)
+                await thread.send(embed=embed)
+            except Exception as e:
+                print(f"🚨 Failed to send update to thread {thread_id}: {e}")
+        else:
+            print(f"🚨 Channel {thread_id} is not a thread; got {type(thread)}")
 
     @commands.Cog.listener()
     async def on_ready(self):
