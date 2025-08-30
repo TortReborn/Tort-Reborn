@@ -192,6 +192,7 @@ extensions = [
     'Tasks.update_member_data',
     'Tasks.check_apps',
     'Tasks.territory_tracker',
+    'Tasks.vanity_roles',
 ]
 
 for ext in extensions:
