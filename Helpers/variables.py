@@ -7,10 +7,12 @@ test = os.getenv("TEST_MODE").lower() in ('true', '1', 't')
 unknown_channel_redirect = 1367285315236008036
 
 if test:
-    guilds = [1364751619018850405, 1369134564450107412]
+    guilds = [1369134564450107412, 1364751619018850405]
     te = 1364751619018850405
     changelog_channel = 1367276640207507617
     welcome_channel = 1369134566509514897
+    announcement_channel = 1411438316087148634
+    faq_channel = 1369134566295732334
     guildbank_channel = unknown_channel_redirect
     log_channel = unknown_channel_redirect
     attention_channel = unknown_channel_redirect
@@ -30,6 +32,18 @@ if test:
     tcc_emoji_id = "<:tcc:1371906703099953242>"
     tna_emoji_id = "<:tna:1371906714949124247>"
     nol_emoji_id = "<:nol:1371906726940639272>"
+    VANITY_ROLE_IDS = {
+        "wars": {
+            "t3": 1411440289159057561,  # Great White Shark (>=120 wars in 14d)
+            "t2": 1411440397581811823,  # Orca             (>=80)
+            "t1": 1411441013372751912,  # Mako Shark       (>=40)
+        },
+        "raids": {
+            "t3": 1411440340556054630,  # Megalodon     (>=80 raids in 14d)
+            "t2": 1411440801476771911,  # Mosasaurus    (>=50)
+            "t1": 1411440932364222464,  # Liopleurodon  (>=30)
+        },
+    }
 else:
     guilds = [729147655875199017, 1364751619018850405]
     te = 784795827808763904
@@ -37,6 +51,8 @@ else:
     welcome_channel = 748900470575071293 
     guildbank_channel = 1213515243041595442
     log_channel = 936679740385931414
+    announcement_channel = 729162124223447040
+    faq_channel = 1386413126697877626
     # Below seem unused or old, unsure
     attention_channel = None
     eco_learning_channel = None
@@ -55,6 +71,18 @@ else:
     tcc_emoji_id = "<:tcc:1316539938917060658>"
     tna_emoji_id = "<:tna:1316539936438222850>"
     nol_emoji_id = "<:nol:1316539940418621530>"
+    VANITY_ROLE_IDS = {
+        "wars": {
+            "t3": 1401236653472743668,  # Great White Shark (>=120 wars in 14d)
+            "t2": 1401236428368642243,  # Orca             (>=80)
+            "t1": 1401226770069590089,  # Mako Shark       (>=40)
+        },
+        "raids": {
+            "t3": 1401281458164990022,  # Megalodon     (>=80 raids in 14d)
+            "t2": 1401281504671305850,  # Mosasaurus    (>=50)
+            "t1": 1401281543699431566,  # Liopleurodon  (>=30)
+        },
+    }
 
 golden_tort = [644071980160647178, 419845975000219648, 282914836084686848]
 
@@ -297,3 +325,17 @@ mythics = {
     "Idol": "spear.water3.png",
     "Thrundacrack": "spear.thunder3.png"
 }
+
+VANITY_ROLE_NAMES = {
+    "wars": {
+        "t3": "Great White Shark - Tier 3 Bi-Weekly War Contribution",
+        "t2": "Orca - Tier 2 Bi-Weekly War Contribution",
+        "t1": "Mako Shark - Tier 1 Bi-Weekly War Contribution",
+    },
+    "raids": {
+        "t3": "Megalodon Tier 3 Bi-Weekly Raid Contribution",
+        "t2": "Mosasaurus - Tier 2 Bi-Weekly Raid Contribution",
+        "t1": "Liopleurodon - Tier 1 Bi-Weekly Raid Contribution",
+    },
+}
+
