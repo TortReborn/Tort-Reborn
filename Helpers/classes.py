@@ -16,6 +16,8 @@ from Helpers.variables import wynn_ranks, welcome_channel
 
 WELCOME_CHANNEL = welcome_channel
 
+_HTTP = requests.Session()
+
 class Guild:
 
     def __init__(self, guild):
@@ -24,7 +26,7 @@ class Guild:
         else:
             url = f'https://api.wynncraft.com/v3/guild/{urlify(guild)}'
 
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = _HTTP.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         guild_data = resp.json()
 
@@ -75,6 +77,8 @@ class PlayerStats:
 
         # player data
         pdata = getPlayerDatav3(self.UUID)
+        self.guild = (pdata['guild']['name'] if pdata.get('guild') else None)
+        self.taq = (self.guild == 'The Aquarium')
         test_last_joined = pdata['lastJoin']
         if test_last_joined:
             self.last_joined = parser.isoparse(test_last_joined)
@@ -109,11 +113,9 @@ class PlayerStats:
         self.total_level = pdata['globalData']['totalLevel']
 
         # guild data
-        self.taq = self.isInTAq(self.UUID)
-        self.guild = 'The Aquarium' if self.taq else pdata['guild']
         if self.guild is not None:
             self.guild = 'The Aquarium' if self.taq else pdata['guild']['name']
-            gdata = Guild(self.guild)
+            gdata = Guild(self.guild)            
             for guildee in gdata.all_members:
                 if guildee['uuid'] == self.UUID:
                     guild_stats = guildee
@@ -279,14 +281,7 @@ class PlayerStats:
             self.real_raids = 0
             self.stats_warn = False
 
-
-            db.close()
-
-    def isInTAq(self, uuid):
-        guild_members = []
-        for member in Guild('The Aquarium').all_members:
-            guild_members.append(member['uuid'])
-        return False if uuid not in guild_members else True
+        db.close()
 
     def unlock_background(self, background):
         db = DB()
