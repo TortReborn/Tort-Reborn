@@ -81,6 +81,39 @@ def _upsert_raid_group_sync(uuid_list):
     finally:
         db.close()
 
+def _graid_increment_group_sync(uuid_list, raid_name: str):
+    if not uuid_list: return
+    db = _db_connect_with_retry()
+    try:
+        cur = db.cursor
+        # find active event
+        cur.execute("SELECT id FROM graid_events WHERE active = TRUE LIMIT 1")
+        row = cur.fetchone()
+        if not row:
+            return
+        event_id = row[0]
+
+        # upsert totals; 1 completion per player per validated group
+        for uid in uuid_list:
+            cur.execute("""
+                INSERT INTO graid_event_totals (event_id, uuid, total)
+                VALUES (%s, %s, 1)
+                ON CONFLICT (event_id, uuid) DO UPDATE
+                  SET total = graid_event_totals.total + 1,
+                      last_updated = NOW()
+            """, (event_id, uid))
+
+            # optional audit row (for tie-breakers/website drilldown)
+            cur.execute("""
+                INSERT INTO graid_event_runs (event_id, uuid, raid_name)
+                VALUES (%s, %s, %s)
+            """, (event_id, uid, raid_name))
+
+        db.connection.commit()
+    finally:
+        db.close()
+
+
 def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
     snap = {'time': int(time.time()), 'members': []}
     uuids = list(pf_map.keys())
@@ -202,6 +235,7 @@ class UpdateMemberData(commands.Cog):
             await channel.send(embed=embed)
         
         await asyncio.to_thread(_upsert_raid_group_sync, list(group))
+        await asyncio.to_thread(_graid_increment_group_sync, list(group), raid)
 
     def _write_current_snapshot(self, db, guild, contrib_map, rank_map, pf_map):
         """
