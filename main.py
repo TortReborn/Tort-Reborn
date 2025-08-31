@@ -164,6 +164,7 @@ extensions = [
     'Commands.lootpool',
     'Commands.aspects',
     'Commands.map',
+    'Commands.graidevent',
 
     # Dev Commands
     'Commands.render_text',
