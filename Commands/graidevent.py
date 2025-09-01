@@ -56,7 +56,7 @@ def _get_active_event(cur):
 
 def _top5_for_event(cur, event_id: int, min_completions: int) -> List[Tuple[str, int]]:
     cur.execute(
-        "SELECT uuid::text, total FROM graid_event_totals "
+        "SELECT uuid::uuid, total FROM graid_event_totals "
         "WHERE event_id = %s AND total >= %s ORDER BY total DESC, uuid ASC LIMIT 5",
         (event_id, min_completions)
     )
@@ -65,7 +65,14 @@ def _top5_for_event(cur, event_id: int, min_completions: int) -> List[Tuple[str,
 def _uuids_to_mentions(cur, pairs: List[Tuple[str,int]]) -> List[str]:
     if not pairs: return []
     uuids = [u for (u, _) in pairs]
-    cur.execute("SELECT uuid::text, discord_id, ign FROM discord_links WHERE uuid = ANY(%s)", (uuids,))
+    cur.execute(
+        """
+        SELECT uuid, discord_id, ign
+        FROM discord_links
+        WHERE uuid = ANY(%s::uuid[])
+        """,
+        (uuids,),
+    )
     m = {r[0]: (r[1], r[2]) for r in cur.fetchall()}  # {uuid: (discord_id, ign)}
     out = []
     for u, total in pairs:
