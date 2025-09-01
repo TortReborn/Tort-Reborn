@@ -102,13 +102,6 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
                   SET total = graid_event_totals.total + 1,
                       last_updated = NOW()
             """, (event_id, uid))
-
-            # optional audit row (for tie-breakers/website drilldown)
-            cur.execute("""
-                INSERT INTO graid_event_runs (event_id, uuid, raid_name)
-                VALUES (%s, %s, %s)
-            """, (event_id, uid, raid_name))
-
         db.connection.commit()
     finally:
         db.close()
