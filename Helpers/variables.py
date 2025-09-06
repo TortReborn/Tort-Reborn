@@ -24,7 +24,7 @@ if test:
     member_app_channel = 1367283441850122330
     military_channel = 1369134566979403789
     territory_tracker_channel = 1369134566979403791
-    spearhead_role_id = 1367287262068342804
+    spearhead_role_id = 1369134565335236645
     application_manager_role_id = "<@&1371274399637835837>"
     shell_emoji_id = "<:shells:1371292212729479207>"
     aspect_emoji_id = "<:aspect_warrior:1371292093074640936>"
@@ -339,3 +339,15 @@ VANITY_ROLE_NAMES = {
     },
 }
 
+claims = {
+    "Corkus": {
+        "hq": "Corkus City",
+        "connections": [
+            "Retrofitted Manufactory",
+            "Corkus Castle",
+            "Corkus City Crossroads",
+            "Corkus Forest",
+            "Picnic Pond"
+        ],
+    },
+}

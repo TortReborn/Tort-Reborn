@@ -2,14 +2,19 @@ from collections import Counter
 import datetime
 import discord
 import json
-import time
 import asyncio
 import random
+from typing import Dict, List, Set
 
 import aiohttp
 from discord.ext import tasks, commands
 
-from Helpers.variables import spearhead_role_id, territory_tracker_channel, military_channel
+from Helpers.variables import (
+    spearhead_role_id,
+    territory_tracker_channel,
+    military_channel,
+    claims,
+)
 
 # ---------- HTTP (aiohttp single session + retries) ----------
 
@@ -31,7 +36,6 @@ async def _close_session():
 async def getTerritoryData():
     try:
         sess = await _get_session()
-        # 3 attempts with exponential backoff + jitter
         for attempt in range(3):
             try:
                 async with sess.get(_TERRITORY_URL) as resp:
@@ -80,12 +84,10 @@ class TerritoryTracker(commands.Cog):
 
     def cog_unload(self):
         self.territory_tracker.cancel()
-        # close HTTP session without blocking unload
         asyncio.create_task(_close_session())
 
     @tasks.loop(seconds=10)
     async def territory_tracker(self):
-        # Ensure loop never dies on exceptions
         try:
             if not self.client.is_ready():
                 return
@@ -102,12 +104,56 @@ class TerritoryTracker(commands.Cog):
 
             await asyncio.to_thread(saveTerritoryData, new_data)
 
-            # Build a count of territories per guild *after* this update
+            # tally post-update counts
             new_counts = Counter()
             for info in new_data.values():
                 new_counts[info['guild']['name']] += 1
 
-            # Find only the changes involving The Aquarium
+            # ---------- CLAIM-BROKEN ALERTS (CONFIG-DRIVEN) ----------
+            # fires on transition: previously owned ALL tiles in claim → now missing any tile
+            if old_data and claims:
+                for claim_name, cfg in claims.items():
+                    hq = cfg.get("hq")
+                    conns: List[str] = cfg.get("connections", [])
+                    if not hq:
+                        continue
+                    members: List[str] = [hq] + conns
+
+                    def _owns_all(data: Dict) -> bool:
+                        for t in members:
+                            owner = data.get(t, {}).get("guild", {}).get("name")
+                            if owner != 'The Aquarium':
+                                return False
+                        return True
+
+                    old_all = _owns_all(old_data)
+                    new_all = _owns_all(new_data)
+
+                    if old_all and not new_all:
+                        # what flipped away from our guild?
+                        lost = [
+                            t for t in members
+                            if old_data.get(t, {}).get("guild", {}).get("name") == "The Aquarium"
+                            and new_data.get(t, {}).get("guild", {}).get("name") != "The Aquarium"
+                        ]
+
+                        # classify cause
+                        if hq in lost:
+                            cause_text = f"**HQ {hq}**"
+                        elif lost:
+                            cause_text = f"connection **{lost[0]}**"
+                        else:
+                            cause_text = "a connection"
+
+                        # Alert
+                        alert_chan = self.client.get_channel(military_channel)
+                        mention = f"<@&{spearhead_role_id}>"
+                        msg = f"{mention} TAq claim **broken** in **{claim_name}** — lost {cause_text}."
+
+                        if alert_chan:
+                            await alert_chan.send(msg)
+
+            # ---------- Territory Change Embeds ----------
             owner_changes = {}
             for terr, new_info in new_data.items():
                 old_info = old_data.get(terr)
