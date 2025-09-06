@@ -166,7 +166,7 @@ class VanityRoles(commands.Cog):
             return
 
         today_utc = datetime.now(timezone.utc).date()
-        if (today_utc - START_DATE_UTC).days % 14 != 0:
+        if (today_utc - START_DATE_UTC).days % 7 != 0:
             return
 
         await self._run_biweekly_and_announce()
