@@ -70,8 +70,9 @@ async def on_ready():
     await client.change_presence(
         activity=discord.CustomActivity(name=f'{guild.online} members online')
     )
-    print(f'We have logged in as {client.user}')
-    print('\n'.join(g.name for g in client.guilds))
+    print(f'🟪 We have logged in as {client.user}')
+    for g in client.guilds:
+        print(f'🟪 Connected to guild: {g.name}')
 
     if not test:
         now = int(time.time())
@@ -194,6 +195,7 @@ extensions = [
     'Tasks.check_apps',
     'Tasks.territory_tracker',
     'Tasks.vanity_roles',
+    'Tasks.graid_event_stop',
 ]
 
 for ext in extensions:
