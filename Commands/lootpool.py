@@ -2,11 +2,12 @@ import discord
 import requests
 from discord.ext import commands
 from discord.commands import SlashCommandGroup
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from Helpers.variables import mythics
 from Helpers.functions import wrap_text, get_multiline_text_size
+from Helpers.database import DB
 import time
 import os
 import json
@@ -23,6 +24,38 @@ class LootPool(commands.Cog):
 
     def _format_list(self, items):
         return "\n".join(items) if items else "None"
+
+    def _cache_data(self, cache_key: str, data: dict):
+        """Cache API data to database"""
+        try:
+            db = DB()
+            db.connect()
+            
+            # Use ON CONFLICT to either insert or update the cache entry
+            db.cursor.execute("""
+                INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
+                VALUES (%s, %s, %s, 1)
+                ON CONFLICT (cache_key) 
+                DO UPDATE SET 
+                    data = EXCLUDED.data,
+                    created_at = NOW(),
+                    expires_at = EXCLUDED.expires_at,
+                    fetch_count = cache_entries.fetch_count + 1,
+                    last_error = NULL,
+                    error_count = 0
+            """, (cache_key, json.dumps(data), None))
+            
+            db.connection.commit()
+            db.close()
+            
+        except Exception as e:
+            print(f"[LootPool._cache_data] Failed to save {cache_key} to cache: {e}")
+            # Don't let database errors prevent the command from working
+            try:
+                if 'db' in locals():
+                    db.close()
+            except:
+                pass
 
     async def _init_session(self):
         session = requests.Session()
@@ -44,6 +77,10 @@ class LootPool(commands.Cog):
             resp = requests.get("https://nori.fish/api/aspects")
             resp.raise_for_status()
             data = resp.json()
+            
+            # Cache the aspects data
+            self._cache_data('aspectData', data)
+            
         except Exception:
             embed = discord.Embed(
                 title=":no_entry: Error",
@@ -192,6 +229,10 @@ class LootPool(commands.Cog):
             resp = session.get("https://nori.fish/api/lootpool", headers=headers)
             resp.raise_for_status()
             data = resp.json()
+            
+            # Cache the lootpool data
+            self._cache_data('lootpoolData', data)
+            
         except Exception:
             embed = discord.Embed(
                 title=":no_entry: Error",

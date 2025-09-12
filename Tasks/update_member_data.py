@@ -113,6 +113,34 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
     if not uuids:
         with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
             json.dump(snap, f, indent=2)
+        
+        # Save empty snapshot to database cache
+        try:
+            db = _db_connect_with_retry()
+            
+            db.cursor.execute("""
+                INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
+                VALUES (%s, %s, %s, 1)
+                ON CONFLICT (cache_key) 
+                DO UPDATE SET 
+                    data = EXCLUDED.data,
+                    created_at = NOW(),
+                    expires_at = EXCLUDED.expires_at,
+                    fetch_count = cache_entries.fetch_count + 1,
+                    last_error = NULL,
+                    error_count = 0
+            """, ('guildData', json.dumps(snap), None))
+            
+            db.connection.commit()
+            db.close()
+            
+        except Exception as e:
+            print(f"[_write_current_snapshot_sync] Failed to save empty snapshot to cache: {e}")
+            try:
+                if 'db' in locals():
+                    db.close()
+            except:
+                pass
         return
 
     db = _db_connect_with_retry()
@@ -153,6 +181,36 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
 
     with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
         json.dump(snap, f, indent=2)
+    
+    # Save to database cache
+    try:
+        db = _db_connect_with_retry()
+        
+        # Use ON CONFLICT to either insert or update the cache entry
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
+            VALUES (%s, %s, %s, 1)
+            ON CONFLICT (cache_key) 
+            DO UPDATE SET 
+                data = EXCLUDED.data,
+                created_at = NOW(),
+                expires_at = EXCLUDED.expires_at,
+                fetch_count = cache_entries.fetch_count + 1,
+                last_error = NULL,
+                error_count = 0
+        """, ('guildData', json.dumps(snap), None))
+        
+        db.connection.commit()
+        db.close()
+        
+    except Exception as e:
+        print(f"[_write_current_snapshot_sync] Failed to save to cache: {e}")
+        # Don't let database errors prevent the file save from working
+        try:
+            if 'db' in locals():
+                db.close()
+        except:
+            pass
 
 
 class UpdateMemberData(commands.Cog):
