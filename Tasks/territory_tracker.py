@@ -9,6 +9,7 @@ from typing import Dict, List, Set
 import aiohttp
 from discord.ext import tasks, commands
 
+from Helpers.database import DB
 from Helpers.variables import (
     spearhead_role_id,
     territory_tracker_channel,
@@ -59,9 +60,41 @@ def _read_territories_sync() -> dict:
         return {}
 
 def saveTerritoryData(data):
+    # Save to JSON file
     with open('territories.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
         f.close()
+    
+    # Save to database cache
+    try:
+        db = DB()
+        db.connect()
+        
+        # Use ON CONFLICT to either insert or update the cache entry
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
+            VALUES (%s, %s, %s, 1)
+            ON CONFLICT (cache_key) 
+            DO UPDATE SET 
+                data = EXCLUDED.data,
+                created_at = NOW(),
+                expires_at = EXCLUDED.expires_at,
+                fetch_count = cache_entries.fetch_count + 1,
+                last_error = NULL,
+                error_count = 0
+        """, ('territories', json.dumps(data), None))
+        
+        db.connection.commit()
+        db.close()
+        
+    except Exception as e:
+        print(f"[saveTerritoryData] Failed to save to cache: {e}")
+        # Don't let database errors prevent the file save from working
+        if 'db' in locals():
+            try:
+                db.close()
+            except:
+                pass
 
 # ---------- Time helper (unchanged) ----------
 
