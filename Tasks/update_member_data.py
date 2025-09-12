@@ -118,6 +118,9 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
         try:
             db = _db_connect_with_retry()
             
+            # Set expiration to epoch time (January 1, 1970)
+            epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+            
             db.cursor.execute("""
                 INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
                 VALUES (%s, %s, %s, 1)
@@ -129,7 +132,7 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
                     fetch_count = cache_entries.fetch_count + 1,
                     last_error = NULL,
                     error_count = 0
-            """, ('guildData', json.dumps(snap), None))
+            """, ('guildData', json.dumps(snap), epoch_time))
             
             db.connection.commit()
             db.close()
@@ -186,6 +189,9 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
     try:
         db = _db_connect_with_retry()
         
+        # Set expiration to epoch time (January 1, 1970)
+        epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        
         # Use ON CONFLICT to either insert or update the cache entry
         db.cursor.execute("""
             INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
@@ -198,7 +204,7 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
                 fetch_count = cache_entries.fetch_count + 1,
                 last_error = NULL,
                 error_count = 0
-        """, ('guildData', json.dumps(snap), None))
+        """, ('guildData', json.dumps(snap), epoch_time))
         
         db.connection.commit()
         db.close()
