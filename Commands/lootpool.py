@@ -31,6 +31,9 @@ class LootPool(commands.Cog):
             db = DB()
             db.connect()
             
+            # Set expiration to epoch time (January 1, 1970)
+            epoch_time = datetime.fromtimestamp(0, tz=timezone.utc)
+            
             # Use ON CONFLICT to either insert or update the cache entry
             db.cursor.execute("""
                 INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
@@ -43,7 +46,7 @@ class LootPool(commands.Cog):
                     fetch_count = cache_entries.fetch_count + 1,
                     last_error = NULL,
                     error_count = 0
-            """, (cache_key, json.dumps(data), None))
+            """, (cache_key, json.dumps(data), epoch_time))
             
             db.connection.commit()
             db.close()
