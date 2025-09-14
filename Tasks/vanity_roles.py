@@ -152,7 +152,13 @@ class VanityRoles(commands.Cog):
 
         # Daily at 00:10 UTC.
         self._running = asyncio.Lock()
-        self.biweekly_roles.start()
+
+        # Prevent duplicate task starts
+        if not self.biweekly_roles.is_running():
+            self.biweekly_roles.start()
+            print("[vanity_roles] Task loop started")
+        else:
+            print("[vanity_roles] WARNING: Task loop already running, skipping duplicate start")
         
 
     def cog_unload(self):
