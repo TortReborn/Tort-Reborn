@@ -107,25 +107,25 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
         db.close()
 
 
-def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
+def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
     snap = {'time': int(time.time()), 'members': []}
     uuids = list(pf_map.keys())
     if not uuids:
         with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
             json.dump(snap, f, indent=2)
-        
+
         # Save empty snapshot to database cache
         try:
             db = _db_connect_with_retry()
-            
+
             # Set expiration to epoch time (January 1, 1970)
             epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
-            
+
             db.cursor.execute("""
                 INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
                 VALUES (%s, %s, %s, 1)
-                ON CONFLICT (cache_key) 
-                DO UPDATE SET 
+                ON CONFLICT (cache_key)
+                DO UPDATE SET
                     data = EXCLUDED.data,
                     created_at = NOW(),
                     expires_at = EXCLUDED.expires_at,
@@ -133,10 +133,10 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
                     last_error = NULL,
                     error_count = 0
             """, ('guildData', json.dumps(snap), epoch_time))
-            
+
             db.connection.commit()
             db.close()
-            
+
         except Exception as e:
             print(f"[_write_current_snapshot_sync] Failed to save empty snapshot to cache: {e}")
             try:
@@ -184,28 +184,35 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map):
 
     with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
         json.dump(snap, f, indent=2)
-    
+
+    # Create cache version with online status
+    cache_snap = {'time': snap['time'], 'members': []}
+    for member in snap['members']:
+        cache_member = dict(member)
+        cache_member['online'] = online_map.get(member['uuid'], False)
+        cache_snap['members'].append(cache_member)
+
     # Save to database cache
     try:
         db = _db_connect_with_retry()
-        
+
         # Set expiration to epoch time (January 1, 1970)
         epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
-        
+
         # Use ON CONFLICT to either insert or update the cache entry
         db.cursor.execute("""
             INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
             VALUES (%s, %s, %s, 1)
-            ON CONFLICT (cache_key) 
-            DO UPDATE SET 
+            ON CONFLICT (cache_key)
+            DO UPDATE SET
                 data = EXCLUDED.data,
                 created_at = NOW(),
                 expires_at = EXCLUDED.expires_at,
                 fetch_count = cache_entries.fetch_count + 1,
                 last_error = NULL,
                 error_count = 0
-        """, ('guildData', json.dumps(snap), epoch_time))
-        
+        """, ('guildData', json.dumps(cache_snap), epoch_time))
+
         db.connection.commit()
         db.close()
         
@@ -532,9 +539,10 @@ class UpdateMemberData(commands.Cog):
         # Build pf_map ONLY from fresh results for the current snapshot write
         pf_map = {m['uuid']: m for m in results if isinstance(m, dict)}
         rank_map = {u: info.get('rank') for u, info in curr_map.items()}
+        online_map = {m['uuid']: m.get('online', False) for m in guild.all_members}
         await asyncio.to_thread(
             _write_current_snapshot_sync,
-            contrib_map, rank_map, pf_map
+            contrib_map, rank_map, pf_map, online_map
         )
         
         print(f"🟨 ENDING LOOP - {datetime.datetime.now(timezone.utc)}",flush=True)
