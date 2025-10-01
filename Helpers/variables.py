@@ -340,14 +340,24 @@ VANITY_ROLE_NAMES = {
 }
 
 claims = {
-    # "Corkus": {
-    #     "hq": "Corkus City",
-    #     "connections": [
-    #         "Retrofitted Manufactory",
-    #         "Corkus Castle",
-    #         "Corkus City Crossroads",
-    #         "Corkus Forest",
-    #         "Picnic Pond"
-    #     ],
-    # },
+    "Corkus": {
+        "hq": "Corkus City",
+        "connections": [
+            "Retrofitted Manufactory",
+            "Corkus Castle",
+            "Corkus City Crossroads",
+            "Corkus Forest",
+            "Picnic Pond"
+        ],
+    },
+    "Sky Islands": {
+        "hq": "Central Islands",
+        "connections": [
+            "Ahmsord",
+            "Temple Island",
+            "Ahmsord Outskirts",
+            "Wybel Island",
+            "Sky Island Ascent"
+        ],
+    }
 }

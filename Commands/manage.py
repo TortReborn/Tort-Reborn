@@ -250,7 +250,10 @@ class Manage(commands.Cog):
 
             addLine(f'&f{player.username}', draw, font, 95, 15)
             addLine(f'&7Balance: &f{new_balance} &7({diff}&7)', draw, font, 95, 40)
-            addLine(f'&7All-Time: &f{new_total} &7({diff}&7)', draw, font, 95, 61)
+            if operation == 'add':
+                addLine(f'&7All-Time: &f{new_total} &7({diff}&7)', draw, font, 95, 61)
+            else:
+                addLine(f'&7All-Time: &f{new_total}', draw, font, 95, 61)
 
             db.connection.commit()
 
