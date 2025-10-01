@@ -51,6 +51,10 @@ class OnGuildChannelUpdate(commands.Cog):
     # -------------- event -> enqueue fast --------------
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before: discord.TextChannel, after: discord.TextChannel):
+        # Only trigger if the name changed
+        if before.name == after.name:
+            return
+
         # Compute status quickly on loop (pure CPU, trivial)
         if after.category and after.category.name == "Guild Queue":
             new_status = ":hourglass: In Queue"
