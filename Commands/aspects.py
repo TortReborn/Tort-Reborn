@@ -202,14 +202,36 @@ class AspectDistribution(commands.Cog):
         queue = dist["queue"]
         start = dist["marker"]
 
-        # 2 drain DB for uncollected aspects
+        # 2 drain DB for uncollected aspects (only from members in guild 7+ days)
         remaining  = amount
         db         = DB(); db.connect()
         recipients = []
+
+        # Build a map of uuid -> join_date for guild members
+        guild = Guild("The Aquarium")
+        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
+        member_map = {}
+        for m in guild.all_members:
+            uuid = m["uuid"]
+            joined = m.get("joined")
+            if joined:
+                try:
+                    dt = datetime.datetime.fromisoformat(joined.replace("Z", "+00:00"))
+                    dt = dt.replace(tzinfo=datetime.timezone.utc)
+                    member_map[uuid] = dt
+                except:
+                    pass
+
         db.cursor.execute("SELECT uuid,uncollected_aspects FROM uncollected_raids WHERE uncollected_aspects>0")
         for u, c in db.cursor.fetchall():
             if remaining <= 0:
                 break
+
+            # Check if member is in guild and has been there 7+ days
+            join_date = member_map.get(u)
+            if not join_date or join_date > cutoff:
+                continue  # Skip this member, leave their aspects for later
+
             take = min(remaining, c)
             if take > 0:
                 recipients += [u] * take

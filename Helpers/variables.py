@@ -359,5 +359,15 @@ claims = {
             "Wybel Island",
             "Sky Island Ascent"
         ],
+    },
+    "Ragni": {
+        "hq": "Nomads' Refuge",
+        "connections": [
+            "Farmers Settlement",
+            "Ancient Waterworks",
+            "Webbed Fracture",
+            "Arachnid Woods",
+            "Entrance to Nivla Woods"
+        ]
     }
 }
