@@ -173,18 +173,28 @@ class TerritoryTracker(commands.Cog):
                             and new_data.get(t, {}).get("guild", {}).get("name") != "The Aquarium"
                         ]
 
-                        # classify cause
+                        # determine which territory and who took it
                         if hq in lost:
-                            cause_text = f"**HQ {hq}**"
+                            lost_terr = hq
+                            terr_type = "HQ"
                         elif lost:
-                            cause_text = f"connection **{lost[0]}**"
+                            lost_terr = lost[0]
+                            terr_type = "connection"
                         else:
-                            cause_text = "a connection"
+                            lost_terr = None
+                            terr_type = "connection"
 
                         # Alert
                         alert_chan = self.client.get_channel(military_channel)
                         mention = f"<@&{spearhead_role_id}>"
-                        msg = f"{mention} TAq claim **broken** in **{claim_name}** — lost {cause_text}."
+
+                        # get the guild that took the territory and build message
+                        if lost_terr:
+                            attacker = new_data.get(lost_terr, {}).get("guild", {}).get("name", "Unknown")
+                            attacker_prefix = new_data.get(lost_terr, {}).get("guild", {}).get("prefix", "???")
+                            msg = f"{mention} **Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
+                        else:
+                            msg = f"{mention} **Attack on {claim_name}!** A {terr_type} was taken."
 
                         if alert_chan:
                             await alert_chan.send(msg)
