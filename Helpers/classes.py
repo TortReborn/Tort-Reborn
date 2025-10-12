@@ -75,44 +75,72 @@ class PlayerStats:
 
         # player data
         pdata = getPlayerDatav3(self.UUID)
-        test_last_joined = pdata['lastJoin']
+
+        # Track which fields are private/null
+        test_last_joined = pdata.get('lastJoin')
         if test_last_joined:
             self.last_joined = parser.isoparse(test_last_joined)
+            self.last_joined_is_private = False
         else:
-            # TAq Creation Date
+            # TAq Creation Date (default)
             self.last_joined = parser.isoparse("2020-03-22T11:11:17.810000Z")
-        self.characters = pdata['characters']
-        self.online = pdata['online']
-        self.server = pdata['server']
+            self.last_joined_is_private = True
+
+        self.characters = pdata.get('characters', {})
+        self.online = pdata.get('online', False)
+        self.server = pdata.get('server')
+
+        # Wars - track if null or missing
         try:
-            self.wars = pdata['globalData']['wars']
+            raw_wars = pdata.get('globalData', {}).get('wars')
+            self.wars = raw_wars if raw_wars is not None else 0
+            self.wars_is_private = raw_wars is None
         except:
             self.wars = 0
-        self.playtime = pdata['playtime']
-        self.rank = pdata['rank']
-        # self.mobs = pdata['globalData']['killedMobs']
+            self.wars_is_private = True
+
+        # Playtime - track if null or missing
+        raw_playtime = pdata.get('playtime')
+        self.playtime = raw_playtime if raw_playtime is not None else 0
+        self.playtime_is_private = raw_playtime is None
+
+        self.rank = pdata.get('rank', 'Player')
+        # self.mobs = pdata.get('globalData', {}).get('killedMobs')
+
+        # Chests and quests - track if null or missing
         try:
-            self.chests = pdata['globalData']['chestsFound']
-            self.quests = pdata['globalData']['completedQuests']
+            raw_chests = pdata.get('globalData', {}).get('chestsFound')
+            raw_quests = pdata.get('globalData', {}).get('completedQuests')
+            self.chests = raw_chests if raw_chests is not None else 0
+            self.quests = raw_quests if raw_quests is not None else 0
+            self.chests_is_private = raw_chests is None
+            self.quests_is_private = raw_quests is None
         except:
             self.chests = 0
-            self.quests = 9
+            self.quests = 0
+            self.chests_is_private = True
+            self.quests_is_private = True
         self.background = 1
         self.backgrounds_owned = []
         self.gradient = ['#293786', '#1d275e']
         if self.rank == 'Player':
-            self.tag = pdata['supportRank'].upper() if pdata['supportRank'] is not None else 'Player'
+            support_rank = pdata.get('supportRank')
+            self.tag = support_rank.upper() if support_rank is not None else 'Player'
         else:
             self.tag = self.rank
         self.tag_color = wynn_ranks[self.tag.lower()]['color'] if self.tag != 'Player' else '#66ccff'
         self.tag_display = wynn_ranks[self.tag.lower()]['display'] if self.tag != 'Player' else 'PLAYER'
-        self.total_level = pdata['globalData']['totalLevel']
+
+        # Total level - track if null or missing
+        raw_total_level = pdata.get('globalData', {}).get('totalLevel')
+        self.total_level = raw_total_level if raw_total_level is not None else 0
+        self.total_level_is_private = raw_total_level is None
 
         # guild data
         self.taq = self.isInTAq(self.UUID)
-        self.guild = 'The Aquarium' if self.taq else pdata['guild']
+        self.guild = 'The Aquarium' if self.taq else pdata.get('guild')
         if self.guild is not None:
-            self.guild = 'The Aquarium' if self.taq else pdata['guild']['name']
+            self.guild = 'The Aquarium' if self.taq else pdata.get('guild', {}).get('name')
             gdata = Guild(self.guild)
             for guildee in gdata.all_members:
                 if guildee['uuid'] == self.UUID:
@@ -120,9 +148,14 @@ class PlayerStats:
                     break
                 else:
                     pass
-            self.guild_rank = guild_stats['rank'] if self.taq else pdata['guild']['rank']
-            self.guild_contributed = guild_stats['contributed']
-            self.guild_joined = parser.isoparse(guild_stats['joined'])
+            self.guild_rank = guild_stats.get('rank') if self.taq else pdata.get('guild', {}).get('rank')
+
+            # Guild contributed - track if null or missing
+            raw_contributed = guild_stats.get('contributed')
+            self.guild_contributed = raw_contributed if raw_contributed is not None else 0
+            self.guild_contributed_is_private = raw_contributed is None
+
+            self.guild_joined = parser.isoparse(guild_stats.get('joined'))
             now_utc   = datetime.now(timezone.utc)
             delta     = now_utc - self.guild_joined
             self.in_guild_for = delta
@@ -130,6 +163,7 @@ class PlayerStats:
             self.guild = None
             self.guild_rank = None
             self.guild_contributed = None
+            self.guild_contributed_is_private = False
             self.guild_joined = None
             self.in_guild_for = None
 
@@ -178,10 +212,27 @@ class PlayerStats:
                 now_entry = None
 
             # Fallback to previously-fetched live values if not present in current_activity.json
-            now_playtime = int(now_entry.get('playtime', self.playtime)) if now_entry else int(self.playtime)
-            now_wars     = int(now_entry.get('wars', self.wars)) if now_entry else int(self.wars)
-            now_contrib  = int(now_entry.get('contributed', self.guild_contributed or 0)) if now_entry else int(self.guild_contributed or 0)
-            now_raids    = int(now_entry.get('raids', self.guild_raids or 0)) if now_entry else int(self.guild_raids or 0)
+            # Also track if any of the base values are private
+            if now_entry:
+                now_playtime_val = now_entry.get('playtime', self.playtime)
+                now_wars_val = now_entry.get('wars', self.wars)
+                now_contrib_val = now_entry.get('contributed', self.guild_contributed or 0)
+                now_raids_val = now_entry.get('raids', self.guild_raids or 0)
+            else:
+                now_playtime_val = self.playtime
+                now_wars_val = self.wars
+                now_contrib_val = self.guild_contributed or 0
+                now_raids_val = self.guild_raids or 0
+
+            # Check if any are None (private)
+            now_playtime_is_private = now_playtime_val is None
+            now_wars_is_private = now_wars_val is None
+            now_contrib_is_private = now_contrib_val is None
+
+            now_playtime = int(now_playtime_val) if now_playtime_val is not None else 0
+            now_wars = int(now_wars_val) if now_wars_val is not None else 0
+            now_contrib = int(now_contrib_val) if now_contrib_val is not None else 0
+            now_raids = int(now_raids_val) if now_raids_val is not None else 0
 
             # 2) Bound the requested days for display (keep your UX constraints)
             try:
@@ -262,6 +313,12 @@ class PlayerStats:
                 self.real_wars  = max(int(now_wars)     - int(base_wars), 0)
                 self.real_raids = max(int(now_raids)    - int(base_raids),0)
 
+                # Mark timed stats as private if the current value was private
+                self.real_pt_is_private = now_playtime_is_private
+                self.real_wars_is_private = now_wars_is_private
+                self.real_xp_is_private = now_contrib_is_private
+                self.real_raids_is_private = False  # raids is not directly from API
+
                 # Optional: stash a flag if you ever want to render a warning icon on the profile
                 self.stats_warn = bool(warn_flag or (now_entry is None))
             else:
@@ -270,6 +327,10 @@ class PlayerStats:
                 self.real_xp = 'N/A'
                 self.real_wars = 'N/A'
                 self.real_raids = 'N/A'
+                self.real_pt_is_private = False
+                self.real_wars_is_private = False
+                self.real_xp_is_private = False
+                self.real_raids_is_private = False
                 self.stats_warn = False
         else:
             # Non-TAq profiles keep zeros (as before)
@@ -277,6 +338,10 @@ class PlayerStats:
             self.real_xp = 0
             self.real_wars = 0
             self.real_raids = 0
+            self.real_pt_is_private = False
+            self.real_wars_is_private = False
+            self.real_xp_is_private = False
+            self.real_raids_is_private = False
             self.stats_warn = False
 
 
@@ -337,17 +402,18 @@ class BasicPlayerStats:
 
         # player data
         pdata = getPlayerDatav3(self.UUID)
-        self.rank = pdata['rank']
+        self.rank = pdata.get('rank', 'Player')
         if self.rank == 'Player':
-            self.tag = pdata['supportRank'].upper() if pdata['supportRank'] is not None else 'Player'
+            support_rank = pdata.get('supportRank')
+            self.tag = support_rank.upper() if support_rank is not None else 'Player'
         else:
             self.tag = self.rank
         self.tag_color = wynn_ranks[self.tag.lower()]['color'] if self.tag != 'Player' else '#66ccff'
-        self.wars = pdata['globalData']['wars']
-        self.total_level = pdata['globalData']['totalLevel']
-        self.completed_quests = pdata['globalData']['completedQuests']
-        self.playtime = pdata['playtime']
-        self.rank = pdata['rank']
+        self.wars = pdata.get('globalData', {}).get('wars', 0)
+        self.total_level = pdata.get('globalData', {}).get('totalLevel', 0)
+        self.completed_quests = pdata.get('globalData', {}).get('completedQuests', 0)
+        self.playtime = pdata.get('playtime', 0)
+        self.rank = pdata.get('rank', 'Player')
 
 
 class PlayerShells:

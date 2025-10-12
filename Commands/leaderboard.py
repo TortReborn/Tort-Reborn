@@ -91,6 +91,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     bg2 = PlaceTemplate('images/profile/second.png')
     bg3 = PlaceTemplate('images/profile/third.png')
     bg_other = PlaceTemplate('images/profile/other.png')
+    bg_private = PlaceTemplate('images/profile/warning.png')  # Red background for private profiles
     warning_icon = Image.open('images/profile/time_warning.png')
     rank_star = Image.open('images/profile/rank_star.png')
     warning_icon.thumbnail((16, 16))
@@ -101,16 +102,22 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     # ---------------------------
     # Helpers
     # ---------------------------
-    def get_current_value(uuid: str, key: str) -> int:
-        """Return the current live cumulative value for the uuid/key from current_activity.json."""
+    def get_current_value(uuid: str, key: str) -> tuple[int, bool]:
+        """
+        Return the current live cumulative value for the uuid/key from current_activity.json.
+        Returns: (value, is_null) where is_null=True if the data is actually None/private.
+        """
         m = current_by_uuid.get(uuid)
         if not m:
-            return 0
+            return 0, False
         v = m.get(key)
+        # Check if the value is actually None (private profile)
+        if v is None:
+            return 0, True
         try:
-            return int(v) if isinstance(v, (int, float)) else int(v or 0)
+            return int(v) if isinstance(v, (int, float)) else int(v or 0), False
         except Exception:
-            return 0
+            return 0, False
 
     def find_baseline_value(uuid: str, key: str, window_days: int) -> (int, bool):
         """
@@ -147,7 +154,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                     return 0, True
 
         # Never seen in any of the snapshots -> baseline=current (delta=0) and warn
-        current_val = get_current_value(uuid, key)
+        current_val, _ = get_current_value(uuid, key)
         return current_val, True
 
     def perday_sum_inclusive(uuid: str, key: str, window_days: int) -> (int, bool):
@@ -159,7 +166,8 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         """
         if num_snapshots == 0:
             # No history -> try current only
-            return get_current_value(uuid, key), True
+            current_val, is_null = get_current_value(uuid, key)
+            return current_val, True
 
         if window_days <= 0:
             end_idx = num_snapshots - 1
@@ -190,14 +198,17 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         api_rank = m.get('rank', 'unknown')
         rank = uuid_to_discord_rank.get(uuid, api_rank)
 
+        is_private = False  # Track if the relevant metric is private/null
+
         if order_key in CUMULATIVE_KEYS:
-            curr_val = get_current_value(uuid, order_key)
+            curr_val, is_null = get_current_value(uuid, order_key)
             base_val, warn_flag = find_baseline_value(uuid, order_key, days)
             contributed = curr_val - base_val
             if contributed < 0:
                 # In case of data resets or rollbacks, never show negatives
                 contributed = 0
                 warn_flag = True
+            is_private = is_null  # Mark as private if current value is null
         else:
             # Per-day style metrics (if you ever add them)
             contributed, warn_flag = perday_sum_inclusive(uuid, order_key, days)
@@ -208,6 +219,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             'contributed': int(contributed),
             'rank': rank,
             'warning': bool(warn_flag),
+            'is_private': is_private,
         })
 
     # Nothing to show?
@@ -217,7 +229,8 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     # ---------------------------
     # Sort & paginate
     # ---------------------------
-    player_rows.sort(key=lambda x: x['contributed'], reverse=True)
+    # Sort by: private profiles last, then by contributed (descending)
+    player_rows.sort(key=lambda x: (x['is_private'], -x['contributed']))
     total_pages = math.ceil(len(player_rows) / 10)
     rank_counter = 1
     widest = 0
@@ -231,7 +244,14 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         page_chunk = player_rows[page_index * 10:(page_index + 1) * 10]
         for row_idx, player in enumerate(page_chunk):
             img, draw = expand_image(img, border=(0, 0, 0, 36), fill='#00000000')
-            bg_color = [bg1, bg2, bg3][rank_counter - 1] if rank_counter <= 3 else bg_other
+
+            # Choose background color: red for private, ranked colors for top 3, blue for others
+            if player['is_private']:
+                bg_color = bg_private
+            elif rank_counter <= 3:
+                bg_color = [bg1, bg2, bg3][rank_counter - 1]
+            else:
+                bg_color = bg_other
 
             # Warning icon for partial window/late join/missing baseline
             if player['warning']:

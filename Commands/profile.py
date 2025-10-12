@@ -126,28 +126,82 @@ class Profile(commands.Cog):
             if player.online:
                 card_entries['World'] = player.server
             else:
-                card_entries['Last Seen'] = pretty_date(player.last_joined)
-            card_entries['Total Level'] = f'{player.total_level}'
-            card_entries['Playtime'] = f'{int(player.playtime)} hrs'
+                # Last Seen - check if private
+                if player.last_joined_is_private:
+                    card_entries['Last Seen'] = '&cPrivate'
+                else:
+                    card_entries['Last Seen'] = pretty_date(player.last_joined)
+
+            # Total Level - check if private
+            if player.total_level_is_private:
+                card_entries['Total Level'] = '&cPrivate'
+            else:
+                card_entries['Total Level'] = f'{player.total_level}'
+
+            # Playtime - check if private
+            if player.playtime_is_private:
+                card_entries['Playtime'] = '&cPrivate'
+            else:
+                card_entries['Playtime'] = f'{int(player.playtime)} hrs'
+
             if player.taq and player.in_guild_for.days >= 1:
-                card_entries[f'Playtime / {player.stats_days} D'] = f'{int(player.real_pt)} hrs'        # TAq only
-            card_entries['Wars'] = str(player.wars)
+                # Timed playtime - check if private
+                if player.real_pt_is_private:
+                    card_entries[f'Playtime / {player.stats_days} D'] = '&cPrivate'
+                else:
+                    card_entries[f'Playtime / {player.stats_days} D'] = f'{int(player.real_pt)} hrs'
+
+            # Wars - check if private
+            if player.wars_is_private:
+                card_entries['Wars'] = '&cPrivate'
+            else:
+                card_entries['Wars'] = str(player.wars)
+
             if player.taq and player.in_guild_for.days >= 1:
-                card_entries[f'Wars / {player.stats_days} D'] = str(player.real_wars)                   # TAq only
+                # Timed wars - check if private
+                if player.real_wars_is_private:
+                    card_entries[f'Wars / {player.stats_days} D'] = '&cPrivate'
+                else:
+                    card_entries[f'Wars / {player.stats_days} D'] = str(player.real_wars)
+
             if player.guild:
-                card_entries['Guild XP'] = format_number(player.guild_contributed)
+                # Guild XP - check if private
+                if player.guild_contributed_is_private:
+                    card_entries['Guild XP'] = '&cPrivate'
+                else:
+                    card_entries['Guild XP'] = format_number(player.guild_contributed)
+
             if player.taq and player.in_guild_for.days >= 1:
-                card_entries[f'Guild XP / {player.stats_days} D'] = format_number(player.real_xp)       # TAq only
+                # Timed Guild XP - check if private
+                if player.real_xp_is_private:
+                    card_entries[f'Guild XP / {player.stats_days} D'] = '&cPrivate'
+                else:
+                    card_entries[f'Guild XP / {player.stats_days} D'] = format_number(player.real_xp)
+
             if player.taq:
                 card_entries['Guild Raids'] = str(player.guild_raids)
                 if player.in_guild_for.days >= 1:
-                    card_entries[f'Guild Raids / {player.stats_days} D'] = str(player.real_raids)       # TAq only
+                    # Timed raids - check if private
+                    if player.real_raids_is_private:
+                        card_entries[f'Guild Raids / {player.stats_days} D'] = '&cPrivate'
+                    else:
+                        card_entries[f'Guild Raids / {player.stats_days} D'] = str(player.real_raids)
+
             # if len(card_entries) < 10:
             #     card_entries['Killed Mobs'] = str(player.mobs)
             if len(card_entries) < 10:
-                card_entries['Chests Looted'] = str(player.chests)
+                # Chests - check if private
+                if player.chests_is_private:
+                    card_entries['Chests Looted'] = '&cPrivate'
+                else:
+                    card_entries['Chests Looted'] = str(player.chests)
+
             if len(card_entries) < 10:
-                card_entries['Quests'] = str(player.quests)
+                # Quests - check if private
+                if player.quests_is_private:
+                    card_entries['Quests'] = '&cPrivate'
+                else:
+                    card_entries['Quests'] = str(player.quests)
         except Exception as e:
             print(e)
 
@@ -162,7 +216,8 @@ class Profile(commands.Cog):
         for entry in range(len(card_entries)):
             card.paste(box, (50 + ((entry % 2) * 410), 730 + (int(entry / 2) * 85)), box)
             draw.text((60 + ((entry % 2) * 410), 720 + (int(entry / 2) * 85)), text=entry_keys[entry], font=title_font, fill='#fad51e')
-            draw.text((430 + ((entry % 2) * 410), 765 + (int(entry / 2) * 85)), text=card_entries[entry_keys[entry]], font=data_font, anchor="ra")
+            # Use addLine to support color codes like &c for red "Private" text
+            addLine(text=card_entries[entry_keys[entry]], draw=draw, font=data_font, x=430 + ((entry % 2) * 410), y=765 + (int(entry / 2) * 85), anchor="ra")
 
         if player.guild:
             if player.taq and player.in_guild_for.days >= 1:
