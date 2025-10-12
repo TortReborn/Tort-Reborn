@@ -129,7 +129,11 @@ class Activity(commands.Cog):
 
             for row_idx, player in enumerate(entries, start=1):
                 canvas, draw = expand_image(canvas, border=(0, 0, 0, 36), fill=(0, 0, 0, 0))
-                if order_by == 'Kick Suitability':
+
+                # Use red background for private profiles (when relevant metric is null)
+                if player.get('playtime_is_private', False):
+                    tmpl = bg_templates['warn']
+                elif order_by == 'Kick Suitability':
                     tmpl = bg_templates['warn'] if player['score'] >= -1 else bg_templates['other']
                 else:
                     rank_idx = row_idx if page_idx == 0 and row_idx <= 3 else None
@@ -252,7 +256,9 @@ class Activity(commands.Cog):
                 days_since = 9999
             days_since = max(0, days_since)
 
-            playtime = member.get('playtime', 0) or 0
+            raw_playtime = member.get('playtime')
+            playtime_is_private = raw_playtime is None  # Detect if playtime is actually null/private
+            playtime = raw_playtime if raw_playtime is not None else 0
             uuid = member.get('uuid', '').lower()
 
             baseline_pt = None
@@ -317,10 +323,16 @@ class Activity(commands.Cog):
                     'score': score,
                     'game_rank': joined.get('rank', member.get('rank')),
                     'discord_rank': discord_rank,
+                    'playtime_is_private': playtime_is_private,
                 })
 
         sort_keys = {'Playtime': 'playtime', 'Inactivity': 'last_join', 'Kick Suitability': 'score'}
-        playerdata.sort(key=lambda x: x[sort_keys[order_by]], reverse=True)
+
+        # For Playtime sorting, put private profiles at the bottom
+        if order_by == 'Playtime':
+            playerdata.sort(key=lambda x: (x['playtime_is_private'], -x[sort_keys[order_by]]))
+        else:
+            playerdata.sort(key=lambda x: x[sort_keys[order_by]], reverse=True)
         paginator = self._make_activity_pages(playerdata, order_by, days)
         await paginator.respond(ctx.interaction, ephemeral=False)
 
