@@ -368,6 +368,76 @@ claims = {
             "Webbed Fracture",
             "Arachnid Woods",
             "Entrance to Nivla Woods"
-        ]
+        ],
+    },
+    "Canyon of the Lost": {
+        "hq": "Bandit's Toll",
+        "connections": [
+            "Illuminant Path",
+            "Canyon Walkway",
+            "Wizard tower",
+            "Workshop Glade"
+        ],
+    },
+    "Detlas": {
+        "hq": "Mine Base Plains",
+        "connections": [
+            "Mining Base Camp",
+            "Abandoned Mines Entrance",
+            "Essren's Hut",
+            "Plains Lake",
+            "Silent Road",
+            "Abandoned Mines"
+        ],
+    },  
+    "Desert": {
+        "hq": "Almuj",
+        "connections": [
+            "Gloopy Cave",
+            "Ruined Villa",
+            "Almuj Slums",
+            "Entrance to Almuj",
+            "Dusty Pit"
+        ],
+    },
+    "Silent Expanse": {
+        "hq": "Toxic Drip",
+        "connections": [
+            "Paths of Sludge",
+            "Toxic Caves",
+            "Gateway  to Nothing"
+        ],
+    },
+    "Swamp": {
+        "hq": "Bloody Trail",
+        "connections": [
+            "Lizardman Lake",
+            "Overtaken Outpost",
+            "Mangled Lake",
+            "Forgotten Path",
+            "Lizardman Camp",
+            "Entrance to Olux"
+        ],
+    },
+    "Kander": {
+        "hq": " Cinfras Outskirts",
+        "connections": [
+            "Cinfras",
+            "Dark Forest Village",
+            "Taylor Cemetery",
+            "Fungal Grove",
+            "Fallen Village"
+        ],
+    },
+    "Ocean": {
+        "hq": "Nodguj Nation",
+        "connections": [
+            "Dujgon Nation",
+            "Icy Island",
+            "Santa's Hideout",
+            "Mage Island",
+            "Durum Barley Islet",
+            "Skien's Island"
+        ],
     }
-}
+} 
