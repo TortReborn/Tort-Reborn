@@ -67,12 +67,20 @@ class ConvertView(View):
         await interaction.response.defer(ephemeral=True)
 
         db = DB(); db.connect()
+
         db.cursor.execute("""
             UPDATE uncollected_raids
-               SET uncollected_raids = uncollected_raids - %s,
-                   collected_raids   = collected_raids   + %s
-             WHERE uuid = %s
-        """, (self.count, self.count, self.uuid))
+                SET uncollected_raids = uncollected_raids - %s,
+                    collected_raids   = collected_raids   + %s
+            WHERE uuid = %s AND uncollected_raids >= %s
+        """, (self.count, self.count, self.uuid, self.count))
+        db.connection.commit()
+
+        if db.cursor.rowcount == 0:
+            db.close()
+            await interaction.followup.send("❌ You cannot claim raids twice.", ephemeral=True)
+            return
+
 
         # Get IGN from discord_links
         db.cursor.execute(
@@ -104,10 +112,19 @@ class ConvertView(View):
         await interaction.response.defer(ephemeral=True)
 
         db = DB(); db.connect()
-        db.cursor.execute(
-            "SELECT uncollected_raids, uncollected_aspects FROM uncollected_raids WHERE uuid = %s",
-            (self.uuid,)
-        )
+        db.cursor.execute("""
+            UPDATE uncollected_raids
+               SET uncollected_raids   = %s,
+                   uncollected_aspects = uncollected_aspects + %s,
+                   collected_raids     = collected_raids + %s
+             WHERE uuid = %s AND uncollected_raids >= %s
+        """, (remainder_raids, aspect_count, raids_spent, self.uuid, raids_spent))
+        db.connection.commit()
+
+        if db.cursor.rowcount == 0:
+            db.close()
+            await interaction.followup.send("❌ You cannot claim raids twice.", ephemeral=True)
+            return
         row = db.cursor.fetchone()
         total_raids = row[0] if row else 0
         current_aspects = row[1] if row else 0
