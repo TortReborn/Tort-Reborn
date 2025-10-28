@@ -36,20 +36,43 @@ class NewMember(commands.Cog):
                       '🏆 CONTRIBUTION ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
             roles_to_add = []
             roles_to_remove = []
+            missing_roles = []
             all_roles = message.guild.roles
+
+            # Validate roles to add
             for add_role in to_add:
                 role = discord.utils.find(lambda r: r.name == add_role, all_roles)
-                if role not in user.roles:
+                if role is None:
+                    missing_roles.append(add_role)
+                elif role not in user.roles:
                     roles_to_add.append(role)
 
-            await user.add_roles(*roles_to_add, reason=f"New member registration (ran by {message.author.name})", atomic=True)
+            # Log and report missing roles
+            if missing_roles:
+                error_msg = f"⚠️ Warning: The following roles do not exist in this server:\n"
+                for role_name in missing_roles:
+                    error_msg += f"• `{role_name}`\n"
+                error_msg += "\nPlease create these roles or update the command configuration."
 
+                embed = discord.Embed(
+                    title=':warning: Missing Roles Configuration Error',
+                    description=error_msg,
+                    color=0xff9900
+                )
+                await message.respond(embed=embed, ephemeral=True)
+                return
+
+            if roles_to_add:
+                await user.add_roles(*roles_to_add, reason=f"New member registration (ran by {message.author.name})", atomic=True)
+
+            # Validate roles to remove
             for remove_role in to_remove:
                 role = discord.utils.find(lambda r: r.name == remove_role, all_roles)
-                if role in user.roles:
+                if role is not None and role in user.roles:
                     roles_to_remove.append(role)
 
-            await user.remove_roles(*roles_to_remove, reason=f"New member registration (ran by {message.author.name})", atomic=True)
+            if roles_to_remove:
+                await user.remove_roles(*roles_to_remove, reason=f"New member registration (ran by {message.author.name})", atomic=True)
 
             if len(rows) != 0:
                 db.cursor.execute(
