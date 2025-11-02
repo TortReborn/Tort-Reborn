@@ -166,6 +166,7 @@ extensions = [
     'Commands.aspects',
     'Commands.map',
     'Commands.graidevent',
+    'Commands.treasury',
 
     # Dev Commands
     'Commands.render_text',
