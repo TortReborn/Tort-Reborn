@@ -341,7 +341,7 @@ class Leaderboard(commands.Cog):
     leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands')
 
     # ---- XP ----
-    @leaderboard_group.command()
+    @leaderboard_group.command(description='Display the XP leaderboard')
     async def xp(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
         await message.defer()
         try:
@@ -353,7 +353,7 @@ class Leaderboard(commands.Cog):
             print("Error in /xp:", e)
 
     # ---- Wars ----
-    @leaderboard_group.command()
+    @leaderboard_group.command(description='Display the Wars leaderboard')
     async def wars(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
         await message.defer()
         try:
@@ -365,7 +365,7 @@ class Leaderboard(commands.Cog):
             print("Error in /wars:", e)
 
     # ---- Playtime ----
-    @leaderboard_group.command()
+    @leaderboard_group.command(description='Display the Playtime leaderboard')
     async def playtime(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
         await message.defer()
         try:
@@ -377,7 +377,7 @@ class Leaderboard(commands.Cog):
             print("Error in /playtime:", e)
 
     # ---- Shells (now time-gated like others) ----
-    @leaderboard_group.command()
+    @leaderboard_group.command(description='Display the Shells leaderboard')
     async def shells(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
         await message.defer()
         try:
@@ -389,7 +389,7 @@ class Leaderboard(commands.Cog):
             print("Error in /shells:", e)
 
     # ---- NEW: Raids ----
-    @leaderboard_group.command()
+    @leaderboard_group.command(description='Display the Raids leaderboard')
     async def raids(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
         """Leaderboard for raid clears (value stored under 'raids' in player_activity.json)."""
         await message.defer()
