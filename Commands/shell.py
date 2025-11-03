@@ -43,7 +43,7 @@ class Shell(commands.Cog):
 
     shell_group = SlashCommandGroup('shell', 'Shells related commands')
 
-    @shell_group.command()
+    @shell_group.command(description='Displays the top shell balances')
     async def baltop(self, message: ApplicationContext):
         await message.response.defer()
         db = DB()
