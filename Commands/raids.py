@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from io import BytesIO
@@ -19,6 +20,7 @@ from Helpers.functions import (
     getData,
     generate_badge,
 )
+from Helpers.classes import PlayerStats
 from Helpers.database import DB
 from Helpers.variables import discord_ranks, minecraft_banner_colors, guilds, wynn_ranks
 
@@ -61,18 +63,46 @@ class Raids(commands.Cog):
                     name: Option(str, "Minecraft username", required=True)):
         await ctx.defer()
 
-        # 1) Fetch player data from Wynncraft API --------------------------------
+        # 1) Fetch player data using PlayerStats (like profile.py) ----------------
+        try:
+            player_stats = await asyncio.to_thread(PlayerStats, name, 7)  # 7 days for compatibility
+            if player_stats.error:
+                embed = discord.Embed(
+                    title=':no_entry: Oops! Something did not go as intended.',
+                    description=f'Could not retrieve information of `{name}`.\nPlease check your spelling or try again later.',
+                    color=0xe33232
+                )
+                await ctx.followup.send(embed=embed, ephemeral=True)
+                return
+        except Exception:
+            embed = discord.Embed(
+                title=':no_entry: Error',
+                description=f'Could not retrieve information of `{name}`.',
+                color=0xe33232
+            )
+            await ctx.followup.send(embed=embed, ephemeral=True)
+            return
+
+        # 2) Fetch raw player data for raid stats ----------------------------------
         player = await self._fetch_player(name)
         if player is None:
-            return await ctx.followup.send(f"❌ Could not fetch data for `{name}`.", ephemeral=True)
+            embed = discord.Embed(
+                title=':no_entry: Player not found',
+                description=f'Could not find player `{name}`.',
+                color=0xe33232
+            )
+            await ctx.followup.send(embed=embed, ephemeral=True)
+            return
 
-        # 2) Resolve customization (background, gradients, tag_color) -------------
-        tag_color, (grad_start, grad_end), bg_index = self._resolve_customization(ctx, player)
+        # 3) Use PlayerStats for customization and formatting ----------------------
+        tag_color = player_stats.tag_color
+        grad_start, grad_end = player_stats.gradient
+        bg_index = player_stats.background
 
-        # 3) Extract raid stats ---------------------------------------------------
+        # 4) Extract raid stats ---------------------------------------------------
         stats = self._extract_raid_stats(player)
 
-        # 4) Build the card image -------------------------------------------------
+        # 5) Build the card image -------------------------------------------------
         card = self._build_base_canvas(tag_color, grad_start, grad_end)
         draw = ImageDraw.Draw(card)
 
@@ -82,8 +112,8 @@ class Raids(commands.Cog):
         # Player name & avatar
         self._draw_player_header(card, draw, player, tag_color)
 
-        # Rank badge (supportRank or rank)
-        self._draw_rank_badge(card, player, tag_color)
+        # Rank badge using PlayerStats formatting (like profile.py)
+        self._draw_rank_badge(card, player_stats, tag_color)
 
         # Guild badges & banner
         self._draw_guild_elements(card, player, tag_color)
@@ -91,7 +121,7 @@ class Raids(commands.Cog):
         # Raid boxes
         self._draw_raid_boxes(card, draw, stats)
 
-        # 5) Send -----------------------------------------------------------------
+        # 6) Send -----------------------------------------------------------------
         buf = BytesIO()
         card.save(buf, format="PNG")
         buf.seek(0)
@@ -112,50 +142,6 @@ class Raids(commands.Cog):
         payload = res.json()
         data = payload.get("data") or ([payload] if payload.get("username") else [])
         return data[0] if data else None
-
-    def _resolve_customization(self, ctx: discord.ApplicationContext, player: Dict):
-        """
-        Determine tag_color (outer border), gradient start/end, and background index.
-        If the player is **not** in our backend (discord_links/profile_customization), use
-        the hard-coded defaults (blue gradient + background 1.png).
-        We no longer fall back to the command author's customization.
-        """
-        # Defaults
-        default_grad = ("#293786", "#1d275e")
-        default_bg = 1
-
-        # Wynn rank colour (preferred for border)
-        w_rank_key = (player.get("supportRank") or player.get("rank") or "").lower()
-        tag_color = wynn_ranks.get(w_rank_key, {}).get("color", "#293786")
-
-        grad_start, grad_end = default_grad
-        bg_index = default_bg
-
-        uuid = player.get("uuid")
-        if not uuid:
-            return tag_color, (grad_start, grad_end), bg_index
-
-        db = DB(); db.connect()
-        try:
-            # Only use customization if we find this player in discord_links
-            db.cursor.execute("SELECT discord_id FROM discord_links WHERE uuid = %s", (uuid,))
-            row = db.cursor.fetchone()
-            if row:
-                target_discord_id = row[0]
-                db.cursor.execute('SELECT background, gradient FROM profile_customization WHERE "user" = %s',
-                                  (target_discord_id,))
-                prow = db.cursor.fetchone()
-                if prow:
-                    if prow[0] is not None:
-                        bg_index = prow[0]
-                    if isinstance(prow[1], list) and len(prow[1]) == 2:
-                        grad_start, grad_end = prow[1]
-        finally:
-            db.close()
-
-        if not bg_index:
-            bg_index = 1
-        return tag_color, (grad_start, grad_end), bg_index
 
     def _extract_raid_stats(self, player: Dict) -> List[Tuple[str, int, int]]:
         """Return list of (abbr, rank, count)."""
@@ -220,10 +206,10 @@ class Raids(commands.Cog):
         skin.thumbnail((480, 480))
         card.paste(skin, (200, 156), skin)
 
-    def _draw_rank_badge(self, card: Image.Image, player: Dict, tag_color: str) -> None:
+    def _draw_rank_badge(self, card: Image.Image, player_stats: PlayerStats, tag_color: str) -> None:
         """Centered support/rank badge like profile card."""
-        rank_tag = player.get("supportRank") or player.get("rank") or "Player"
-        rank_badge = generate_rank_badge(rank_tag, tag_color)
+        # Use PlayerStats tag_display (already formatted like profile.py)
+        rank_badge = generate_rank_badge(player_stats.tag_display, tag_color)
         w, h = rank_badge.size
         card.paste(rank_badge, (450 - w // 2, 96), rank_badge)
 
