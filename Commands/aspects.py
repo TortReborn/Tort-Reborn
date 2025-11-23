@@ -136,21 +136,73 @@ class AspectDistribution(commands.Cog):
         return dist
 
 
+    def create_default_avatar(self, uuid: str) -> bytes:
+        """Create a simple default avatar with a question mark"""
+        img = Image.new("RGBA", (64, 64), (100, 100, 100, 255))
+        draw = ImageDraw.Draw(img)
+
+        # Draw a border
+        draw.rectangle([(0, 0), (63, 63)], outline=(150, 150, 150, 255), width=2)
+
+        # Draw a question mark
+        try:
+            font = ImageFont.truetype("arial.ttf", size=30)
+        except:
+            font = ImageFont.load_default()
+
+        char = "?"
+        bbox = draw.textbbox((0, 0), char, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = (64 - text_width) // 2
+        y = (64 - text_height) // 2
+        draw.text((x, y), char, fill=(255, 255, 255, 255), font=font)
+
+        # Convert to bytes
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        return buf.read()
+
     async def get_avatar(self, uuid: str) -> bytes:
         cache = self.load_json(AVATAR_CACHE_FILE, {})
         if uuid in cache:
             path = os.path.join(AVATAR_CACHE_DIR, cache[uuid])
             if os.path.exists(path):
                 return open(path,'rb').read()
+
         url = f"https://crafatar.com/avatars/{uuid}?size=64&overlay"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                data = await resp.read()
-        fn = f"{uuid}.png"
-        with open(os.path.join(AVATAR_CACHE_DIR, fn),'wb') as f: f.write(data)
-        cache[uuid] = fn
-        self.save_json(AVATAR_CACHE_FILE, cache)
-        return data
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    data = await resp.read()
+
+                    # Validate response before caching
+                    # Check if response is HTML (error page) instead of image
+                    if data.startswith(b'<!DOCTYPE') or data.startswith(b'<html'):
+                        # Crafatar returned an error page, don't cache it
+                        print(f"Warning: Crafatar returned HTML error page for UUID {uuid}")
+                        return None
+
+                    # Check if it's a valid image by checking PNG/JPEG headers
+                    is_png = data[:8] == b'\x89PNG\r\n\x1a\n'
+                    is_jpeg = data[:3] == b'\xff\xd8\xff'
+
+                    if not (is_png or is_jpeg):
+                        # Invalid image data, don't cache it
+                        print(f"Warning: Invalid image data received for UUID {uuid}")
+                        return None
+
+            # Only cache valid image data
+            fn = f"{uuid}.png"
+            with open(os.path.join(AVATAR_CACHE_DIR, fn),'wb') as f: f.write(data)
+            cache[uuid] = fn
+            self.save_json(AVATAR_CACHE_FILE, cache)
+            return data
+        except Exception as e:
+            # Network error or other issue
+            print(f"Warning: Failed to fetch avatar for UUID {uuid}: {e}")
+            return None
 
     def make_distribution_image(self, avatar_bytes_list, names_list):
         title_font = ImageFont.truetype("arial.ttf", size=20)
@@ -179,8 +231,19 @@ class AspectDistribution(commands.Cog):
             row = (idx-1)%ROWS_PER_COLUMN
             x = col * CELL_WIDTH + PADDING
             y_pos = y + row * line_h
-            av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((AVATAR_SIZE,AVATAR_SIZE))
-            img.paste(av_img, (x,y_pos), av_img)
+
+            # Handle avatar with error handling
+            try:
+                av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((AVATAR_SIZE,AVATAR_SIZE))
+                img.paste(av_img, (x,y_pos), av_img)
+            except Exception as e:
+                # If image processing fails (shouldn't happen with our validation, but just in case)
+                # Create a simple colored square as fallback
+                fallback = Image.new("RGBA", (AVATAR_SIZE, AVATAR_SIZE), (80, 80, 80, 255))
+                draw_fb = ImageDraw.Draw(fallback)
+                draw_fb.rectangle([(0,0), (AVATAR_SIZE-1, AVATAR_SIZE-1)], outline=(120, 120, 120, 255))
+                img.paste(fallback, (x, y_pos), fallback)
+
             line = f"{idx}. {name}"
             text_y = y_pos + (AVATAR_SIZE - text_font.getbbox(line)[3])//2
             draw.text((x + AVATAR_SIZE + 10, text_y), line, font=text_font, fill=(255,255,255))
@@ -262,8 +325,18 @@ class AspectDistribution(commands.Cog):
                 name = (looked_up[0] if isinstance(looked_up, (list, tuple)) else str(looked_up))
                 names.append(name)
 
-        # 5 fetch avatars in parallel
-        avatars = await asyncio.gather(*(self.get_avatar(u) for u in recipients))
+        # 5 fetch avatars in parallel, with fallbacks for failures
+        avatar_tasks = [self.get_avatar(u) for u in recipients]
+        avatar_results = await asyncio.gather(*avatar_tasks)
+
+        # Replace None results with default avatars
+        avatars = []
+        for idx, (avatar_data, uuid) in enumerate(zip(avatar_results, recipients)):
+            if avatar_data is None:
+                # Use default avatar if fetch failed
+                avatars.append(self.create_default_avatar(uuid))
+            else:
+                avatars.append(avatar_data)
 
         # 6 update the marker by how many you actually displayed
         displayed = len(recipients)
