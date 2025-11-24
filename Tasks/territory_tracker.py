@@ -113,9 +113,92 @@ def timeHeld(date_time_old, date_time_new):
     return f"{d} d {t[0]} h {t[1]} m {t[2]} s"
 
 
+# Helper functions for new features
+def get_all_hq_territories():
+    """Get a set of all HQ territory names from claims configuration."""
+    hq_territories = set()
+    for claim_name, cfg in claims.items():
+        hq = cfg.get("hq")
+        if hq:
+            hq_territories.add(hq)
+    return hq_territories
+
+
+def check_spearhead_conditions(territory_data, last_ping_time, territory_state):
+    """
+    Check if conditions are met to ping spearhead:
+    1. The Aquarium owns more than 7 territories
+    2. The Aquarium has owned ALL connection territories AND HQ for >20 minutes for at least one claim
+
+    Returns: (should_ping, reason_message)
+    """
+    # Count territories owned by The Aquarium
+    aquarium_territories = sum(
+        1 for info in territory_data.values()
+        if info['guild']['name'] == 'The Aquarium'
+    )
+
+    # Check first condition
+    if aquarium_territories <= 7:
+        return False, None
+
+    # Check if enough time has passed since last ping (5 minutes cooldown)
+    if last_ping_time:
+        time_since_ping = datetime.datetime.now() - last_ping_time
+        if time_since_ping.total_seconds() < 300:  # 5 minutes in seconds
+            return False, None
+
+    # Check second condition - for each claim, see if we own all territories for >20 minutes
+    current_time = datetime.datetime.now(datetime.timezone.utc)
+    qualifying_claims = []
+
+    for claim_name, cfg in claims.items():
+        hq = cfg.get("hq")
+        connections = cfg.get("connections", [])
+        if not hq:
+            continue
+
+        all_territories = [hq] + connections
+
+        # Check if we own all territories in this claim
+        all_owned = True
+        oldest_acquisition = None
+
+        for terr in all_territories:
+            terr_info = territory_data.get(terr)
+            if not terr_info or terr_info['guild']['name'] != 'The Aquarium':
+                all_owned = False
+                break
+
+            # Parse acquisition time
+            acquired_str = terr_info['acquired']
+            acquired_time = datetime.datetime.fromisoformat(acquired_str.rstrip('Z'))
+            acquired_time = acquired_time.replace(tzinfo=datetime.timezone.utc)
+
+            # Track the most recent acquisition (limiting factor)
+            if oldest_acquisition is None or acquired_time > oldest_acquisition:
+                oldest_acquisition = acquired_time
+
+        if all_owned and oldest_acquisition:
+            # Check if we've owned all territories for >20 minutes
+            time_held = current_time - oldest_acquisition
+            if time_held.total_seconds() > 1200:  # 20 minutes in seconds
+                qualifying_claims.append(claim_name)
+
+    if qualifying_claims:
+        # Create message with territory count and qualifying claims
+        claims_list = ", ".join(qualifying_claims)
+        message = f"The Aquarium controls {aquarium_territories} territories and has held {claims_list} for over 20 minutes!"
+        return True, message
+
+    return False, None
+
+
 class TerritoryTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
+        self.last_spearhead_ping = None  # Track last spearhead ping to prevent spam
+        self.last_territory_state = {}  # Track when we first owned all territories in a claim
         self.territory_tracker.start()
 
     def cog_unload(self):
@@ -221,9 +304,30 @@ class TerritoryTracker(commands.Cog):
                         }
                     }
 
+            # Check for HQ captures and send congratulations
+            hq_territories = get_all_hq_territories()
             for terr, change in owner_changes.items():
                 old = change['old']
                 new = change['new']
+
+                # Check if this is an HQ capture by The Aquarium
+                if (terr in hq_territories and
+                    old['owner'] != 'The Aquarium' and
+                    new['owner'] == 'The Aquarium'):
+
+                    # Find which claim this HQ belongs to
+                    claim_name = None
+                    for c_name, cfg in claims.items():
+                        if cfg.get("hq") == terr:
+                            claim_name = c_name
+                            break
+
+                    if claim_name:
+                        # Send congratulations message to military channel (no ping)
+                        alert_chan = self.client.get_channel(military_channel)
+                        if alert_chan:
+                            congrats_msg = f"🎉 Congratulations on a successful snipe of **{claim_name}** owned by **{old['owner']}**!"
+                            await alert_chan.send(congrats_msg)
 
                 # Determine gain vs loss
                 if new['owner'] == 'The Aquarium':
@@ -266,6 +370,21 @@ class TerritoryTracker(commands.Cog):
                 )
 
                 await channel.send(embed=embed)
+
+            # Check if we should ping spearhead based on conditions
+            should_ping, ping_message = check_spearhead_conditions(
+                new_data,
+                self.last_spearhead_ping,
+                self.last_territory_state
+            )
+
+            if should_ping and ping_message:
+                alert_chan = self.client.get_channel(military_channel)
+                if alert_chan:
+                    mention = f"<@&{spearhead_role_id}>"
+                    full_message = f"{mention} {ping_message}"
+                    await alert_chan.send(full_message)
+                    self.last_spearhead_ping = datetime.datetime.now()
 
         except Exception as e:
             # Log and continue; the task loop will run again next tick
