@@ -439,5 +439,16 @@ claims = {
             "Durum Barley Islet",
             "Skien's Island"
         ],
+    },
+    "Ragni-Detlas": {
+        "hq": "Corrupted Warfront",
+        "connections": [
+            "Corrupted Orchard",
+            "Detlas Suburbs",
+            "Plains Lake",
+            "Roots of Corruption",
+            "Corrupted Road",
+            "Akias Ruins"
+        ],
     }
-} 
+}
