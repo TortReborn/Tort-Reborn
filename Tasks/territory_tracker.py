@@ -124,81 +124,9 @@ def get_all_hq_territories():
     return hq_territories
 
 
-def check_spearhead_conditions(territory_data, last_ping_time, territory_state):
-    """
-    Check if conditions are met to ping spearhead:
-    1. The Aquarium owns more than 7 territories
-    2. The Aquarium has owned ALL connection territories AND HQ for >20 minutes for at least one claim
-
-    Returns: (should_ping, reason_message)
-    """
-    # Count territories owned by The Aquarium
-    aquarium_territories = sum(
-        1 for info in territory_data.values()
-        if info['guild']['name'] == 'The Aquarium'
-    )
-
-    # Check first condition
-    if aquarium_territories <= 7:
-        return False, None
-
-    # Check if enough time has passed since last ping (5 minutes cooldown)
-    if last_ping_time:
-        time_since_ping = datetime.datetime.now() - last_ping_time
-        if time_since_ping.total_seconds() < 300:  # 5 minutes in seconds
-            return False, None
-
-    # Check second condition - for each claim, see if we own all territories for >20 minutes
-    current_time = datetime.datetime.now(datetime.timezone.utc)
-    qualifying_claims = []
-
-    for claim_name, cfg in claims.items():
-        hq = cfg.get("hq")
-        connections = cfg.get("connections", [])
-        if not hq:
-            continue
-
-        all_territories = [hq] + connections
-
-        # Check if we own all territories in this claim
-        all_owned = True
-        oldest_acquisition = None
-
-        for terr in all_territories:
-            terr_info = territory_data.get(terr)
-            if not terr_info or terr_info['guild']['name'] != 'The Aquarium':
-                all_owned = False
-                break
-
-            # Parse acquisition time
-            acquired_str = terr_info['acquired']
-            acquired_time = datetime.datetime.fromisoformat(acquired_str.rstrip('Z'))
-            acquired_time = acquired_time.replace(tzinfo=datetime.timezone.utc)
-
-            # Track the most recent acquisition (limiting factor)
-            if oldest_acquisition is None or acquired_time > oldest_acquisition:
-                oldest_acquisition = acquired_time
-
-        if all_owned and oldest_acquisition:
-            # Check if we've owned all territories for >20 minutes
-            time_held = current_time - oldest_acquisition
-            if time_held.total_seconds() > 1200:  # 20 minutes in seconds
-                qualifying_claims.append(claim_name)
-
-    if qualifying_claims:
-        # Create message with territory count and qualifying claims
-        claims_list = ", ".join(qualifying_claims)
-        message = f"The Aquarium controls {aquarium_territories} territories and has held {claims_list} for over 20 minutes!"
-        return True, message
-
-    return False, None
-
-
 class TerritoryTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.last_spearhead_ping = None  # Track last spearhead ping to prevent spam
-        self.last_territory_state = {}  # Track when we first owned all territories in a claim
         self.territory_tracker.start()
 
     def cog_unload(self):
@@ -267,17 +195,53 @@ class TerritoryTracker(commands.Cog):
                             lost_terr = None
                             terr_type = "connection"
 
+                        # Check spearhead ping conditions:
+                        # 1. Guild owns more than 7 territories
+                        # 2. We had held all territories in this claim for >20 minutes
+                        aquarium_territory_count = sum(
+                            1 for info in old_data.values()
+                            if info.get('guild', {}).get('name') == 'The Aquarium'
+                        )
+
+                        should_ping_spearhead = False
+                        if aquarium_territory_count > 7:
+                            # Check if we had held all claim territories for >20 minutes
+                            current_time = datetime.datetime.now(datetime.timezone.utc)
+                            most_recent_acquisition = None
+
+                            for terr in members:
+                                terr_info = old_data.get(terr)
+                                if terr_info and terr_info.get('guild', {}).get('name') == 'The Aquarium':
+                                    acquired_str = terr_info.get('acquired', '')
+                                    if acquired_str:
+                                        acquired_time = datetime.datetime.fromisoformat(acquired_str.rstrip('Z'))
+                                        acquired_time = acquired_time.replace(tzinfo=datetime.timezone.utc)
+                                        if most_recent_acquisition is None or acquired_time > most_recent_acquisition:
+                                            most_recent_acquisition = acquired_time
+
+                            if most_recent_acquisition:
+                                time_held = current_time - most_recent_acquisition
+                                if time_held.total_seconds() > 1200:  # 20 minutes
+                                    should_ping_spearhead = True
+
                         # Alert
                         alert_chan = self.client.get_channel(military_channel)
-                        mention = f"<@&{spearhead_role_id}>"
 
                         # get the guild that took the territory and build message
                         if lost_terr:
                             attacker = new_data.get(lost_terr, {}).get("guild", {}).get("name", "Unknown")
                             attacker_prefix = new_data.get(lost_terr, {}).get("guild", {}).get("prefix", "???")
-                            msg = f"{mention} **Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
+                            if should_ping_spearhead:
+                                mention = f"<@&{spearhead_role_id}>"
+                                msg = f"{mention} **Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
+                            else:
+                                msg = f"**Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
                         else:
-                            msg = f"{mention} **Attack on {claim_name}!** A {terr_type} was taken."
+                            if should_ping_spearhead:
+                                mention = f"<@&{spearhead_role_id}>"
+                                msg = f"{mention} **Attack on {claim_name}!** A {terr_type} was taken."
+                            else:
+                                msg = f"**Attack on {claim_name}!** A {terr_type} was taken."
 
                         if alert_chan:
                             await alert_chan.send(msg)
@@ -370,21 +334,6 @@ class TerritoryTracker(commands.Cog):
                 )
 
                 await channel.send(embed=embed)
-
-            # Check if we should ping spearhead based on conditions
-            should_ping, ping_message = check_spearhead_conditions(
-                new_data,
-                self.last_spearhead_ping,
-                self.last_territory_state
-            )
-
-            if should_ping and ping_message:
-                alert_chan = self.client.get_channel(military_channel)
-                if alert_chan:
-                    mention = f"<@&{spearhead_role_id}>"
-                    full_message = f"{mention} {ping_message}"
-                    await alert_chan.send(full_message)
-                    self.last_spearhead_ping = datetime.datetime.now()
 
         except Exception as e:
             # Log and continue; the task loop will run again next tick
