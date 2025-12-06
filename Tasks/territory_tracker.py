@@ -227,6 +227,23 @@ class TerritoryTracker(commands.Cog):
                         # Alert
                         alert_chan = self.client.get_channel(military_channel)
 
+                        # Check if attack pings are enabled via toggle
+                        if should_ping_spearhead and alert_chan:
+                            try:
+                                db = DB()
+                                db.connect()
+                                db.cursor.execute(
+                                    "SELECT setting_value FROM guild_settings WHERE guild_id = %s AND setting_key = %s",
+                                    (alert_chan.guild.id, 'attack_ping')
+                                )
+                                result = db.cursor.fetchone()
+                                db.close()
+                                # Default to True if no setting exists, but respect toggle if set
+                                if result is not None and not result[0]:
+                                    should_ping_spearhead = False
+                            except Exception:
+                                pass  # If DB check fails, use the existing should_ping_spearhead value
+
                         # get the guild that took the territory and build message
                         if lost_terr:
                             attacker = new_data.get(lost_terr, {}).get("guild", {}).get("name", "Unknown")
