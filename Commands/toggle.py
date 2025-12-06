@@ -23,6 +23,18 @@ class Toggle(commands.Cog):
         db = DB()
         db.connect()
 
+        # Create table if it doesn't exist
+        db.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS guild_settings (
+                guild_id      BIGINT       NOT NULL,
+                setting_key   VARCHAR(64)  NOT NULL,
+                setting_value BOOLEAN      NOT NULL DEFAULT TRUE,
+                updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (guild_id, setting_key)
+            )
+        """)
+        db.connection.commit()
+
         # Check current setting
         db.cursor.execute(
             "SELECT setting_value FROM guild_settings WHERE guild_id = %s AND setting_key = %s",
