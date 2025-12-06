@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS new_app (
   webhook   TEXT      NOT NULL,
   posted    BOOLEAN   NOT NULL    DEFAULT FALSE,
   reminder  BOOLEAN   NOT NULL    DEFAULT FALSE,
-  status    TEXT      NOT NULL    DEFAULT ':green_circle: Opened',  
+  status    TEXT      NOT NULL    DEFAULT ':green_circle: Opened',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS guild_settings (
+  guild_id      BIGINT       NOT NULL,
+  setting_key   VARCHAR(64)  NOT NULL,
+  setting_value BOOLEAN      NOT NULL DEFAULT TRUE,
+  updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (guild_id, setting_key)
 );

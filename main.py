@@ -151,6 +151,7 @@ extensions = [
     'Commands.raids',
     #'Commands.rank',
     'Commands.manage',
+    'Commands.toggle',
     # 'Commands.blacklist',
     'Commands.shell',
     # 'Commands.contribution',
