@@ -135,7 +135,7 @@ class Rank(commands.Cog):
         safe = quote(name)
         url = f"https://api.wynncraft.com/v3/player/{safe}?fullResult"
         try:
-            r = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+            r = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         except requests.RequestException:
             return None
         if r.status_code != 200:

@@ -24,7 +24,7 @@ class Guild:
         else:
             url = f'https://api.wynncraft.com/v3/guild/{urlify(guild)}'
 
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         guild_data = resp.json()
 

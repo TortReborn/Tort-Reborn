@@ -37,7 +37,7 @@ def getPlayerData(name):
         name = 'aa7402cc-bf1c-4aed-838b-fd8897d38836'
     url = f'https://api.wynncraft.com/v2/player/{name}/stats'
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:
@@ -47,7 +47,7 @@ def getPlayerData(name):
 def getPlayerDatav3(uuid):
     url = f'https://api.wynncraft.com/v3/player/{uuid}?fullResult'
     try:
-        resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:
@@ -58,7 +58,7 @@ def getGuildFromShort(short):
     url = ('https://api.wynncraft.com/public_api.php'
            '?action=statsLeaderboard&type=guild&timeframe=alltime')
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         data = resp.json()
     except requests.RequestException:
@@ -100,7 +100,7 @@ def search(item, type):
 def getData(guild):
     url = f"https://api.wynncraft.com/v3/guild/{urlify(guild)}"
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:
@@ -179,7 +179,7 @@ def getGuildMembers(guild):
       f'?action=guildStats&command={urlify(guild)}'
     )
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json().get('members', [])
     except requests.RequestException:
@@ -216,7 +216,7 @@ def getPlayerUUID(player):
         return [username, str(player_uuid)]
     except:
         try:
-            req = requests.get(f"https://api.wynncraft.com/v3/player/{player}", headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"}, timeout=10)
+            req = requests.get(f"https://api.wynncraft.com/v3/player/{player}", headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"}, timeout=10)
             username = req.json()['username']
             player_uuid = UUID(req.json()['uuid'])
             return [username, str(player_uuid)]
@@ -432,7 +432,7 @@ def round_corners(img, radius=25):
 def generate_banner(guild, scale, style=''):
     url = f"https://api.wynncraft.com/v3/guild/{urlify(guild)}"
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         resp.raise_for_status()
         data = resp.json()
     except requests.RequestException:
@@ -490,7 +490,7 @@ def generate_banner(guild, scale, style=''):
 def update_items():
     ITEMS = []
 
-    req = requests.get('https://api.wynncraft.com/v3/item/database?fullResult', headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+    req = requests.get('https://api.wynncraft.com/v3/item/database?fullResult', headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
     items = req.json()
 
     for item in items:
@@ -740,7 +740,7 @@ def getOnlinePlayers():
     # Preferred v3 endpoint (30 seconds TTL)
     v3_url = "https://api.wynncraft.com/v3/player"
     try:
-        resp = requests.get(v3_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(v3_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         if resp.status_code == 200:
             data = resp.json()
             if 'players' in data and isinstance(data['players'], dict):
@@ -751,7 +751,7 @@ def getOnlinePlayers():
     # Fallback to legacy endpoint (using a different timeout for the fallback)
     legacy_url = "https://api.wynncraft.com/public_api.php?action=onlinePlayers"
     try:
-        resp = requests.get(legacy_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(legacy_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         if resp.status_code == 200:
             data = resp.json()
             # Legacy format returns a list of servers, each with a list of players
@@ -787,7 +787,7 @@ def getOnlinePlayersUUID():
     uuid_url = "https://api.wynncraft.com/v3/player?identifier=uuid"
 
     try:
-        resp = requests.get(uuid_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+        resp = requests.get(uuid_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         if resp.status_code == 200:
             data = resp.json()
             players = data.get("players", {})

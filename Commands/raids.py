@@ -134,7 +134,7 @@ class Raids(commands.Cog):
         safe_name = quote(name)
         url = f"https://api.wynncraft.com/v3/player/{safe_name}"
         try:
-            res = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv("WYNN_TOKEN")}"})
+            res = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
         except requests.RequestException:
             return None
         if res.status_code != 200:
