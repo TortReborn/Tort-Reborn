@@ -31,10 +31,10 @@ class CachePlayerActivity(commands.Cog):
             db.close()
 
             if not exists:
-                print("[CachePlayerActivity] No existing cache found, creating initial cache entry")
+                print("🟨 [CachePlayerActivity] No existing cache found, creating initial cache entry")
                 await self.create_cache_entry()
             else:
-                print("[CachePlayerActivity] Cache entry already exists")
+                print("🟨 [CachePlayerActivity] Cache entry already exists")
 
         except Exception as e:
             print(f"[CachePlayerActivity] Error checking cache existence: {e}")

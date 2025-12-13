@@ -371,7 +371,7 @@ class UpdateMemberData(commands.Cog):
     @tasks.loop(minutes=3)
     async def update_member_data(self):
         now = datetime.datetime.now(timezone.utc)
-        print(f"🟦 STARTING LOOP - {now}", flush=True)
+        print(f"🟦 STARTING LOOP - {now.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
 
         # fetch guild over HTTP off the event loop
         guild = await asyncio.to_thread(Guild, "The Aquarium")
@@ -545,7 +545,7 @@ class UpdateMemberData(commands.Cog):
             contrib_map, rank_map, pf_map, online_map
         )
         
-        print(f"🟨 ENDING LOOP - {datetime.datetime.now(timezone.utc)}",flush=True)
+        print(f"🟨 ENDING LOOP - {datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}",flush=True)
 
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
     async def daily_activity_snapshot(self):
