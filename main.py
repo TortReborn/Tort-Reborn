@@ -200,6 +200,7 @@ extensions = [
     'Tasks.vanity_roles',
     'Tasks.graid_event_stop',
     'Tasks.cache_player_activity',
+    'Tasks.recruitment_checker',
 ]
 
 for ext in extensions:
