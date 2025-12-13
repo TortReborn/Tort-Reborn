@@ -156,9 +156,9 @@ class VanityRoles(commands.Cog):
         # Prevent duplicate task starts
         if not self.biweekly_roles.is_running():
             self.biweekly_roles.start()
-            print("[vanity_roles] Task loop started")
+            print("🟨 [vanity_roles] Task loop started")
         else:
-            print("[vanity_roles] WARNING: Task loop already running, skipping duplicate start")
+            print("🟨 [vanity_roles] WARNING: Task loop already running, skipping duplicate start")
         
 
     def cog_unload(self):

@@ -57,7 +57,6 @@ class RecruitmentChecker(commands.Cog):
     async def recruitment_loop(self):
         """Background task that scans online players for guildless recruitment candidates"""
         try:
-            print("🟪 [RecruitmentChecker] Starting recruitment scan...")
             start_time = datetime.now(timezone.utc)
             candidates = []
             total_scanned = 0
@@ -80,7 +79,7 @@ class RecruitmentChecker(commands.Cog):
                 player_list = list(players.items())
                 random.shuffle(player_list)
 
-                print(f"[RecruitmentChecker] Found {total_players} online players (randomized), using {request_delay:.2f}s delay between requests")
+                print(f"🟩 [RecruitmentChecker] Found {total_players} online players")
 
                 for player_name, server_name in player_list:
                     # Check if we've hit the cutoff time (9:45)
