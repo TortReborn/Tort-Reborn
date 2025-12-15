@@ -171,17 +171,21 @@ class AspectDistribution(commands.Cog):
             if os.path.exists(path):
                 return open(path,'rb').read()
 
-        url = f"https://crafatar.com/avatars/{uuid}?size=64&overlay"
+        # Use Visage API for avatar rendering
+        url = f"https://vzge.me/face/64/{uuid}"
+        headers = {'User-Agent': os.getenv("visage_UA", "")}
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status != 200:
+                        print(f"Warning: Visage returned status {resp.status} for UUID {uuid}")
+                        return None
+
                     data = await resp.read()
 
-                    # Validate response before caching
                     # Check if response is HTML (error page) instead of image
                     if data.startswith(b'<!DOCTYPE') or data.startswith(b'<html'):
-                        # Crafatar returned an error page, don't cache it
-                        print(f"Warning: Crafatar returned HTML error page for UUID {uuid}")
+                        print(f"Warning: Visage returned HTML error page for UUID {uuid}")
                         return None
 
                     # Check if it's a valid image by checking PNG/JPEG headers
@@ -189,7 +193,6 @@ class AspectDistribution(commands.Cog):
                     is_jpeg = data[:3] == b'\xff\xd8\xff'
 
                     if not (is_png or is_jpeg):
-                        # Invalid image data, don't cache it
                         print(f"Warning: Invalid image data received for UUID {uuid}")
                         return None
 
@@ -200,7 +203,6 @@ class AspectDistribution(commands.Cog):
             self.save_json(AVATAR_CACHE_FILE, cache)
             return data
         except Exception as e:
-            # Network error or other issue
             print(f"Warning: Failed to fetch avatar for UUID {uuid}: {e}")
             return None
 
