@@ -619,12 +619,44 @@ class UpdateMemberData(commands.Cog):
                 'raids': rd
             })
 
-        # 3: write out json
+        # 3: write out json (keep for backward compatibility and verification)
         pth = "player_activity.json"
         old = self._load_json(pth, [])
         old.insert(0, snap)
         with open(pth, 'w') as f:
             json.dump(old, f, indent=2)
+        print("Daily activity snapshot written to JSON", flush=True)
+
+        # 4: write to player_activity database table (all fields)
+        try:
+            snapshot_date = today_utc
+            db_rows_written = 0
+            for member in snap['members']:
+                uuid = member.get('uuid')
+                playtime = member.get('playtime')
+                contributed = member.get('contributed') or 0
+                wars = member.get('wars') or 0
+                raids = member.get('raids') or 0
+                shells = member.get('shells') or 0
+                if uuid and playtime is not None:
+                    db.cursor.execute("""
+                        INSERT INTO player_activity (uuid, playtime, contributed, wars, raids, shells, snapshot_date)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (uuid, snapshot_date)
+                        DO UPDATE SET
+                            playtime = EXCLUDED.playtime,
+                            contributed = EXCLUDED.contributed,
+                            wars = EXCLUDED.wars,
+                            raids = EXCLUDED.raids,
+                            shells = EXCLUDED.shells
+                    """, (uuid, playtime, contributed, wars, raids, shells, snapshot_date))
+                    db_rows_written += 1
+            db.connection.commit()
+            print(f"Daily activity snapshot written to DB ({db_rows_written} rows)", flush=True)
+        except Exception as e:
+            print(f"[daily_activity_snapshot] Failed to write to DB: {e}", flush=True)
+            traceback.print_exc()
+
         db.close()
         print("Daily activity snapshot complete", flush=True)
     

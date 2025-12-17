@@ -18,7 +18,6 @@ START_DATE_UTC = date(2025, 8, 31)  # first run date (YYYY, M, D)
 WINDOW_DAYS = 14  # bi-weekly window
 
 CURRENT_PATH = "current_activity.json"
-HISTORY_PATH = "player_activity.json"
 
 @dataclass
 class WindowedStats:
@@ -34,19 +33,6 @@ def _load_json(path: str, default):
         return default
 
 
-def _build_hist_index(history_mrf: List[Dict[str, Any]]) -> List[Dict[str, Dict[str, Any]]]:
-    """Index snapshots (most recent first) -> {uuid -> member entry}."""
-    out: List[Dict[str, Dict[str, Any]]] = []
-    for snap in history_mrf:
-        idx_map: Dict[str, Dict[str, Any]] = {}
-        for m in snap.get("members", []):
-            uid = m.get("uuid")
-            if uid:
-                idx_map[uid] = m
-        out.append(idx_map)
-    return out
-
-
 def _get_current_value(cur_by_uuid: Dict[str, Dict[str, Any]], uuid: str, key: str) -> int:
     m = cur_by_uuid.get(uuid)
     if not m:
@@ -58,64 +44,65 @@ def _get_current_value(cur_by_uuid: Dict[str, Dict[str, Any]], uuid: str, key: s
         return 0
 
 
-def _find_inclusive_baseline(
-    hist_by_uuid_at: List[Dict[str, Dict[str, Any]]],
-    uuid: str,
-    key: str,
-    window_days: int,
-) -> int:
+def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> int:
     """
-    Inclusive baseline:
-      - baseline_idx = window_days (the (W+1)-th most recent snapshot)
-      - if missing at that index, walk toward newer (W-1 ... 0)
-      - if never found, baseline = 0 (safe default)
+    Get baseline value from player_activity database table using index-based lookup.
     """
-    num = len(hist_by_uuid_at)
-    if num == 0:
+    try:
+        # Get the window_days-th most recent snapshot date (0-indexed)
+        db.cursor.execute("""
+            SELECT DISTINCT snapshot_date FROM player_activity
+            ORDER BY snapshot_date DESC
+            OFFSET %s LIMIT 1
+        """, (window_days,))
+        date_row = db.cursor.fetchone()
+        if not date_row:
+            return 0
+        target_date = date_row[0]
+
+        db.cursor.execute(f"""
+            SELECT {key} FROM player_activity
+            WHERE uuid = %s AND snapshot_date = %s
+        """, (uuid, target_date))
+        row = db.cursor.fetchone()
+
+        if row and row[0] is not None:
+            return int(row[0])
         return 0
-
-    baseline_idx = min(window_days, num - 1)
-    entry = hist_by_uuid_at[baseline_idx].get(uuid)
-    if entry is not None:
-        try:
-            return int(entry.get(key) or 0)
-        except Exception:
-            pass
-
-    for i in range(baseline_idx - 1, -1, -1):
-        e = hist_by_uuid_at[i].get(uuid)
-        if e is not None:
-            try:
-                return int(e.get(key) or 0)
-            except Exception:
-                return 0
-    return 0
+    except Exception as e:
+        print(f"[vanity_roles] Error getting baseline for {uuid}/{key}: {e}")
+        return 0
 
 
 def compute_windowed_stats(window_days: int = WINDOW_DAYS) -> Dict[str, WindowedStats]:
     """
     Returns { uuid -> WindowedStats(wars=Δ, raids=Δ) } for the last `window_days`.
-    Uses current_activity.json (live) minus inclusive-baseline from player_activity.json (MRF).
+    Uses current_activity.json (live) minus baseline from player_activity database table.
     """
+    # Load current live data from JSON (updated every 3 minutes)
     current = _load_json(CURRENT_PATH, {})
-    history_mrf: List[Dict[str, Any]] = _load_json(HISTORY_PATH, [])
-
     cur_members = current.get("members", []) if isinstance(current, dict) else []
     cur_by_uuid = {m["uuid"]: m for m in cur_members if isinstance(m, dict) and m.get("uuid")}
 
-    hist_by_uuid_at = _build_hist_index(history_mrf)
+    # Get baseline values from database
+    db = DB()
+    db.connect()
 
     out: Dict[str, WindowedStats] = {}
-    for uuid in cur_by_uuid.keys():
-        curr_wars = _get_current_value(cur_by_uuid, uuid, "wars")
-        curr_raids = _get_current_value(cur_by_uuid, uuid, "raids")
+    try:
+        for uuid in cur_by_uuid.keys():
+            curr_wars = _get_current_value(cur_by_uuid, uuid, "wars")
+            curr_raids = _get_current_value(cur_by_uuid, uuid, "raids")
 
-        base_wars = _find_inclusive_baseline(hist_by_uuid_at, uuid, "wars", window_days)
-        base_raids = _find_inclusive_baseline(hist_by_uuid_at, uuid, "raids", window_days)
+            base_wars = _get_baseline_from_db(db, uuid, "wars", window_days)
+            base_raids = _get_baseline_from_db(db, uuid, "raids", window_days)
 
-        wars_delta = max(curr_wars - base_wars, 0)
-        raids_delta = max(curr_raids - base_raids, 0)
-        out[uuid] = WindowedStats(wars=wars_delta, raids=raids_delta)
+            wars_delta = max(curr_wars - base_wars, 0)
+            raids_delta = max(curr_raids - base_raids, 0)
+            out[uuid] = WindowedStats(wars=wars_delta, raids=raids_delta)
+    finally:
+        db.close()
+
     return out
 
 # --- NEW: tier helpers returning 't1'/'t2'/'t3' (or None) ---

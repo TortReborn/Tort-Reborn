@@ -1,6 +1,7 @@
 import json
 import math
 import time
+from datetime import date, timedelta
 from io import BytesIO
 from typing import Dict, List, Any
 
@@ -22,10 +23,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     """
     Build a paginator filled with leaderboard images for a given metric.
 
-    Inclusive window rule (most-recent-first snapshots):
-      - For a W-day window, baseline is the (W+1)-th most recent snapshot => index = W.
-      - Value = current_activity (live) - baseline_snapshot (with fallback toward newer indices).
-      - If a member never appears in any snapshot up to index 0, use baseline=current to yield 0 and warn.
+    Uses current_activity.json (live) minus baseline from player_activity database table.
 
     Args:
         order_key: key in each member record (e.g. 'contributed', 'wars', 'playtime', 'shells', 'raids')
@@ -35,13 +33,11 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     Returns:
         discord.ext.pages.Paginator instance ready to respond.
     """
-    from collections import defaultdict
-
     # Keys that are cumulative in our snapshots and should use (current - baseline)
     CUMULATIVE_KEYS = {"contributed", "wars", "playtime", "shells", "raids"}
 
     # ---------------------------
-    # Load data files
+    # Load current data from JSON
     # ---------------------------
     try:
         with open('current_activity.json', 'r', encoding='utf-8') as f:
@@ -49,178 +45,158 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     except Exception:
         return pages.Paginator(pages=[Page(content='No current activity available.')])
 
-    try:
-        with open('player_activity.json', 'r', encoding='utf-8') as f:
-            activity_days_mrf: List[Dict[str, Any]] = json.load(f)  # most recent first
-    except Exception:
-        # If we can't read historical snapshots, we can still render a "live now" leaderboard
-        activity_days_mrf = []
-
     if not isinstance(current_data, dict) or not current_data.get('members'):
         return pages.Paginator(pages=[Page(content='No current activity members found.')])
-
-    # Most-recent-first count
-    num_snapshots = len(activity_days_mrf)
-
-    # Fast index for historical snapshots: at each snapshot index (most recent first),
-    # map uuid -> the member dict in that snapshot
-    hist_by_uuid_at: List[Dict[str, Dict[str, Any]]] = []
-    for day in activity_days_mrf:
-        idx_map: Dict[str, Dict[str, Any]] = {}
-        for m in day.get('members', []):
-            idx_map[m['uuid']] = m
-        hist_by_uuid_at.append(idx_map)
 
     # Current/live membership is source of truth for "who to list" and "names"
     current_members = current_data.get('members', [])
     current_by_uuid = {m['uuid']: m for m in current_members}
 
     # ---------------------------
-    # DB: discord ranks overlay (stars)
+    # DB connection for baseline lookups and discord ranks
     # ---------------------------
     db = DB()
     db.connect()
-    db.cursor.execute("SELECT uuid, rank FROM discord_links")
-    uuid_to_discord_rank: Dict[str, str] = {row[0]: row[1] for row in db.cursor.fetchall()}
-    db.close()
 
-    # ---------------------------
-    # Assets
-    # ---------------------------
-    bg1 = PlaceTemplate('images/profile/first.png')
-    bg2 = PlaceTemplate('images/profile/second.png')
-    bg3 = PlaceTemplate('images/profile/third.png')
-    bg_other = PlaceTemplate('images/profile/other.png')
-    bg_private = PlaceTemplate('images/profile/warning.png')  # Red background for private profiles
-    warning_icon = Image.open('images/profile/time_warning.png')
-    rank_star = Image.open('images/profile/rank_star.png')
-    warning_icon.thumbnail((16, 16))
-    icon = Image.open(key_icon)
-    icon.thumbnail((16, 16))
-    game_font = ImageFont.truetype('images/profile/game.ttf', 19)
+    try:
+        db.cursor.execute("SELECT uuid, rank FROM discord_links")
+        uuid_to_discord_rank: Dict[str, str] = {row[0]: row[1] for row in db.cursor.fetchall()}
 
-    # ---------------------------
-    # Helpers
-    # ---------------------------
-    def get_current_value(uuid: str, key: str) -> tuple[int, bool]:
-        """
-        Return the current live cumulative value for the uuid/key from current_activity.json.
-        Returns: (value, is_null) where is_null=True if the data is actually None/private.
-        """
-        m = current_by_uuid.get(uuid)
-        if not m:
-            return 0, False
-        v = m.get(key)
-        # Check if the value is actually None (private profile)
-        if v is None:
-            return 0, True
-        try:
-            return int(v) if isinstance(v, (int, float)) else int(v or 0), False
-        except Exception:
-            return 0, False
+        # ---------------------------
+        # Assets
+        # ---------------------------
+        bg1 = PlaceTemplate('images/profile/first.png')
+        bg2 = PlaceTemplate('images/profile/second.png')
+        bg3 = PlaceTemplate('images/profile/third.png')
+        bg_other = PlaceTemplate('images/profile/other.png')
+        bg_private = PlaceTemplate('images/profile/warning.png')  # Red background for private profiles
+        warning_icon = Image.open('images/profile/time_warning.png')
+        rank_star = Image.open('images/profile/rank_star.png')
+        warning_icon.thumbnail((16, 16))
+        icon = Image.open(key_icon)
+        icon.thumbnail((16, 16))
+        game_font = ImageFont.truetype('images/profile/game.ttf', 19)
 
-    def find_baseline_value(uuid: str, key: str, window_days: int) -> (int, bool):
-        """
-        For cumulative keys:
-          - If window_days <= 0: all-time -> baseline = 0, warn=False
-          - Else baseline_idx = window_days (W), i.e., the (W+1)-th most recent snapshot.
-          - If uuid missing at baseline_idx, walk toward newer snapshots (W-1, W-2, ..., 0).
-          - If never appears, use baseline=current to force delta 0 and warn=True.
-        Returns (baseline_value, warn_flag).
-        """
-        if window_days <= 0 or num_snapshots == 0:
-            return 0, False
-
-        baseline_idx = min(window_days, num_snapshots - 1)  # clamp in case we have fewer than W+1 snapshots
-        warn = False
-
-        # Try baseline at W
-        hist_map = hist_by_uuid_at[baseline_idx]
-        entry = hist_map.get(uuid)
-        if entry is not None:
+        # ---------------------------
+        # Helpers
+        # ---------------------------
+        def get_current_value(uuid: str, key: str) -> tuple[int, bool]:
+            """
+            Return the current live cumulative value for the uuid/key from current_activity.json.
+            Returns: (value, is_null) where is_null=True if the data is actually None/private.
+            """
+            m = current_by_uuid.get(uuid)
+            if not m:
+                return 0, False
+            v = m.get(key)
+            # Check if the value is actually None (private profile)
+            if v is None:
+                return 0, True
             try:
-                return int(entry.get(key) or 0), False
+                return int(v) if isinstance(v, (int, float)) else int(v or 0), False
             except Exception:
-                return 0, True  # malformed value -> treat as 0 and warn
+                return 0, False
 
-        # Fallback: walk toward the present (W-1 ... 0)
-        for i in range(baseline_idx - 1, -1, -1):
-            e = hist_by_uuid_at[i].get(uuid)
-            if e is not None:
-                warn = True
-                try:
-                    return int(e.get(key) or 0), True
-                except Exception:
-                    return 0, True
+        def find_baseline_value_from_db(uuid: str, key: str, window_days: int) -> tuple[int, bool]:
+            """
+            Get baseline value from player_activity database table.
+            Uses index-based lookup (window_days-th most recent snapshot) to match
+            the original JSON-based behavior.
+            Returns (baseline_value, warn_flag).
+            """
+            if window_days <= 0:
+                return 0, False
 
-        # Never seen in any of the snapshots -> baseline=current (delta=0) and warn
-        current_val, _ = get_current_value(uuid, key)
-        return current_val, True
-
-    def perday_sum_inclusive(uuid: str, key: str, window_days: int) -> (int, bool):
-        """
-        For genuinely per-day keys (not in CUMULATIVE_KEYS), sum the most-recent-first
-        slice [0 .. window_days] inclusive of today-so-far semantics:
-          - If window_days <= 0: sum all available per-day entries across snapshots.
-          - If a member is missing in parts of the span, treat missing as 0 and warn.
-        """
-        if num_snapshots == 0:
-            # No history -> try current only
-            current_val, is_null = get_current_value(uuid, key)
-            return current_val, True
-
-        if window_days <= 0:
-            end_idx = num_snapshots - 1
-        else:
-            end_idx = min(window_days, num_snapshots - 1)
-
-        total = 0
-        warn = False
-        for i in range(0, end_idx + 1):
-            entry = hist_by_uuid_at[i].get(uuid)
-            if entry is None:
-                warn = True
-                continue
             try:
-                total += int(entry.get(key) or 0)
-            except Exception:
-                warn = True
-        return total, warn
+                # Get the window_days-th most recent snapshot date (0-indexed)
+                # This matches the original JSON index-based lookup
+                db.cursor.execute("""
+                    SELECT DISTINCT snapshot_date FROM player_activity
+                    ORDER BY snapshot_date DESC
+                    OFFSET %s LIMIT 1
+                """, (window_days,))
+                date_row = db.cursor.fetchone()
 
-    # ---------------------------
-    # Build leaderboard rows using CURRENT membership
-    # ---------------------------
-    player_rows: List[Dict[str, Any]] = []
+                if not date_row:
+                    # Not enough snapshots - use oldest available
+                    db.cursor.execute("""
+                        SELECT DISTINCT snapshot_date FROM player_activity
+                        ORDER BY snapshot_date ASC
+                        LIMIT 1
+                    """)
+                    date_row = db.cursor.fetchone()
+                    if not date_row:
+                        current_val, _ = get_current_value(uuid, key)
+                        return current_val, True
 
-    for m in current_members:
-        uuid = m['uuid']
-        name = m.get('name') or m.get('username') or 'Unknown'
-        api_rank = m.get('rank', 'unknown')
-        rank = uuid_to_discord_rank.get(uuid, api_rank)
+                target_date = date_row[0]
 
-        is_private = False  # Track if the relevant metric is private/null
+                db.cursor.execute(f"""
+                    SELECT {key} FROM player_activity
+                    WHERE uuid = %s AND snapshot_date = %s
+                """, (uuid, target_date))
+                row = db.cursor.fetchone()
 
-        if order_key in CUMULATIVE_KEYS:
-            curr_val, is_null = get_current_value(uuid, order_key)
-            base_val, warn_flag = find_baseline_value(uuid, order_key, days)
-            contributed = curr_val - base_val
-            if contributed < 0:
-                # In case of data resets or rollbacks, never show negatives
-                contributed = 0
-                warn_flag = True
-            is_private = is_null  # Mark as private if current value is null
-        else:
-            # Per-day style metrics (if you ever add them)
-            contributed, warn_flag = perday_sum_inclusive(uuid, order_key, days)
+                if row and row[0] is not None:
+                    return int(row[0]), False
 
-        player_rows.append({
-            'name': name,
-            'uuid': uuid,
-            'contributed': int(contributed),
-            'rank': rank,
-            'warning': bool(warn_flag),
-            'is_private': is_private,
-        })
+                # Player not found at target date - try walking toward present
+                db.cursor.execute(f"""
+                    SELECT {key}, snapshot_date FROM player_activity
+                    WHERE uuid = %s AND snapshot_date > %s
+                    ORDER BY snapshot_date ASC
+                    LIMIT 1
+                """, (uuid, target_date))
+                fallback = db.cursor.fetchone()
+                if fallback and fallback[0] is not None:
+                    return int(fallback[0]), True  # warn flag since we used fallback
+
+                # Never found - use current value (delta = 0)
+                current_val, _ = get_current_value(uuid, key)
+                return current_val, True
+            except Exception as e:
+                print(f"[leaderboard] Error getting baseline for {uuid}/{key}: {e}")
+                current_val, _ = get_current_value(uuid, key)
+                return current_val, True
+
+        # ---------------------------
+        # Build leaderboard rows using CURRENT membership
+        # ---------------------------
+        player_rows: List[Dict[str, Any]] = []
+
+        for m in current_members:
+            uuid = m['uuid']
+            name = m.get('name') or m.get('username') or 'Unknown'
+            api_rank = m.get('rank', 'unknown')
+            rank = uuid_to_discord_rank.get(uuid, api_rank)
+
+            is_private = False  # Track if the relevant metric is private/null
+
+            if order_key in CUMULATIVE_KEYS:
+                curr_val, is_null = get_current_value(uuid, order_key)
+                base_val, warn_flag = find_baseline_value_from_db(uuid, order_key, days)
+                contributed = curr_val - base_val
+                if contributed < 0:
+                    # In case of data resets or rollbacks, never show negatives
+                    contributed = 0
+                    warn_flag = True
+                is_private = is_null  # Mark as private if current value is null
+            else:
+                # For non-cumulative keys, just use current value
+                contributed, is_null = get_current_value(uuid, order_key)
+                warn_flag = False
+                is_private = is_null
+
+            player_rows.append({
+                'name': name,
+                'uuid': uuid,
+                'contributed': int(contributed),
+                'rank': rank,
+                'warning': bool(warn_flag),
+                'is_private': is_private,
+            })
+    finally:
+        db.close()
 
     # Nothing to show?
     if not player_rows:

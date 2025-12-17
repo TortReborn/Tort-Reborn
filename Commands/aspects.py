@@ -1,155 +1,73 @@
-import json
-import os
+"""
+Commands/aspects.py
+Aspect distribution commands - now using database storage.
+"""
+
 import io
-import aiohttp
+import os
+import json
 import asyncio
 import datetime
+from datetime import timezone, timedelta
 from math import ceil
+
+import aiohttp
+import discord
 from discord.ext import commands
 from discord.commands import SlashCommandGroup, Option
-import discord
 from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
-from Helpers.variables import te, guilds
+from Helpers.variables import te
+from Helpers import aspect_db
+
 
 GUILD_ID = te
-BLACKLIST_FILE    = "aspect_blacklist.json"
-DISTRIBUTION_FILE = "aspect_distribution.json"
-PLAYER_ACTIVITY   = "player_activity.json"
 AVATAR_CACHE_FILE = "avatar_cache.json"
-AVATAR_CACHE_DIR  = "avatar_cache"
-WEEKLY_THRESHOLD  = 5    # hours
-MAX_COLUMNS       = 4
-ROWS_PER_COLUMN   = 10
-CELL_WIDTH        = 205  # per column width
-PADDING           = 5
-AVATAR_SIZE       = 28
-LINE_SPACING      = 8
+AVATAR_CACHE_DIR = "avatar_cache"
+MAX_COLUMNS = 4
+ROWS_PER_COLUMN = 10
+CELL_WIDTH = 205
+PADDING = 5
+AVATAR_SIZE = 28
+LINE_SPACING = 8
+
 
 class AspectDistribution(commands.Cog):
-    aspects = SlashCommandGroup(
-        "aspects", "Manage aspect distribution", guild_ids=[GUILD_ID]
-    )
+    aspects = SlashCommandGroup("aspects", "Manage aspect distribution", guild_ids=[GUILD_ID])
     blacklist = aspects.create_subgroup("blacklist", "Manage aspect distribution blacklist")
 
     def __init__(self, client):
         self.client = client
         os.makedirs(AVATAR_CACHE_DIR, exist_ok=True)
-        for path, default in [
-            (BLACKLIST_FILE, {"blacklist": []}),
-            (DISTRIBUTION_FILE, {"queue": [], "marker": 0}),
-            (AVATAR_CACHE_FILE, {})
-        ]:
-            if not os.path.exists(path):
-                with open(path, "w") as f:
-                    json.dump(default, f, indent=2)
+        
+        if not os.path.exists(AVATAR_CACHE_FILE):
+            with open(AVATAR_CACHE_FILE, "w") as f:
+                json.dump({}, f)
 
     def load_json(self, path, default):
         try:
             with open(path, "r") as f:
                 return json.load(f)
-        except:
+        except Exception:
             return default
 
     def save_json(self, path, data):
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
-    def get_weekly_playtime(self, uuid: str) -> float:
-        data = self.load_json(PLAYER_ACTIVITY, [])
-        if not data:
-            return 0.0
-        recent = next((m.get("playtime",0) for m in data[0]["members"] if m["uuid"]==uuid),0)
-        older = next((m.get("playtime",0) for m in data[min(7,len(data)-1)]["members"] if m["uuid"]==uuid),0)
-        if recent and older:
-            return max(0.0, recent - older)
-        else:
-            return 0
-
-    def rebuild_queue(self):
-        dist = self.load_json(DISTRIBUTION_FILE, {"queue": [], "marker": 0})
-        old_q = dist.get("queue", [])
-        old_m = dist.get("marker", 0)
-
-        blacklist = set(self.load_json(BLACKLIST_FILE, {"blacklist": []})["blacklist"])
-        guild = Guild("The Aquarium")
-        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
-
-        # 1) Rebuild in the exact same order as guild.all_members:
-        eligible = []
-        for m in guild.all_members:
-            u = m["uuid"]
-            joined = m.get("joined")
-            if not joined or u in blacklist:
-                continue
-            try:
-                dt = datetime.datetime.fromisoformat(joined.replace("Z", "+00:00"))
-                dt = dt.replace(tzinfo=datetime.timezone.utc)
-            except:
-                continue
-            if dt > cutoff or self.get_weekly_playtime(u) < WEEKLY_THRESHOLD:
-                continue
-            eligible.append(u)
-
-        # prune avatar cache for those no longer eligible
-        cache = self.load_json(AVATAR_CACHE_FILE, {})
-        changed = False
-        for u, fn in list(cache.items()):
-            if u not in eligible:
-                path = os.path.join(AVATAR_CACHE_DIR, fn)
-                if os.path.exists(path):
-                    os.remove(path)
-                del cache[u]
-                changed = True
-        if changed:
-            self.save_json(AVATAR_CACHE_FILE, cache)
-
-        # 2) Preserve old marker by UUID, or advance to the next eligible
-        new_m = 0
-        old_uuid = None
-        if 0 <= old_m < len(old_q):
-            old_uuid = old_q[old_m]
-
-        if old_uuid:
-            if old_uuid in eligible:
-                new_m = eligible.index(old_uuid)
-            else:
-                # find their position in the full guild list, then pick the next eligible after them
-                all_ids = [m["uuid"] for m in guild.all_members]
-                try:
-                    old_idx = all_ids.index(old_uuid)
-                except ValueError:
-                    old_idx = None
-
-                if old_idx is not None:
-                    for idx, u in enumerate(eligible):
-                        if all_ids.index(u) > old_idx:
-                            new_m = idx
-                            break
-                    # if none is after them, new_m stays 0 (wrap)
-
-        dist["queue"] = eligible
-        dist["marker"] = new_m
-        self.save_json(DISTRIBUTION_FILE, dist)
-        return dist
-
-
     def create_default_avatar(self, uuid: str) -> bytes:
-        """Create a simple default avatar with a question mark"""
+        """Create a simple default avatar with a question mark."""
         img = Image.new("RGBA", (64, 64), (100, 100, 100, 255))
         draw = ImageDraw.Draw(img)
-
-        # Draw a border
         draw.rectangle([(0, 0), (63, 63)], outline=(150, 150, 150, 255), width=2)
-
-        # Draw a question mark
+        
         try:
-            font = ImageFont.truetype("arial.ttf", size=30)
-        except:
+            font = ImageFont.truetype("images/profile/game.ttf", size=30)
+        except Exception:
             font = ImageFont.load_default()
-
+        
         char = "?"
         bbox = draw.textbbox((0, 0), char, font=font)
         text_width = bbox[2] - bbox[0]
@@ -157,8 +75,7 @@ class AspectDistribution(commands.Cog):
         x = (64 - text_width) // 2
         y = (64 - text_height) // 2
         draw.text((x, y), char, fill=(255, 255, 255, 255), font=font)
-
-        # Convert to bytes
+        
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         buf.seek(0)
@@ -169,9 +86,8 @@ class AspectDistribution(commands.Cog):
         if uuid in cache:
             path = os.path.join(AVATAR_CACHE_DIR, cache[uuid])
             if os.path.exists(path):
-                return open(path,'rb').read()
+                return open(path, 'rb').read()
 
-        # Use Visage API for avatar rendering
         url = f"https://vzge.me/face/64/{uuid}"
         headers = {'User-Agent': os.getenv("visage_UA", "")}
         try:
@@ -180,25 +96,23 @@ class AspectDistribution(commands.Cog):
                     if resp.status != 200:
                         print(f"Warning: Visage returned status {resp.status} for UUID {uuid}")
                         return None
-
+                    
                     data = await resp.read()
-
-                    # Check if response is HTML (error page) instead of image
+                    
                     if data.startswith(b'<!DOCTYPE') or data.startswith(b'<html'):
                         print(f"Warning: Visage returned HTML error page for UUID {uuid}")
                         return None
-
-                    # Check if it's a valid image by checking PNG/JPEG headers
+                    
                     is_png = data[:8] == b'\x89PNG\r\n\x1a\n'
                     is_jpeg = data[:3] == b'\xff\xd8\xff'
-
+                    
                     if not (is_png or is_jpeg):
                         print(f"Warning: Invalid image data received for UUID {uuid}")
                         return None
 
-            # Only cache valid image data
             fn = f"{uuid}.png"
-            with open(os.path.join(AVATAR_CACHE_DIR, fn),'wb') as f: f.write(data)
+            with open(os.path.join(AVATAR_CACHE_DIR, fn), 'wb') as f:
+                f.write(data)
             cache[uuid] = fn
             self.save_json(AVATAR_CACHE_FILE, cache)
             return data
@@ -207,230 +121,306 @@ class AspectDistribution(commands.Cog):
             return None
 
     def make_distribution_image(self, avatar_bytes_list, names_list):
-        title_font = ImageFont.truetype("arial.ttf", size=20)
-        text_font  = ImageFont.truetype("arial.ttf", size=16)
+        title_font = ImageFont.truetype("images/profile/game.ttf", size=20)
+        text_font = ImageFont.truetype("images/profile/game.ttf", size=16)
         line_h = max(AVATAR_SIZE, text_font.getbbox("Ay")[3] - text_font.getbbox("Ay")[1]) + LINE_SPACING
 
         total = len(names_list)
-        cols = min(MAX_COLUMNS, ceil(total/ROWS_PER_COLUMN))
+        cols = min(MAX_COLUMNS, ceil(total / ROWS_PER_COLUMN))
         rows = min(total, ROWS_PER_COLUMN)
 
         img_w = cols * CELL_WIDTH
-        img_h = PADDING*2 + line_h*(1 + rows)  # title + rows
+        img_h = PADDING * 2 + line_h * (1 + rows)
 
-        img = Image.new("RGBA", (img_w, img_h), (54,57,63,255))
+        img = Image.new("RGBA", (img_w, img_h), (54, 57, 63, 255))
         draw = ImageDraw.Draw(img)
-        draw.rectangle([(0,0),(img_w-1,img_h-1)], outline=(26,115,232), width=3)
+        draw.rectangle([(0, 0), (img_w - 1, img_h - 1)], outline=(26, 115, 232), width=3)
 
         y = PADDING
         title = "Aspect Distribution"
         tw = title_font.getbbox(title)[2]
-        draw.text(((img_w - tw)//2, y), title, font=title_font, fill=(255,255,255))
+        draw.text(((img_w - tw) // 2, y), title, font=title_font, fill=(255, 255, 255))
         y += line_h
 
         for idx, (av_b, name) in enumerate(zip(avatar_bytes_list, names_list), start=1):
-            col = (idx-1)//ROWS_PER_COLUMN
-            row = (idx-1)%ROWS_PER_COLUMN
+            col = (idx - 1) // ROWS_PER_COLUMN
+            row = (idx - 1) % ROWS_PER_COLUMN
             x = col * CELL_WIDTH + PADDING
             y_pos = y + row * line_h
 
-            # Handle avatar with error handling
             try:
-                av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((AVATAR_SIZE,AVATAR_SIZE))
-                img.paste(av_img, (x,y_pos), av_img)
-            except Exception as e:
-                # If image processing fails (shouldn't happen with our validation, but just in case)
-                # Create a simple colored square as fallback
+                av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((AVATAR_SIZE, AVATAR_SIZE))
+                img.paste(av_img, (x, y_pos), av_img)
+            except Exception:
                 fallback = Image.new("RGBA", (AVATAR_SIZE, AVATAR_SIZE), (80, 80, 80, 255))
                 draw_fb = ImageDraw.Draw(fallback)
-                draw_fb.rectangle([(0,0), (AVATAR_SIZE-1, AVATAR_SIZE-1)], outline=(120, 120, 120, 255))
+                draw_fb.rectangle([(0, 0), (AVATAR_SIZE - 1, AVATAR_SIZE - 1)], outline=(120, 120, 120, 255))
                 img.paste(fallback, (x, y_pos), fallback)
 
             line = f"{idx}. {name}"
-            text_y = y_pos + (AVATAR_SIZE - text_font.getbbox(line)[3])//2
-            draw.text((x + AVATAR_SIZE + 10, text_y), line, font=text_font, fill=(255,255,255))
+            text_y = y_pos + (AVATAR_SIZE - text_font.getbbox(line)[3]) // 2
+            draw.text((x + AVATAR_SIZE + 10, text_y), line, font=text_font, fill=(255, 255, 255))
 
         buf = io.BytesIO()
-        img.save(buf,format="PNG")
+        img.save(buf, format="PNG")
         buf.seek(0)
         return buf
 
-    @aspects.command(
-        name="distribute",
-        description="Given N aspects, pick next members in queue to receive them"
-    )
+    @aspects.command(name="distribute", description="Given N aspects, pick next members in queue to receive them")
     async def distribute(self, ctx: discord.ApplicationContext, amount: Option(int, "Number of aspects to distribute")):
         await ctx.defer()
 
-        # 1 rebuild & grab queue + start position
-        dist  = self.rebuild_queue()
-        queue = dist["queue"]
-        start = dist["marker"]
+        db = DB()
+        db.connect()
 
-        # 2 drain DB for uncollected aspects (only from members in guild 7+ days)
-        remaining  = amount
-        db         = DB(); db.connect()
-        recipients = []
+        try:
+            # Rebuild queue and get current state
+            queue, start = aspect_db.rebuild_queue(db)
+            
+            # Get guild for member lookup
+            guild = Guild("The Aquarium")
+            cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=7)
+            
+            # Build member map for 7-day check
+            member_map = {}
+            for m in guild.all_members:
+                uuid = m["uuid"]
+                joined = m.get("joined")
+                if joined:
+                    try:
+                        dt = datetime.datetime.fromisoformat(joined.replace("Z", "+00:00"))
+                        dt = dt.replace(tzinfo=timezone.utc)
+                        member_map[uuid] = dt
+                    except Exception:
+                        pass
 
-        # Build a map of uuid -> join_date for guild members
-        guild = Guild("The Aquarium")
-        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7)
-        member_map = {}
-        for m in guild.all_members:
-            uuid = m["uuid"]
-            joined = m.get("joined")
-            if joined:
-                try:
-                    dt = datetime.datetime.fromisoformat(joined.replace("Z", "+00:00"))
-                    dt = dt.replace(tzinfo=datetime.timezone.utc)
-                    member_map[uuid] = dt
-                except:
-                    pass
+            # 1. Drain uncollected aspects from DB first
+            remaining = amount
+            recipients = []
+            
+            for uuid, count in aspect_db.get_uncollected_aspects(db):
+                if remaining <= 0:
+                    break
+                
+                # Convert uuid to string for comparison
+                uuid_str = str(uuid)
+                
+                join_date = member_map.get(uuid_str)
+                if not join_date or join_date > cutoff:
+                    continue
+                
+                take = min(remaining, count)
+                if take > 0:
+                    recipients += [uuid_str] * take
+                    remaining -= take
+                    aspect_db.deduct_uncollected_aspects(db, uuid_str, take)
+            
+            db.connection.commit()
 
-        db.cursor.execute("SELECT uuid,uncollected_aspects FROM uncollected_raids WHERE uncollected_aspects>0")
-        for u, c in db.cursor.fetchall():
-            if remaining <= 0:
-                break
+            # 2. Fill from rotation queue
+            if remaining > 0 and queue:
+                for i in range(remaining):
+                    idx = (start + i) % len(queue)
+                    recipients.append(queue[idx])
 
-            # Check if member is in guild and has been there 7+ days
-            join_date = member_map.get(u)
-            if not join_date or join_date > cutoff:
-                continue  # Skip this member, leave their aspects for later
+            # 3. Build names list
+            names = []
+            for u in recipients:
+                member = next((m for m in guild.all_members if m["uuid"] == u), None)
+                if member:
+                    names.append(member["name"])
+                else:
+                    looked_up = await getNameFromUUID(u)
+                    name = looked_up[0] if isinstance(looked_up, (list, tuple)) else str(looked_up)
+                    names.append(name)
 
-            take = min(remaining, c)
-            if take > 0:
-                recipients += [u] * take
-                remaining -= take
-                db.cursor.execute(
-                    "UPDATE uncollected_raids SET uncollected_aspects = uncollected_aspects - %s WHERE uuid = %s",
-                    (take, u)
-                )
-        db.connection.commit()
-        db.close()
+            # 4. Fetch avatars
+            avatar_tasks = [self.get_avatar(u) for u in recipients]
+            avatar_results = await asyncio.gather(*avatar_tasks)
+            
+            avatars = []
+            for avatar_data, uuid in zip(avatar_results, recipients):
+                if avatar_data is None:
+                    avatars.append(self.create_default_avatar(uuid))
+                else:
+                    avatars.append(avatar_data)
 
-        # 3 fill from the rotation, cycling the queue as needed
-        if remaining > 0 and queue:
-            for i in range(remaining):
-                idx = (start + i) % len(queue)
-                u   = queue[idx]
-                recipients.append(u)
+            # 5. Update marker
+            displayed = len(recipients)
+            if queue:
+                new_marker = (start + displayed) % len(queue)
+                aspect_db.save_queue_state(db, queue, new_marker)
 
-        # 4 build names list one-to-one
-        guild = Guild("The Aquarium")
-        names = []
-        for u in recipients:
-            member = next((m for m in guild.all_members if m["uuid"] == u), None)
-            if member:
-                names.append(member["name"])
-            else:
-                looked_up = await getNameFromUUID(u)
-                name = (looked_up[0] if isinstance(looked_up, (list, tuple)) else str(looked_up))
-                names.append(name)
+            # 6. Log distribution
+            distribution_list = []
+            for uuid, name in zip(recipients, names):
+                distribution_list.append({"uuid": uuid, "ign": name})
+            aspect_db.log_distribution(db, ctx.author.id, distribution_list, amount)
 
-        # 5 fetch avatars in parallel, with fallbacks for failures
-        avatar_tasks = [self.get_avatar(u) for u in recipients]
-        avatar_results = await asyncio.gather(*avatar_tasks)
+            # 7. Render and send
+            buf = self.make_distribution_image(avatars, names)
+            await ctx.followup.send(file=discord.File(buf, "distribution.png"))
 
-        # Replace None results with default avatars
-        avatars = []
-        for idx, (avatar_data, uuid) in enumerate(zip(avatar_results, recipients)):
-            if avatar_data is None:
-                # Use default avatar if fetch failed
-                avatars.append(self.create_default_avatar(uuid))
-            else:
-                avatars.append(avatar_data)
+        finally:
+            db.close()
 
-        # 6 update the marker by how many you actually displayed
-        displayed = len(recipients)
-        if queue:
-            new_marker = (start + displayed) % len(queue)
-            dist["marker"] = new_marker
-            self.save_json(DISTRIBUTION_FILE, dist)
-
-        # 7 render & send
-        buf = self.make_distribution_image(avatars, names)
-        await ctx.followup.send(file=discord.File(buf, "distribution.png"))
-
-    @aspects.command(
-        name="queue",
-        description="Show queue of uncollected aspects"
-    )
+    @aspects.command(name="queue", description="Show queue of uncollected aspects")
     async def queue(self, ctx: discord.ApplicationContext):
         await ctx.defer()
 
-        # 1) Fetch all uuids with uncollected aspects > 0
-        db = DB(); db.connect()
-        db.cursor.execute(
-            "SELECT uuid, uncollected_aspects FROM uncollected_raids WHERE uncollected_aspects > 0"
-        )
-        rows = db.cursor.fetchall()
-        db.close()
+        db = DB()
+        db.connect()
 
-        # 2) If none, inform
-        if not rows:
+        try:
+            rows = aspect_db.get_uncollected_aspects(db)
+            
+            if not rows:
+                embed = discord.Embed(
+                    title="Aspect Queue",
+                    description="No uncollected aspects at the moment.",
+                    color=0x2F3136
+                )
+                return await ctx.followup.send(embed=embed)
+
+            guild = Guild("The Aquarium")
+            lines = []
+            total = 0
+            
+            for uuid, count in rows:
+                total += count
+                uuid_str = str(uuid)
+                member = next((m for m in guild.all_members if m["uuid"] == uuid_str), None)
+                if member:
+                    name = member["name"]
+                else:
+                    looked_up = await getNameFromUUID(uuid_str)
+                    name = looked_up[0] if isinstance(looked_up, (list, tuple)) else str(looked_up)
+                lines.append(f"{name}: {count}")
+
+            description = "\n".join(lines) + f"\n\n**Total: {total}**"
             embed = discord.Embed(
-                title="Aspect Queue",
-                description="No uncollected aspects at the moment.",
+                title="Raid Aspect Queue",
+                description=description,
                 color=0x2F3136
             )
-            return await ctx.followup.send(embed=embed)
+            await ctx.followup.send(embed=embed)
 
-        # 3) Build lines of "Name: count" and sum total
-        guild = Guild("The Aquarium")
-        lines = []
-        total = 0
-        for uuid, count in rows:
-            total += count
-            member = next((m for m in guild.all_members if m["uuid"] == uuid), None)
-            if member:
-                name = member["name"]
-            else:
-                looked_up = await getNameFromUUID(uuid)
-                name = looked_up[0] if isinstance(looked_up, (list, tuple)) else str(looked_up)
-            lines.append(f"{name}: {count}")
+        finally:
+            db.close()
 
-        # 4) Create embed
-        description = "\n".join(lines) + f"\n\n**Total: {total}**"
-        embed = discord.Embed(
-            title="Raid Aspect Queue",
-            description=description,
-            color=0x2F3136
-        )
-
-        # 5) Send
-        await ctx.followup.send(embed=embed)
-
-
-
-    @blacklist.command(
-        name="add",
-        description="Add someone to the aspect blacklist"
-    )
+    @blacklist.command(name="add", description="Add someone to the aspect blacklist")
     async def blacklist_add(self, ctx, user: Option(discord.Member, "Member to blacklist")):
-        await ctx.defer(); db=DB(); db.connect()
-        db.cursor.execute("SELECT uuid FROM discord_links WHERE discord_id=%s",(user.id,))
-        row=db.cursor.fetchone(); db.close()
-        if not row: return await ctx.followup.send("❌ That user has no linked game UUID.")
-        uuid=row[0]; data=self.load_json(BLACKLIST_FILE,{"blacklist":[]})
-        bl=data["blacklist"]
-        if uuid in bl: return await ctx.followup.send("✅ Already blacklisted.")
-        bl.append(uuid); self.save_json(BLACKLIST_FILE,{"blacklist":bl})
-        await ctx.followup.send(f"✅ Added **{user.display_name}** to the aspect blacklist.")
+        await ctx.defer()
+        
+        db = DB()
+        db.connect()
 
-    @blacklist.command(
-        name="remove",
-        description="Remove someone from the aspect blacklist"
-    )
-    async def blacklist_remove(self, ctx, user: Option(discord.Member, "Member to un‐blacklist")):
-        await ctx.defer(); db=DB(); db.connect()
-        db.cursor.execute("SELECT uuid FROM discord_links WHERE discord_id=%s",(user.id,))
-        row=db.cursor.fetchone(); db.close()
-        if not row: return await ctx.followup.send("❌ That user has no linked game UUID.")
-        uuid=row[0]; data=self.load_json(BLACKLIST_FILE,{"blacklist":[]})
-        bl=data["blacklist"]
-        if uuid not in bl: return await ctx.followup.send("✅ User wasn’t on the aspect blacklist.")
-        bl.remove(uuid); self.save_json(BLACKLIST_FILE,{"blacklist":bl})
-        await ctx.followup.send(f"✅ Removed **{user.display_name}** from the aspect blacklist.")
+        try:
+            db.cursor.execute("SELECT uuid FROM discord_links WHERE discord_id = %s", (user.id,))
+            row = db.cursor.fetchone()
+            
+            if not row:
+                return await ctx.followup.send("❌ That user has no linked game UUID.")
+            
+            uuid = str(row[0])
+            
+            if not aspect_db.add_to_blacklist(db, uuid, ctx.author.id):
+                return await ctx.followup.send("✅ Already blacklisted.")
+            
+            await ctx.followup.send(f"✅ Added **{user.display_name}** to the aspect blacklist.")
+
+        finally:
+            db.close()
+
+    @blacklist.command(name="remove", description="Remove someone from the aspect blacklist")
+    async def blacklist_remove(self, ctx, user: Option(discord.Member, "Member to un-blacklist")):
+        await ctx.defer()
+        
+        db = DB()
+        db.connect()
+
+        try:
+            db.cursor.execute("SELECT uuid FROM discord_links WHERE discord_id = %s", (user.id,))
+            row = db.cursor.fetchone()
+            
+            if not row:
+                return await ctx.followup.send("❌ That user has no linked game UUID.")
+            
+            uuid = str(row[0])
+            
+            if not aspect_db.remove_from_blacklist(db, uuid):
+                return await ctx.followup.send("✅ User wasn't on the aspect blacklist.")
+            
+            await ctx.followup.send(f"✅ Removed **{user.display_name}** from the aspect blacklist.")
+
+        finally:
+            db.close()
+
+    @aspects.command(name="rotation", description="Show current rotation queue and marker position")
+    async def rotation(self, ctx: discord.ApplicationContext):
+        """Show the current rotation queue state."""
+        await ctx.defer()
+        
+        db = DB()
+        db.connect()
+        
+        try:
+            queue, marker = aspect_db.get_queue_state(db)
+            
+            if not queue:
+                embed = discord.Embed(
+                    title="Rotation Queue",
+                    description="Queue is empty. Run `/aspects distribute` to rebuild.",
+                    color=0x2F3136
+                )
+                return await ctx.followup.send(embed=embed)
+            
+            guild = Guild("The Aquarium")
+            
+            # Show next 10 in rotation
+            lines = []
+            for i in range(min(10, len(queue))):
+                idx = (marker + i) % len(queue)
+                uuid = queue[idx]
+                member = next((m for m in guild.all_members if m["uuid"] == uuid), None)
+                name = member["name"] if member else uuid[:8]
+                prefix = "→ " if i == 0 else "  "
+                lines.append(f"{prefix}{i+1}. {name}")
+            
+            description = "\n".join(lines)
+            description += f"\n\n**Total in queue:** {len(queue)}"
+            description += f"\n**Current position:** {marker + 1}/{len(queue)}"
+            
+            embed = discord.Embed(
+                title="Rotation Queue (Next 10)",
+                description=description,
+                color=0x2F3136
+            )
+            await ctx.followup.send(embed=embed)
+            
+        finally:
+            db.close()
+
+    @aspects.command(name="rebuild", description="Force rebuild the rotation queue")
+    async def rebuild(self, ctx: discord.ApplicationContext):
+        """Force rebuild the queue from current guild data."""
+        await ctx.defer()
+        
+        db = DB()
+        db.connect()
+        
+        try:
+            queue, marker = aspect_db.rebuild_queue(db)
+            
+            embed = discord.Embed(
+                title="Queue Rebuilt",
+                description=f"✅ Rebuilt queue with **{len(queue)}** eligible members.\nMarker position: {marker + 1}",
+                color=0x00FF00
+            )
+            await ctx.followup.send(embed=embed)
+            
+        finally:
+            db.close()
 
     @commands.Cog.listener()
     async def on_ready(self):
