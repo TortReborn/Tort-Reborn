@@ -103,11 +103,11 @@ class Shell(commands.Cog):
                 img.paste(bg_color.divider, (55, p * 36 + 3), bg_color.divider)
                 pos = f'{i}.'
                 addLine(f'&f{pos}', d, gameFont, 10, p * 36 + 9)
-                addLine(f'&f{player['name']}', d, gameFont, 65, p * 36 + 9)
+                addLine(f"&f{player['name']}", d, gameFont, 65, p * 36 + 9)
                 _, _, w, h = d.textbbox((0, 0), f"{player['shells']:,}", font=gameFont)
                 if i == 1:
                     widest = w
-                addLine(f'&f{player['shells']:,}', d, gameFont, img.width - 40 - w, p * 36 + 9)
+                addLine(f"&f{player['shells']:,}", d, gameFont, img.width - 40 - w, p * 36 + 9)
                 img.paste(shells_img, (img.width - 65 - widest, p * 36 + 11), shells_img)
                 img.paste(bg_color.divider, (img.width - 75 - widest, p * 36 + 3), bg_color.divider)
                 i += 1

@@ -10,6 +10,12 @@ venv
 
 # Python cache files
 __pycache__/
+**/__pycache__/
+*.pyc
+
+# Claude Code files
+CLAUDE.md
+.mcp.json
 
 Archive/theaquarium.json
 current_activity.json

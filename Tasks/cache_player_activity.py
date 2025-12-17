@@ -1,7 +1,7 @@
 import json
 import datetime
 import asyncio
-from datetime import timezone, time as dtime
+from datetime import timezone, time as dtime, timedelta
 from discord.ext import tasks, commands
 
 from Helpers.database import DB
@@ -15,6 +15,19 @@ class CachePlayerActivity(commands.Cog):
 
     def cog_unload(self):
         self.cache_activity_data.cancel()
+
+    def _get_activity_from_db(self, db, target_date):
+        """Get player activity snapshot from database for a specific date."""
+        try:
+            db.cursor.execute("""
+                SELECT uuid, playtime FROM player_activity
+                WHERE snapshot_date = %s
+            """, (target_date,))
+            rows = db.cursor.fetchall()
+            return [{'uuid': str(row[0]), 'playtime': row[1]} for row in rows]
+        except Exception as e:
+            print(f"[CachePlayerActivity] Error querying DB for {target_date}: {e}")
+            return []
 
     async def check_and_create_initial_cache(self):
         """Check if cache entry exists, create it if not"""
@@ -45,24 +58,12 @@ class CachePlayerActivity(commands.Cog):
                     pass
 
     async def create_cache_entry(self):
-        """Create cache entry with current available data"""
+        """Create cache entry with current available data from database."""
         try:
-            # Load player_activity.json (most recent first)
-            try:
-                with open('player_activity.json', 'r', encoding='utf-8') as f:
-                    activity_data = json.load(f)
-            except FileNotFoundError:
-                print("[CachePlayerActivity] player_activity.json not found, creating empty cache")
-                activity_data = []
-            except json.JSONDecodeError as e:
-                print(f"[CachePlayerActivity] Error decoding player_activity.json: {e}, creating empty cache")
-                activity_data = []
+            db = DB()
+            db.connect()
 
-            if not isinstance(activity_data, list):
-                print("[CachePlayerActivity] player_activity.json is not a list, creating empty cache")
-                activity_data = []
-
-            # Extract data for specific days
+            today = datetime.date.today()
             cache_data = {
                 'cached_at': datetime.datetime.now(timezone.utc).isoformat(),
                 'days': {}
@@ -71,16 +72,16 @@ class CachePlayerActivity(commands.Cog):
             target_days = [1, 7, 14, 30]
 
             for day in target_days:
-                if day < len(activity_data):
-                    # Get the snapshot for this day
-                    snapshot = activity_data[day]
+                target_date = today - timedelta(days=day)
+                members = self._get_activity_from_db(db, target_date)
+
+                if members:
                     cache_data['days'][f'day_{day}'] = {
-                        'time': snapshot.get('time'),
-                        'members': snapshot.get('members', [])
+                        'time': int(datetime.datetime.combine(target_date, datetime.time()).replace(tzinfo=timezone.utc).timestamp()),
+                        'members': members
                     }
-                    print(f"[CachePlayerActivity] Added data for day {day} with {len(snapshot.get('members', []))} members")
+                    print(f"[CachePlayerActivity] Added data for day {day} with {len(members)} members from DB")
                 else:
-                    # Not enough historical data for this day
                     cache_data['days'][f'day_{day}'] = {
                         'time': None,
                         'members': []
@@ -89,9 +90,6 @@ class CachePlayerActivity(commands.Cog):
 
             # Save to database cache
             try:
-                db = DB()
-                db.connect()
-
                 # Set expiration to epoch time (January 1, 1970)
                 epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
 
@@ -110,47 +108,34 @@ class CachePlayerActivity(commands.Cog):
                 """, ('player_activity_cache', json.dumps(cache_data), epoch_time))
 
                 db.connection.commit()
-                db.close()
-
                 print(f"[CachePlayerActivity] Successfully created initial cache for days: {target_days}")
 
             except Exception as e:
                 print(f"[CachePlayerActivity] Failed to save initial cache: {e}")
-                if 'db' in locals():
-                    try:
-                        db.close()
-                    except:
-                        pass
+
+            db.close()
 
         except Exception as e:
             print(f"[CachePlayerActivity] Unexpected error creating cache: {e}")
+            if 'db' in locals():
+                try:
+                    db.close()
+                except:
+                    pass
 
     @tasks.loop(time=dtime(hour=0, minute=15, tzinfo=timezone.utc))
     async def cache_activity_data(self):
         """
         Daily task that runs at 00:15 UTC to cache player activity data
-        for specific day intervals (1, 7, 14, and 30 days ago)
+        for specific day intervals (1, 7, 14, and 30 days ago) from database.
         """
         try:
             print("[CachePlayerActivity] Starting player activity cache task")
 
-            # Load player_activity.json (most recent first)
-            try:
-                with open('player_activity.json', 'r', encoding='utf-8') as f:
-                    activity_data = json.load(f)
-            except FileNotFoundError:
-                print("[CachePlayerActivity] player_activity.json not found")
-                return
-            except json.JSONDecodeError as e:
-                print(f"[CachePlayerActivity] Error decoding player_activity.json: {e}")
-                return
+            db = DB()
+            db.connect()
 
-            if not isinstance(activity_data, list):
-                print("[CachePlayerActivity] player_activity.json is not a list")
-                return
-
-            # Extract data for specific days
-            # Index 0 is day 0 (today), so we want indices 1, 7, 14, and 30
+            today = datetime.date.today()
             cache_data = {
                 'cached_at': datetime.datetime.now(timezone.utc).isoformat(),
                 'days': {}
@@ -159,16 +144,16 @@ class CachePlayerActivity(commands.Cog):
             target_days = [1, 7, 14, 30]
 
             for day in target_days:
-                if day < len(activity_data):
-                    # Get the snapshot for this day
-                    snapshot = activity_data[day]
+                target_date = today - timedelta(days=day)
+                members = self._get_activity_from_db(db, target_date)
+
+                if members:
                     cache_data['days'][f'day_{day}'] = {
-                        'time': snapshot.get('time'),
-                        'members': snapshot.get('members', [])
+                        'time': int(datetime.datetime.combine(target_date, datetime.time()).replace(tzinfo=timezone.utc).timestamp()),
+                        'members': members
                     }
-                    print(f"[CachePlayerActivity] Added data for day {day} with {len(snapshot.get('members', []))} members")
+                    print(f"[CachePlayerActivity] Added data for day {day} with {len(members)} members from DB")
                 else:
-                    # Not enough historical data for this day
                     cache_data['days'][f'day_{day}'] = {
                         'time': None,
                         'members': []
@@ -177,9 +162,6 @@ class CachePlayerActivity(commands.Cog):
 
             # Save to database cache
             try:
-                db = DB()
-                db.connect()
-
                 # Set expiration to epoch time (January 1, 1970)
                 epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
 
@@ -198,20 +180,20 @@ class CachePlayerActivity(commands.Cog):
                 """, ('player_activity_cache', json.dumps(cache_data), epoch_time))
 
                 db.connection.commit()
-                db.close()
-
                 print(f"[CachePlayerActivity] Successfully cached player activity data for days: {target_days}")
 
             except Exception as e:
                 print(f"[CachePlayerActivity] Failed to save to cache: {e}")
-                if 'db' in locals():
-                    try:
-                        db.close()
-                    except:
-                        pass
+
+            db.close()
 
         except Exception as e:
             print(f"[CachePlayerActivity] Unexpected error: {e}")
+            if 'db' in locals():
+                try:
+                    db.close()
+                except:
+                    pass
 
     @cache_activity_data.before_loop
     async def before_cache(self):
