@@ -195,28 +195,40 @@ def guild_banner(guild, style=''):
 @app.route('/xp_data/<path:uuid>', methods=['GET'])
 @cross_origin()
 def xp_data(uuid):
-    with open('player_activity.json', 'r') as f:
-        data = json.load(f)
-        f.close()
+    """Get XP contribution data for a player from the database."""
+    from datetime import timedelta
+
+    db = DB()
+    db.connect()
 
     xp_contribution = []
-    days = []
+    days_list = []
 
-    for i in range(30):
-        for player in data[i]['members']:
-            if player['uuid'] == uuid:
-                found = False
-                for p in data[i + 1]['members']:
-                    if p['uuid'] == uuid:
-                        found = True
-                        break
-                if found:
-                    xp_contribution.insert(0, player['contributed'] - p['contributed'])
-                else:
-                    xp_contribution.insert(0, player['contributed'] - 0)
-                days.insert(0, datetime.utcfromtimestamp(data[i]['time'] - 3600).strftime('%d/%m/%Y'))
+    try:
+        # Get last 31 days of data for this player (to calculate 30 deltas)
+        db.cursor.execute("""
+            SELECT contributed, snapshot_date FROM player_activity
+            WHERE uuid = %s
+            ORDER BY snapshot_date DESC
+            LIMIT 31
+        """, (uuid,))
+        rows = db.cursor.fetchall()
 
-    return {"xp_contribution": xp_contribution, "days": days}
+        if len(rows) < 2:
+            return {"xp_contribution": [], "days": []}
+
+        # Calculate daily XP deltas (most recent first in DB, but we want oldest first in output)
+        for i in range(len(rows) - 1):
+            current = rows[i]
+            previous = rows[i + 1]
+            delta = (current[0] or 0) - (previous[0] or 0)
+            xp_contribution.insert(0, max(0, delta))  # Insert at beginning to reverse order
+            days_list.insert(0, current[1].strftime('%d/%m/%Y'))
+
+    finally:
+        db.close()
+
+    return {"xp_contribution": xp_contribution, "days": days_list}
 
 
 @app.route('/download_welcome_messages', methods=['GET'])

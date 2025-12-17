@@ -2,6 +2,7 @@ import json
 import math
 import time
 import datetime
+from datetime import timedelta
 from io import BytesIO
 from dateutil import parser
 
@@ -27,6 +28,32 @@ def _load_json(path: str, default):
             return json.load(f)
     except Exception:
         return default
+
+
+def _get_baseline_playtime_from_db(db: DB, uuid: str, days: int) -> float:
+    """Get baseline playtime from player_activity table using index-based lookup."""
+    try:
+        # Get the days-th most recent snapshot date (0-indexed)
+        db.cursor.execute("""
+            SELECT DISTINCT snapshot_date FROM player_activity
+            ORDER BY snapshot_date DESC
+            OFFSET %s LIMIT 1
+        """, (days,))
+        date_row = db.cursor.fetchone()
+        if not date_row:
+            return 0.0
+        target_date = date_row[0]
+
+        db.cursor.execute("""
+            SELECT playtime FROM player_activity
+            WHERE uuid = %s AND snapshot_date = %s
+        """, (uuid, target_date))
+        row = db.cursor.fetchone()
+        if row and row[0] is not None:
+            return float(row[0])
+        return 0.0
+    except Exception:
+        return 0.0
 
 
 def _load_discord_ranks():
@@ -231,100 +258,83 @@ class Activity(commands.Cog):
         await ctx.interaction.response.defer()
 
         uuid_to_rank = _load_discord_ranks()
-        history = _load_json('player_activity.json', [])
         current = _load_json('current_activity.json', {})
         current_members = current.get('members', []) if isinstance(current, dict) else []
 
         taq_members = Guild('The Aquarium').all_members
 
+        # Open DB connection for baseline lookups
+        db = DB()
+        db.connect()
+
         playerdata = []
         now_dt = datetime.datetime.utcnow()
 
-        for member in current_members:
-            if not isinstance(member, dict):
-                continue
+        try:
+            for member in current_members:
+                if not isinstance(member, dict):
+                    continue
 
-            uuid = member.get('uuid')
-            last_join_iso = member['lastJoin']
-            if not last_join_iso:
-                # TAq creation date
-                last_join_iso = "2020-03-22T11:11:17.810000Z"
+                uuid = member.get('uuid')
+                last_join_iso = member['lastJoin']
+                if not last_join_iso:
+                    # TAq creation date
+                    last_join_iso = "2020-03-22T11:11:17.810000Z"
 
-            try:
-                days_since = date_diff(parser.isoparse(last_join_iso))
-            except Exception:
-                days_since = 9999
-            days_since = max(0, days_since)
+                try:
+                    days_since = date_diff(parser.isoparse(last_join_iso))
+                except Exception:
+                    days_since = 9999
+                days_since = max(0, days_since)
 
-            raw_playtime = member.get('playtime')
-            playtime_is_private = raw_playtime is None  # Detect if playtime is actually null/private
-            playtime = raw_playtime if raw_playtime is not None else 0
-            uuid = member.get('uuid', '').lower()
+                raw_playtime = member.get('playtime')
+                playtime_is_private = raw_playtime is None  # Detect if playtime is actually null/private
+                playtime = raw_playtime if raw_playtime is not None else 0
+                uuid = member.get('uuid', '').lower()
 
-            baseline_pt = None
+                # Get baseline playtime from database
+                baseline_pt = _get_baseline_playtime_from_db(db, uuid, days)
 
-            # Step 1: Attempt to get playtime from snapshot 'days' ago
-            if len(history) >= days:
-                snap = history[days-1]
+                # Compute actual playtime delta
+                real_pt = max(0, float(playtime) - float(baseline_pt))
 
-                entry = next((p for p in snap.get('members', []) if p.get('uuid', '').lower() == uuid), None)
-                if entry is not None:
-                    baseline_pt = entry.get('playtime', 0)
+                joined = next((p for p in taq_members if p.get('uuid') == uuid), {})
+                try:
+                    joined_dt = parser.isoparse(joined.get('joined'))
+                    if joined_dt.tzinfo:
+                        joined_dt = joined_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+                    member_for = max(0, (now_dt - joined_dt).days)
+                except Exception:
+                    member_for = 0
 
-            # Step 2: Fallback to earliest available snapshot in decreasing order
-            if baseline_pt is None:
-                for offset in reversed(range(days)):
-                    if offset >= len(history):
-                        continue
-                    day_snap = history[offset]
-                    entry = next(
-                        (p for p in day_snap.get('members', []) if p.get('uuid', '').lower() == uuid), None
-                    )
-                    if entry is not None:
-                        baseline_pt = entry.get('playtime', 0)
-                        break
-                    
-            if baseline_pt is None:
-                baseline_pt = 0
+                discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
+                raw_stars = RANK_STARS_MAP.get((discord_rank or '').lower(), '')
+                star_count = raw_stars if isinstance(raw_stars, int) else (raw_stars.count('*') if isinstance(raw_stars, str) else 0)
 
-            # Step 4: Compute actual playtime
-            real_pt = max(0, float(playtime) - float(baseline_pt))
+                adjusted_age_bonus = (member_for / 5) ** 0.8
+                rank_penalty = max(0, 5 - star_count) * 1.5
 
-            joined = next((p for p in taq_members if p.get('uuid') == uuid), {})
-            try:
-                joined_dt = parser.isoparse(joined.get('joined'))
-                if joined_dt.tzinfo:
-                    joined_dt = joined_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
-                member_for = max(0, (now_dt - joined_dt).days)
-            except Exception:
-                member_for = 0
+                score = (
+                    (days_since * 2.0)
+                    - (real_pt * 4.0)
+                    - adjusted_age_bonus
+                    + rank_penalty
+                )
 
-            discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
-            raw_stars = RANK_STARS_MAP.get((discord_rank or '').lower(), '')
-            star_count = raw_stars if isinstance(raw_stars, int) else (raw_stars.count('*') if isinstance(raw_stars, str) else 0)
-            
-            adjusted_age_bonus = (member_for / 5) ** 0.8
-            rank_penalty = max(0, 5 - star_count) * 1.5
-
-            score = (
-                (days_since * 2.0)
-                - (real_pt * 4.0)
-                - adjusted_age_bonus
-                + rank_penalty
-            )
-
-            if order_by != 'Kick Suitability' or member_for >= 7:
-                playerdata.append({
-                    'uuid': uuid,
-                    'name': member.get('name', 'Unknown'),
-                    'playtime': real_pt,
-                    'last_join': days_since,
-                    'member_for': member_for,
-                    'score': score,
-                    'game_rank': joined.get('rank', member.get('rank')),
-                    'discord_rank': discord_rank,
-                    'playtime_is_private': playtime_is_private,
-                })
+                if order_by != 'Kick Suitability' or member_for >= 7:
+                    playerdata.append({
+                        'uuid': uuid,
+                        'name': member.get('name', 'Unknown'),
+                        'playtime': real_pt,
+                        'last_join': days_since,
+                        'member_for': member_for,
+                        'score': score,
+                        'game_rank': joined.get('rank', member.get('rank')),
+                        'discord_rank': discord_rank,
+                        'playtime_is_private': playtime_is_private,
+                    })
+        finally:
+            db.close()
 
         sort_keys = {'Playtime': 'playtime', 'Inactivity': 'last_join', 'Kick Suitability': 'score'}
 

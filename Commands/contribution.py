@@ -1,5 +1,6 @@
 import datetime
 import time
+from datetime import date, timedelta
 from io import BytesIO
 
 from PIL import Image, ImageFont, ImageDraw
@@ -17,6 +18,32 @@ import json
 import math
 
 
+def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int):
+    """Get baseline value from player_activity table using index-based lookup."""
+    try:
+        # Get the days-th most recent snapshot date (0-indexed)
+        db.cursor.execute("""
+            SELECT DISTINCT snapshot_date FROM player_activity
+            ORDER BY snapshot_date DESC
+            OFFSET %s LIMIT 1
+        """, (days,))
+        date_row = db.cursor.fetchone()
+        if not date_row:
+            return 0
+        target_date = date_row[0]
+
+        db.cursor.execute(f"""
+            SELECT {key} FROM player_activity
+            WHERE uuid = %s AND snapshot_date = %s
+        """, (uuid, target_date))
+        row = db.cursor.fetchone()
+        if row and row[0] is not None:
+            return row[0]
+        return 0
+    except Exception:
+        return 0
+
+
 class Contribution(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -26,10 +53,12 @@ class Contribution(commands.Cog):
                        dayss: discord.Option(int, name="days", min_value=1, max_value=30, default=7)):
         await message.defer()
         book = []
-        with open('player_activity.json', 'r') as f:
-            old_data = json.loads(f.read())
         with open('current_activity.json', 'r') as f:
             new_data = json.loads(f.read())
+
+        # Handle both dict and list formats
+        if isinstance(new_data, dict):
+            new_data = new_data.get('members', [])
 
         taq = Guild('The Aquarium').all_members
         playerdata = []
@@ -49,40 +78,42 @@ class Contribution(commands.Cog):
         legendFont = ImageFont.truetype('images/profile/5x5.ttf', 20)
         db = DB()
         db.connect()
-        for member in new_data:
-            uuid = member['uuid']
-            playtime = member['playtime']
-            wars = member['wars']
-            xp = member['contributed']
 
-            db.cursor.execute(
-                f'SELECT discord_links.ign, COALESCE(shells.shells, 0) AS shells, COALESCE((SELECT entries FROM promotion_suggestions WHERE promotion_suggestions.uuid = discord_links.uuid), \'[]\') AS entries FROM discord_links LEFT JOIN shells ON discord_links.discord_id = shells.user WHERE discord_links.uuid = \'{uuid}\';')
-            row = db.cursor.fetchone()
-            if row:
-                shells = row[1]
-                suggestions = json.loads(row[2])
-            else:
-                shells = 0
-                suggestions = []
+        try:
+            for member in new_data:
+                uuid = member['uuid']
+                playtime = member.get('playtime') or 0
+                wars = member.get('wars') or 0
+                xp = member.get('contributed') or 0
 
-            if dayss > len(old_data):
-                dayss = len(old_data)
-            day = dayss
-            while not isInCurrDay(old_data[day - 1]['members'], uuid) and day - 1 != 0:
-                day -= 1
-            else:
-                for user in old_data[day - 1]['members']:
-                    if uuid == user['uuid']:
-                        real_pt = playtime - user['playtime']
-                        real_wars = wars - user['wars']
-                        real_xp = xp - user['contributed']
-                        real_shells = shells - user['shells']
-                        break
-            contribution_score = (real_wars / 5) + (real_xp / 500000000) + (real_pt / 15) + real_shells + (len(suggestions) * 1000000)
-            if real_pt >= 0:
-                playerdata.append(
-                        {'name': member['name'], 'uuid': uuid, 'playtime': real_pt, 'wars': real_wars,
-                         'rank': member['rank'], 'xp': real_xp, 'shells': real_shells, 'suggestions': len(suggestions), 'score': contribution_score})
+                db.cursor.execute(
+                    f'SELECT discord_links.ign, COALESCE(shells.shells, 0) AS shells, COALESCE((SELECT entries FROM promotion_suggestions WHERE promotion_suggestions.uuid = discord_links.uuid), \'[]\') AS entries FROM discord_links LEFT JOIN shells ON discord_links.discord_id = shells.user WHERE discord_links.uuid = \'{uuid}\';')
+                row = db.cursor.fetchone()
+                if row:
+                    shells = row[1]
+                    suggestions = json.loads(row[2])
+                else:
+                    shells = 0
+                    suggestions = []
+
+                # Get baselines from database
+                base_pt = _get_baseline_from_db(db, uuid, 'playtime', dayss)
+                base_wars = _get_baseline_from_db(db, uuid, 'wars', dayss)
+                base_xp = _get_baseline_from_db(db, uuid, 'contributed', dayss)
+                base_shells = _get_baseline_from_db(db, uuid, 'shells', dayss)
+
+                real_pt = playtime - base_pt
+                real_wars = wars - base_wars
+                real_xp = xp - base_xp
+                real_shells = shells - base_shells
+
+                contribution_score = (real_wars / 5) + (real_xp / 500000000) + (real_pt / 15) + real_shells + (len(suggestions) * 1000000)
+                if real_pt >= 0:
+                    playerdata.append(
+                            {'name': member['name'], 'uuid': uuid, 'playtime': real_pt, 'wars': real_wars,
+                             'rank': member['rank'], 'xp': real_xp, 'shells': real_shells, 'suggestions': len(suggestions), 'score': contribution_score})
+        finally:
+            db.close()
 
         if playerdata:
             i = 1
