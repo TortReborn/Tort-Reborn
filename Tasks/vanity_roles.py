@@ -44,9 +44,10 @@ def _get_current_value(cur_by_uuid: Dict[str, Dict[str, Any]], uuid: str, key: s
         return 0
 
 
-def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> int:
+def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> Optional[int]:
     """
     Get baseline value from player_activity database table using index-based lookup.
+    Returns None if player has no record for the target date (new member).
     """
     try:
         # Get the window_days-th most recent snapshot date (0-indexed)
@@ -57,7 +58,7 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> int:
         """, (window_days,))
         date_row = db.cursor.fetchone()
         if not date_row:
-            return 0
+            return None  # Not enough snapshots in database
         target_date = date_row[0]
 
         db.cursor.execute(f"""
@@ -66,11 +67,34 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> int:
         """, (uuid, target_date))
         row = db.cursor.fetchone()
 
+        if row is None:
+            return None  # Player has no record for this date (new member)
+        if row[0] is None:
+            return 0
+        return int(row[0])
+    except Exception as e:
+        print(f"[vanity_roles] Error getting baseline for {uuid}/{key}: {e}")
+        return 0
+
+
+def _get_player_earliest_baseline(db: DB, uuid: str, key: str) -> int:
+    """
+    Get the earliest available baseline for a player (their first snapshot).
+    Used as fallback for new members who don't have 14-day-old records.
+    """
+    try:
+        db.cursor.execute(f"""
+            SELECT {key} FROM player_activity
+            WHERE uuid = %s
+            ORDER BY snapshot_date ASC
+            LIMIT 1
+        """, (uuid,))
+        row = db.cursor.fetchone()
         if row and row[0] is not None:
             return int(row[0])
         return 0
     except Exception as e:
-        print(f"[vanity_roles] Error getting baseline for {uuid}/{key}: {e}")
+        print(f"[vanity_roles] Error getting earliest baseline for {uuid}/{key}: {e}")
         return 0
 
 
@@ -96,6 +120,12 @@ def compute_windowed_stats(window_days: int = WINDOW_DAYS) -> Dict[str, Windowed
 
             base_wars = _get_baseline_from_db(db, uuid, "wars", window_days)
             base_raids = _get_baseline_from_db(db, uuid, "raids", window_days)
+
+            # Fallback to earliest snapshot for new members
+            if base_wars is None:
+                base_wars = _get_player_earliest_baseline(db, uuid, "wars")
+            if base_raids is None:
+                base_raids = _get_player_earliest_baseline(db, uuid, "raids")
 
             wars_delta = max(curr_wars - base_wars, 0)
             raids_delta = max(curr_raids - base_raids, 0)
