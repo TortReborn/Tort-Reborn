@@ -185,3 +185,17 @@ CREATE TABLE IF NOT EXISTS cache_entries (
 
 CREATE INDEX IF NOT EXISTS idx_cache_expires_at ON cache_entries(expires_at);
 CREATE INDEX IF NOT EXISTS idx_cache_created_at ON cache_entries(created_at);
+
+-- =============================================================================
+-- Territory History (Map Snapshots)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS territory_snapshots (
+  id            SERIAL       PRIMARY KEY,
+  snapshot_time TIMESTAMPTZ  NOT NULL,
+  territories   JSONB        NOT NULL,
+  created_at    TIMESTAMPTZ  DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_snapshots_time ON territory_snapshots(snapshot_time DESC);
+CREATE INDEX IF NOT EXISTS idx_snapshots_time_range ON territory_snapshots(snapshot_time);
