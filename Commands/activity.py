@@ -12,7 +12,7 @@ from discord.commands import slash_command, Option
 from PIL import Image, ImageFont, ImageDraw
 
 from Helpers.classes import PlaceTemplate, Page, Guild
-from Helpers.database import DB
+from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge
 from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, guilds, te
 
@@ -258,7 +258,7 @@ class Activity(commands.Cog):
         await ctx.interaction.response.defer()
 
         uuid_to_rank = _load_discord_ranks()
-        current = _load_json('current_activity.json', {})
+        current = get_current_guild_data()
         current_members = current.get('members', []) if isinstance(current, dict) else []
 
         taq_members = Guild('The Aquarium').all_members

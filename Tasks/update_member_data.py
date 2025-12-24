@@ -9,6 +9,8 @@ import traceback
 from datetime import timezone, timedelta, time as dtime
 from collections import deque
 from discord.ext import tasks, commands
+from discord.commands import slash_command
+from discord import default_permissions
 
 # ensure prints flush immediately
 if hasattr(sys.stdout, "reconfigure"):
@@ -25,7 +27,8 @@ from Helpers.variables import (
     notg_emoji_id,
     tcc_emoji_id,
     tna_emoji_id,
-    nol_emoji_id
+    nol_emoji_id,
+    guilds
 )
 
 RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
@@ -33,7 +36,6 @@ LOG_CHANNEL = log_channel
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 100  # max calls per minute
-CURRENT_ACTIVITY_FILE = "current_activity.json"
 
 RAID_EMOJIS = {
     "Nest of the Grootslangs": notg_emoji_id,
@@ -111,9 +113,6 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
     snap = {'time': int(time.time()), 'members': []}
     uuids = list(pf_map.keys())
     if not uuids:
-        with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
-            json.dump(snap, f, indent=2)
-
         # Save empty snapshot to database cache
         try:
             db = _db_connect_with_retry()
@@ -181,9 +180,6 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
             'raids':       entry['raids'],
             'lastJoin':    last_join
         })
-
-    with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
-        json.dump(snap, f, indent=2)
 
     # Create cache version with online status
     cache_snap = {'time': snap['time'], 'members': []}
@@ -300,73 +296,6 @@ class UpdateMemberData(commands.Cog):
         
         await asyncio.to_thread(_upsert_raid_group_sync, list(group))
         await asyncio.to_thread(_graid_increment_group_sync, list(group), raid)
-
-    def _write_current_snapshot(self, db, guild, contrib_map, rank_map, pf_map):
-        """
-        Write an always‐fresh snapshot to CURRENT_ACTIVITY_FILE,
-        using a single bulk query for shells and raids totals,
-        joining strictly on IDs (no ign).
-        """
-        snap = {'time': int(time.time()), 'members': []}
-        cur = db.cursor
-
-        # 1. Gather all UUIDs we need stats for
-        uuids = list(pf_map.keys())
-        if not uuids:
-            self._save_json(CURRENT_ACTIVITY_FILE, snap)
-            return
-
-        # 2. Bulk‐fetch shells and raids_total for every uuid in one go
-        sql = """
-        SELECT
-        dl.uuid,
-        COALESCE(s.shells, 0) AS shells,
-        COALESCE(ur.uncollected_raids, 0)
-            + COALESCE(ur.collected_raids, 0) AS raids_total
-        FROM discord_links dl
-        LEFT JOIN shells s
-        ON dl.discord_id = s.user
-        LEFT JOIN uncollected_raids ur
-        ON dl.uuid = ur.uuid
-        WHERE dl.uuid = ANY(%s::uuid[]);
-        """
-        cur.execute(sql, (uuids,))
-        rows = cur.fetchall()
-
-        # 3. Build lookup dict by uuid
-        stats_by_uuid = {
-            row[0]: {'shells': row[1], 'raids': row[2]}
-            for row in rows
-        }
-
-        # 4. Populate the snapshot
-        for uuid, pf in pf_map.items():
-            if not isinstance(pf, dict):
-                continue
-
-            username  = pf.get('username') or pf.get('name')
-            last_join = pf.get('lastJoin', "2020-03-22T11:11:17.810000Z")  # ISO8601 string
-
-            entry      = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
-            shells     = entry['shells']
-            raids_total= entry['raids']
-
-            snap['members'].append({
-                'name':        username,
-                'uuid':        uuid,
-                'rank':        rank_map.get(uuid),
-                'playtime':    pf.get('playtime'),
-                'contributed': contrib_map.get(uuid),
-                'wars':        pf.get('globalData', {}).get('wars'),
-                'shells':      shells,
-                'raids':       raids_total,
-                'lastJoin':    last_join
-            })
-
-        # 5. Write out JSON
-        self._save_json(CURRENT_ACTIVITY_FILE, snap)
-
-
 
     @tasks.loop(minutes=3)
     async def update_member_data(self):
@@ -547,89 +476,102 @@ class UpdateMemberData(commands.Cog):
         
         print(f"🟨 ENDING LOOP - {datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}",flush=True)
 
-    @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
-    async def daily_activity_snapshot(self):
-        print("Starting daily activity snapshot", flush=True)
+    async def _run_snapshot(self, target_date=None):
+        """
+        Core snapshot logic. Fetches all guild members and writes to player_activity table.
+        Uses UPSERT (ON CONFLICT DO UPDATE) for deduplication - safe to run multiple times.
 
-        # --- Guard: ensure only one snapshot per UTC day (most-recent-first file) ---
-        pth = "player_activity.json"
-        today_utc = datetime.datetime.now(timezone.utc).date()
-        try:
-            old = self._load_json(pth, [])
-            if old:
-                last_ts = old[0].get("time")
-                if isinstance(last_ts, (int, float)):
-                    last_date = datetime.datetime.fromtimestamp(last_ts, tz=timezone.utc).date()
-                    if last_date == today_utc:
-                        print("Daily snapshot already exists for today; skipping duplicate.", flush=True)
-                        return
-        except Exception:
-            traceback.print_exc()
-            # If the file is malformed, proceed to write a fresh snapshot below.
+        Args:
+            target_date: The date to use for the snapshot. Defaults to today UTC.
 
-        # --- Build snapshot (unchanged) ---
-        db = DB(); db.connect()
+        Returns:
+            Tuple of (success: bool, members_written: int, total_members: int)
+        """
+        if target_date is None:
+            target_date = datetime.datetime.now(timezone.utc).date()
+
+        print(f"Running snapshot for date: {target_date}", flush=True)
+
+        db = DB()
+        db.connect()
         guild = Guild("The Aquarium")
         snap = {'time': int(time.time()), 'members': []}
+
+        total_members = len(guild.all_members)
 
         # 1: build contrib and rank maps from recent guild state
         contrib_map = {m['uuid']: m.get('contributed', 0) for m in guild.all_members}
         rank_map    = {m['uuid']: m.get('rank')       for m in guild.all_members}
 
-        # 2: snapshot each member currently in guild
-        for m in guild.all_members:
-            uuid = m['uuid']
-            username = m['name']
+        # 2: snapshot each member currently in guild (with retry logic for rate limits)
+        pending_members = list(guild.all_members)
+        max_retries = 3
+        retry_delay = 30  # seconds
 
-            async with self._semaphore:
-                pf = await asyncio.to_thread(getPlayerDatav3, uuid)
-            if not isinstance(pf, dict):
-                continue
+        for attempt in range(max_retries + 1):
+            failed_members = []
 
-            # shells
-            db.cursor.execute(
-                "SELECT COALESCE(s.shells, 0) "
-                "FROM discord_links dl "
-                "LEFT JOIN shells s ON dl.discord_id = s.user "
-                "WHERE dl.uuid = %s",
-                (uuid,)
-            )
-            row = db.cursor.fetchone()
-            sh = row[0] if row else 0
+            for m in pending_members:
+                uuid = m['uuid']
+                username = m['name']
 
-            # raids
-            db.cursor.execute(
-                "SELECT COALESCE(ur.uncollected_raids, 0) + COALESCE(ur.collected_raids, 0) "
-                "FROM discord_links dl "
-                "LEFT JOIN uncollected_raids ur ON dl.uuid = ur.uuid "
-                "WHERE dl.uuid = %s",
-                (uuid,)
-            )
-            row = db.cursor.fetchone()
-            rd = row[0] if row else 0
+                async with self._semaphore:
+                    pf = await asyncio.to_thread(getPlayerDatav3, uuid)
+                if not isinstance(pf, dict):
+                    failed_members.append(m)
+                    continue
 
-            snap['members'].append({
-                'name': username,
-                'uuid': uuid,
-                'rank': rank_map.get(uuid),
-                'playtime': pf.get('playtime'),
-                'contributed': contrib_map.get(uuid),
-                'wars': pf.get('globalData', {}).get('wars'),
-                'shells': sh,
-                'raids': rd
-            })
+                # shells
+                db.cursor.execute(
+                    "SELECT COALESCE(s.shells, 0) "
+                    "FROM discord_links dl "
+                    "LEFT JOIN shells s ON dl.discord_id = s.user "
+                    "WHERE dl.uuid = %s",
+                    (uuid,)
+                )
+                row = db.cursor.fetchone()
+                sh = row[0] if row else 0
 
-        # 3: write out json (keep for backward compatibility and verification)
-        pth = "player_activity.json"
-        old = self._load_json(pth, [])
-        old.insert(0, snap)
-        with open(pth, 'w') as f:
-            json.dump(old, f, indent=2)
-        print("Daily activity snapshot written to JSON", flush=True)
+                # raids
+                db.cursor.execute(
+                    "SELECT COALESCE(ur.uncollected_raids, 0) + COALESCE(ur.collected_raids, 0) "
+                    "FROM discord_links dl "
+                    "LEFT JOIN uncollected_raids ur ON dl.uuid = ur.uuid "
+                    "WHERE dl.uuid = %s",
+                    (uuid,)
+                )
+                row = db.cursor.fetchone()
+                rd = row[0] if row else 0
 
-        # 4: write to player_activity database table (all fields)
+                snap['members'].append({
+                    'name': username,
+                    'uuid': uuid,
+                    'rank': rank_map.get(uuid),
+                    'playtime': pf.get('playtime'),
+                    'contributed': contrib_map.get(uuid),
+                    'wars': pf.get('globalData', {}).get('wars'),
+                    'shells': sh,
+                    'raids': rd
+                })
+
+            # If no failures or we've exhausted retries, break
+            if not failed_members or attempt >= max_retries:
+                if failed_members:
+                    failed_names = [m['name'] for m in failed_members]
+                    print(f"[Snapshot] Final failures after {max_retries} retries: {', '.join(failed_names)}", flush=True)
+                break
+
+            # Wait and retry failed members
+            failed_names = [m['name'] for m in failed_members]
+            print(f"[Snapshot] {len(failed_members)} failed fetches: {', '.join(failed_names)}", flush=True)
+            print(f"[Snapshot] Waiting {retry_delay}s before retry {attempt + 1}/{max_retries}...", flush=True)
+            await asyncio.sleep(retry_delay)
+            pending_members = failed_members
+
+        failed_fetches = len(failed_members) if failed_members else 0
+
+        # 3: write to player_activity database table (uses UPSERT for deduplication)
         try:
-            snapshot_date = today_utc
             db_rows_written = 0
             for member in snap['members']:
                 uuid = member.get('uuid')
@@ -638,7 +580,7 @@ class UpdateMemberData(commands.Cog):
                 wars = member.get('wars') or 0
                 raids = member.get('raids') or 0
                 shells = member.get('shells') or 0
-                if uuid and playtime is not None:
+                if uuid:
                     db.cursor.execute("""
                         INSERT INTO player_activity (uuid, playtime, contributed, wars, raids, shells, snapshot_date)
                         VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -649,16 +591,108 @@ class UpdateMemberData(commands.Cog):
                             wars = EXCLUDED.wars,
                             raids = EXCLUDED.raids,
                             shells = EXCLUDED.shells
-                    """, (uuid, playtime, contributed, wars, raids, shells, snapshot_date))
+                    """, (uuid, playtime, contributed, wars, raids, shells, target_date))
                     db_rows_written += 1
             db.connection.commit()
-            print(f"Daily activity snapshot written to DB ({db_rows_written} rows)", flush=True)
+            private_profiles = sum(1 for m in snap['members'] if m.get('playtime') is None)
+            print(f"Snapshot written to DB ({db_rows_written} rows, {failed_fetches} failed API, {private_profiles} private profiles)", flush=True)
+            db.close()
+            return (True, db_rows_written, total_members, failed_fetches, private_profiles)
         except Exception as e:
-            print(f"[daily_activity_snapshot] Failed to write to DB: {e}", flush=True)
+            print(f"[_run_snapshot] Failed to write to DB: {e}", flush=True)
             traceback.print_exc()
+            db.close()
+            return (False, 0, total_members, failed_fetches, 0)
 
-        db.close()
-        print("Daily activity snapshot complete", flush=True)
+    @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
+    async def daily_activity_snapshot(self):
+        print("Starting daily activity snapshot", flush=True)
+
+        # --- Guard: ensure only one snapshot per UTC day (check database) ---
+        today_utc = datetime.datetime.now(timezone.utc).date()
+        try:
+            db_check = DB()
+            db_check.connect()
+            db_check.cursor.execute("""
+                SELECT COUNT(*) FROM player_activity
+                WHERE snapshot_date = %s
+            """, (today_utc,))
+            existing_count = db_check.cursor.fetchone()[0]
+            db_check.close()
+            if existing_count > 0:
+                print(f"Daily snapshot already exists for today ({existing_count} rows); skipping.", flush=True)
+                return
+        except Exception:
+            traceback.print_exc()
+            # If the check fails, proceed to write a fresh snapshot below.
+
+        success, written, total, failed_api, private = await self._run_snapshot(today_utc)
+        if success:
+            print(f"Daily activity snapshot complete ({written}/{total} members, {failed_api} failed API, {private} private)", flush=True)
+        else:
+            print("Daily activity snapshot failed", flush=True)
+
+    @slash_command(name="force_snapshot", description="Force retry the daily activity snapshot (admin only)", guild_ids=guilds)
+    @default_permissions(administrator=True)
+    async def force_snapshot(self, ctx: discord.ApplicationContext):
+        """
+        Manually trigger a snapshot retry. Uses UPSERT so it's safe to run multiple times -
+        existing entries for today will be updated, not duplicated.
+        """
+        await ctx.defer(ephemeral=True)
+
+        today_utc = datetime.datetime.now(timezone.utc).date()
+
+        # Check current state before running
+        try:
+            db_check = DB()
+            db_check.connect()
+            db_check.cursor.execute("""
+                SELECT COUNT(*) FROM player_activity
+                WHERE snapshot_date = %s
+            """, (today_utc,))
+            existing_count = db_check.cursor.fetchone()[0]
+            db_check.close()
+        except Exception:
+            existing_count = 0
+
+        await ctx.respond(
+            f"Starting forced snapshot for {today_utc}...\n"
+            f"Current entries for today: {existing_count}\n"
+            f"This may take a minute.",
+            ephemeral=True
+        )
+
+        success, written, total, failed_api, private = await self._run_snapshot(today_utc)
+
+        # Check new state after running
+        try:
+            db_check = DB()
+            db_check.connect()
+            db_check.cursor.execute("""
+                SELECT COUNT(*) FROM player_activity
+                WHERE snapshot_date = %s
+            """, (today_utc,))
+            new_count = db_check.cursor.fetchone()[0]
+            db_check.close()
+        except Exception:
+            new_count = written
+
+        if success:
+            await ctx.followup.send(
+                f"✅ Snapshot complete!\n"
+                f"• Members in guild: {total}\n"
+                f"• Successfully written: {written}\n"
+                f"• Failed API fetches: {failed_api}\n"
+                f"• Private profiles (null playtime): {private}\n"
+                f"• Total entries for {today_utc}: {new_count}",
+                ephemeral=True
+            )
+        else:
+            await ctx.followup.send(
+                f"❌ Snapshot failed. Check logs for details.",
+                ephemeral=True
+            )
     
     @update_member_data.before_loop
     async def before_update(self):
