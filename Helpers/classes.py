@@ -8,7 +8,7 @@ from dateutil import parser
 import discord
 from discord.ui import InputText, Modal
 
-from Helpers.database import DB
+from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline
 from Helpers.functions import getPlayerUUID, getPlayerDatav3, urlify
 from discord.ext.pages import Page as _Page
 
@@ -200,18 +200,14 @@ class PlayerStats:
             self.collected_raids = 0 if len(rows) == 0 else rows[0][2]
             self.guild_raids = self.uncollected_raids + self.collected_raids
 
-        # timed stats (inclusive window using current_activity.json as "now")
+        # timed stats (using database for both current and baseline data)
         if self.taq:
-            # 1) Load NOW from current_activity.json so profiles match the leaderboard exactly
-            try:
-                with open('current_activity.json', 'r', encoding='utf-8') as f:
-                    cur = json.load(f)
-                cur_map = {m['uuid']: m for m in cur.get('members', [])}
-                now_entry = cur_map.get(self.UUID)
-            except Exception:
-                now_entry = None
+            # 1) Load NOW from database cache so profiles match the leaderboard exactly
+            cur = get_current_guild_data()
+            cur_map = {m['uuid']: m for m in cur.get('members', [])}
+            now_entry = cur_map.get(self.UUID)
 
-            # Fallback to previously-fetched live values if not present in current_activity.json
+            # Fallback to previously-fetched live values if not present in cache
             # Also track if any of the base values are private
             if now_entry:
                 now_playtime_val = now_entry.get('playtime', self.playtime)
@@ -235,13 +231,17 @@ class PlayerStats:
             now_raids = int(now_raids_val) if now_raids_val is not None else 0
 
             # 2) Bound the requested days for display (keep your UX constraints)
+            # Get number of available snapshots from database
+            db_temp = DB()
+            db_temp.connect()
             try:
-                with open('player_activity.json', 'r', encoding='utf-8') as f:
-                    snaps_mrf = json.load(f)  # most recent first, index 0 = latest
+                db_temp.cursor.execute("SELECT COUNT(DISTINCT snapshot_date) FROM player_activity")
+                num_snaps = db_temp.cursor.fetchone()[0] or 0
             except Exception:
-                snaps_mrf = []
+                num_snaps = 0
+            finally:
+                db_temp.close()
 
-            num_snaps = len(snaps_mrf)
             # Keep your original limits
             if days > num_snaps:
                 days = num_snaps
@@ -251,61 +251,13 @@ class PlayerStats:
                 days = 1
             self.stats_days = days
 
-            def read_member_at(idx: int):
-                """Return the member dict for self.UUID at snapshot idx (MRF), else None."""
-                if idx < 0 or idx >= num_snaps:
-                    return None
-                for m in snaps_mrf[idx].get('members', []):
-                    if m.get('uuid') == self.UUID:
-                        return m
-                return None
-
-            def find_inclusive_baseline(days_window: int):
-                """
-                Inclusive baseline rule:
-                  - baseline_idx = days_window  (the (W+1)-th most recent)
-                  - if missing at baseline_idx, walk toward newer snapshots: (days_window-1 ... 0)
-                  - if never found, baseline = current (delta 0), warn=True
-                Returns: (base_playtime, base_wars, base_contrib, base_raids, warn)
-                """
-                if num_snaps == 0:
-                    return (now_playtime, now_wars, now_contrib, now_raids, True)
-
-                baseline_idx = min(days_window, num_snaps - 1)
-                warn = False
-
-                entry = read_member_at(baseline_idx)
-                if entry is not None:
-                    try:
-                        return (
-                            int(entry.get('playtime') or 0),
-                            int(entry.get('wars') or 0),
-                            int(entry.get('contributed') or 0),
-                            int(entry.get('raids') or 0),
-                            False
-                        )
-                    except Exception:
-                        # Malformed values -> treat as missing and walk toward 0
-                        entry = None
-
-                # Fallback: walk toward the present (W-1 ... 0)
-                for i in range(baseline_idx - 1, -1, -1):
-                    e = read_member_at(i)
-                    if e is not None:
-                        warn = True
-                        return (
-                            int(e.get('playtime') or 0),
-                            int(e.get('wars') or 0),
-                            int(e.get('contributed') or 0),
-                            int(e.get('raids') or 0),
-                            True
-                        )
-
-                # Never found -> baseline = current so delta = 0; warn
-                return (now_playtime, now_wars, now_contrib, now_raids, True)
-
             if self.in_guild_for.days >= 1:
-                base_pt, base_wars, base_xp, base_raids, warn_flag = find_inclusive_baseline(days)
+                # Get baseline values from database
+                base_pt, warn_pt = get_player_activity_baseline(self.UUID, 'playtime', days)
+                base_wars, warn_wars = get_player_activity_baseline(self.UUID, 'wars', days)
+                base_xp, warn_xp = get_player_activity_baseline(self.UUID, 'contributed', days)
+                base_raids, warn_raids = get_player_activity_baseline(self.UUID, 'raids', days)
+                warn_flag = warn_pt or warn_wars or warn_xp or warn_raids
 
                 # 3) Compute inclusive deltas (clamped >= 0)
                 self.real_pt    = max(int(now_playtime) - int(base_pt),   0)

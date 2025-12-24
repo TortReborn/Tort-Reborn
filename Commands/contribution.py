@@ -11,7 +11,7 @@ from discord.ext import pages
 from discord.commands import slash_command
 
 from Helpers.classes import PlaceTemplate, Page, Guild
-from Helpers.database import DB
+from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import isInCurrDay, expand_image, addLine, generate_rank_badge, format_number
 from Helpers.variables import rank_map, te, guilds
 import json
@@ -53,12 +53,13 @@ class Contribution(commands.Cog):
                        dayss: discord.Option(int, name="days", min_value=1, max_value=30, default=7)):
         await message.defer()
         book = []
-        with open('current_activity.json', 'r') as f:
-            new_data = json.loads(f.read())
+        current_data = get_current_guild_data()
 
         # Handle both dict and list formats
-        if isinstance(new_data, dict):
-            new_data = new_data.get('members', [])
+        if isinstance(current_data, dict):
+            new_data = current_data.get('members', [])
+        else:
+            new_data = current_data
 
         taq = Guild('The Aquarium').all_members
         playerdata = []

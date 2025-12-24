@@ -33,7 +33,6 @@ LOG_CHANNEL = log_channel
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 100  # max calls per minute
-CURRENT_ACTIVITY_FILE = "current_activity.json"
 
 RAID_EMOJIS = {
     "Nest of the Grootslangs": notg_emoji_id,
@@ -111,9 +110,6 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
     snap = {'time': int(time.time()), 'members': []}
     uuids = list(pf_map.keys())
     if not uuids:
-        with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
-            json.dump(snap, f, indent=2)
-
         # Save empty snapshot to database cache
         try:
             db = _db_connect_with_retry()
@@ -181,9 +177,6 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
             'raids':       entry['raids'],
             'lastJoin':    last_join
         })
-
-    with open(CURRENT_ACTIVITY_FILE, "w", encoding="utf-8") as f:
-        json.dump(snap, f, indent=2)
 
     # Create cache version with online status
     cache_snap = {'time': snap['time'], 'members': []}
@@ -300,73 +293,6 @@ class UpdateMemberData(commands.Cog):
         
         await asyncio.to_thread(_upsert_raid_group_sync, list(group))
         await asyncio.to_thread(_graid_increment_group_sync, list(group), raid)
-
-    def _write_current_snapshot(self, db, guild, contrib_map, rank_map, pf_map):
-        """
-        Write an always‐fresh snapshot to CURRENT_ACTIVITY_FILE,
-        using a single bulk query for shells and raids totals,
-        joining strictly on IDs (no ign).
-        """
-        snap = {'time': int(time.time()), 'members': []}
-        cur = db.cursor
-
-        # 1. Gather all UUIDs we need stats for
-        uuids = list(pf_map.keys())
-        if not uuids:
-            self._save_json(CURRENT_ACTIVITY_FILE, snap)
-            return
-
-        # 2. Bulk‐fetch shells and raids_total for every uuid in one go
-        sql = """
-        SELECT
-        dl.uuid,
-        COALESCE(s.shells, 0) AS shells,
-        COALESCE(ur.uncollected_raids, 0)
-            + COALESCE(ur.collected_raids, 0) AS raids_total
-        FROM discord_links dl
-        LEFT JOIN shells s
-        ON dl.discord_id = s.user
-        LEFT JOIN uncollected_raids ur
-        ON dl.uuid = ur.uuid
-        WHERE dl.uuid = ANY(%s::uuid[]);
-        """
-        cur.execute(sql, (uuids,))
-        rows = cur.fetchall()
-
-        # 3. Build lookup dict by uuid
-        stats_by_uuid = {
-            row[0]: {'shells': row[1], 'raids': row[2]}
-            for row in rows
-        }
-
-        # 4. Populate the snapshot
-        for uuid, pf in pf_map.items():
-            if not isinstance(pf, dict):
-                continue
-
-            username  = pf.get('username') or pf.get('name')
-            last_join = pf.get('lastJoin', "2020-03-22T11:11:17.810000Z")  # ISO8601 string
-
-            entry      = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
-            shells     = entry['shells']
-            raids_total= entry['raids']
-
-            snap['members'].append({
-                'name':        username,
-                'uuid':        uuid,
-                'rank':        rank_map.get(uuid),
-                'playtime':    pf.get('playtime'),
-                'contributed': contrib_map.get(uuid),
-                'wars':        pf.get('globalData', {}).get('wars'),
-                'shells':      shells,
-                'raids':       raids_total,
-                'lastJoin':    last_join
-            })
-
-        # 5. Write out JSON
-        self._save_json(CURRENT_ACTIVITY_FILE, snap)
-
-
 
     @tasks.loop(minutes=3)
     async def update_member_data(self):
@@ -551,21 +477,24 @@ class UpdateMemberData(commands.Cog):
     async def daily_activity_snapshot(self):
         print("Starting daily activity snapshot", flush=True)
 
-        # --- Guard: ensure only one snapshot per UTC day (most-recent-first file) ---
-        pth = "player_activity.json"
+        # --- Guard: ensure only one snapshot per UTC day (check database) ---
         today_utc = datetime.datetime.now(timezone.utc).date()
         try:
-            old = self._load_json(pth, [])
-            if old:
-                last_ts = old[0].get("time")
-                if isinstance(last_ts, (int, float)):
-                    last_date = datetime.datetime.fromtimestamp(last_ts, tz=timezone.utc).date()
-                    if last_date == today_utc:
-                        print("Daily snapshot already exists for today; skipping duplicate.", flush=True)
-                        return
+            db_check = DB()
+            db_check.connect()
+            db_check.cursor.execute("""
+                SELECT snapshot_date FROM player_activity
+                WHERE snapshot_date = %s
+                LIMIT 1
+            """, (today_utc,))
+            existing = db_check.cursor.fetchone()
+            db_check.close()
+            if existing:
+                print("Daily snapshot already exists for today; skipping duplicate.", flush=True)
+                return
         except Exception:
             traceback.print_exc()
-            # If the file is malformed, proceed to write a fresh snapshot below.
+            # If the check fails, proceed to write a fresh snapshot below.
 
         # --- Build snapshot (unchanged) ---
         db = DB(); db.connect()
@@ -619,15 +548,7 @@ class UpdateMemberData(commands.Cog):
                 'raids': rd
             })
 
-        # 3: write out json (keep for backward compatibility and verification)
-        pth = "player_activity.json"
-        old = self._load_json(pth, [])
-        old.insert(0, snap)
-        with open(pth, 'w') as f:
-            json.dump(old, f, indent=2)
-        print("Daily activity snapshot written to JSON", flush=True)
-
-        # 4: write to player_activity database table (all fields)
+        # 3: write to player_activity database table (all fields)
         try:
             snapshot_date = today_utc
             db_rows_written = 0

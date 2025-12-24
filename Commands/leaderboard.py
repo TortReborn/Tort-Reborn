@@ -11,7 +11,7 @@ from discord import SlashCommandGroup
 from discord.ext import commands, pages
 
 from Helpers.classes import PlaceTemplate, Page
-from Helpers.database import DB
+from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, expand_image, generate_rank_badge
 from Helpers.variables import rank_map, discord_ranks
 
@@ -23,7 +23,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     """
     Build a paginator filled with leaderboard images for a given metric.
 
-    Uses current_activity.json (live) minus baseline from player_activity database table.
+    Uses current guild data (live) minus baseline from player_activity database table.
 
     Args:
         order_key: key in each member record (e.g. 'contributed', 'wars', 'playtime', 'shells', 'raids')
@@ -37,12 +37,10 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     CUMULATIVE_KEYS = {"contributed", "wars", "playtime", "shells", "raids"}
 
     # ---------------------------
-    # Load current data from JSON
+    # Load current data from database
     # ---------------------------
-    try:
-        with open('current_activity.json', 'r', encoding='utf-8') as f:
-            current_data = json.load(f)
-    except Exception:
+    current_data = get_current_guild_data()
+    if not current_data:
         return pages.Paginator(pages=[Page(content='No current activity available.')])
 
     if not isinstance(current_data, dict) or not current_data.get('members'):
@@ -82,7 +80,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         # ---------------------------
         def get_current_value(uuid: str, key: str) -> tuple[int, bool]:
             """
-            Return the current live cumulative value for the uuid/key from current_activity.json.
+            Return the current live cumulative value for the uuid/key from database cache.
             Returns: (value, is_null) where is_null=True if the data is actually None/private.
             """
             m = current_by_uuid.get(uuid)
@@ -367,7 +365,7 @@ class Leaderboard(commands.Cog):
     # ---- NEW: Raids ----
     @leaderboard_group.command(description='Display the Raids leaderboard')
     async def raids(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
-        """Leaderboard for raid clears (value stored under 'raids' in player_activity.json)."""
+        """Leaderboard for raid clears (value stored under 'raids' in player_activity table)."""
         await message.defer()
         try:
             days = PERIOD_TO_DAYS.get(period, 7)
