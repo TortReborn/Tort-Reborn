@@ -1,6 +1,9 @@
+import json
 import os
+
 import psycopg2
 from psycopg2 import OperationalError
+
 
 class DB:
     def __init__(self):
@@ -50,3 +53,74 @@ class DB:
             self.cursor.close()
         if self.connection:
             self.connection.close()
+
+
+def get_current_guild_data() -> dict:
+    """Load current guild member data from cache_entries table.
+    Returns dict with 'time' and 'members' keys, or empty dict on error.
+    Replaces: current_activity.json
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            "SELECT data FROM cache_entries WHERE cache_key = 'guildData'"
+        )
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    except Exception as e:
+        print(f"[get_current_guild_data] Error: {e}")
+        return {}
+    finally:
+        db.close()
+
+
+def get_player_activity_baseline(uuid: str, key: str, days: int) -> tuple:
+    """Get baseline value from player_activity table.
+    Returns (value, warn_flag) tuple.
+    Replaces: player_activity.json lookups
+    """
+    db = DB()
+    db.connect()
+    try:
+        # Get the days-th most recent snapshot date
+        db.cursor.execute("""
+            SELECT DISTINCT snapshot_date FROM player_activity
+            ORDER BY snapshot_date DESC
+            OFFSET %s LIMIT 1
+        """, (days,))
+        date_row = db.cursor.fetchone()
+
+        if not date_row:
+            return (0, True)  # No snapshots available
+
+        target_date = date_row[0]
+
+        db.cursor.execute(f"""
+            SELECT {key} FROM player_activity
+            WHERE uuid = %s AND snapshot_date = %s
+        """, (uuid, target_date))
+        row = db.cursor.fetchone()
+
+        if row and row[0] is not None:
+            return (int(row[0]), False)
+
+        # Player not found - try walking toward present
+        db.cursor.execute(f"""
+            SELECT {key} FROM player_activity
+            WHERE uuid = %s AND snapshot_date > %s
+            ORDER BY snapshot_date ASC LIMIT 1
+        """, (uuid, target_date))
+        fallback = db.cursor.fetchone()
+
+        if fallback and fallback[0] is not None:
+            return (int(fallback[0]), True)  # warn flag
+
+        return (0, True)
+    except Exception as e:
+        print(f"[get_player_activity_baseline] Error for {uuid}/{key}: {e}")
+        return (0, True)
+    finally:
+        db.close()

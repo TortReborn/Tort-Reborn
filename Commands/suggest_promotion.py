@@ -11,15 +11,14 @@ from discord import option, default_permissions, slash_command
 from discord.ext import commands
 from discord.ui import View, Modal, InputText
 
-from Helpers.database import DB
+from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import getPlayerUUID
 from Helpers.variables import test, te, promotion_channel, guilds
 
 
 async def get_members(message: discord.AutocompleteContext):
-    with open('current_activity.json', 'r') as f:
-        members = json.load(f)
-        f.close()
+    current_data = get_current_guild_data()
+    members = current_data.get('members', []) if isinstance(current_data, dict) else current_data
 
     member_list = []
     for member in members:
@@ -73,9 +72,8 @@ class SuggestPromotion(commands.Cog):
         taq_member = False
         username, UUID = getPlayerUUID(member)
 
-        with open('current_activity.json', 'r') as f:
-            members = json.load(f)
-            f.close()
+        current_data = get_current_guild_data()
+        members = current_data.get('members', []) if isinstance(current_data, dict) else current_data
 
         for m in members:
             if m['uuid'] == UUID:

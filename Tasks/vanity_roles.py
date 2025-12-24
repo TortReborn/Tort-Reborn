@@ -10,27 +10,18 @@ from discord.ext import commands, tasks
 from discord.commands import slash_command
 from discord import default_permissions
 
-from Helpers.database import DB
+from Helpers.database import DB, get_current_guild_data
 from Helpers.variables import guilds, announcement_channel, faq_channel, VANITY_ROLE_NAMES
 
 START_DATE_UTC = date(2025, 8, 31)  # first run date (YYYY, M, D)
 
 WINDOW_DAYS = 14  # bi-weekly window
 
-CURRENT_PATH = "current_activity.json"
 
 @dataclass
 class WindowedStats:
     wars: int
     raids: int
-
-
-def _load_json(path: str, default):
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return default
 
 
 def _get_current_value(cur_by_uuid: Dict[str, Dict[str, Any]], uuid: str, key: str) -> int:
@@ -101,10 +92,10 @@ def _get_player_earliest_baseline(db: DB, uuid: str, key: str) -> int:
 def compute_windowed_stats(window_days: int = WINDOW_DAYS) -> Dict[str, WindowedStats]:
     """
     Returns { uuid -> WindowedStats(wars=Δ, raids=Δ) } for the last `window_days`.
-    Uses current_activity.json (live) minus baseline from player_activity database table.
+    Uses current guild data (live) minus baseline from player_activity database table.
     """
-    # Load current live data from JSON (updated every 3 minutes)
-    current = _load_json(CURRENT_PATH, {})
+    # Load current live data from database (updated every 3 minutes)
+    current = get_current_guild_data()
     cur_members = current.get("members", []) if isinstance(current, dict) else []
     cur_by_uuid = {m["uuid"]: m for m in cur_members if isinstance(m, dict) and m.get("uuid")}
 
