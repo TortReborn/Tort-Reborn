@@ -575,7 +575,7 @@ class UpdateMemberData(commands.Cog):
             db_rows_written = 0
             for member in snap['members']:
                 uuid = member.get('uuid')
-                playtime = member.get('playtime')
+                playtime = member.get('playtime') or 0
                 contributed = member.get('contributed') or 0
                 wars = member.get('wars') or 0
                 raids = member.get('raids') or 0
