@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from io import BytesIO
 import asyncio
 
@@ -30,13 +31,22 @@ class Profile(commands.Cog):
             await ctx.followup.send(embed=embed, ephemeral=True)
             return
 
+        # Check for Christmas (Dec 24-26)
+        today = datetime.now()
+        is_christmas = today.month == 12 and today.day in (24, 25, 26)
+
         # Base Image + Edge Gradient
-        card = vertical_gradient(main_color=player.tag_color)
+        if is_christmas:
+            card = vertical_gradient(main_color='#c41e3a')  # Christmas red edge
+        else:
+            card = vertical_gradient(main_color=player.tag_color)
         card = round_corners(card)
         draw = ImageDraw.Draw(card)
 
         # Card Color/Pattern
-        if player.background == 2 and player.gradient == ['#293786', '#1d275e']:    # Set gradient for TAq Sea Turtle BG
+        if is_christmas:
+            card_color = vertical_gradient(width=850, height=1130, main_color='#c41e3a', secondary_color='#165b33')  # Red to green
+        elif player.background == 2 and player.gradient == ['#293786', '#1d275e']:    # Set gradient for TAq Sea Turtle BG
             card_color = vertical_gradient(width=850, height=1130, main_color='#4585db', secondary_color='#2f2b73')
         else:
             card_color = vertical_gradient(width=850, height=1130, main_color=player.gradient[0], secondary_color=player.gradient[1])
@@ -44,12 +54,18 @@ class Profile(commands.Cog):
         card.paste(card_color, (25, 25), card_color)
 
         # Background Outline
-        bg_outline = vertical_gradient(width=818, height=545, main_color=player.tag_color, reverse=True)
+        if is_christmas:
+            bg_outline = vertical_gradient(width=818, height=545, main_color='#165b33', reverse=True)  # Green outline
+        else:
+            bg_outline = vertical_gradient(width=818, height=545, main_color=player.tag_color, reverse=True)
         bg_outline = round_corners(bg_outline)
         card.paste(bg_outline, (41, 100), bg_outline)
 
         # Background
-        background = Image.open(f"images/profile_backgrounds/{player.background}.png")
+        if is_christmas:
+            background = Image.open("images/profile_backgrounds/christmas_background.png")
+        else:
+            background = Image.open(f"images/profile_backgrounds/{player.background}.png")
         background = round_corners(background, radius=20)
         card.paste(background, (50, 110), background)
 
