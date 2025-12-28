@@ -169,6 +169,7 @@ extensions = [
     'Commands.graidevent',
     'Commands.treasury',
     'Commands.recruitment',
+    'Commands.top_wars',
 
     # Dev Commands
     'Commands.render_text',
