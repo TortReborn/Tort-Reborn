@@ -199,3 +199,20 @@ CREATE TABLE IF NOT EXISTS territory_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_snapshots_time ON territory_snapshots(snapshot_time DESC);
 CREATE INDEX IF NOT EXISTS idx_snapshots_time_range ON territory_snapshots(snapshot_time);
+
+-- =============================================================================
+-- Liquid Emerald Balance Tracking
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS le_balance_log (
+  id               SERIAL       PRIMARY KEY,
+  balance          INTEGER      NOT NULL,
+  previous_balance INTEGER,
+  action           TEXT         NOT NULL,
+  reason           TEXT         DEFAULT 'N/A',
+  updated_by       TEXT         NOT NULL,
+  created_at       TIMESTAMPTZ  DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_le_balance_log_created_at
+  ON le_balance_log(created_at DESC);
