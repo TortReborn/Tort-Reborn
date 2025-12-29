@@ -112,6 +112,35 @@ class ConvertView(View):
         await interaction.response.defer(ephemeral=True)
 
         db = DB(); db.connect()
+
+        # Get current raid count from database
+        db.cursor.execute("""
+            SELECT uncollected_raids, uncollected_aspects
+            FROM uncollected_raids
+            WHERE uuid = %s
+        """, (self.uuid,))
+        row = db.cursor.fetchone()
+
+        if not row:
+            db.close()
+            return await interaction.followup.send("❌ No raid data found.", ephemeral=True)
+
+        total_raids = row[0]
+        current_aspects = row[1]
+
+        # Calculate conversion amounts
+        aspect_count = total_raids // 2
+        if aspect_count == 0:
+            db.close()
+            return await interaction.followup.send(
+                "❌ You need at least 2 uncollected raids to claim 1 Aspect.",
+                ephemeral=True
+            )
+
+        remainder_raids = total_raids % 2
+        raids_spent = aspect_count * 2
+
+        # Update with race condition check
         db.cursor.execute("""
             UPDATE uncollected_raids
                SET uncollected_raids   = %s,
@@ -125,36 +154,14 @@ class ConvertView(View):
             db.close()
             await interaction.followup.send("❌ You cannot claim raids twice.", ephemeral=True)
             return
-        row = db.cursor.fetchone()
-        total_raids = row[0] if row else 0
-        current_aspects = row[1] if row else 0
 
-        aspect_count = total_raids // 2
-        if aspect_count == 0:
-            db.close()
-            return await interaction.followup.send(
-                "❌ You need at least 2 uncollected raids to claim 1 Aspect.",
-                ephemeral=True
-            )
-        
-        remainder_raids = total_raids % 2
-        raids_spent     = aspect_count * 2
-
-        db.cursor.execute("""
-            UPDATE uncollected_raids
-               SET uncollected_raids   = %s,
-                   uncollected_aspects = uncollected_aspects + %s,
-                   collected_raids     = collected_raids + %s
-             WHERE uuid = %s
-        """, (remainder_raids, aspect_count, raids_spent, self.uuid))
-        db.connection.commit()
         db.close()
 
         await interaction.edit_original_response(
             content=(
                 f"✅ Converted **{raids_spent}** uncollected raid(s) into "
-                f"**{aspect_count}** new uncollected aspect(s)!  \n"
-                f"• You now have **{current_aspects + aspect_count}** total uncollected aspect(s).  \n"
+                f"**{aspect_count}** new uncollected aspect(s)!\n"
+                f"• You now have **{current_aspects + aspect_count}** total uncollected aspect(s).\n"
                 f"• **{remainder_raids}** raid(s) remain uncollected."
             ),
             view=None
