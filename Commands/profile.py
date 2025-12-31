@@ -31,13 +31,16 @@ class Profile(commands.Cog):
             await ctx.followup.send(embed=embed, ephemeral=True)
             return
 
-        # Check for Christmas (Dec 24-26)
+        # Check for Christmas (Dec 24-26) and New Year's (Dec 31, Jan 1)
         today = datetime.now()
-        is_christmas = today.month == 12 and today.day in (24, 25, 26)
+        is_christmas = today.month == 12 and today.day in (24, 25)
+        is_new_years = (today.month == 12 and today.day == 31) or (today.month == 1 and today.day == 1)
 
         # Base Image + Edge Gradient
         if is_christmas:
             card = vertical_gradient(main_color='#c41e3a')  # Christmas red edge
+        elif is_new_years:
+            card = vertical_gradient(main_color='#FFD700')  # New Year's gold edge
         else:
             card = vertical_gradient(main_color=player.tag_color)
         card = round_corners(card)
@@ -46,6 +49,8 @@ class Profile(commands.Cog):
         # Card Color/Pattern
         if is_christmas:
             card_color = vertical_gradient(width=850, height=1130, main_color='#c41e3a', secondary_color='#165b33')  # Red to green
+        elif is_new_years:
+            card_color = vertical_gradient(width=850, height=1130, main_color='#FFD700', secondary_color='#1a1a1a')  # Gold to black
         elif player.background == 2 and player.gradient == ['#293786', '#1d275e']:    # Set gradient for TAq Sea Turtle BG
             card_color = vertical_gradient(width=850, height=1130, main_color='#4585db', secondary_color='#2f2b73')
         else:
@@ -56,6 +61,8 @@ class Profile(commands.Cog):
         # Background Outline
         if is_christmas:
             bg_outline = vertical_gradient(width=818, height=545, main_color='#165b33', reverse=True)  # Green outline
+        elif is_new_years:
+            bg_outline = vertical_gradient(width=818, height=545, main_color='#FFD700', reverse=True)  # Gold outline
         else:
             bg_outline = vertical_gradient(width=818, height=545, main_color=player.tag_color, reverse=True)
         bg_outline = round_corners(bg_outline)
@@ -64,6 +71,8 @@ class Profile(commands.Cog):
         # Background
         if is_christmas:
             background = Image.open("images/profile_backgrounds/christmas_background.png")
+        elif is_new_years:
+            background = Image.open("images/profile_backgrounds/new_years_background.png")
         else:
             background = Image.open(f"images/profile_backgrounds/{player.background}.png")
         background = round_corners(background, radius=20)
