@@ -40,7 +40,7 @@ class Profile(commands.Cog):
         if is_christmas:
             card = vertical_gradient(main_color='#c41e3a')  # Christmas red edge
         elif is_new_years:
-            card = vertical_gradient(main_color='#FFD700')  # New Year's gold edge
+            card = vertical_gradient(main_color='#e11d48')  # New Year's red edge
         else:
             card = vertical_gradient(main_color=player.tag_color)
         card = round_corners(card)
@@ -50,7 +50,7 @@ class Profile(commands.Cog):
         if is_christmas:
             card_color = vertical_gradient(width=850, height=1130, main_color='#c41e3a', secondary_color='#165b33')  # Red to green
         elif is_new_years:
-            card_color = vertical_gradient(width=850, height=1130, main_color='#FFD700', secondary_color='#1a1a1a')  # Gold to black
+            card_color = vertical_gradient(width=850, height=1130, main_color='#e11d48', secondary_color='#1d4ed8')  # Red to blue
         elif player.background == 2 and player.gradient == ['#293786', '#1d275e']:    # Set gradient for TAq Sea Turtle BG
             card_color = vertical_gradient(width=850, height=1130, main_color='#4585db', secondary_color='#2f2b73')
         else:
@@ -62,7 +62,7 @@ class Profile(commands.Cog):
         if is_christmas:
             bg_outline = vertical_gradient(width=818, height=545, main_color='#165b33', reverse=True)  # Green outline
         elif is_new_years:
-            bg_outline = vertical_gradient(width=818, height=545, main_color='#FFD700', reverse=True)  # Gold outline
+            bg_outline = vertical_gradient(width=818, height=545, main_color='#1d4ed8', reverse=True)  # Blue outline
         else:
             bg_outline = vertical_gradient(width=818, height=545, main_color=player.tag_color, reverse=True)
         bg_outline = round_corners(bg_outline)
