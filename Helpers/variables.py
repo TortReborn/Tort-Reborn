@@ -24,6 +24,7 @@ if test:
     member_app_channel = 1367283441850122330
     military_channel = 1369134566979403789
     territory_tracker_channel = 1369134566979403791
+    global_terr_tracker_channel = 1457380818845434068
     spearhead_role_id = 1369134565335236645
     application_manager_role_id = "<@&1371274399637835837>"
     shell_emoji_id = "<:shells:1371292212729479207>"
@@ -63,6 +64,7 @@ else:
     member_app_channel = 889162191150931978
     military_channel = 729162690760671244
     territory_tracker_channel = 729162480000958564
+    global_terr_tracker_channel = 1454634575442743437
     spearhead_role_id = 857589881689210950
     application_manager_role_id = "<@&870767928704921651>"
     shell_emoji_id = "<:shells:1126608994526560306>"

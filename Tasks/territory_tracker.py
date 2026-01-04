@@ -13,6 +13,7 @@ from Helpers.database import DB
 from Helpers.variables import (
     spearhead_role_id,
     territory_tracker_channel,
+    global_terr_tracker_channel,
     military_channel,
     claims,
 )
@@ -620,6 +621,8 @@ class TerritoryTracker(commands.Cog):
             if channel is None:
                 return
 
+            global_channel = self.client.get_channel(global_terr_tracker_channel)
+
             old_data = await asyncio.to_thread(_read_territories_sync)
 
             new_data = await getTerritoryData()
@@ -748,14 +751,15 @@ class TerritoryTracker(commands.Cog):
 
             # ---------- Territory Change Embeds ----------
             owner_changes = {}
+            all_owner_changes = {}
             for terr, new_info in new_data.items():
                 old_info = old_data.get(terr)
                 if not old_info:
                     continue
                 old_owner = old_info['guild']['name']
                 new_owner = new_info['guild']['name']
-                if old_owner != new_owner and ('The Aquarium' in (old_owner, new_owner)):
-                    owner_changes[terr] = {
+                if old_owner != new_owner:
+                    change_data = {
                         'old': {
                             'owner': old_owner,
                             'prefix': old_info['guild']['prefix'],
@@ -767,6 +771,9 @@ class TerritoryTracker(commands.Cog):
                             'acquired': new_info['acquired']
                         }
                     }
+                    all_owner_changes[terr] = change_data
+                    if 'The Aquarium' in (old_owner, new_owner):
+                        owner_changes[terr] = change_data
 
             # Check for HQ captures and send congratulations
             hq_territories = get_all_hq_territories()
@@ -834,6 +841,48 @@ class TerritoryTracker(commands.Cog):
                 )
 
                 await channel.send(embed=embed)
+
+            # ---------- Global Territory Tracker Embeds ----------
+            if global_channel:
+                for terr, change in all_owner_changes.items():
+                    old = change['old']
+                    new = change['new']
+
+                    # Determine color and title
+                    if new['owner'] == 'The Aquarium':
+                        color = discord.Color.green()
+                        title = f"🟢 Territory Gained: **{terr}**"
+                    elif old['owner'] == 'The Aquarium':
+                        color = discord.Color.red()
+                        title = f"🔴 Territory Lost: **{terr}**"
+                    else:
+                        color = discord.Color.from_rgb(255, 255, 255)
+                        title = f"⚪ Territory Changed: **{terr}**"
+
+                    global_embed = discord.Embed(title=title, color=color)
+                    global_embed.add_field(
+                        name="Old Owner",
+                        value=(
+                            f"{old['owner']} [{old['prefix']}]\n"
+                            f"Territories: {new_counts.get(old['owner'], 0)}"
+                        ),
+                        inline=True
+                    )
+                    global_embed.add_field(
+                        name="\u200b",
+                        value="➜",
+                        inline=True
+                    )
+                    global_embed.add_field(
+                        name="New Owner",
+                        value=(
+                            f"{new['owner']} [{new['prefix']}]\n"
+                            f"Territories: {new_counts.get(new['owner'], 0)}"
+                        ),
+                        inline=True
+                    )
+
+                    await global_channel.send(embed=global_embed)
 
         except Exception as e:
             # Log and continue; the task loop will run again next tick
