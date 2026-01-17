@@ -1,0 +1,170 @@
+{
+  "dernic wood": {
+    "t1": {
+      "toggled": false,
+      "shells": 1,
+      "per": 20,
+      "highlight": false
+    },
+    "t2": {
+      "toggled": false,
+      "shells": 1,
+      "per": 12,
+      "highlight": false
+    },
+    "t3": {
+      "toggled": false,
+      "shells": 1,
+      "per": 6,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic string": {
+    "t1": {
+      "toggled": false,
+      "shells": 1,
+      "per": 20,
+      "highlight": false
+    },
+    "t2": {
+      "toggled": false,
+      "shells": 1,
+      "per": 8,
+      "highlight": false
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 2,
+      "per": 1,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic paper": {
+    "t1": {
+      "toggled": true,
+      "shells": 1,
+      "per": 8,
+      "highlight": false
+    },
+    "t2": {
+      "toggled": true,
+      "shells": 1,
+      "per": 4,
+      "highlight": false
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 2,
+      "per": 1,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic oil": {
+    "t1": {
+      "toggled": true,
+      "shells": 1,
+      "per": 2,
+      "highlight": true
+    },
+    "t2": {
+      "toggled": true,
+      "shells": 1,
+      "per": 3,
+      "highlight": true
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 1,
+      "per": 2,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic meat": {
+    "t1": {
+      "toggled": true,
+      "shells": 1,
+      "per": 4,
+      "highlight": true
+    },
+    "t2": {
+      "toggled": true,
+      "shells": 1,
+      "per": 3,
+      "highlight": false
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 1,
+      "per": 1,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic ingot": {
+    "t1": {
+      "toggled": false,
+      "shells": 1,
+      "per": 10,
+      "highlight": false
+    },
+    "t2": {
+      "toggled": false,
+      "shells": 1,
+      "per": 6,
+      "highlight": false
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 3,
+      "per": 1,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic grain": {
+    "t1": {
+      "toggled": true,
+      "shells": 1,
+      "per": 4,
+      "highlight": true
+    },
+    "t2": {
+      "toggled": true,
+      "shells": 1,
+      "per": 3,
+      "highlight": true
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 1,
+      "per": 2,
+      "highlight": false
+    },
+    "toggled": true
+  },
+  "dernic gem": {
+    "t1": {
+      "toggled": false,
+      "shells": 1,
+      "per": 64,
+      "highlight": false
+    },
+    "t2": {
+      "toggled": false,
+      "shells": 1,
+      "per": 10,
+      "highlight": false
+    },
+    "t3": {
+      "toggled": true,
+      "shells": 3,
+      "per": 1,
+      "highlight": false
+    },
+    "toggled": true
+  }
+}

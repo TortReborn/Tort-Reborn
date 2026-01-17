@@ -1,0 +1,289 @@
+{
+  "output_mode": "both",
+  "highlight_mode": "outline",
+  "cols_ings": 4,
+  "cols_mats": 4,
+  "color_bg": [
+    41,
+    42,
+    46
+  ],
+  "color_row": [
+    55,
+    56,
+    60
+  ],
+  "color_text": [
+    255,
+    255,
+    255
+  ],
+  "highlight_text": [
+    23,
+    255,
+    255
+  ],
+  "gradient_points": [
+    [
+      255,
+      225,
+      100
+    ],
+    [
+      255,
+      170,
+      70
+    ],
+    [
+      255,
+      130,
+      40
+    ],
+    [
+      255,
+      100,
+      25
+    ]
+  ],
+  "tier_colors": {
+    "1": [
+      255,
+      255,
+      255
+    ],
+    "2": [
+      255,
+      225,
+      100
+    ],
+    "3": [
+      255,
+      150,
+      50
+    ]
+  },
+  "channel_id": 1369134566723293199,
+  "message_id": 1462028738396164176,
+  "text_message_id": 1462138742306373817,
+  "ings_message_id": 1462138746391630100,
+  "mats_message_id": 1462138750233608441,
+  "rates_snapshot": {
+    "ing:frenetic heart": {
+      "name": "Frenetic Heart",
+      "shells": 6,
+      "per": 1,
+      "priority": "high"
+    },
+    "ing:ancient heart": {
+      "name": "Ancient Heart",
+      "shells": 1,
+      "per": 1,
+      "priority": "low"
+    },
+    "ing:etheric fern": {
+      "name": "Etheric Fern",
+      "shells": 2,
+      "per": 1,
+      "priority": "low"
+    },
+    "ing:aspect of the void": {
+      "name": "Aspect Of The Void",
+      "shells": 2,
+      "per": 1,
+      "priority": "high"
+    },
+    "ing:pride of the heights": {
+      "name": "Pride Of The Heights",
+      "shells": 1,
+      "per": 3,
+      "priority": "low"
+    },
+    "ing:unicorn horn": {
+      "name": "Unicorn Horn",
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
+    },
+    "ing:death whistle leaf": {
+      "name": "Death Whistle Leaf",
+      "shells": 2,
+      "per": 1,
+      "priority": "high"
+    },
+    "ing:borange fluff": {
+      "name": "Borange Fluff",
+      "shells": 2,
+      "per": 1,
+      "priority": "low"
+    },
+    "ing:evolving spores": {
+      "name": "Evolving Spores",
+      "shells": 1,
+      "per": 4,
+      "priority": "low"
+    },
+    "ing:plane of nonexistence": {
+      "name": "Plane Of Nonexistence",
+      "shells": 1,
+      "per": 3,
+      "priority": "low"
+    },
+    "ing:throbbing avos heart": {
+      "name": "Throbbing Avos Heart",
+      "shells": 1,
+      "per": 8,
+      "priority": "low"
+    },
+    "ing:cherry sapling": {
+      "name": "Cherry Sapling",
+      "shells": 1,
+      "per": 5,
+      "priority": "low"
+    },
+    "ing:haleva plant": {
+      "name": "Haleva Plant",
+      "shells": 1,
+      "per": 6,
+      "priority": "low"
+    },
+    "ing:serpent tongue": {
+      "name": "Serpent Tongue",
+      "shells": 1,
+      "per": 6,
+      "priority": "low"
+    },
+    "ing:cyclone blue leaves": {
+      "name": "Cyclone Blue Leaves",
+      "shells": 1,
+      "per": 5,
+      "priority": "high"
+    },
+    "ing:creepvine cluster": {
+      "name": "Creepvine Cluster",
+      "shells": 1,
+      "per": 6,
+      "priority": "low"
+    },
+    "ing:tentacle": {
+      "name": "Tentacle",
+      "shells": 1,
+      "per": 10,
+      "priority": "low"
+    },
+    "ing:flow of fate": {
+      "name": "Flow Of Fate",
+      "shells": 1,
+      "per": 7,
+      "priority": "low"
+    },
+    "ing:red mercury": {
+      "name": "Red Mercury",
+      "shells": 1,
+      "per": 16,
+      "priority": "low"
+    },
+    "ing:glacial anomaly": {
+      "name": "Glacial Anomaly",
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
+    },
+    "ing:lashing hellfire": {
+      "name": "Lashing Hellfire",
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
+    },
+    "mat:dernic string:3": {
+      "name": "Dernic String (Tier 3)",
+      "shells": 2,
+      "per": 1,
+      "priority": "low"
+    },
+    "mat:dernic paper:1": {
+      "name": "Dernic Paper (Tier 1)",
+      "shells": 1,
+      "per": 8,
+      "priority": "low"
+    },
+    "mat:dernic paper:2": {
+      "name": "Dernic Paper (Tier 2)",
+      "shells": 1,
+      "per": 4,
+      "priority": "low"
+    },
+    "mat:dernic paper:3": {
+      "name": "Dernic Paper (Tier 3)",
+      "shells": 2,
+      "per": 1,
+      "priority": "low"
+    },
+    "mat:dernic oil:1": {
+      "name": "Dernic Oil (Tier 1)",
+      "shells": 1,
+      "per": 2,
+      "priority": "high"
+    },
+    "mat:dernic oil:2": {
+      "name": "Dernic Oil (Tier 2)",
+      "shells": 1,
+      "per": 3,
+      "priority": "high"
+    },
+    "mat:dernic oil:3": {
+      "name": "Dernic Oil (Tier 3)",
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
+    },
+    "mat:dernic meat:1": {
+      "name": "Dernic Meat (Tier 1)",
+      "shells": 1,
+      "per": 4,
+      "priority": "high"
+    },
+    "mat:dernic meat:2": {
+      "name": "Dernic Meat (Tier 2)",
+      "shells": 1,
+      "per": 3,
+      "priority": "low"
+    },
+    "mat:dernic meat:3": {
+      "name": "Dernic Meat (Tier 3)",
+      "shells": 1,
+      "per": 1,
+      "priority": "low"
+    },
+    "mat:dernic ingot:3": {
+      "name": "Dernic Ingot (Tier 3)",
+      "shells": 3,
+      "per": 1,
+      "priority": "low"
+    },
+    "mat:dernic grain:1": {
+      "name": "Dernic Grain (Tier 1)",
+      "shells": 1,
+      "per": 4,
+      "priority": "high"
+    },
+    "mat:dernic grain:2": {
+      "name": "Dernic Grain (Tier 2)",
+      "shells": 1,
+      "per": 3,
+      "priority": "high"
+    },
+    "mat:dernic grain:3": {
+      "name": "Dernic Grain (Tier 3)",
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
+    },
+    "mat:dernic gem:3": {
+      "name": "Dernic Gem (Tier 3)",
+      "shells": 3,
+      "per": 1,
+      "priority": "low"
+    }
+  },
+  "legacy_mode": true
+}
