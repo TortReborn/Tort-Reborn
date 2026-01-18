@@ -65,28 +65,7 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> Opti
         return int(row[0])
     except Exception as e:
         print(f"[vanity_roles] Error getting baseline for {uuid}/{key}: {e}")
-        return 0
-
-
-def _get_player_earliest_baseline(db: DB, uuid: str, key: str) -> int:
-    """
-    Get the earliest available baseline for a player (their first snapshot).
-    Used as fallback for new members who don't have 14-day-old records.
-    """
-    try:
-        db.cursor.execute(f"""
-            SELECT {key} FROM player_activity
-            WHERE uuid = %s
-            ORDER BY snapshot_date ASC
-            LIMIT 1
-        """, (uuid,))
-        row = db.cursor.fetchone()
-        if row and row[0] is not None:
-            return int(row[0])
-        return 0
-    except Exception as e:
-        print(f"[vanity_roles] Error getting earliest baseline for {uuid}/{key}: {e}")
-        return 0
+        return None
 
 
 def compute_windowed_stats(window_days: int = WINDOW_DAYS) -> Dict[str, WindowedStats]:
@@ -112,11 +91,9 @@ def compute_windowed_stats(window_days: int = WINDOW_DAYS) -> Dict[str, Windowed
             base_wars = _get_baseline_from_db(db, uuid, "wars", window_days)
             base_raids = _get_baseline_from_db(db, uuid, "raids", window_days)
 
-            # Fallback to earliest snapshot for new members
-            if base_wars is None:
-                base_wars = _get_player_earliest_baseline(db, uuid, "wars")
-            if base_raids is None:
-                base_raids = _get_player_earliest_baseline(db, uuid, "raids")
+            # Skip players without baseline data (mid-period joins, returning members)
+            if base_wars is None or base_raids is None:
+                continue
 
             wars_delta = max(curr_wars - base_wars, 0)
             raids_delta = max(curr_raids - base_raids, 0)
