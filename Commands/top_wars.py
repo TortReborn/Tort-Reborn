@@ -84,11 +84,14 @@ def get_wars_in_range(start_date: datetime.date, end_date: datetime.date) -> Dic
         # Calculate deltas for current guild members only
         result = {}
         for uuid in current_uuids:
-            start_val = start_wars.get(uuid, 0)
-            end_val = end_wars.get(uuid, 0)
-
+            # Exclude players without start date data (mid-week joins, returning members)
+            if uuid not in start_wars:
+                continue
             if uuid not in end_wars:
                 continue
+
+            start_val = start_wars[uuid]
+            end_val = end_wars[uuid]
 
             delta = end_val - start_val
             if delta < 0:
