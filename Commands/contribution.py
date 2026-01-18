@@ -29,7 +29,7 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int):
         """, (days,))
         date_row = db.cursor.fetchone()
         if not date_row:
-            return 0
+            return None  # No snapshot data available for this time period
         target_date = date_row[0]
 
         db.cursor.execute(f"""
@@ -39,9 +39,9 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int):
         row = db.cursor.fetchone()
         if row and row[0] is not None:
             return row[0]
-        return 0
+        return None  # Signal that player should be excluded
     except Exception:
-        return 0
+        return None
 
 
 class Contribution(commands.Cog):
@@ -103,10 +103,14 @@ class Contribution(commands.Cog):
                 base_xp = _get_baseline_from_db(db, uuid, 'contributed', dayss)
                 base_shells = _get_baseline_from_db(db, uuid, 'shells', dayss)
 
+                # Skip players with missing baseline data (mid-period joins, returning members)
+                if base_wars is None or base_pt is None or base_xp is None:
+                    continue
+
                 real_pt = playtime - base_pt
                 real_wars = wars - base_wars
                 real_xp = xp - base_xp
-                real_shells = shells - base_shells
+                real_shells = shells - (base_shells or 0)
 
                 contribution_score = (real_wars / 5) + (real_xp / 500000000) + (real_pt / 15) + real_shells + (len(suggestions) * 1000000)
                 if real_pt >= 0:
