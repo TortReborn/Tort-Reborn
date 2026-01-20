@@ -18,6 +18,9 @@ from Helpers.variables import (
     claims,
 )
 
+_TERRITORY_EXTERNALS_CACHE = None
+DEBUG_HQ_CONGRATS = False
+
 # ---------- Territory Abbreviation Mapping (for snapshot compression) ----------
 
 TERRITORY_TO_ABBREV = {
@@ -601,6 +604,82 @@ def get_all_hq_territories():
     return hq_territories
 
 
+def _load_territory_externals():
+    global _TERRITORY_EXTERNALS_CACHE
+    if _TERRITORY_EXTERNALS_CACHE is not None:
+        return _TERRITORY_EXTERNALS_CACHE
+    try:
+        with open("territory_externals.json", "r", encoding="utf-8") as f:
+            _TERRITORY_EXTERNALS_CACHE = json.load(f)
+    except Exception:
+        _TERRITORY_EXTERNALS_CACHE = {}
+    return _TERRITORY_EXTERNALS_CACHE
+
+
+def _get_claim_by_hq(hq_name: str):
+    for claim_name, cfg in claims.items():
+        if cfg.get("hq") == hq_name:
+            return claim_name, cfg
+    return None, None
+
+
+def _hq_connections_by_hq():
+    return {
+        cfg.get("hq"): cfg.get("connections", [])
+        for cfg in claims.values()
+        if cfg.get("hq")
+    }
+
+
+def _evaluate_hq_difficulty(hq_name: str, claim_holder_guild: str, data: Dict):
+    territory_externals = _load_territory_externals()
+    externals = list(territory_externals.get(hq_name, []))
+    conns_by_hq = _hq_connections_by_hq()
+    excluded = set(conns_by_hq.get(hq_name, []))
+    filtered = [t for t in externals if t not in excluded]
+    reduced = len(filtered) != len(externals)
+    total = len(filtered)
+    if total <= 1:
+        return False, total, 0, reduced
+    owned = sum(
+        1
+        for t in filtered
+        if data.get(t, {}).get("guild", {}).get("name") == claim_holder_guild
+    )
+    return (owned / total) >= 0.5, total, owned, reduced
+
+
+def _claim_owner_counts(claim_cfg: Dict, data: Dict):
+    hq = claim_cfg.get("hq")
+    conns = claim_cfg.get("connections", [])
+    members = [hq] + conns if hq else conns
+    counts = Counter()
+    for terr in members:
+        owner = data.get(terr, {}).get("guild", {}).get("name")
+        if owner:
+            counts[owner] += 1
+    return len(members), counts
+
+
+def _mega_claim_suppressed(data: Dict):
+    ragni_cfg = claims.get("Ragni")
+    detlas_cfg = claims.get("Detlas")
+    if not ragni_cfg or not detlas_cfg:
+        return False
+    ragni_total, ragni_counts = _claim_owner_counts(ragni_cfg, data)
+    detlas_total, detlas_counts = _claim_owner_counts(detlas_cfg, data)
+    if ragni_total == 0 or detlas_total == 0:
+        return False
+    guilds = set(ragni_counts.keys()) | set(detlas_counts.keys())
+    for guild in guilds:
+        if (
+            ragni_counts.get(guild, 0) / ragni_total >= 0.5
+            and detlas_counts.get(guild, 0) / detlas_total >= 0.5
+        ):
+            return True
+    return False
+
+
 class TerritoryTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -787,18 +866,41 @@ class TerritoryTracker(commands.Cog):
                     new['owner'] == 'The Aquarium'):
 
                     # Find which claim this HQ belongs to
-                    claim_name = None
-                    for c_name, cfg in claims.items():
-                        if cfg.get("hq") == terr:
-                            claim_name = c_name
-                            break
+                    claim_name, _ = _get_claim_by_hq(terr)
 
                     if claim_name:
-                        # Send congratulations message to military channel (no ping)
-                        alert_chan = self.client.get_channel(military_channel)
-                        if alert_chan:
-                            congrats_msg = f"🎉 Congratulations on a successful snipe of **{claim_name}** owned by **{old['owner']}**!"
-                            await alert_chan.send(congrats_msg)
+                        claim_holder_guild = old['owner']
+                        mega_suppressed = False
+                        if terr in ("Nomads' Refuge", "Mine Base Plains"):
+                            mega_suppressed = _mega_claim_suppressed(new_data)
+
+                        difficulty_valid = False
+                        total_externals = 0
+                        owned_externals = 0
+                        conns_reduced = False
+                        if not mega_suppressed:
+                            (difficulty_valid, total_externals, owned_externals,
+                             conns_reduced) = _evaluate_hq_difficulty(
+                                terr, claim_holder_guild, new_data
+                            )
+
+                        if not mega_suppressed and difficulty_valid:
+                            # Send congratulations message to military channel (no ping)
+                            alert_chan = self.client.get_channel(military_channel)
+                            if alert_chan:
+                                congrats_msg = f"🎉 Congratulations on a successful snipe of **{claim_name}** owned by **{old['owner']}**!"
+                                await alert_chan.send(congrats_msg)
+                        elif DEBUG_HQ_CONGRATS:
+                            print(
+                                "[HQ Congrats Suppressed] "
+                                f"hq={terr} "
+                                f"snipe_guild={new['owner']} "
+                                f"claim_holder_guild={claim_holder_guild} "
+                                f"externals_total={total_externals} "
+                                f"externals_owned={owned_externals} "
+                                f"conns_reduced={conns_reduced} "
+                                f"mega_claim_suppressed={mega_suppressed}"
+                            )
 
                 # Determine gain vs loss
                 if new['owner'] == 'The Aquarium':
