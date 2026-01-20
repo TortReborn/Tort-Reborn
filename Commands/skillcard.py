@@ -50,7 +50,7 @@ def fetch_wynn_player(username: str):
         headers["Authorization"] = f"Bearer {token}"
     _debug(f"Fetching player data: {url}")
     try:
-        resp = requests.get(url, headers=headers, timeout=12)
+        resp = requests.get(url, headers=headers, timeout=15)
     except requests.RequestException as exc:
         _debug(f"Wynn API request failed: {exc}")
         return None, f"API request failed: {exc}"
@@ -309,7 +309,7 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
             uuid_no_hyphens = uuid.replace("-", "")
         if not uuid_no_hyphens:
             uuid_url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
-            uuid_response = requests.get(uuid_url, timeout=8)
+            uuid_response = requests.get(uuid_url, timeout=15)
             uuid_response.raise_for_status()
             uuid_data = uuid_response.json()
             uuid_no_hyphens = uuid_data.get("id")
@@ -320,19 +320,23 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
         cache_key = uuid_no_hyphens or username.lower()
         skin_img, cached_bytes = _load_skin_cache(cache_key)
 
+        uuid_for_visage = uuid or uuid_no_hyphens
         skin_services = [
-            f"https://visage.surgeplay.com/bust/{uuid_no_hyphens}?no=3d&width=600",
-            f"https://mc-heads.net/body/{uuid_no_hyphens}/400",
-            f"https://crafatar.com/renders/body/{uuid_no_hyphens}?scale=8&overlay",
-            f"https://minotar.net/armor/body/{username}/400.png",
-            f"https://mc-heads.net/avatar/{username}/200"
+            f"https://visage.surgeplay.com/bust/500/{uuid_for_visage}",
+            # f"https://mc-heads.net/body/{uuid_no_hyphens}/400",
+            # f"https://crafatar.com/renders/body/{uuid_no_hyphens}?scale=8&overlay",
+            # f"https://minotar.net/armor/body/{username}/400.png",
+            # f"https://mc-heads.net/avatar/{username}/200"
         ]
 
         if skin_img is None:
             for service_url in skin_services:
                 try:
                     _debug(f"Fetching skin: {service_url}")
-                    skin_response = requests.get(service_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+                    headers = {'User-Agent': 'Mozilla/5.0'}
+                    if "visage.surgeplay.com" in service_url:
+                        headers = {'User-Agent': os.getenv("visage_UA", "")}
+                    skin_response = requests.get(service_url, headers=headers, timeout=15)
                     if skin_response.status_code == 200:
                         skin_img = Image.open(BytesIO(skin_response.content)).convert("RGBA")
                         data = skin_img.getdata()
