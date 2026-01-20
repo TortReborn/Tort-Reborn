@@ -16,6 +16,15 @@ DEBUG_SKILLCARD = True
 
 FONT_PATH = "images/profile/game.ttf"
 TITLE_FONT_PATH = "images/profile/5x5.ttf"
+PROFILE_ACCENT = (250, 213, 30)
+PROFILE_EDGE_TOP = (28, 36, 64)
+PROFILE_EDGE_BOTTOM = (10, 14, 28)
+PROFILE_INNER_TOP = (30, 52, 96)
+PROFILE_INNER_BOTTOM = (14, 24, 52)
+PROFILE_OVERLAY = (0, 0, 0, 90)
+PROFILE_OVERLAY_DARK = (0, 0, 0, 140)
+SKIN_CACHE = {}
+CACHE_DIR = os.path.join("images", "cache", "skins")
 
 
 def _debug(message: str) -> None:
@@ -183,18 +192,64 @@ def draw_top_overlay(image, box, height_ratio=0.25, fill=(30, 45, 65), radius=25
     image.paste(overlay, (box[0], box[1]), overlay)
 
 
-def _format_stat(label: str, value, suffix: str = "") -> str:
+def _format_stat_parts(label: str, value, suffix: str = ""):
     if value is None:
-        return f"{label}: Private"
+        return label, "Private"
     if suffix:
-        return f"{label}: {value}{suffix}"
-    return f"{label}: {value}"
+        return label, f"{value}{suffix}"
+    return label, f"{value}"
+
+
+def _draw_stat_line(draw, x, y, label, value, font, label_color, value_color):
+    label_text = f"{label}: "
+    draw.text((x, y), label_text, fill=label_color, font=font)
+    label_bbox = draw.textbbox((x, y), label_text, font=font)
+    draw.text((label_bbox[2], y), value, fill=value_color, font=font)
+
+
+def _skin_cache_path(cache_key: str) -> str:
+    safe_key = "".join(ch for ch in cache_key.lower() if ch.isalnum())
+    if not safe_key:
+        safe_key = "unknown"
+    return os.path.join(CACHE_DIR, f"{safe_key}.bin")
+
+
+def _load_skin_cache(cache_key: str):
+    cached = SKIN_CACHE.get(cache_key)
+    if cached:
+        try:
+            return Image.open(BytesIO(cached)).convert("RGBA"), cached
+        except Exception:
+            return None, None
+
+    path = _skin_cache_path(cache_key)
+    if not os.path.exists(path):
+        return None, None
+    try:
+        with open(path, "rb") as handle:
+            data = handle.read()
+        return Image.open(BytesIO(data)).convert("RGBA"), data
+    except Exception:
+        return None, None
+
+
+def _save_skin_cache(cache_key: str, data: bytes) -> None:
+    if not data:
+        return
+    SKIN_CACHE[cache_key] = data
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        path = _skin_cache_path(cache_key)
+        with open(path, "wb") as handle:
+            handle.write(data)
+    except Exception:
+        pass
 
 
 def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
     width, height = 1024, 1536
-    outer_start = (36, 50, 75)
-    outer_end = (50, 66, 95)
+    outer_start = PROFILE_EDGE_TOP
+    outer_end = PROFILE_EDGE_BOTTOM
     image = create_gradient((width, height), outer_start, outer_end)
     draw = ImageDraw.Draw(image)
 
@@ -203,8 +258,8 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
     inner_width = inner_box[2] - inner_box[0]
     inner_height = inner_box[3] - inner_box[1]
 
-    inner_start = (16, 29, 51)
-    inner_end = (30, 45, 70)
+    inner_start = PROFILE_INNER_TOP
+    inner_end = PROFILE_INNER_BOTTOM
     inner_gradient = create_gradient((inner_width, inner_height), inner_start, inner_end)
     image.paste(inner_gradient, (inner_box[0], inner_box[1]))
 
@@ -236,7 +291,7 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
         bg_img = round_corners(create_gradient((bg[2] - bg[0], bg[3] - bg[1]), outer_start, outer_end), 32)
         image.paste(bg_img, (bg[0], bg[1]), bg_img)
 
-    overlay_color = (10, 20, 35)
+    overlay_color = PROFILE_OVERLAY
     draw_rounded_overlay(image, rect1, 25, overlay_color)
     draw_rounded_overlay(image, rect2, 25, overlay_color)
     draw_rounded_overlay(image, middle_rect, 25, overlay_color)
@@ -254,13 +309,16 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
             uuid_no_hyphens = uuid.replace("-", "")
         if not uuid_no_hyphens:
             uuid_url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
-            uuid_response = requests.get(uuid_url, timeout=3)
+            uuid_response = requests.get(uuid_url, timeout=8)
             uuid_response.raise_for_status()
             uuid_data = uuid_response.json()
             uuid_no_hyphens = uuid_data.get("id")
 
         if not uuid_no_hyphens:
             raise Exception("No UUID available for skin lookup")
+
+        cache_key = uuid_no_hyphens or username.lower()
+        skin_img, cached_bytes = _load_skin_cache(cache_key)
 
         skin_services = [
             f"https://visage.surgeplay.com/bust/{uuid_no_hyphens}?no=3d&width=600",
@@ -270,27 +328,28 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
             f"https://mc-heads.net/avatar/{username}/200"
         ]
 
-        skin_img = None
-        for service_url in skin_services:
-            try:
-                _debug(f"Fetching skin: {service_url}")
-                skin_response = requests.get(service_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=3)
-                if skin_response.status_code == 200:
-                    skin_img = Image.open(BytesIO(skin_response.content)).convert("RGBA")
-                    data = skin_img.getdata()
-                    new_data = []
-                    for item in data:
-                        if item[0] < 15 and item[1] < 15 and item[2] < 15:
-                            new_data.append((255, 255, 255, 0))
-                        else:
-                            new_data.append(item)
-                    skin_img.putdata(new_data)
-                    _debug(f"Skin service succeeded: {service_url}")
-                    break
-                _debug(f"Skin service status {skin_response.status_code}: {service_url}")
-            except Exception as exc:
-                _debug(f"Skin service failed {service_url}: {exc}")
-                continue
+        if skin_img is None:
+            for service_url in skin_services:
+                try:
+                    _debug(f"Fetching skin: {service_url}")
+                    skin_response = requests.get(service_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+                    if skin_response.status_code == 200:
+                        skin_img = Image.open(BytesIO(skin_response.content)).convert("RGBA")
+                        data = skin_img.getdata()
+                        new_data = []
+                        for item in data:
+                            if item[0] < 15 and item[1] < 15 and item[2] < 15:
+                                new_data.append((255, 255, 255, 0))
+                            else:
+                                new_data.append(item)
+                        skin_img.putdata(new_data)
+                        _save_skin_cache(cache_key, skin_response.content)
+                        _debug(f"Skin service succeeded: {service_url}")
+                        break
+                    _debug(f"Skin service status {skin_response.status_code}: {service_url}")
+                except Exception as exc:
+                    _debug(f"Skin service failed {service_url}: {exc}")
+                    continue
 
         if skin_img is None:
             raise Exception("All skin services failed")
@@ -357,7 +416,7 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
             _debug(f"Couldn't generate fallback avatar: {exc}")
 
     title_font = ImageFont.truetype(TITLE_FONT_PATH, 38)
-    lighter_overlay_color = (30, 45, 65)
+    lighter_overlay_color = PROFILE_OVERLAY_DARK
 
     draw_top_overlay(image, rect1, height_ratio=0.25, fill=lighter_overlay_color, radius=25)
     title_left = "COMPLETION STATS"
@@ -365,7 +424,7 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
     title_left_bbox = draw.textbbox((0, 0), title_left, font=title_font)
     title_left_height = title_left_bbox[3] - title_left_bbox[1]
     title_left_y = rect1[1] + (int(overlay_height * 0.25) - title_left_height) // 2 - 5
-    draw.text((title_left_x, title_left_y), title_left, fill="white", font=title_font)
+    draw.text((title_left_x, title_left_y), title_left, fill=PROFILE_ACCENT, font=title_font)
 
     draw_top_overlay(image, rect2, height_ratio=0.25, fill=lighter_overlay_color, radius=25)
     title_right = "ACTIVITY STATS"
@@ -373,35 +432,53 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
     title_right_bbox = draw.textbbox((0, 0), title_right, font=title_font)
     title_right_height = title_right_bbox[3] - title_right_bbox[1]
     title_right_y = rect2[1] + (int(overlay_height * 0.25) - title_right_height) // 2 - 5
-    draw.text((title_right_x, title_right_y), title_right, fill="white", font=title_font)
+    draw.text((title_right_x, title_right_y), title_right, fill=PROFILE_ACCENT, font=title_font)
 
     font = ImageFont.truetype(FONT_PATH, 38)
 
     left_text = [
-        _format_stat("Discoveries", stats.get("discoveries")),
-        _format_stat("Total Levels", stats.get("total_levels")),
-        _format_stat("Quests", stats.get("quests")),
+        _format_stat_parts("Discoveries", stats.get("discoveries")),
+        _format_stat_parts("Total Levels", stats.get("total_levels")),
+        _format_stat_parts("Quests", stats.get("quests")),
     ]
     left_text_area_height = rect1[3] - (rect1[1] + int(overlay_height * 0.25))
     left_line_spacing = left_text_area_height // (len(left_text) + 1)
     y_left = rect1[1] + int(overlay_height * 0.25) + left_line_spacing // 2
-    for line in left_text:
-        draw.text((rect1[0] + 20, y_left), line, fill="white", font=font)
+    for label, value in left_text:
+        _draw_stat_line(
+            draw,
+            rect1[0] + 20,
+            y_left,
+            label,
+            value,
+            font,
+            PROFILE_ACCENT,
+            "white",
+        )
         y_left += left_line_spacing
 
     playtime_val = stats.get("playtime")
     if playtime_val is not None:
         playtime_val = int(playtime_val)
     right_text = [
-        _format_stat("Raids", stats.get("raids")),
-        _format_stat("Playtime", playtime_val, " hrs" if playtime_val is not None else ""),
-        _format_stat("Wars", stats.get("wars")),
+        _format_stat_parts("Raids", stats.get("raids")),
+        _format_stat_parts("Playtime", playtime_val, " hrs" if playtime_val is not None else ""),
+        _format_stat_parts("Wars", stats.get("wars")),
     ]
     right_text_area_height = rect2[3] - (rect2[1] + int(overlay_height * 0.25))
     right_line_spacing = right_text_area_height // (len(right_text) + 1)
     y_right = rect2[1] + int(overlay_height * 0.25) + right_line_spacing // 2
-    for line in right_text:
-        draw.text((rect2[0] + 20, y_right), line, fill="white", font=font)
+    for label, value in right_text:
+        _draw_stat_line(
+            draw,
+            rect2[0] + 20,
+            y_right,
+            label,
+            value,
+            font,
+            PROFILE_ACCENT,
+            "white",
+        )
         y_right += right_line_spacing
 
     middle_text = [
@@ -411,8 +488,9 @@ def create_stats_image_with_bigger_top(stats, elo, username, uuid=None):
     middle_text_area_height = middle_rect[3] - middle_rect[1]
     middle_line_spacing = middle_text_area_height // (len(middle_text) + 1)
     y_middle = middle_rect[1] + middle_line_spacing // 2
-    for line in middle_text:
-        draw.text((middle_rect[0] + 20, y_middle), line, fill="white", font=font)
+    for idx, line in enumerate(middle_text):
+        line_color = PROFILE_ACCENT if idx == 0 else "white"
+        draw.text((middle_rect[0] + 20, y_middle), line, fill=line_color, font=font)
         y_middle += middle_line_spacing
 
     return round_corners(image, radius=38)
