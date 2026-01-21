@@ -244,20 +244,19 @@ class Profile(commands.Cog):
             # Use addLine to support color codes like &c for red "Private" text
             addLine(text=card_entries[entry_keys[entry]], draw=draw, font=data_font, x=430 + ((entry % 2) * 410), y=765 + (int(entry / 2) * 85), anchor="ra")
 
-        if player.guild:
-            if player.taq and player.in_guild_for.days >= 1:
-                # Shells
-                data_font = ImageFont.truetype('images/profile/game.ttf', 50)
-                shells_img = Image.open('images/profile/shells.png')
-                shells_img.thumbnail((50, 50))
-                addLine(text=str(player.balance), draw=draw, font=data_font, x=781, y=46, drop_x=7, drop_y=7, anchor="rt")
-                card.paste(shells_img, (800, 40), shells_img)
-
         if player.linked:
-            if str(ctx.author.id) == str(player.discord) and player.in_guild_for.days >= 365 and 3 not in player.backgrounds_owned:
-                player.unlock_background('1 Year Anniversary')
-            if str(ctx.author.id) == str(player.discord) and player.rank.upper() in ['NARWHAL', 'HYDRA'] and 2 not in player.backgrounds_owned:
-                player.unlock_background('TAq Sea Turtle')
+            # Shells
+            data_font = ImageFont.truetype('images/profile/game.ttf', 50)
+            shells_img = Image.open('images/profile/shells.png')
+            shells_img.thumbnail((50, 50))
+            addLine(text=str(player.balance), draw=draw, font=data_font, x=781, y=46, drop_x=7, drop_y=7, anchor="rt")
+            card.paste(shells_img, (800, 40), shells_img)
+
+            if player.guild and player.taq:
+                if str(ctx.author.id) == str(player.discord) and player.in_guild_for.days >= 365 and 3 not in player.backgrounds_owned:
+                    player.unlock_background('1 Year Anniversary')
+                if str(ctx.author.id) == str(player.discord) and player.rank.upper() in ['NARWHAL', 'HYDRA'] and 2 not in player.backgrounds_owned:
+                    player.unlock_background('TAq Sea Turtle')
 
         with BytesIO() as file:
             card.save(file, format="PNG")
