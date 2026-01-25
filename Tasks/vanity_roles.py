@@ -11,7 +11,7 @@ from discord.commands import slash_command
 from discord import default_permissions
 
 from Helpers.database import DB, get_current_guild_data
-from Helpers.variables import guilds, announcement_channel, faq_channel, VANITY_ROLE_NAMES
+from Helpers.variables import guilds, announcement_channel, faq_channel, VANITY_ROLE_IDS
 
 START_DATE_UTC = date(2025, 8, 31)  # first run date (YYYY, M, D)
 
@@ -215,27 +215,24 @@ class VanityRoles(commands.Cog):
         except discord.NotFound:
             return None
 
-    async def _resolve_roles_by_exact_name(self, guild: discord.Guild) -> Dict[str, Dict[str, discord.Role]]:
-        """Resolve vanity roles strictly by exact name; abort (raise) if any missing."""
-        roles = await guild.fetch_roles()
-        name_index = {r.name: r for r in roles}  # case-sensitive on purpose
-
+    async def _resolve_roles_by_id(self, guild: discord.Guild) -> Dict[str, Dict[str, discord.Role]]:
+        """Resolve vanity roles by ID from VANITY_ROLE_IDS."""
         resolved: Dict[str, Dict[str, discord.Role]] = {"wars": {}, "raids": {}}
         missing = []
         for section in ("wars", "raids"):
-            for tier, name in VANITY_ROLE_NAMES[section].items():
-                role = name_index.get(name)
+            for tier, role_id in VANITY_ROLE_IDS[section].items():
+                role = guild.get_role(role_id)
                 if role is None:
-                    missing.append((section, tier, name))
+                    missing.append((section, tier, role_id))
                 else:
                     resolved[section][tier] = role
 
         if missing:
-            print("[vanity_roles] ERROR: The following vanity roles were not found by exact name:")
-            for section, tier, name in missing:
-                print(f"  - {section} {tier}: '{name}'")
-            print("[vanity_roles] Aborting. Fix the role names or create the roles exactly as listed.")
-            raise RuntimeError("Missing vanity roles by name")
+            print("[vanity_roles] ERROR: The following vanity roles were not found by ID:")
+            for section, tier, role_id in missing:
+                print(f"  - {section} {tier}: {role_id}")
+            print("[vanity_roles] Aborting. Check VANITY_ROLE_IDS in variables.py.")
+            raise RuntimeError("Missing vanity roles by ID")
 
         return resolved
 
@@ -318,9 +315,9 @@ class VanityRoles(commands.Cog):
 
             print(f"[vanity_roles] Running for guild: {guild.name} ({guild.id})")
 
-            # 1) Resolve roles strictly by exact name
+            # 1) Resolve roles by ID
             try:
-                resolved = await self._resolve_roles_by_exact_name(guild)
+                resolved = await self._resolve_roles_by_id(guild)
             except RuntimeError:
                 return  # stop if names don't match
             
