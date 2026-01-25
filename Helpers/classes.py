@@ -186,7 +186,9 @@ class PlayerStats:
             self.discord = None
             
         # shells
-        if self.taq:
+        self.shells = 0
+        self.balance = 0
+        if self.linked:
             db.cursor.execute('SELECT * FROM shells WHERE "user" = %s', (self.discord,))
             rows = db.cursor.fetchall()
             self.shells = 0 if len(rows) == 0 else rows[0][1]
