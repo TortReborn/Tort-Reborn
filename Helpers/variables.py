@@ -335,7 +335,7 @@ VANITY_ROLE_NAMES = {
         "t1": "Mako Shark - Tier 1 Bi-Weekly War Contribution",
     },
     "raids": {
-        "t3": "Megalodon Tier 3 Bi-Weekly Raid Contribution",
+        "t3": "Megalodon - Tier 3 Bi-Weekly Raid Contribution",
         "t2": "Mosasaurus - Tier 2 Bi-Weekly Raid Contribution",
         "t1": "Liopleurodon - Tier 1 Bi-Weekly Raid Contribution",
     },
