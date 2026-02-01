@@ -66,8 +66,8 @@
     "t1": {
       "toggled": true,
       "shells": 1,
-      "per": 2,
-      "highlight": true
+      "per": 7,
+      "highlight": false
     },
     "t2": {
       "toggled": true,

@@ -70,7 +70,7 @@
   "rates_snapshot": {
     "ing:frenetic heart": {
       "name": "Frenetic Heart",
-      "shells": 6,
+      "shells": 8,
       "per": 1,
       "priority": "high"
     },
@@ -88,9 +88,9 @@
     },
     "ing:aspect of the void": {
       "name": "Aspect Of The Void",
-      "shells": 2,
-      "per": 1,
-      "priority": "high"
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
     },
     "ing:pride of the heights": {
       "name": "Pride Of The Heights",
@@ -106,9 +106,9 @@
     },
     "ing:death whistle leaf": {
       "name": "Death Whistle Leaf",
-      "shells": 2,
+      "shells": 1,
       "per": 1,
-      "priority": "high"
+      "priority": "low"
     },
     "ing:borange fluff": {
       "name": "Borange Fluff",
@@ -137,32 +137,32 @@
     "ing:cherry sapling": {
       "name": "Cherry Sapling",
       "shells": 1,
-      "per": 5,
-      "priority": "low"
+      "per": 4,
+      "priority": "high"
     },
     "ing:haleva plant": {
       "name": "Haleva Plant",
       "shells": 1,
-      "per": 6,
+      "per": 4,
       "priority": "low"
     },
     "ing:serpent tongue": {
       "name": "Serpent Tongue",
       "shells": 1,
-      "per": 6,
-      "priority": "low"
+      "per": 3,
+      "priority": "high"
     },
     "ing:cyclone blue leaves": {
       "name": "Cyclone Blue Leaves",
       "shells": 1,
-      "per": 5,
+      "per": 2,
       "priority": "high"
     },
     "ing:creepvine cluster": {
       "name": "Creepvine Cluster",
       "shells": 1,
-      "per": 6,
-      "priority": "low"
+      "per": 3,
+      "priority": "high"
     },
     "ing:tentacle": {
       "name": "Tentacle",
@@ -221,8 +221,8 @@
     "mat:dernic oil:1": {
       "name": "Dernic Oil (Tier 1)",
       "shells": 1,
-      "per": 2,
-      "priority": "high"
+      "per": 7,
+      "priority": "low"
     },
     "mat:dernic oil:2": {
       "name": "Dernic Oil (Tier 2)",

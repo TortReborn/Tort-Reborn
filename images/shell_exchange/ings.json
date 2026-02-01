@@ -1,7 +1,7 @@
 {
   "frenetic heart": {
     "toggled": true,
-    "shells": 6,
+    "shells": 8,
     "per": 1,
     "highlight": true
   },
@@ -19,9 +19,9 @@
   },
   "aspect of the void": {
     "toggled": true,
-    "shells": 2,
-    "per": 1,
-    "highlight": true
+    "shells": 1,
+    "per": 2,
+    "highlight": false
   },
   "pride of the heights": {
     "toggled": true,
@@ -37,9 +37,9 @@
   },
   "death whistle leaf": {
     "toggled": true,
-    "shells": 2,
+    "shells": 1,
     "per": 1,
-    "highlight": true
+    "highlight": false
   },
   "borange fluff": {
     "toggled": true,
@@ -74,32 +74,32 @@
   "cherry sapling": {
     "toggled": true,
     "shells": 1,
-    "per": 5,
-    "highlight": false
+    "per": 4,
+    "highlight": true
   },
   "haleva plant": {
     "toggled": true,
     "shells": 1,
-    "per": 6,
+    "per": 4,
     "highlight": false
   },
   "serpent tongue": {
     "toggled": true,
     "shells": 1,
-    "per": 6,
-    "highlight": false
+    "per": 3,
+    "highlight": true
   },
   "cyclone blue leaves": {
     "toggled": true,
     "shells": 1,
-    "per": 5,
+    "per": 2,
     "highlight": true
   },
   "creepvine cluster": {
     "toggled": true,
     "shells": 1,
-    "per": 6,
-    "highlight": false
+    "per": 3,
+    "highlight": true
   },
   "undiscovered plant": {
     "toggled": false,

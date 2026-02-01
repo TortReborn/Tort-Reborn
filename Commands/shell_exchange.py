@@ -303,14 +303,14 @@ class ShellExchange(commands.Cog):
             self.save_config(config)
             await ctx.respond(f"Material columns set to {cols}", ephemeral=True)
 
-    @shell_exchange_group.command(name="generate", description='Generate and post/update shell exchange images')
+    @shell_exchange_group.command(name="generate", description='Generate and post/update shell exchange')
     async def shell_exchange_generate(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=True)
         config = self.load_config()
         legacy_mode = config.get("legacy_mode", False)
         channel_id = config.get("channel_id")
         if not channel_id and not legacy_mode:
-            await ctx.followup.send("Channel not set. Use /shell_exchange config channel <channel> first.", ephemeral=True)
+            await ctx.followup.send("Channel not set. Set channel first", ephemeral=True)
             return
 
         channel = self.client.get_channel(channel_id) if channel_id else None
@@ -401,7 +401,7 @@ class ShellExchange(commands.Cog):
 
         await self._post_rates_update(config)
         self.save_config(config)
-        await ctx.followup.send("Posted shell exchange information.", ephemeral=True)
+        await ctx.followup.send("Posted shell exchange", ephemeral=True)
 
     @shell_exchange_group.command(name="legacy", description="Toggle legacy webhook updates")
     async def shell_exchange_legacy(self, ctx: discord.ApplicationContext, enabled: discord.Option(bool, required=True)):
