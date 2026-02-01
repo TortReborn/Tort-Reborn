@@ -42,7 +42,7 @@ MATS_CFG = os.path.join(BASE, "images", "shell_exchange", "materials.json")
 OUT_INGS = os.path.join(BASE, "images", "shell_exchange", "ingredient_shell_panel.png")
 OUT_MATS = os.path.join(BASE, "images", "shell_exchange", "materials_shell_panel.png")
 
-FONT_FILE = os.path.join(RES, "Minecraftia-Regular.ttf")
+FONT_FILE = os.path.join(BASE, "images", "profile", "game.ttf")
 STAR_FONT_FILE = os.path.join(RES, "Inter-VariableFont_opsz,wght.ttf")
 SHELL_ICON_FILE = os.path.join(RES, "shell.png")
 
