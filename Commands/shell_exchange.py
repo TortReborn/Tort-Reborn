@@ -9,16 +9,17 @@ from io import BytesIO
 from PIL import Image
 
 from Helpers.shell_exchange_generator import generate_images
-from Helpers.variables import test
+from Helpers.variables import (
+    LEGACY_MESSAGE_ID,
+    LEGACY_WEBHOOK_URL,
+    RATES_PING_ROLE_ID,
+    RATES_THREAD_ID,
+    test,
+)
 
 CONFIG_FILE = "shell_exchange_config.json"
 INGS_FILE = "images/shell_exchange/ings.json"
 MATS_FILE = "images/shell_exchange/materials.json"
-RATES_THREAD_ID = 1279379192626282579
-RATES_THREAD_ID_TEST = 1462137243194888212
-RATES_PING_ROLE_ID = 1050233131183112255
-LEGACY_WEBHOOK_URL = "https://discord.com/api/webhooks/1135511106085994526/FvH7NuTcK9NyTwRDbwDcaDkekoedk2Gg-HL0cgiqVNUrjBNP22n7IfVahMXPmiBCX5ql"
-LEGACY_MESSAGE_ID = 1135537781574205520
 
 class ShellExchange(commands.Cog):
     # Create command groups
@@ -217,11 +218,10 @@ class ShellExchange(commands.Cog):
         if not (added or removed or modified):
             return False
 
-        thread_id = RATES_THREAD_ID_TEST if test else RATES_THREAD_ID
-        thread = self.client.get_channel(thread_id)
+        thread = self.client.get_channel(RATES_THREAD_ID)
         if thread is None:
             try:
-                thread = await self.client.fetch_channel(thread_id)
+                thread = await self.client.fetch_channel(RATES_THREAD_ID)
             except Exception:
                 return False
 
