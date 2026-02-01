@@ -194,6 +194,12 @@
       "per": 2,
       "priority": "low"
     },
+    "ing:ancient spring water": {
+      "name": "Ancient Spring Water",
+      "shells": 1,
+      "per": 2,
+      "priority": "low"
+    },
     "mat:dernic string:3": {
       "name": "Dernic String (Tier 3)",
       "shells": 2,
