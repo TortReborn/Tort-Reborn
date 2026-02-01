@@ -142,5 +142,11 @@
     "shells": 1,
     "per": 2,
     "highlight": false
+  },
+  "ancient spring water": {
+    "toggled": true,
+    "shells": 1,
+    "per": 2,
+    "highlight": false
   }
 }
