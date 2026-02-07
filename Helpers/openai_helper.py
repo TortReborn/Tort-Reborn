@@ -18,6 +18,13 @@ class ApplicationParse(BaseModel):
     certainty: float
 
 
+def _strict_schema(model: type[BaseModel]) -> dict:
+    """Return a JSON schema with additionalProperties: false (required by OpenAI)."""
+    schema = model.model_json_schema()
+    schema["additionalProperties"] = False
+    return schema
+
+
 def query(
     instructions: str,
     input_text: str,
@@ -40,7 +47,7 @@ def query(
                 "format": {
                     "type": "json_schema",
                     "name": json_schema.__name__,
-                    "schema": json_schema.model_json_schema(),
+                    "schema": _strict_schema(json_schema),
                 }
             }
         response = client.responses.create(**kwargs)
@@ -54,6 +61,29 @@ def query(
         return {"content": None, "data": None, "error": str(e)}
 
 
+_APPLICATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "ign": {
+            "type": "string",
+            "description": "The in-game name or username extracted from the Discord message."
+        },
+        "recruiter": {
+            "type": "string",
+            "description": "The name of the recruiter extracted from the Discord message."
+        },
+        "certainty": {
+            "type": "number",
+            "description": "A decimal between 0 and 1, where 1 means 100% certainty regarding the extraction accuracy.",
+            "minimum": 0,
+            "maximum": 1
+        }
+    },
+    "required": ["ign", "recruiter", "certainty"],
+    "additionalProperties": False
+}
+
+
 def parse_application(message_text: str) -> dict:
     try:
         result = _get_client().responses.create(
@@ -65,8 +95,9 @@ def parse_application(message_text: str) -> dict:
             text={
                 "format": {
                     "type": "json_schema",
-                    "name": "ApplicationParse",
-                    "schema": ApplicationParse.model_json_schema(),
+                    "strict": True,
+                    "name": "discord_message_extraction",
+                    "schema": _APPLICATION_SCHEMA,
                 }
             },
         )

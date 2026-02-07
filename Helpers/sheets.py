@@ -21,7 +21,7 @@ def _post(payload: dict) -> dict:
         return {"success": False, "error": str(e)}
 
 
-def add_row(ticket: str, ign: str, recruiter: str, type_: str = "New") -> dict:
+def add_row(ticket: str, ign: str, recruiter: str, type_: str = "Member") -> dict:
     return _post({
         "action": "addRow",
         "ticket": ticket,

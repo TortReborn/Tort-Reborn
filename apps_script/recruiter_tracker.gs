@@ -48,7 +48,7 @@ function jsonResponse(data) {
 }
 
 function getSheet() {
-  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
+  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("App Tracker");
 }
 
 /**
@@ -58,11 +58,18 @@ function getSheet() {
 function addRow(payload) {
   var sheet = getSheet();
   var ticket = payload.ticket || "";
-  var type = payload.type || "New";
+  var type = payload.type || "Member";
   var ign = payload.ign || "";
   var recruiter = payload.recruiter || "";
 
-  sheet.appendRow([ticket, type, ign, recruiter, false, false, "NYP"]);
+  // Insert at row 2 (top, below header) with empty promo columns
+  sheet.insertRowAfter(1);
+  var lastCol = sheet.getLastColumn();
+  var newRow = sheet.getRange(2, 1, 1, lastCol);
+  newRow.clearDataValidations();
+  // Copy formatting from existing data row (row 3) so alternating colors stay correct
+  sheet.getRange(3, 1, 1, lastCol).copyTo(newRow, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  sheet.getRange(2, 1, 1, 7).setValues([[ticket, type, ign, recruiter, "", "", "NYP"]]);
   return { success: true };
 }
 
@@ -71,6 +78,11 @@ function addRow(payload) {
  * payload: { ign, type }
  */
 function updateType(payload) {
+  var validTypes = ["Member", "Left"];
+  if (validTypes.indexOf(payload.type) === -1) {
+    return { success: false, error: "Invalid type: " + payload.type + ". Must be Member or Left." };
+  }
+
   var row = findRowByIGN(payload.ign);
   if (!row) return { success: false, error: "IGN not found: " + payload.ign };
 
@@ -110,7 +122,7 @@ function updatePromo(payload) {
     return { success: false, error: "Unknown promo type: " + payload.promo };
   }
 
-  sheet.getRange(row, col).setValue(true);
+  sheet.getRange(row, col).setValue("✓");
   return { success: true };
 }
 
@@ -131,15 +143,16 @@ function findByIGN(payload) {
       type: values[1],
       ign: values[2],
       recruiter: values[3],
-      manateePromo: values[4],
-      piranhaPromo: values[5],
+      manateePromo: values[4] === "✓",
+      piranhaPromo: values[5] === "✓",
       paid: values[6]
     }
   };
 }
 
 /**
- * Search bottom-to-top for the most recent row matching IGN (case-insensitive).
+ * Search top-to-bottom for the most recent row matching IGN (case-insensitive).
+ * Newest rows are at the top (row 2), so first match is most recent.
  * Returns the 1-based row number, or null if not found.
  */
 function findRowByIGN(ign) {
@@ -152,7 +165,7 @@ function findRowByIGN(ign) {
   var ignCol = sheet.getRange(2, 3, lastRow - 1, 1).getValues(); // Column C, skip header
   var target = ign.toLowerCase();
 
-  for (var i = ignCol.length - 1; i >= 0; i--) {
+  for (var i = 0; i < ignCol.length; i++) {
     if (String(ignCol[i][0]).toLowerCase() === target) {
       return i + 2; // Convert to 1-based row (accounting for header)
     }

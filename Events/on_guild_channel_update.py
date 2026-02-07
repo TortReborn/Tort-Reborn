@@ -94,53 +94,56 @@ class OnGuildChannelUpdate(commands.Cog):
             try:
                 # BLOCKING DB fetch in a thread
                 row = await asyncio.to_thread(_db_fetch_row, channel_id)
-                if not row:
-                    continue
+                ticket = None
 
-                _, ticket, _, thread_id = row
-                if not thread_id:
-                    print(f"🚨 No thread_id stored for channel {channel_id}; skipping post.")
-                    continue
+                if row:
+                    _, ticket, _, thread_id = row
+                    if not thread_id:
+                        print(f"🚨 No thread_id stored for channel {channel_id}; skipping post.")
+                    else:
+                        # BLOCKING DB update in a thread
+                        await asyncio.to_thread(_db_update_status, channel_id, new_status)
 
-                # BLOCKING DB update in a thread
-                await asyncio.to_thread(_db_update_status, channel_id, new_status)
+                        # Build embed
+                        ticket_str = ticket.replace("ticket-", "") if ticket else "?"
+                        embed = Embed(
+                            title=f"Application {ticket_str}",
+                            description="Status updated — please review below:",
+                            colour=colour,
+                        )
+                        embed.add_field(name="Channel", value=f"<#{channel_id}>", inline=True)
+                        embed.add_field(name="Status",  value=new_status, inline=True)
 
-                # Build embed
-                ticket_str = ticket.replace("ticket-", "") if ticket else "?"
-                embed = Embed(
-                    title=f"Application {ticket_str}",
-                    description="Status updated — please review below:",
-                    colour=colour,
-                )
-                embed.add_field(name="Channel", value=f"<#{channel_id}>", inline=True)
-                embed.add_field(name="Status",  value=new_status, inline=True)
+                        # Send into the associated thread (fetch if not cached)
+                        thread = self.client.get_channel(thread_id)
+                        if thread is None:
+                            try:
+                                thread = await self.client.fetch_channel(thread_id)
+                            except Exception as e:
+                                print(f"🚨 Could not fetch thread {thread_id}: {e}")
+                                thread = None
 
-                # Send into the associated thread (fetch if not cached)
-                thread = self.client.get_channel(thread_id)
-                if thread is None:
-                    try:
-                        thread = await self.client.fetch_channel(thread_id)
-                    except Exception as e:
-                        print(f"🚨 Could not fetch thread {thread_id}: {e}")
-                        continue
-
-                if isinstance(thread, discord.Thread):
-                    try:
-                        if getattr(thread, "archived", False):
-                            # Avoid long hangs: cap edits/sends with a timeout
-                            async with asyncio.timeout(8):
-                                await thread.edit(archived=False)
-                        async with asyncio.timeout(8):
-                            await thread.send(embed=embed)
-                    except asyncio.TimeoutError:
-                        print(f"⚠️ Timed out sending to thread {thread_id}")
-                    except Exception as e:
-                        print(f"🚨 Failed to send update to thread {thread_id}: {e}")
-                else:
-                    print(f"🚨 Channel {thread_id} is not a thread; got {type(thread)}")
+                        if thread and isinstance(thread, discord.Thread):
+                            try:
+                                if getattr(thread, "archived", False):
+                                    async with asyncio.timeout(8):
+                                        await thread.edit(archived=False)
+                                async with asyncio.timeout(8):
+                                    await thread.send(embed=embed)
+                            except asyncio.TimeoutError:
+                                print(f"⚠️ Timed out sending to thread {thread_id}")
+                            except Exception as e:
+                                print(f"🚨 Failed to send update to thread {thread_id}: {e}")
+                        elif thread:
+                            print(f"🚨 Channel {thread_id} is not a thread; got {type(thread)}")
 
                 # Process accepted tickets for recruiter tracking
+                # Works with or without a new_app DB row (for testing)
                 if new_status == ":white_check_mark: Accepted":
+                    # Use DB ticket name if available, otherwise derive from channel
+                    if not ticket:
+                        ch = self.client.get_channel(channel_id)
+                        ticket = ch.name if ch else f"channel-{channel_id}"
                     try:
                         await self._process_accepted_ticket(channel_id, ticket)
                     except Exception as e:
@@ -156,8 +159,13 @@ class OnGuildChannelUpdate(commands.Cog):
                 self._queue.task_done()
 
     async def _process_accepted_ticket(self, channel_id: int, ticket: str):
+        import re
         from Helpers.openai_helper import parse_application
         from Helpers.sheets import add_row
+
+        # Extract just the ticket number (e.g. "ticket-3650" -> "3650")
+        num_match = re.search(r'(\d+)', ticket)
+        ticket_num = num_match.group(1) if num_match else ticket
 
         channel = self.client.get_channel(channel_id)
         if channel is None:
@@ -198,7 +206,8 @@ class OnGuildChannelUpdate(commands.Cog):
         certainty = result.get("certainty", 0.0)
 
         if certainty >= 0.90 and ign:
-            sheet_result = await asyncio.to_thread(add_row, ticket, ign, recruiter)
+            sheet_result = await asyncio.to_thread(add_row, ticket_num, ign, recruiter)
+
             if not sheet_result.get("success"):
                 err_ch = self.client.get_channel(error_channel)
                 if err_ch:

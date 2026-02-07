@@ -7,6 +7,21 @@ from Helpers.database import DB
 from Helpers.variables import error_channel
 
 
+def _db_lookup_uuid(discord_id: int):
+    """Blocking DB: look up UUID by Discord ID."""
+    db = DB()
+    try:
+        db.connect()
+        db.cursor.execute(
+            "SELECT uuid FROM discord_links WHERE discord_id = %s",
+            (discord_id,)
+        )
+        row = db.cursor.fetchone()
+        return row[0] if row else None
+    finally:
+        db.close()
+
+
 class OnMemberUpdate(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -35,22 +50,11 @@ class OnMemberUpdate(commands.Cog):
         try:
             from Helpers.sheets import find_by_ign, update_promo
 
-            # Look up IGN from discord_links
-            db = DB()
-            db.connect()
-            try:
-                db.cursor.execute(
-                    "SELECT uuid FROM discord_links WHERE discord_id = %s",
-                    (after.id,)
-                )
-                row = db.cursor.fetchone()
-            finally:
-                db.close()
-
-            if not row:
+            # Look up UUID from discord_links (blocking, run in thread)
+            uuid = await asyncio.to_thread(_db_lookup_uuid, after.id)
+            if not uuid:
                 return
 
-            uuid = row[0]
             from Helpers.functions import getUsernameFromUUID
             name_result = await asyncio.to_thread(getUsernameFromUUID, uuid)
             if not name_result:
