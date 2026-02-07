@@ -154,6 +154,7 @@ extensions = [
     'Commands.toggle',
     # 'Commands.blacklist',
     'Commands.shell',
+    'Commands.shell_exchange',
     # 'Commands.contribution',
     # 'Commands.recruit',
     # 'Commands.build',

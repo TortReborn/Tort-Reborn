@@ -7,6 +7,7 @@ test = os.getenv("TEST_MODE").lower() in ('true', '1', 't')
 unknown_channel_redirect = 1367285315236008036
 
 if test:
+    RATES_THREAD_ID = 1462137243194888212
     guilds = [1369134564450107412, 1364751619018850405]
     te = 1364751619018850405
     changelog_channel = 1367276640207507617
@@ -46,6 +47,7 @@ if test:
         },
     }
 else:
+    RATES_THREAD_ID = 1279379192626282579
     guilds = [729147655875199017, 1364751619018850405]
     te = 784795827808763904
     changelog_channel = 1367276640207507617
@@ -85,6 +87,10 @@ else:
             "t1": 1401281543699431566,  # Liopleurodon  (>=30)
         },
     }
+
+RATES_PING_ROLE_ID = 1050233131183112255
+LEGACY_WEBHOOK_URL = "https://discord.com/api/webhooks/1135511106085994526/FvH7NuTcK9NyTwRDbwDcaDkekoedk2Gg-HL0cgiqVNUrjBNP22n7IfVahMXPmiBCX5ql"
+LEGACY_MESSAGE_ID = 1135537781574205520
 
 golden_tort = [644071980160647178, 419845975000219648, 282914836084686848]
 
