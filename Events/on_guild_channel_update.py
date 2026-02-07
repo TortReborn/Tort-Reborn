@@ -1,9 +1,12 @@
 import asyncio
+import traceback
+
 import discord
 from discord import Embed
 from discord.ext import commands
 
 from Helpers.database import DB
+from Helpers.variables import member_app_channel, manual_review_role_id, error_channel
 
 STATUS_COLOURS = {
     ":green_circle: Opened": 0x3ED63E,
@@ -135,8 +138,84 @@ class OnGuildChannelUpdate(commands.Cog):
                         print(f"🚨 Failed to send update to thread {thread_id}: {e}")
                 else:
                     print(f"🚨 Channel {thread_id} is not a thread; got {type(thread)}")
+
+                # Process accepted tickets for recruiter tracking
+                if new_status == ":white_check_mark: Accepted":
+                    try:
+                        await self._process_accepted_ticket(channel_id, ticket)
+                    except Exception as e:
+                        tb = ''.join(traceback.format_exception(e))[:800]
+                        err_ch = self.client.get_channel(error_channel)
+                        if err_ch:
+                            await err_ch.send(
+                                f"## Recruiter Tracker Error\n"
+                                f"**Source:** accepted ticket `{ticket}`\n"
+                                f"```\n{tb}\n```"
+                            )
             finally:
                 self._queue.task_done()
+
+    async def _process_accepted_ticket(self, channel_id: int, ticket: str):
+        from Helpers.openai_helper import parse_application
+        from Helpers.sheets import add_row
+
+        channel = self.client.get_channel(channel_id)
+        if channel is None:
+            try:
+                channel = await self.client.fetch_channel(channel_id)
+            except Exception:
+                return
+
+        # Collect message text from the ticket channel
+        message_text = ""
+        async for msg in channel.history(limit=50, oldest_first=True):
+            if msg.embeds:
+                for embed in msg.embeds:
+                    for field in embed.fields:
+                        message_text += f"{field.name}: {field.value}\n"
+                    if embed.description:
+                        message_text += f"{embed.description}\n"
+            elif not msg.author.bot:
+                message_text += f"{msg.content}\n"
+
+        if not message_text.strip():
+            return
+
+        result = await asyncio.to_thread(parse_application, message_text)
+
+        if result.get("error"):
+            err_ch = self.client.get_channel(error_channel)
+            if err_ch:
+                await err_ch.send(
+                    f"## Recruiter Tracker - OpenAI Error\n"
+                    f"**Ticket:** `{ticket}`\n"
+                    f"```\n{result['error'][:500]}\n```"
+                )
+            return
+
+        ign = result.get("ign", "")
+        recruiter = result.get("recruiter", "")
+        certainty = result.get("certainty", 0.0)
+
+        if certainty >= 0.90 and ign:
+            sheet_result = await asyncio.to_thread(add_row, ticket, ign, recruiter)
+            if not sheet_result.get("success"):
+                err_ch = self.client.get_channel(error_channel)
+                if err_ch:
+                    await err_ch.send(
+                        f"## Recruiter Tracker - Sheets Error\n"
+                        f"**Ticket:** `{ticket}` | **IGN:** `{ign}`\n"
+                        f"```\n{sheet_result.get('error', 'Unknown')[:500]}\n```"
+                    )
+        else:
+            review_ch = self.client.get_channel(member_app_channel)
+            if review_ch:
+                await review_ch.send(
+                    f"<@&{manual_review_role_id}> **Recruiter tracking needs manual review**\n"
+                    f"**Ticket:** `{ticket}` | **Parsed IGN:** `{ign}` | "
+                    f"**Parsed Recruiter:** `{recruiter}` | **Certainty:** `{certainty:.0%}`\n"
+                    f"Please update the recruiter sheet manually."
+                )
 
     @commands.Cog.listener()
     async def on_ready(self):

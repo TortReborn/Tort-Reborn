@@ -192,6 +192,7 @@ extensions = [
     'Events.on_guild_channel_create',
     'Events.on_guild_channel_update',
     'Events.on_raw_reaction_add',
+    'Events.on_member_update',
 
     # Tasks
     'Tasks.guild_log',
