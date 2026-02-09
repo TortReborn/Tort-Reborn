@@ -153,6 +153,35 @@ CREATE INDEX IF NOT EXISTS idx_player_activity_date
   ON player_activity(snapshot_date DESC);
 
 -- =============================================================================
+-- Guild Bank Transactions
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS guild_bank_transactions (
+  id             SERIAL       PRIMARY KEY,
+  content_hash   VARCHAR      NOT NULL,
+  sequence_num   INTEGER      NOT NULL DEFAULT 0,
+  player_name    VARCHAR      NOT NULL,
+  action         VARCHAR      NOT NULL CHECK (action IN ('deposited', 'withdrew')),
+  item_count     INTEGER      NOT NULL,
+  item_name      VARCHAR      NOT NULL,
+  bank_type      VARCHAR      NOT NULL DEFAULT 'High Ranked',
+  first_reported TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  report_count   INTEGER      NOT NULL DEFAULT 1,
+  reporters      TEXT[]       NOT NULL DEFAULT '{}',
+  created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  dedup_key      TEXT         NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS guild_bank_dedup_idx
+  ON guild_bank_transactions(dedup_key);
+
+CREATE INDEX IF NOT EXISTS idx_gb_dedup
+  ON guild_bank_transactions(content_hash, sequence_num, first_reported DESC);
+
+CREATE INDEX IF NOT EXISTS idx_gb_recent
+  ON guild_bank_transactions(created_at DESC);
+
+-- =============================================================================
 -- System / Config
 -- =============================================================================
 
@@ -216,3 +245,21 @@ CREATE TABLE IF NOT EXISTS le_balance_log (
 
 CREATE INDEX IF NOT EXISTS idx_le_balance_log_created_at
   ON le_balance_log(created_at DESC);
+
+-- =============================================================================
+-- Meeting Agenda
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS agenda_bau_topics (
+  id          SERIAL       PRIMARY KEY,
+  topic       VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS agenda_requested_topics (
+  id           SERIAL       PRIMARY KEY,
+  topic        VARCHAR(100) NOT NULL,
+  description  TEXT,
+  submitted_by BIGINT       NOT NULL,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);

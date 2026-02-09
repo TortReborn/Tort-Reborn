@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import time
@@ -10,7 +11,7 @@ from discord.ext import tasks, commands
 from Helpers.classes import Guild
 from Helpers.database import DB
 from Helpers.functions import savePlayers, date_diff, getPlayerDatav3
-from Helpers.variables import test
+from Helpers.variables import test, error_channel
 
 
 class GuildLog(commands.Cog):
@@ -92,6 +93,25 @@ class GuildLog(commands.Cog):
                     '🟥 <t:' + str(int(u_timenow)) + ':d> <t:' + str(int(u_timenow)) + ':t> | **' + player[
                         'name'].replace('_', '\\_') + f'** {discord_id} has left the guild! | ' + player[
                         'rank'].upper() + ' | member for **' + str(in_guild_for.days) + f' days**{lastseen}')
+
+                # Update recruiter tracking sheet
+                try:
+                    from Helpers.sheets import find_by_ign, update_type, update_paid
+                    sheet_row = await asyncio.to_thread(find_by_ign, player['name'])
+                    if sheet_row.get("success") and sheet_row.get("data"):
+                        await asyncio.to_thread(update_type, player['name'], "Left")
+                        paid = sheet_row["data"].get("paid", "")
+                        if paid in ("NYP", "NP"):
+                            await asyncio.to_thread(update_paid, player['name'], "LG")
+                except Exception as e:
+                    err_ch = self.client.get_channel(error_channel)
+                    if err_ch:
+                        await err_ch.send(
+                            f"## Recruiter Tracker - Leave Update Error\n"
+                            f"**Player:** `{player['name']}`\n"
+                            f"```\n{str(e)[:500]}\n```"
+                        )
+
         for player in new_data:
             uuid = player['uuid']
             found = False
