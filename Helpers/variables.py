@@ -5,6 +5,7 @@ load_dotenv()
 test = os.getenv("TEST_MODE").lower() in ('true', '1', 't')
 
 unknown_channel_redirect = 1367285315236008036
+error_channel = 1367285315236008036
 
 if test:
     RATES_THREAD_ID = 1462137243194888212
@@ -23,11 +24,14 @@ if test:
     raid_collecting_channel = 1370900136267616339
     raid_log_channel = 1370124586036887652
     member_app_channel = 1367283441850122330
+    meeting_announcement_channel = 1470222786646507676
+    executive_role_id = 1364751911999373483
     military_channel = 1369134566979403789
     territory_tracker_channel = 1369134566979403791
     global_terr_tracker_channel = 1457380818845434068
     spearhead_role_id = 1369134565335236645
     application_manager_role_id = "<@&1371274399637835837>"
+    manual_review_role_id = 1371274399637835837
     shell_emoji_id = "<:shells:1371292212729479207>"
     aspect_emoji_id = "<:aspect_warrior:1371292093074640936>"
     notg_emoji_id = "<:notg:1371906671747666052>"
@@ -64,11 +68,14 @@ else:
     raid_collecting_channel = 1280196125340602478
     raid_log_channel = 1290713041285152788
     member_app_channel = 889162191150931978
+    meeting_announcement_channel = 868488553062092850
+    executive_role_id = 1192976663185719467
     military_channel = 729162690760671244
     territory_tracker_channel = 729162480000958564
     global_terr_tracker_channel = 1454634575442743437
     spearhead_role_id = 857589881689210950
     application_manager_role_id = "<@&870767928704921651>"
+    manual_review_role_id = 1469587471326249063
     shell_emoji_id = "<:shells:1126608994526560306>"
     aspect_emoji_id = "<:aspect_warrior:1371292000963395655>"
     notg_emoji_id = "<:notg:1316539942524031017>"

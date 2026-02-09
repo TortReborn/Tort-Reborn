@@ -5,7 +5,7 @@ from discord.commands import user_command
 from Helpers.classes import LinkAccount, NewMember
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import guilds, discord_ranks, discord_rank_roles
+from Helpers.variables import guilds, discord_ranks, discord_rank_roles, error_channel
 
 
 class RankPromote(commands.Cog):
@@ -146,6 +146,28 @@ class RankPromote(commands.Cog):
         )
         db.connection.commit()
         db.close()
+
+        # Update recruiter tracking sheet (non-fatal)
+        try:
+            from Helpers.sheets import update_promo
+            from Helpers.functions import getUsernameFromUUID
+            import asyncio
+            name_result = await asyncio.to_thread(getUsernameFromUUID, uuid)
+            if name_result:
+                ign = name_result
+                ranks_keys = list(discord_ranks)
+                if new_index >= ranks_keys.index("Manatee"):
+                    await asyncio.to_thread(update_promo, ign, "manateePromo")
+                if new_index >= ranks_keys.index("Piranha"):
+                    await asyncio.to_thread(update_promo, ign, "piranhaPromo")
+        except Exception as e:
+            err_ch = self.client.get_channel(error_channel)
+            if err_ch:
+                await err_ch.send(
+                    f"## Recruiter Tracker - Promo Update Error\n"
+                    f"**User:** <@{user.id}> | **New rank:** `{new_rank_key}`\n"
+                    f"```\n{str(e)[:500]}\n```"
+                )
 
         # Confirm success
         embed = discord.Embed(
