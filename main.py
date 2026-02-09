@@ -170,6 +170,7 @@ extensions = [
     'Commands.treasury',
     'Commands.recruitment',
     'Commands.top_wars',
+    'Commands.agenda',
 
     # Dev Commands
     'Commands.render_text',

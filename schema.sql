@@ -216,3 +216,21 @@ CREATE TABLE IF NOT EXISTS le_balance_log (
 
 CREATE INDEX IF NOT EXISTS idx_le_balance_log_created_at
   ON le_balance_log(created_at DESC);
+
+-- =============================================================================
+-- Meeting Agenda
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS agenda_bau_topics (
+  id          SERIAL       PRIMARY KEY,
+  topic       VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS agenda_requested_topics (
+  id           SERIAL       PRIMARY KEY,
+  topic        VARCHAR(100) NOT NULL,
+  description  TEXT,
+  submitted_by BIGINT       NOT NULL,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);

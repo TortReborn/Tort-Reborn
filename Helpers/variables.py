@@ -23,6 +23,8 @@ if test:
     raid_collecting_channel = 1370900136267616339
     raid_log_channel = 1370124586036887652
     member_app_channel = 1367283441850122330
+    meeting_announcement_channel = 1470222786646507676
+    executive_role_id = 1364751911999373483
     military_channel = 1369134566979403789
     territory_tracker_channel = 1369134566979403791
     global_terr_tracker_channel = 1457380818845434068
@@ -64,6 +66,8 @@ else:
     raid_collecting_channel = 1280196125340602478
     raid_log_channel = 1290713041285152788
     member_app_channel = 889162191150931978
+    meeting_announcement_channel = 868488553062092850
+    executive_role_id = 1192976663185719467
     military_channel = 729162690760671244
     territory_tracker_channel = 729162480000958564
     global_terr_tracker_channel = 1454634575442743437
