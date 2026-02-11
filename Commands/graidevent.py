@@ -85,8 +85,8 @@ class GraidEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(name="graid_event_start", guild_ids=guilds, description="Admin: start a new GRAID event")
-    @default_permissions(administrator=True)
+    @slash_command(name="graid_event_start", guild_ids=guilds, description="Start a new GRAID event")
+    @default_permissions(manage_roles=True)
     async def graid_start(
         self, ctx: discord.ApplicationContext,
         title: str,
@@ -129,8 +129,8 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @slash_command(name="graid_event_stop", guild_ids=guilds, description="Admin: stop the current GRAID event")
-    @default_permissions(administrator=True)
+    @slash_command(name="graid_event_stop", guild_ids=guilds, description="Stop the current GRAID event")
+    @default_permissions(manage_roles=True)
     async def graid_stop(self, ctx: discord.ApplicationContext):
         db = _db()
         try:
@@ -159,8 +159,8 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @slash_command(name="graid_event_info", guild_ids=guilds, description="Admin: show the active GRAID event")
-    @default_permissions(administrator=True)
+    @slash_command(name="graid_event_info", guild_ids=guilds, description="Show the active GRAID event")
+    @default_permissions(manage_roles=True)
     async def graid_info(self, ctx: discord.ApplicationContext):
         db = _db()
         try:
@@ -195,8 +195,8 @@ class GraidEvent(commands.Cog):
         return titles  # list[str] (max 25 shown by Discord)
 
     # Then change your command signature:
-    @slash_command(name="graid_event_set", description="Admin: activate an existing GRAID (by title)")
-    @default_permissions(administrator=True)
+    @slash_command(name="graid_event_set", description="Activate an existing GRAID (by title)")
+    @default_permissions(manage_roles=True)
     async def graid_set(
         self,
         ctx: discord.ApplicationContext,
