@@ -28,6 +28,7 @@ from Helpers.variables import (
     tcc_emoji_id,
     tna_emoji_id,
     nol_emoji_id,
+    aspect_emoji_id,
     guilds
 )
 
@@ -238,6 +239,7 @@ class UpdateMemberData(commands.Cog):
         self.previous_members = self._load_json(self.member_file, {})
         self.member_file_exists = os.path.exists(self.member_file)
         self.raid_participants = {raid: {"unvalidated": {}, "validated": {}} for raid in self.RAID_NAMES}
+        self.xp_only_validated = {}  # uuid -> {"name": str, "first_seen": datetime} for players with XP jump but no detected raid type
         self.cold_start = True
         self.request_times = deque()
         self._semaphore = asyncio.Semaphore(5)
@@ -265,18 +267,25 @@ class UpdateMemberData(commands.Cog):
         bar = "█" * filled + "─" * (length - filled)
         return f"[{bar}]"
 
-    async def _announce_raid(self, raid, group, guild):
+    async def _announce_raid(self, raid, group, guild, participant_names=None):
         print(f"Announcing raid {raid}: {group}", flush=True)
-        participants = self.raid_participants[raid]["validated"]
-        names = [participants[uid]["name"] for uid in group]
+        if participant_names:
+            names = [participant_names.get(uid, uid) for uid in group]
+        else:
+            participants = self.raid_participants[raid]["validated"]
+            names = [participants[uid]["name"] for uid in group]
         bolded = [f"**{n}**" for n in names]
         names_str = ", ".join(bolded[:-1]) + ", and " + bolded[-1] if len(bolded) > 1 else bolded[0]
-        emoji = RAID_EMOJIS.get(raid, "")
+        if raid:
+            emoji = RAID_EMOJIS.get(raid, "")
+            title = f"{emoji} {raid} Completed!"
+        else:
+            title = f"{aspect_emoji_id} Guild Raid Completed!"
         now = datetime.datetime.now(timezone.utc)
         channel = self.client.get_channel(RAID_ANNOUNCE_CHANNEL_ID)
         if channel:
             embed = discord.Embed(
-                title=f"{emoji} {raid} Completed!",
+                title=title,
                 description=names_str,
                 timestamp=now,
                 color=0x00FF00
@@ -317,6 +326,15 @@ class UpdateMemberData(commands.Cog):
                 if first < cutoff:
                     print(f"{now} - PRUNE unvalidated {info['name']} in {raid}", flush=True)
                     queues['unvalidated'].pop(uid)
+
+        # 2b: Prune stale xp_only_validated entries
+        for uid, info in list(self.xp_only_validated.items()):
+            first = info['first_seen']
+            if isinstance(first, str):
+                first = datetime.datetime.fromisoformat(first)
+            if first < cutoff:
+                print(f"{now} - PRUNE xp_only_validated {info['name']}", flush=True)
+                self.xp_only_validated.pop(uid)
 
         # 3: Member join/leave
         prev_map = self.previous_members
@@ -378,6 +396,7 @@ class UpdateMemberData(commands.Cog):
         # --- 7: Build new snapshot (carry forward) & detect unvalidated only with fresh data ---
         new_data = dict(prev)      # carry forward last-known values for members we didn't fetch
         fresh = set()              # UUIDs we successfully fetched this iteration
+        name_map = {}              # uuid -> username, built from fresh API results
 
         for m in results:
             if not isinstance(m, dict):
@@ -385,6 +404,7 @@ class UpdateMemberData(commands.Cog):
 
             uid, uname = m['uuid'], m['username']
             fresh.add(uid)
+            name_map[uid] = uname
 
             raids = m.get('globalData', {}).get('raids', {}).get('list', {})
             counts = {r: raids.get(r, 0) for r in self.RAID_NAMES}
@@ -437,6 +457,16 @@ class UpdateMemberData(commands.Cog):
                     queues['validated'][uid] = info
                     print(f"{now} - VALIDATED {info['name']} for {raid} via XP jump", flush=True)
 
+        # --- 9b: Cross-validate — if a player entered unvalidated for a raid
+        #     but was already in xp_only from a previous tick, validate immediately ---
+        for raid, queues in self.raid_participants.items():
+            for uid in list(queues['unvalidated']):
+                if uid in self.xp_only_validated:
+                    info = queues['unvalidated'].pop(uid)
+                    queues['validated'][uid] = info
+                    self.xp_only_validated.pop(uid)
+                    print(f"{now} - CROSS-VALIDATED {info['name']} for {raid} (was in xp_only pool)", flush=True)
+
         # --- 10: Validate via contrib diff (only if we have fresh data this tick) ---
         for raid, queues in self.raid_participants.items():
             for uid, info in list(queues['unvalidated'].items()):
@@ -451,14 +481,62 @@ class UpdateMemberData(commands.Cog):
                     queues['unvalidated'].pop(uid)
                     print(f"{now} - VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})", flush=True)
 
-        # --- 11: Announce raids (unchanged) ---
+        # --- 10b: Add XP-jump players with no raid detection to xp_only pool ---
+        for uid in xp_jumps:
+            in_any_raid_queue = any(
+                uid in self.raid_participants[r]['unvalidated'] or uid in self.raid_participants[r]['validated']
+                for r in self.RAID_NAMES
+            )
+            if not in_any_raid_queue and uid not in self.xp_only_validated:
+                uname = name_map.get(uid, uid)
+                self.xp_only_validated[uid] = {
+                    "name": uname,
+                    "first_seen": now
+                }
+                print(f"{now} - XP-ONLY validated {uname} (no raid type detected)", flush=True)
+
+        # --- 11: Announce raids (with xp_only backfill) ---
         for raid in self.RAID_NAMES:
             vals = self.raid_participants[raid]['validated']
-            if len(vals) >= 4:
+            raid_validated_count = len(vals)
+
+            if raid_validated_count == 0:
+                continue
+
+            needed = 4 - raid_validated_count
+            if needed <= 0:
+                # 4+ raid-specific validated — form group normally
                 group = set(list(vals)[:4])
                 await self._announce_raid(raid, group, guild)
                 for uid in group:
                     vals.pop(uid)
+            elif len(self.xp_only_validated) >= needed:
+                # 1-3 raid-specific validated + enough xp_only to fill to 4
+                xp_only_uids = list(self.xp_only_validated.keys())[:needed]
+                for uid in xp_only_uids:
+                    info = self.xp_only_validated.pop(uid)
+                    vals[uid] = info
+                    print(f"{now} - BACKFILL {info['name']} from xp_only pool into {raid}", flush=True)
+
+                group = set(list(vals)[:4])
+                await self._announce_raid(raid, group, guild)
+                for uid in group:
+                    vals.pop(uid)
+
+        # --- 11b: All-private group (no raid type detected for anyone) ---
+        # Grace period: only announce xp_only players from previous ticks,
+        # giving raid-specific detection a chance to catch up next iteration.
+        eligible_xp_only = {uid: info for uid, info in self.xp_only_validated.items()
+                           if info['first_seen'] < now}
+        while len(eligible_xp_only) >= 4:
+            xp_only_uids = list(eligible_xp_only.keys())[:4]
+            group = set(xp_only_uids)
+            participant_names = {uid: self.xp_only_validated[uid]["name"] for uid in xp_only_uids}
+            for uid in xp_only_uids:
+                self.xp_only_validated.pop(uid)
+                eligible_xp_only.pop(uid)
+            print(f"{now} - ALL-PRIVATE group formed: {participant_names}", flush=True)
+            await self._announce_raid(None, group, guild, participant_names=participant_names)
 
         # --- 12: Persist (unchanged, but now includes carry-forward) ---
         self.previous_data = new_data
