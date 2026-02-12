@@ -22,6 +22,7 @@ logging.basicConfig(
     format='[%(levelname)s] %(message)s'
 )
 logging.getLogger('discord').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
 
 # get bot token
 load_dotenv()
