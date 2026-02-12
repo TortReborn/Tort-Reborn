@@ -1,15 +1,18 @@
 import asyncio
+import json
 import re
 from datetime import datetime, timezone
+from io import BytesIO
 
 import discord
 from discord import ApplicationContext
 from discord.ext import commands
 
+from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.embed_updater import update_poll_embed
-from Helpers.functions import getPlayerUUID
-from Helpers.openai_helper import extract_ign, parse_application
+from Helpers.functions import generate_applicant_info, getPlayerUUID, getNameFromUUID
+from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign, parse_application
 from Helpers.sheets import add_row
 from Helpers.variables import (
     guilds,
@@ -376,6 +379,270 @@ class ApplicationCommands(commands.Cog):
             ephemeral=True,
         )
 
+    @discord.slash_command(
+        name="receive",
+        description="Manually detect and process the last application message in this ticket",
+        guild_ids=guilds + [te],
+        default_member_permissions=discord.Permissions(manage_channels=True),
+    )
+    async def receive(self, ctx: ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        # Must be in a Guild Applications ticket channel
+        if not (
+            ctx.channel.category
+            and ctx.channel.category.name == "Guild Applications"
+            and ctx.channel.name.startswith("ticket-")
+        ):
+            await ctx.followup.send(
+                "This command can only be used in a `ticket-` channel under **Guild Applications**.",
+                ephemeral=True,
+            )
+            return
+
+        # Look up the application record
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "SELECT applicant_discord_id, app_type, thread_id FROM new_app WHERE channel = %s",
+            (ctx.channel.id,)
+        )
+        row = db.cursor.fetchone()
+        db.close()
+
+        if not row:
+            await ctx.followup.send(
+                "No application record found for this channel.",
+                ephemeral=True,
+            )
+            return
+
+        stored_discord_id, app_type, thread_id = row
+
+        if app_type is not None:
+            await ctx.followup.send(
+                f"This application has already been detected as **{app_type}**.",
+                ephemeral=True,
+            )
+            return
+
+        # Find the applicant's discord ID if not stored yet
+        if stored_discord_id is None:
+            stored_discord_id = await self._find_ticket_opener(ctx.channel)
+            if stored_discord_id:
+                db = DB(); db.connect()
+                db.cursor.execute(
+                    "UPDATE new_app SET applicant_discord_id = %s WHERE channel = %s",
+                    (stored_discord_id, ctx.channel.id)
+                )
+                db.connection.commit()
+                db.close()
+
+        # Find the last non-bot message (from the applicant if known, otherwise any non-bot)
+        target_message = None
+        async for msg in ctx.channel.history(limit=50):
+            if msg.author.bot:
+                continue
+            if stored_discord_id and msg.author.id != stored_discord_id:
+                continue
+            target_message = msg
+            break
+
+        if not target_message:
+            await ctx.followup.send(
+                "Could not find a recent applicant message in this channel.",
+                ephemeral=True,
+            )
+            return
+
+        # --- Ex-member check (same logic as on_message) ---
+        is_ex_member = False
+        mc_name = ""
+        if stored_discord_id:
+            db = DB(); db.connect()
+            db.cursor.execute(
+                "SELECT uuid FROM discord_links WHERE discord_id = %s",
+                (stored_discord_id,)
+            )
+            link_row = db.cursor.fetchone()
+            db.close()
+
+            if link_row and link_row[0]:
+                is_ex_member = True
+                ex_member_uuid = str(link_row[0])
+                resolved = await asyncio.to_thread(getNameFromUUID, ex_member_uuid)
+                mc_name = resolved[0] if resolved else ""
+
+                detection = await asyncio.to_thread(detect_rejoin_intent, target_message.content)
+                if detection.get("error"):
+                    await ctx.followup.send(
+                        f"AI detection error: `{detection['error'][:200]}`",
+                        ephemeral=True,
+                    )
+                    return
+                if not detection["is_application"] or detection["confidence"] < 0.4:
+                    await ctx.followup.send(
+                        "The message was not detected as an application (ex-member rejoin check).\n"
+                        f"Confidence: {detection.get('confidence', 0):.0%}",
+                        ephemeral=True,
+                    )
+                    return
+
+                detected_type = detection["app_type"]
+
+                if not mc_name:
+                    mc_name = await self._extract_ign_from_text(target_message.content)
+                    if not mc_name:
+                        ign_result = await asyncio.to_thread(extract_ign, target_message.content)
+                        if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.5:
+                            mc_name = ign_result["ign"]
+
+        # --- Regular applicant path ---
+        if not is_ex_member:
+            detection = await asyncio.to_thread(detect_application, target_message.content)
+
+            if detection.get("error"):
+                await ctx.followup.send(
+                    f"AI detection error: `{detection['error'][:200]}`",
+                    ephemeral=True,
+                )
+                return
+
+            if not detection["is_application"] or detection["confidence"] < 0.7:
+                await ctx.followup.send(
+                    "The message was not detected as an application.\n"
+                    f"Confidence: {detection.get('confidence', 0):.0%}",
+                    ephemeral=True,
+                )
+                return
+
+            detected_type = detection["app_type"]
+
+            mc_name = await self._extract_ign_from_text(target_message.content)
+            if not mc_name:
+                ign_result = await asyncio.to_thread(extract_ign, target_message.content)
+                if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.7:
+                    mc_name = ign_result["ign"]
+
+        # --- Process the detected application (mirrors on_message._process_detected_application) ---
+        # Generate player stats image
+        pdata = None
+        blacklist_warning = ""
+        if mc_name:
+            pdata = await asyncio.to_thread(BasicPlayerStats, mc_name)
+            if pdata.error:
+                pdata = None
+            else:
+                try:
+                    with open('blacklist.json', 'r') as f:
+                        blacklist = json.load(f)
+                    for player in blacklist:
+                        if pdata.UUID == player['UUID']:
+                            blacklist_warning = (
+                                f':no_entry: Player present on blacklist!\n'
+                                f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
+                            )
+                except FileNotFoundError:
+                    pass
+
+        # Update DB with the detected type and IGN
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "UPDATE new_app SET app_type = %s, ign = %s WHERE channel = %s",
+            (detected_type, mc_name or None, ctx.channel.id)
+        )
+        db.connection.commit()
+        db.close()
+
+        # Update poll embed to "Received" and rename channel
+        await update_poll_embed(self.client, ctx.channel.id, ":green_circle: Received", 0x3ED63E)
+        num_match = re.search(r'(\d+)', ctx.channel.name)
+        ticket_num = num_match.group(1) if num_match else ctx.channel.name.split("-", 1)[-1]
+        try:
+            await ctx.channel.edit(name=f"received-{ticket_num}")
+        except Exception:
+            pass
+
+        # Re-fetch thread_id if needed
+        if not thread_id:
+            db = DB(); db.connect()
+            db.cursor.execute(
+                "SELECT thread_id FROM new_app WHERE channel = %s",
+                (ctx.channel.id,)
+            )
+            trow = db.cursor.fetchone()
+            db.close()
+            if trow:
+                thread_id = trow[0]
+
+        # Post to the exec thread
+        if thread_id:
+            thread = self.client.get_channel(thread_id)
+            if thread is None:
+                try:
+                    thread = await self.client.fetch_channel(thread_id)
+                except Exception:
+                    thread = None
+
+            if thread:
+                if getattr(thread, "archived", False):
+                    await thread.edit(archived=False)
+
+                type_label = "Guild Member" if detected_type == "guild_member" else "Community Member"
+
+                embed_title = f"Application {ticket_num}"
+                if pdata:
+                    embed_title += f" ({pdata.username})"
+
+                embed = discord.Embed(
+                    title=embed_title,
+                    description=blacklist_warning,
+                    colour=0x3ed63e,
+                )
+                embed.add_field(name="Channel", value=f":link: <#{ctx.channel.id}>", inline=True)
+                embed.add_field(name="Type", value=type_label, inline=True)
+
+                if pdata:
+                    img = generate_applicant_info(pdata)
+                    with BytesIO() as file:
+                        img.save(file, format="PNG")
+                        file.seek(0)
+                        player_info = discord.File(
+                            file,
+                            filename=f"{ticket_num}-{pdata.UUID}.png"
+                        )
+                        embed.set_image(url=f"attachment://{ticket_num}-{pdata.UUID}.png")
+                        await thread.send(
+                            f"{application_manager_role_id} **New {type_label} application received!**",
+                            embed=embed,
+                            file=player_info,
+                        )
+                else:
+                    await thread.send(
+                        f"{application_manager_role_id} **New {type_label} application received!**",
+                        embed=embed,
+                    )
+
+                app_content = target_message.content[:1900]
+                await thread.send(
+                    f"**Application from {target_message.author.mention}:**\n>>> {app_content}"
+                )
+
+        # Send thank-you message in the ticket channel
+        await ctx.channel.send(
+            f"Hi {target_message.author.mention},\n\n"
+            f"Thank you for your interest in joining The Aquarium! \U0001F420\n"
+            f"Your application has been received and is greatly appreciated.\n\n"
+            f"We'll be carefully reviewing it and aim to get back to you within 12 hours.\n\n"
+            f"Best regards,\n"
+            f"The Aquarium Applications Team"
+        )
+
+        type_label = "Guild Member" if detected_type == "guild_member" else "Community Member"
+        await ctx.followup.send(
+            f"Application manually received. Type: **{type_label}**, IGN: `{mc_name or 'unknown'}`",
+            ephemeral=True,
+        )
+
     # --- Helper methods ---
 
     async def _resolve_member(self, channel, discord_id: int) -> discord.Member | None:
@@ -495,6 +762,43 @@ class ApplicationCommands(commands.Cog):
                     f"**Parsed Recruiter:** `{recruiter}` | **Certainty:** `{certainty:.0%}`\n"
                     f"Please update the recruiter sheet manually."
                 )
+
+    async def _extract_ign_from_text(self, text) -> str:
+        """Try to extract an IGN from a wynncraft stats link in the text."""
+        stats_match = re.search(
+            r"wynncraft\.com/stats/player[/\s]*"
+            r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[\w]+)",
+            text
+        )
+        if stats_match:
+            captured = stats_match.group(1)
+            if re.fullmatch(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', captured):
+                resolved = await asyncio.to_thread(getNameFromUUID, captured)
+                if resolved:
+                    return resolved[0]
+            else:
+                return captured
+        return ""
+
+    async def _find_ticket_opener(self, channel) -> int | None:
+        """Parse the Ticket Tool welcome message to find the ticket opener's Discord ID."""
+        async for msg in channel.history(limit=10, oldest_first=True):
+            if msg.author.bot and msg.mentions:
+                if "welcome to" in msg.content.lower():
+                    for mentioned in msg.mentions:
+                        if not mentioned.bot:
+                            return mentioned.id
+            if msg.author.bot and msg.embeds:
+                for embed in msg.embeds:
+                    desc = embed.description or ""
+                    if "welcome" in desc.lower():
+                        match = re.search(r'<@!?(\d+)>', desc)
+                        if match:
+                            return int(match.group(1))
+        for target in channel.overwrites:
+            if isinstance(target, discord.Member) and not target.bot:
+                return target.id
+        return None
 
     @commands.Cog.listener()
     async def on_ready(self):
