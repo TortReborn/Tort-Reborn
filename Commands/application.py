@@ -33,22 +33,21 @@ class ApplicationCommands(commands.Cog):
         """
         source = ctx.channel
 
-        # Try ticket channel first
+        # Try ticket channel ID first, then exec thread ID
         db = DB(); db.connect()
-        if hasattr(source, 'name') and source.name.startswith("ticket-"):
-            db.cursor.execute(
-                """SELECT applicant_discord_id, thread_id, app_type, decision, ign, channel
-                   FROM new_app WHERE channel = %s""",
-                (source.id,)
-            )
-        else:
-            # Try exec thread lookup
+        db.cursor.execute(
+            """SELECT applicant_discord_id, thread_id, app_type, decision, ign, channel
+               FROM new_app WHERE channel = %s""",
+            (source.id,)
+        )
+        row = db.cursor.fetchone()
+        if not row:
             db.cursor.execute(
                 """SELECT applicant_discord_id, thread_id, app_type, decision, ign, channel
                    FROM new_app WHERE thread_id = %s""",
                 (source.id,)
             )
-        row = db.cursor.fetchone()
+            row = db.cursor.fetchone()
         db.close()
 
         if not row:

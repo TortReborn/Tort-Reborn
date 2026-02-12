@@ -44,7 +44,9 @@ class OnGuildChannelUpdate(commands.Cog):
                 num_match = re.search(r'(\d+)', after.name)
                 ticket_num = num_match.group(1) if num_match else after.name.split("-", 1)[-1]
 
-                if app_type == "guild_member":
+                if not decision:
+                    new_name = None
+                elif app_type == "guild_member":
                     new_name = f"accepted-{ticket_num}" if decision == "accepted" else f"denied-{ticket_num}"
                 elif app_type == "community_member":
                     new_name = f"c-accepted-{ticket_num}" if decision == "accepted" else f"c-denied-{ticket_num}"

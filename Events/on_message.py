@@ -185,7 +185,6 @@ class OnMessage(commands.Cog):
                     await thread.edit(archived=False)
 
                 type_label = "Guild Member" if detected_type == "guild_member" else "Community Member"
-                ticket_num = message.channel.name.replace("ticket-", "")
 
                 # Build the stats embed
                 embed_title = f"Application {ticket_num}"
