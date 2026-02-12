@@ -109,7 +109,7 @@ class OnMessage(commands.Cog):
 
             # IGN fallback if UUID resolution failed
             if not mc_name:
-                mc_name = self._extract_ign_from_text(message.content)
+                mc_name = await self._extract_ign_from_text(message.content)
                 if not mc_name:
                     ign_result = await asyncio.to_thread(extract_ign, message.content)
                     if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.5:
@@ -131,7 +131,7 @@ class OnMessage(commands.Cog):
         detected_type = detection["app_type"]  # "guild_member" or "community_member"
 
         # Extract IGN from the application text
-        mc_name = self._extract_ign_from_text(message.content)
+        mc_name = await self._extract_ign_from_text(message.content)
         if not mc_name:
             ign_result = await asyncio.to_thread(extract_ign, message.content)
             if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.7:
