@@ -24,6 +24,12 @@ class ApplicationDetection(BaseModel):
     confidence: float
 
 
+class RejoinDetection(BaseModel):
+    is_application: bool
+    app_type: str  # "guild_member", "community_member", or "none"
+    confidence: float
+
+
 class IGNExtraction(BaseModel):
     ign: str
     confidence: float
@@ -150,6 +156,7 @@ Set confidence between 0.0 and 1.0."""
 
 def detect_application(message_text: str) -> dict:
     """Determine if a message is an application response and what type."""
+    preview = message_text[:100].replace('\n', ' ')
     result = query(
         instructions=_DETECT_INSTRUCTIONS,
         input_text=message_text,
@@ -159,8 +166,58 @@ def detect_application(message_text: str) -> dict:
         max_tokens=200,
     )
     if result["error"]:
+        print(f"[detect_application] \"{preview}\" -> error: {result['error']}")
         return {"is_application": False, "app_type": "none", "confidence": 0.0, "error": result["error"]}
     data = result["data"]
+    print(f"[detect_application] \"{preview}\" -> {data.get('app_type')} (confidence: {data.get('confidence')})")
+    return {
+        "is_application": data.get("is_application", False),
+        "app_type": data.get("app_type", "none"),
+        "confidence": data.get("confidence", 0.0),
+        "error": None,
+    }
+
+
+_REJOIN_DETECT_INSTRUCTIONS = """\
+You are analyzing a Discord message sent in a guild application ticket for The Aquarium,
+a Wynncraft guild. The sender is a KNOWN EX-MEMBER who was previously in the guild.
+
+Determine if this message expresses intent to rejoin or reapply to the guild.
+Be LENIENT — ex-members often write casually, such as:
+- "Hey, I'd like to rejoin if possible"
+- "Hi, sorry about being kicked for inactivity, can I come back?"
+- "I want to apply again"
+- "Is it possible to rejoin?"
+- Any message expressing desire to return, reapply, rejoin, or come back
+
+This does NOT need to follow a structured application format. Any indication
+of wanting to rejoin or reapply counts.
+
+For app_type:
+- If the message mentions wanting to be a community member (including abbreviations like
+  "comm member", "community", "comm", "cm"), set app_type to "community_member".
+- Otherwise, default to "guild_member".
+
+Set confidence between 0.0 and 1.0 based on how clearly the message expresses
+rejoin intent. Even a casual "can I come back?" should get high confidence."""
+
+
+def detect_rejoin_intent(message_text: str) -> dict:
+    """Determine if an ex-member's message expresses intent to rejoin."""
+    preview = message_text[:100].replace('\n', ' ')
+    result = query(
+        instructions=_REJOIN_DETECT_INSTRUCTIONS,
+        input_text=message_text,
+        json_schema=RejoinDetection,
+        model="gpt-4.1-nano",
+        temperature=0.0,
+        max_tokens=200,
+    )
+    if result["error"]:
+        print(f"[detect_rejoin] \"{preview}\" -> error: {result['error']}")
+        return {"is_application": False, "app_type": "none", "confidence": 0.0, "error": result["error"]}
+    data = result["data"]
+    print(f"[detect_rejoin] \"{preview}\" -> {data.get('app_type')} (confidence: {data.get('confidence')})")
     return {
         "is_application": data.get("is_application", False),
         "app_type": data.get("app_type", "none"),
