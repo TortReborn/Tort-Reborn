@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 import sys
 import discord
 import datetime
@@ -19,7 +20,8 @@ else:
     import os as _os
     sys.stdout = _os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
-from Helpers.classes import Guild, DB
+from Helpers.classes import Guild, DB, BasicPlayerStats
+from Helpers.embed_updater import update_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID
 from Helpers.variables import (
     raid_log_channel,
@@ -29,7 +31,8 @@ from Helpers.variables import (
     tna_emoji_id,
     nol_emoji_id,
     aspect_emoji_id,
-    guilds
+    guilds,
+    welcome_channel,
 )
 
 RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
@@ -356,6 +359,12 @@ class UpdateMemberData(commands.Cog):
                 ej = discord.Embed(title='Guild Members Joined', timestamp=now, color=0x00FF00)
                 add_chunked(ej, 'Joined', [getNameFromUUID(u)[0] for u in joined])
                 await ch.send(embed=ej)
+                # Auto-register members who have pending accepted applications
+                for uuid in joined:
+                    try:
+                        await self._auto_register_joined_member(uuid, curr_map[uuid]['name'])
+                    except Exception as e:
+                        print(f"[auto_register] Error for {uuid}: {e}")
             if left:
                 el = discord.Embed(title='Guild Members Left', timestamp=now, color=0xFF0000)
                 add_chunked(el, 'Left', [prev_map[u]['name'] for u in left])
@@ -553,6 +562,107 @@ class UpdateMemberData(commands.Cog):
         )
         
         print(f"🟨 ENDING LOOP - {datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}",flush=True)
+
+    async def _auto_register_joined_member(self, uuid: str, ign: str):
+        """Check if a joined member has a pending accepted application and auto-register them."""
+
+        def _check_pending_app(uuid_str):
+            db = DB()
+            try:
+                db.connect()
+                db.cursor.execute(
+                    """SELECT dl.discord_id, dl.app_channel
+                       FROM discord_links dl
+                       WHERE dl.uuid = %s
+                         AND dl.linked = FALSE
+                         AND dl.app_channel IS NOT NULL""",
+                    (uuid_str,)
+                )
+                return db.cursor.fetchone()
+            finally:
+                db.close()
+
+        row = await asyncio.to_thread(_check_pending_app, uuid)
+        if not row:
+            return  # No pending application for this UUID
+
+        discord_id, app_channel_id = row
+
+        discord_guild = self.client.get_guild(guilds[0])
+        if not discord_guild:
+            return
+
+        member = discord_guild.get_member(discord_id)
+        if not member:
+            return
+
+        # Fetch player stats for wars_on_join
+        pdata = await asyncio.to_thread(BasicPlayerStats, ign)
+        wars_on_join = 0
+        if not pdata.error:
+            wars_on_join = pdata.wars
+
+        # Assign roles (mirrors NewMember modal from Helpers/classes.py)
+        to_add = [
+            'Member', 'The Aquarium [TAq]', '\u2606Reef', 'Starfish',
+            '\U0001F947 RANKS\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
+            '\U0001F6E0\uFE0F PROFESSIONS\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
+            '\u2728 COSMETIC ROLES\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
+            'CONTRIBUTION ROLES\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
+        ]
+        to_remove = ['Land Crab', 'Honored Fish', 'Ex-Member']
+
+        all_roles = discord_guild.roles
+        roles_to_add = [discord.utils.get(all_roles, name=r) for r in to_add]
+        roles_to_add = [r for r in roles_to_add if r is not None]
+        roles_to_remove = [discord.utils.get(all_roles, name=r) for r in to_remove]
+        roles_to_remove = [r for r in roles_to_remove if r is not None]
+
+        try:
+            if roles_to_add:
+                await member.add_roles(*roles_to_add, reason="Auto-registration from accepted application")
+            if roles_to_remove:
+                await member.remove_roles(*roles_to_remove, reason="Auto-registration from accepted application")
+            await member.edit(nick=f"Starfish {ign}")
+        except discord.Forbidden:
+            print(f"[auto_register] Missing permissions to modify roles/nick for {member.name}")
+            return
+        except Exception as e:
+            print(f"[auto_register] Error modifying {member.name}: {e}")
+            return
+
+        # Update discord_links: mark as linked, set rank
+        def _complete_registration(did, ign_val, uuid_str, wars):
+            db = DB()
+            try:
+                db.connect()
+                db.cursor.execute(
+                    """UPDATE discord_links
+                       SET linked = TRUE, rank = 'Starfish', ign = %s, wars_on_join = %s
+                       WHERE discord_id = %s""",
+                    (ign_val, wars, did)
+                )
+                db.connection.commit()
+            finally:
+                db.close()
+
+        await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, wars_on_join)
+
+        # Update poll embed
+        if app_channel_id:
+            await update_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
+
+        # Send welcome embed
+        welcome_ch = self.client.get_channel(welcome_channel)
+        if welcome_ch:
+            welcome_embed = discord.Embed(
+                description=f":ocean: Dive right in, {member.mention}! The water's fine.",
+                color=discord.Color.blue()
+            )
+            welcome_embed.set_author(name="Welcome Aboard!", icon_url=member.display_avatar.url)
+            await welcome_ch.send(embed=welcome_embed)
+
+        print(f"[auto_register] Successfully registered {ign} ({member.name}) from accepted application.")
 
     async def _run_snapshot(self, target_date=None):
         """

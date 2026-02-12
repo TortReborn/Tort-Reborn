@@ -4,11 +4,11 @@ from datetime import datetime, timezone
 import discord
 from discord import Embed
 from discord.ext import commands
-from discord.ui import View, Button
+from discord.ui import View
 from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.database import DB
-from Helpers.variables import guilds, member_app_channel, application_manager_role_id
+from Helpers.variables import guilds, member_app_channel
 
 
 class OnGuildChannelCreate(commands.Cog):
@@ -25,24 +25,27 @@ class OnGuildChannelCreate(commands.Cog):
         ):
             return
 
-        db = DB(); db.connect()
-        webhook = await channel.create_webhook(name=channel.name)
-        db.cursor.execute(
-            """
-            INSERT INTO new_app (channel, ticket, webhook)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (channel) DO NOTHING;
-            """,
-            (channel.id, channel.name, webhook.url)
-        )
-        db.connection.commit()
-        db.close()
-
+        # Identify the ticket opener from permission overwrites
+        ticket_opener_id = None
         user_name = ""
         for target in channel.overwrites:
             if isinstance(target, discord.Member) and not target.bot:
                 user_name = target.display_name
+                ticket_opener_id = target.id
                 break
+
+        db = DB(); db.connect()
+        webhook = await channel.create_webhook(name=channel.name)
+        db.cursor.execute(
+            """
+            INSERT INTO new_app (channel, ticket, webhook, applicant_discord_id)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (channel) DO NOTHING;
+            """,
+            (channel.id, channel.name, webhook.url, ticket_opener_id)
+        )
+        db.connection.commit()
+        db.close()
 
         img = Image.open("images/profile/welcome.png")
         draw = ImageDraw.Draw(img)
@@ -55,20 +58,6 @@ class OnGuildChannelCreate(commands.Cog):
             welcome_file = discord.File(buf, filename=f"welcome_{channel.id}.png")
 
         view = View()
-        # view.add_item(
-        #     Button(
-        #         label="Guild Member",
-        #         url=f"https://tally.so/r/nrpr5X?ticket={channel.id}",
-        #         emoji="🔵",
-        #     )
-        # )
-        # view.add_item(
-        #     Button(
-        #         label="Community Member",
-        #         url=f"https://tally.so/r/3XgBrz?ticket={channel.id}",
-        #         emoji="🟢",
-        #     )
-        # )
         await channel.send(file=welcome_file, view=view)
 
         exec_chan = self.client.get_channel(member_app_channel)
@@ -85,9 +74,8 @@ class OnGuildChannelCreate(commands.Cog):
         poll_embed.add_field(name="Channel", value=f"<#{channel.id}>", inline=True)
         poll_embed.add_field(name="Status",  value=":green_circle: Opened", inline=True)
 
-        poll_msg = await exec_chan.send(
-            application_manager_role_id, embed=poll_embed
-        )
+        # Send embed without pinging application manager
+        poll_msg = await exec_chan.send(embed=poll_embed)
         thread = await poll_msg.create_thread(
             name=ticket_num, auto_archive_duration=1440
         )
@@ -98,14 +86,16 @@ class OnGuildChannelCreate(commands.Cog):
         db.cursor.execute(
             """
             UPDATE new_app
-               SET created_at    = %s,
-                   posted        = TRUE,
-                   thread_id = %s
+               SET created_at       = %s,
+                   posted           = TRUE,
+                   thread_id        = %s,
+                   poll_message_id  = %s
              WHERE channel = %s;
             """,
             (
                 datetime.now(timezone.utc),
                 thread.id,
+                poll_msg.id,
                 channel.id
             )
         )

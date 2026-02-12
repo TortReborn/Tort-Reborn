@@ -50,6 +50,9 @@ if test:
             "t1": 1411440932364222464,  # Liopleurodon  (>=30)
         },
     }
+    app_category_name = "Guild Applications"
+    invited_category_name = "Invited"
+    closed_category_name = "Closed Applications"
 else:
     RATES_THREAD_ID = 1279379192626282579
     guilds = [729147655875199017, 1364751619018850405]
@@ -94,7 +97,11 @@ else:
             "t1": 1401281543699431566,  # Liopleurodon  (>=30)
         },
     }
+    app_category_name = "Guild Applications"
+    invited_category_name = "Invited"
+    closed_category_name = "Closed Applications"
 
+TICKET_TOOL_BOT_ID = 557628352828014614
 RATES_PING_ROLE_ID = 1050233131183112255
 LEGACY_WEBHOOK_URL = "https://discord.com/api/webhooks/1135511106085994526/FvH7NuTcK9NyTwRDbwDcaDkekoedk2Gg-HL0cgiqVNUrjBNP22n7IfVahMXPmiBCX5ql"
 LEGACY_MESSAGE_ID = 1135537781574205520
