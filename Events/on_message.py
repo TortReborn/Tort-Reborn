@@ -10,7 +10,7 @@ from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.functions import generate_applicant_info, getNameFromUUID
 from Helpers.embed_updater import update_poll_embed
-from Helpers.openai_helper import detect_application, extract_ign
+from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign
 from Helpers.variables import application_manager_role_id
 
 
@@ -81,7 +81,44 @@ class OnMessage(commands.Cog):
         if app_type is not None:
             return
 
-        # Use AI to detect if this is an application
+        # --- Ex-member check: looser rejoin detection ---
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "SELECT uuid FROM discord_links WHERE discord_id = %s",
+            (stored_discord_id,)
+        )
+        link_row = db.cursor.fetchone()
+        db.close()
+
+        if link_row and link_row[0]:
+            ex_member_uuid = str(link_row[0])
+
+            # Resolve current IGN from stored UUID
+            resolved = await asyncio.to_thread(getNameFromUUID, ex_member_uuid)
+            mc_name = resolved[0] if resolved else ""
+
+            # Lenient rejoin intent detection
+            detection = await asyncio.to_thread(detect_rejoin_intent, message.content)
+            if detection.get("error"):
+                print(f"[on_message] Rejoin detection error for {message.channel.name}: {detection['error']}")
+                return
+            if not detection["is_application"] or detection["confidence"] < 0.4:
+                return
+
+            detected_type = detection["app_type"]
+
+            # IGN fallback if UUID resolution failed
+            if not mc_name:
+                mc_name = self._extract_ign_from_text(message.content)
+                if not mc_name:
+                    ign_result = await asyncio.to_thread(extract_ign, message.content)
+                    if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.5:
+                        mc_name = ign_result["ign"]
+
+            await self._process_detected_application(message, detected_type, mc_name, thread_id)
+            return
+
+        # --- Regular applicant path ---
         detection = await asyncio.to_thread(detect_application, message.content)
 
         if detection.get("error"):
@@ -93,41 +130,42 @@ class OnMessage(commands.Cog):
 
         detected_type = detection["app_type"]  # "guild_member" or "community_member"
 
-        # --- Application detected! ---
-
         # Extract IGN from the application text
-        mc_name = ""
-        # First try regex for wynncraft stats link (captures UUID or username)
-        stats_match = re.search(
-            r"wynncraft\.com/stats/player[/\s]*"
-            r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[\w]+)",
-            message.content
-        )
-        if stats_match:
-            captured = stats_match.group(1)
-            # Check if it's a full UUID (with hyphens) — resolve to username
-            if re.fullmatch(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', captured):
-                resolved = await asyncio.to_thread(getNameFromUUID, captured)
-                if resolved:
-                    mc_name = resolved[0]  # username
-            else:
-                mc_name = captured  # Already a username in the link
+        mc_name = self._extract_ign_from_text(message.content)
         if not mc_name:
-            # Fall back to AI extraction
             ign_result = await asyncio.to_thread(extract_ign, message.content)
             if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.7:
                 mc_name = ign_result["ign"]
 
+        await self._process_detected_application(message, detected_type, mc_name, thread_id)
+
+    async def _extract_ign_from_text(self, text) -> str:
+        """Try to extract an IGN from a wynncraft stats link in the text."""
+        stats_match = re.search(
+            r"wynncraft\.com/stats/player[/\s]*"
+            r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[\w]+)",
+            text
+        )
+        if stats_match:
+            captured = stats_match.group(1)
+            if re.fullmatch(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', captured):
+                resolved = await asyncio.to_thread(getNameFromUUID, captured)
+                if resolved:
+                    return resolved[0]
+            else:
+                return captured
+        return ""
+
+    async def _process_detected_application(self, message, detected_type, mc_name, thread_id):
+        """Shared processing after an application is detected (regular or ex-member rejoin)."""
         # Generate player stats image
         pdata = None
-        player_uuid = ""
         blacklist_warning = ""
         if mc_name:
             pdata = await asyncio.to_thread(BasicPlayerStats, mc_name)
             if pdata.error:
                 pdata = None
             else:
-                player_uuid = pdata.UUID
                 # Blacklist check
                 try:
                     with open('blacklist.json', 'r') as f:
