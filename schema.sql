@@ -12,15 +12,21 @@ CREATE TABLE IF NOT EXISTS discord_links (
 );
 
 CREATE TABLE IF NOT EXISTS new_app (
-  id         SERIAL       PRIMARY KEY,
-  channel    BIGINT       NOT NULL UNIQUE,
-  ticket     VARCHAR(100) NOT NULL,
-  webhook    TEXT         NOT NULL,
-  posted     BOOLEAN      NOT NULL DEFAULT FALSE,
-  reminder   BOOLEAN      NOT NULL DEFAULT FALSE,
-  status     TEXT         NOT NULL DEFAULT ':green_circle: Opened',
-  created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-  thread_id  BIGINT
+  id                   SERIAL       PRIMARY KEY,
+  channel              BIGINT       NOT NULL UNIQUE,
+  ticket               VARCHAR(100) NOT NULL,
+  webhook              TEXT         NOT NULL,
+  posted               BOOLEAN      NOT NULL DEFAULT FALSE,
+  reminder             BOOLEAN      NOT NULL DEFAULT FALSE,
+  status               TEXT         NOT NULL DEFAULT ':green_circle: Opened',
+  created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  thread_id            BIGINT,
+  applicant_discord_id BIGINT,
+  app_type             VARCHAR(20),
+  decision             VARCHAR(20),
+  decision_at          TIMESTAMPTZ,
+  ign                  VARCHAR(64),
+  poll_message_id      BIGINT
 );
 
 -- =============================================================================
@@ -151,6 +157,35 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_player_activity_date
   ON player_activity(snapshot_date DESC);
+
+-- Migration: Add application overhaul columns
+DO $$
+BEGIN
+  -- new_app columns
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'applicant_discord_id') THEN
+    ALTER TABLE new_app ADD COLUMN applicant_discord_id BIGINT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'app_type') THEN
+    ALTER TABLE new_app ADD COLUMN app_type VARCHAR(20);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'decision') THEN
+    ALTER TABLE new_app ADD COLUMN decision VARCHAR(20);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'decision_at') THEN
+    ALTER TABLE new_app ADD COLUMN decision_at TIMESTAMPTZ;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'ign') THEN
+    ALTER TABLE new_app ADD COLUMN ign VARCHAR(64);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'poll_message_id') THEN
+    ALTER TABLE new_app ADD COLUMN poll_message_id BIGINT;
+  END IF;
+
+  -- discord_links column
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'discord_links' AND column_name = 'app_channel') THEN
+    ALTER TABLE discord_links ADD COLUMN app_channel BIGINT;
+  END IF;
+END $$;
 
 -- =============================================================================
 -- Guild Bank Transactions

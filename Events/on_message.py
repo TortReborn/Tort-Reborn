@@ -1,8 +1,6 @@
 import asyncio
 import json
 import re
-import time
-from datetime import datetime
 from io import BytesIO
 
 import discord
@@ -10,7 +8,10 @@ from discord.ext import commands
 
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
-from Helpers.functions import generate_applicant_info
+from Helpers.functions import generate_applicant_info, getNameFromUUID
+from Helpers.embed_updater import update_poll_embed
+from Helpers.openai_helper import detect_application, extract_ign
+from Helpers.variables import application_manager_role_id
 
 
 class OnMessage(commands.Cog):
@@ -22,86 +23,8 @@ class OnMessage(commands.Cog):
         if message.author == self.client.user:
             return
 
-        if message.author.bot and message.author.discriminator != '0000':
-            return
-
-        if message.channel.name.startswith('ticket-') and message.channel.category.name == 'Guild Applications':
-            if not message.author.bot:
-                role = discord.utils.find(lambda r: r.name == 'Member', message.guild.roles)
-                if role in message.author.roles:
-                    return
-            db = DB()
-            db.connect()
-            db.cursor.execute(f'SELECT * FROM new_app WHERE channel = \'{message.channel.id}\'')
-            result = db.cursor.fetchone()
-            if result:
-                if result[1] == 0:
-                    if message.guild.id != 729147655875199017:
-                        # Updated 4/30/2025
-                        ch = self.client.get_channel(1367283441850122330)  # test
-                    else:
-                        ch = self.client.get_channel(889162191150931978)
-
-                    embed_title = f'Application {message.channel.name.replace("ticket-", "")}'
-                    embed_description = ''
-                    mc_name = ''
-                    # check if application is sent by bot
-                    if message.author.bot:
-                        if message.embeds[0].title == ':no_entry: Oops! Something did not go as intended.':
-                            return
-                        for field in message.embeds[0].fields:
-                            if field.name == 'Minecraft Username':
-                                mc_name = field.value
-                                break
-                    # else search for stats link in message content
-                    else:
-                        stats_link = re.findall("wynncraft\\.com\\/stats\\/player.*", message.content)
-                        if stats_link:
-                            mc_name = stats_link[0].split('/')[-1]
-
-                    pdata = BasicPlayerStats(mc_name)
-
-                    if not pdata.error:
-                        img = generate_applicant_info(pdata)
-
-                        embed_title = f'Application {message.channel.name.replace("ticket-", "")} ({pdata.username})'
-
-                        # blacklist check
-                        with open('blacklist.json', 'r') as f:
-                            blacklist = json.load(f)
-                            f.close()
-
-                        for player in blacklist:
-                            if pdata.UUID == player['UUID']:
-                                embed_description = f':no_entry: Player present on blacklist!\n**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
-
-                    embed = discord.Embed(title=embed_title, description=embed_description, colour=0x3ed63e)
-                    embed.add_field(name='Channel', value=f':link: <#{message.channel.id}>')
-                    embed.add_field(name='Status', value=':green_circle: Opened')
-
-                    if not pdata.error:
-                        with BytesIO() as file:
-                            img.save(file, format="PNG")
-                            file.seek(0)
-                            t = int(time.time())
-                            player_info = discord.File(file, filename=f"{message.channel.name.replace('ticket-', '')}-{pdata.UUID}.png")
-                            embed.set_image(url=f"attachment://{message.channel.name.replace('ticket-', '')}-{pdata.UUID}.png")
-                        msg = await ch.send(f'<@&870767928704921651>', embed=embed, file=player_info)
-                        player_uuid = pdata.UUID
-                    else:
-                        player_uuid = ''
-                        msg = await ch.send(f'<@&870767928704921651>', embed=embed)
-                    thread = await msg.create_thread(name=message.channel.name.replace('ticket-', ''),
-                                                     auto_archive_duration=1440)
-                    await msg.add_reaction('👍')
-                    await msg.add_reaction('🤷')
-                    await msg.add_reaction('👎')
-
-                    db.cursor.execute(
-                        f'UPDATE new_app SET created=\'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\', posted = True, notif_msg_id = \'{msg.id}\', thread_id = \'{thread.id}\', uuid = \'{player_uuid}\' WHERE channel = \'{message.channel.id}\'')
-                    db.connection.commit()
-            db.close()
-        elif message.channel.id == 729163031321509938:
+        # --- Special channel format enforcement (kick appeals) ---
+        if message.channel.id == 729163031321509938:
             if 'how long' in message.content.lower() and 'why' in message.content.lower() and 'kick' in message.content.lower():
                 pass
             else:
@@ -109,6 +32,239 @@ class OnMessage(commands.Cog):
                 reply = await message.channel.send(':no_entry: Please use the format in pinned messages.')
                 await asyncio.sleep(5)
                 await reply.delete()
+            return
+
+        # --- Application ticket detection ---
+        if not (
+            message.channel.category
+            and message.channel.category.name == 'Guild Applications'
+            and message.channel.name.startswith('ticket-')
+        ):
+            return
+
+        # Skip all bot messages
+        if message.author.bot:
+            return
+
+        # Look up the application record
+        db = DB()
+        db.connect()
+        db.cursor.execute(
+            "SELECT applicant_discord_id, app_type, thread_id FROM new_app WHERE channel = %s",
+            (message.channel.id,)
+        )
+        row = db.cursor.fetchone()
+        db.close()
+
+        if not row:
+            return
+
+        stored_discord_id, app_type, thread_id = row
+
+        # If we don't have the applicant_discord_id yet, try to parse from Ticket Tool message
+        if stored_discord_id is None:
+            stored_discord_id = await self._find_ticket_opener(message.channel)
+            if stored_discord_id:
+                db = DB(); db.connect()
+                db.cursor.execute(
+                    "UPDATE new_app SET applicant_discord_id = %s WHERE channel = %s",
+                    (stored_discord_id, message.channel.id)
+                )
+                db.connection.commit()
+                db.close()
+
+        # Only process messages from the ticket opener
+        if message.author.id != stored_discord_id:
+            return
+
+        # If we already detected an application type, don't re-process
+        if app_type is not None:
+            return
+
+        # Use AI to detect if this is an application
+        detection = await asyncio.to_thread(detect_application, message.content)
+
+        if detection.get("error"):
+            print(f"[on_message] AI detection error for {message.channel.name}: {detection['error']}")
+            return
+
+        if not detection["is_application"] or detection["confidence"] < 0.7:
+            return
+
+        detected_type = detection["app_type"]  # "guild_member" or "community_member"
+
+        # --- Application detected! ---
+
+        # Extract IGN from the application text
+        mc_name = ""
+        # First try regex for wynncraft stats link (captures UUID or username)
+        stats_match = re.search(
+            r"wynncraft\.com/stats/player[/\s]*"
+            r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[\w]+)",
+            message.content
+        )
+        if stats_match:
+            captured = stats_match.group(1)
+            # Check if it's a full UUID (with hyphens) — resolve to username
+            if re.fullmatch(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', captured):
+                resolved = await asyncio.to_thread(getNameFromUUID, captured)
+                if resolved:
+                    mc_name = resolved[0]  # username
+            else:
+                mc_name = captured  # Already a username in the link
+        if not mc_name:
+            # Fall back to AI extraction
+            ign_result = await asyncio.to_thread(extract_ign, message.content)
+            if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.7:
+                mc_name = ign_result["ign"]
+
+        # Generate player stats image
+        pdata = None
+        player_uuid = ""
+        blacklist_warning = ""
+        if mc_name:
+            pdata = await asyncio.to_thread(BasicPlayerStats, mc_name)
+            if pdata.error:
+                pdata = None
+            else:
+                player_uuid = pdata.UUID
+                # Blacklist check
+                try:
+                    with open('blacklist.json', 'r') as f:
+                        blacklist = json.load(f)
+                    for player in blacklist:
+                        if pdata.UUID == player['UUID']:
+                            blacklist_warning = (
+                                f':no_entry: Player present on blacklist!\n'
+                                f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
+                            )
+                except FileNotFoundError:
+                    pass
+
+        # Update DB with the detected type and IGN
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "UPDATE new_app SET app_type = %s, ign = %s WHERE channel = %s",
+            (detected_type, mc_name or None, message.channel.id)
+        )
+        db.connection.commit()
+        db.close()
+
+        # Update poll embed to "Received" and rename channel
+        await update_poll_embed(self.client, message.channel.id, ":green_circle: Received", 0x3ED63E)
+        num_match = re.search(r'(\d+)', message.channel.name)
+        ticket_num = num_match.group(1) if num_match else message.channel.name.split("-", 1)[-1]
+        try:
+            await message.channel.edit(name=f"received-{ticket_num}")
+        except Exception:
+            pass
+
+        # Re-fetch thread_id (may have been stored by on_guild_channel_create after our initial query)
+        if not thread_id:
+            db = DB(); db.connect()
+            db.cursor.execute(
+                "SELECT thread_id FROM new_app WHERE channel = %s",
+                (message.channel.id,)
+            )
+            row = db.cursor.fetchone()
+            db.close()
+            if row:
+                thread_id = row[0]
+
+        # Post to the exec thread
+        if thread_id:
+            thread = self.client.get_channel(thread_id)
+            if thread is None:
+                try:
+                    thread = await self.client.fetch_channel(thread_id)
+                except Exception:
+                    thread = None
+
+            if thread:
+                if getattr(thread, "archived", False):
+                    await thread.edit(archived=False)
+
+                type_label = "Guild Member" if detected_type == "guild_member" else "Community Member"
+                ticket_num = message.channel.name.replace("ticket-", "")
+
+                # Build the stats embed
+                embed_title = f"Application {ticket_num}"
+                if pdata:
+                    embed_title += f" ({pdata.username})"
+
+                embed = discord.Embed(
+                    title=embed_title,
+                    description=blacklist_warning,
+                    colour=0x3ed63e,
+                )
+                embed.add_field(name="Channel", value=f":link: <#{message.channel.id}>", inline=True)
+                embed.add_field(name="Type", value=type_label, inline=True)
+
+                # Send with stats image if available
+                if pdata:
+                    img = generate_applicant_info(pdata)
+                    with BytesIO() as file:
+                        img.save(file, format="PNG")
+                        file.seek(0)
+                        player_info = discord.File(
+                            file,
+                            filename=f"{ticket_num}-{pdata.UUID}.png"
+                        )
+                        embed.set_image(url=f"attachment://{ticket_num}-{pdata.UUID}.png")
+                        await thread.send(
+                            f"{application_manager_role_id} **New {type_label} application received!**",
+                            embed=embed,
+                            file=player_info,
+                        )
+                else:
+                    await thread.send(
+                        f"{application_manager_role_id} **New {type_label} application received!**",
+                        embed=embed,
+                    )
+
+                # Copy the application message text into the thread
+                app_content = message.content[:1900]
+                await thread.send(
+                    f"**Application from {message.author.mention}:**\n>>> {app_content}"
+                )
+
+        # Send thank-you message in the ticket channel
+        await message.channel.send(
+            f"Hi {message.author.mention},\n\n"
+            f"Thank you for your interest in joining The Aquarium! \U0001F420\n"
+            f"Your application has been received and is greatly appreciated.\n\n"
+            f"We'll be carefully reviewing it and aim to get back to you within 12 hours.\n\n"
+            f"Best regards,\n"
+            f"The Aquarium Applications Team"
+        )
+
+    async def _find_ticket_opener(self, channel) -> int | None:
+        """Parse the Ticket Tool welcome message to find the ticket opener's Discord ID.
+
+        Ticket Tool sends: "Hello @username, welcome to The Aquarium!"
+        The mentioned user is the ticket opener.
+        """
+        async for msg in channel.history(limit=10, oldest_first=True):
+            # Check for Ticket Tool bot messages with mentions
+            if msg.author.bot and msg.mentions:
+                if "welcome to" in msg.content.lower():
+                    for mentioned in msg.mentions:
+                        if not mentioned.bot:
+                            return mentioned.id
+            # Also check embeds (some Ticket Tool configs use embeds)
+            if msg.author.bot and msg.embeds:
+                for embed in msg.embeds:
+                    desc = embed.description or ""
+                    if "welcome" in desc.lower():
+                        match = re.search(r'<@!?(\d+)>', desc)
+                        if match:
+                            return int(match.group(1))
+
+        # Fallback: use channel permission overwrites
+        for target in channel.overwrites:
+            if isinstance(target, discord.Member) and not target.bot:
+                return target.id
+        return None
 
     @commands.Cog.listener()
     async def on_ready(self):

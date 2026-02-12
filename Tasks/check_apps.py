@@ -12,6 +12,7 @@ class CheckApps(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def check_apps(self):
+        # --- 8-hour reminder for open applications ---
         db = DB()
         db.connect()
         db.cursor.execute(
@@ -25,9 +26,6 @@ class CheckApps(commands.Cog):
         )
         rows = db.cursor.fetchall()
         db.close()
-
-        if not rows:
-            return
 
         now_utc = datetime.datetime.now(datetime.timezone.utc)
 
