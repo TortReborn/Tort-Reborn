@@ -79,14 +79,18 @@ async def on_ready():
         crash_report = json.load(open('last_online.json', 'r'))
         downtime = now - crash_report['timestamp']
 
-        embed = Embed(
-            title=f'🟢 {client.user} is back online!',
-            description=(
-                f'🕙 **Downtime**\n'
-                f'`{datetime.timedelta(seconds=downtime)}`\n\n'
+        desc = f'🕙 **Downtime**\n`{datetime.timedelta(seconds=downtime)}`\n\n'
+        if crash_report.get("type") not in ("Online",):
+            desc += (
                 f'ℹ️ **Shutdown reason**\n'
                 f'```\n{crash_report["type"]}\n{crash_report["value"]}```'
-            ),
+            )
+        else:
+            desc += 'ℹ️ Graceful shutdown or connection loss'
+
+        embed = Embed(
+            title=f'🟢 {client.user} is back online!',
+            description=desc,
             colour=0x1cd641
         )
         ch = client.get_channel(1367285315236008036)
@@ -94,15 +98,15 @@ async def on_ready():
 
 
 @client.event
-async def on_disconnect():
-    crash = {
-        "type": "Disconnected",
-        "value": "Bot disconnected from Discord",
-        "tb": "Bot disconnected from Discord",
+async def on_connect():
+    last_online = {
+        "type": "Online",
+        "value": "Bot was last connected",
+        "tb": "",
         "timestamp": int(time.time())
     }
     with open('last_online.json', 'w') as f:
-        json.dump(crash, f)
+        json.dump(last_online, f)
 
 
 if not test or test:
