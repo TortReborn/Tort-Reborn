@@ -13,6 +13,7 @@ from Helpers.openai_helper import extract_ign, parse_application
 from Helpers.sheets import add_row
 from Helpers.variables import (
     guilds,
+    te,
     member_app_channel,
     application_manager_role_id,
     invited_category_name,
@@ -82,7 +83,7 @@ class ApplicationCommands(commands.Cog):
     @discord.slash_command(
         name="accept",
         description="Accept this ticket's application",
-        guild_ids=guilds,
+        guild_ids=guilds + [te],
         default_member_permissions=discord.Permissions(manage_channels=True),
     )
     async def accept(self, ctx: ApplicationContext):
@@ -316,7 +317,7 @@ class ApplicationCommands(commands.Cog):
     @discord.slash_command(
         name="deny",
         description="Deny this ticket's application",
-        guild_ids=guilds,
+        guild_ids=guilds + [te],
         default_member_permissions=discord.Permissions(manage_channels=True),
     )
     async def deny(self, ctx: ApplicationContext):
