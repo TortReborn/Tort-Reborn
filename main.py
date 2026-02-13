@@ -178,6 +178,7 @@ extensions = [
     'Commands.recruitment',
     'Commands.top_wars',
     'Commands.agenda',
+    'Commands.wave_promote',
 
     # Dev Commands
     'Commands.render_text',
