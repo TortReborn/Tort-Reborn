@@ -277,7 +277,7 @@ class OnMessage(commands.Cog):
 
         # Send thank-you message in the ticket channel
         await message.channel.send(
-            f"Hi {message.author.mention},\n\n"
+            f"Hi {message.author.display_name},\n\n"
             f"Thank you for your interest in joining The Aquarium! \U0001F420\n"
             f"Your application has been received and is greatly appreciated.\n\n"
             f"We'll be carefully reviewing it and aim to get back to you within 12 hours.\n\n"
