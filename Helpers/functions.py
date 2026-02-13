@@ -224,6 +224,21 @@ def getPlayerUUID(player):
             return False
 
 
+def determine_starting_rank(member):
+    """Determine the starting rank for a new member based on their existing Discord roles.
+
+    - Retired Chief -> 'Piranha' (highest priority)
+    - Honored Fish -> 'Manatee'
+    - Otherwise -> 'Starfish' (default)
+    """
+    role_names = {r.name for r in member.roles}
+    if 'Retired Chief' in role_names:
+        return 'Piranha'
+    if 'Honored Fish' in role_names:
+        return 'Manatee'
+    return 'Starfish'
+
+
 def getNameFromUUID(uuid):
     try:
         req = requests.get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}")

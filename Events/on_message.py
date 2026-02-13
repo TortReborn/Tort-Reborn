@@ -82,6 +82,9 @@ class OnMessage(commands.Cog):
             return
 
         # --- Ex-member check: looser rejoin detection ---
+        is_ex_member = False
+        mc_name = ""
+
         db = DB(); db.connect()
         db.cursor.execute(
             "SELECT uuid FROM discord_links WHERE discord_id = %s",
@@ -91,12 +94,19 @@ class OnMessage(commands.Cog):
         db.close()
 
         if link_row and link_row[0]:
+            # Known ex-member via discord_links - resolve IGN from UUID
+            is_ex_member = True
             ex_member_uuid = str(link_row[0])
-
-            # Resolve current IGN from stored UUID
             resolved = await asyncio.to_thread(getNameFromUUID, ex_member_uuid)
             mc_name = resolved[0] if resolved else ""
+        else:
+            # Fallback: check Discord roles for ex-member indicators
+            ex_member_role_names = {'Ex-Member', 'Honored Fish', 'Retired Chief'}
+            member_role_names = {r.name for r in message.author.roles}
+            if ex_member_role_names & member_role_names:
+                is_ex_member = True
 
+        if is_ex_member:
             # Lenient rejoin intent detection
             detection = await asyncio.to_thread(detect_rejoin_intent, message.content)
             if detection.get("error"):
@@ -107,7 +117,7 @@ class OnMessage(commands.Cog):
 
             detected_type = detection["app_type"]
 
-            # IGN fallback if UUID resolution failed
+            # IGN fallback if UUID resolution failed or no UUID available
             if not mc_name:
                 mc_name = await self._extract_ign_from_text(message.content)
                 if not mc_name:
