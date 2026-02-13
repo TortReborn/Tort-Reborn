@@ -22,7 +22,7 @@ else:
 
 from Helpers.classes import Guild, DB, BasicPlayerStats
 from Helpers.embed_updater import update_poll_embed
-from Helpers.functions import getPlayerDatav3, getNameFromUUID
+from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank
 from Helpers.variables import (
     raid_log_channel,
     log_channel,
@@ -33,6 +33,7 @@ from Helpers.variables import (
     aspect_emoji_id,
     guilds,
     welcome_channel,
+    discord_ranks,
 )
 
 RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
@@ -602,15 +603,19 @@ class UpdateMemberData(commands.Cog):
         if not pdata.error:
             wars_on_join = pdata.wars
 
+        # Determine starting rank based on existing Discord roles
+        starting_rank = determine_starting_rank(member)
+        rank_roles = discord_ranks[starting_rank]['roles']
+
         # Assign roles (mirrors NewMember modal from Helpers/classes.py)
         to_add = [
-            'Member', 'The Aquarium [TAq]', '\u2606Reef', 'Starfish',
+            'Member', 'The Aquarium [TAq]', *rank_roles,
             '\U0001F947 RANKS\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
             '\U0001F6E0\uFE0F PROFESSIONS\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
             '\u2728 COSMETIC ROLES\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
             'CONTRIBUTION ROLES\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800',
         ]
-        to_remove = ['Land Crab', 'Honored Fish', 'Ex-Member']
+        to_remove = ['Land Crab', 'Honored Fish', 'Retired Chief', 'Ex-Member']
 
         all_roles = discord_guild.roles
         roles_to_add = [discord.utils.get(all_roles, name=r) for r in to_add]
@@ -623,7 +628,7 @@ class UpdateMemberData(commands.Cog):
                 await member.add_roles(*roles_to_add, reason="Auto-registration from accepted application")
             if roles_to_remove:
                 await member.remove_roles(*roles_to_remove, reason="Auto-registration from accepted application")
-            await member.edit(nick=f"Starfish {ign}")
+            await member.edit(nick=f"{starting_rank} {ign}")
         except discord.Forbidden:
             print(f"[auto_register] Missing permissions to modify roles/nick for {member.name}")
             return
@@ -632,21 +637,21 @@ class UpdateMemberData(commands.Cog):
             return
 
         # Update discord_links: mark as linked, set rank
-        def _complete_registration(did, ign_val, uuid_str, wars):
+        def _complete_registration(did, ign_val, uuid_str, wars, rank):
             db = DB()
             try:
                 db.connect()
                 db.cursor.execute(
                     """UPDATE discord_links
-                       SET linked = TRUE, rank = 'Starfish', ign = %s, wars_on_join = %s
+                       SET linked = TRUE, rank = %s, ign = %s, wars_on_join = %s
                        WHERE discord_id = %s""",
-                    (ign_val, wars, did)
+                    (rank, ign_val, wars, did)
                 )
                 db.connection.commit()
             finally:
                 db.close()
 
-        await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, wars_on_join)
+        await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, wars_on_join, starting_rank)
 
         # Update poll embed
         if app_channel_id:

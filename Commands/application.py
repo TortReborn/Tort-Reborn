@@ -467,11 +467,21 @@ class ApplicationCommands(commands.Cog):
             db.close()
 
             if link_row and link_row[0]:
+                # Known ex-member via discord_links - resolve IGN from UUID
                 is_ex_member = True
                 ex_member_uuid = str(link_row[0])
                 resolved = await asyncio.to_thread(getNameFromUUID, ex_member_uuid)
                 mc_name = resolved[0] if resolved else ""
+            else:
+                # Fallback: check Discord roles for ex-member indicators
+                applicant_member = await self._resolve_member(ctx.channel, stored_discord_id)
+                if applicant_member:
+                    ex_member_role_names = {'Ex-Member', 'Honored Fish', 'Retired Chief'}
+                    member_role_names = {r.name for r in applicant_member.roles}
+                    if ex_member_role_names & member_role_names:
+                        is_ex_member = True
 
+            if is_ex_member:
                 detection = await asyncio.to_thread(detect_rejoin_intent, target_message.content)
                 if detection.get("error"):
                     await ctx.followup.send(

@@ -5,8 +5,8 @@ from discord import default_permissions
 
 from Helpers.classes import LinkAccount, PlayerStats, BasicPlayerStats
 from Helpers.database import DB
-from Helpers.functions import getPlayerUUID
-from Helpers.variables import guilds
+from Helpers.functions import getPlayerUUID, determine_starting_rank
+from Helpers.variables import guilds, discord_ranks
 
 
 class NewMember(commands.Cog):
@@ -30,8 +30,11 @@ class NewMember(commands.Cog):
                 await message.respond(embed=embed, ephemeral=True)
                 return
 
-            to_remove = ['Land Crab', 'Honored Fish', 'Ex-Member']
-            to_add = ['Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+            starting_rank = determine_starting_rank(user)
+            rank_roles = discord_ranks[starting_rank]['roles']
+
+            to_remove = ['Land Crab', 'Honored Fish', 'Retired Chief', 'Ex-Member']
+            to_add = ['Member', 'The Aquarium [TAq]', *rank_roles, '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
                       '🛠️ PROFESSIONS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
                       'CONTRIBUTION ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
             roles_to_add = []
@@ -76,14 +79,16 @@ class NewMember(commands.Cog):
 
             if len(rows) != 0:
                 db.cursor.execute(
-                    f'UPDATE discord_links SET rank = \'Starfish\', ign = \'{ign}\', wars_on_join = {pdata.wars}, uuid= \'{pdata.UUID}\' WHERE discord_id = \'{user.id}\'')
+                    'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s WHERE discord_id = %s',
+                    (starting_rank, ign, pdata.wars, pdata.UUID, user.id))
                 db.connection.commit()
             else:
                 db.cursor.execute(
-                    f'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join) VALUES ({user.id}, \'{pdata.username}\',\'{pdata.UUID}\' , False, \'Starfish\', {pdata.wars});')
+                    'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join) VALUES (%s, %s, %s, False, %s, %s)',
+                    (user.id, pdata.username, pdata.UUID, starting_rank, pdata.wars))
                 db.connection.commit()
             db.close()
-            await user.edit(nick="Starfish " + ign)
+            await user.edit(nick=f"{starting_rank} {ign}")
             embed = discord.Embed(title=':white_check_mark: New member registered', description=f'<@{user.id}> was linked to `{pdata.username}`', color=0x3ed63e)
             await message.respond(embed=embed)
         else:

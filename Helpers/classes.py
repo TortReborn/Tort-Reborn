@@ -9,10 +9,10 @@ import discord
 from discord.ui import InputText, Modal
 
 from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline
-from Helpers.functions import getPlayerUUID, getPlayerDatav3, urlify
+from Helpers.functions import getPlayerUUID, getPlayerDatav3, urlify, determine_starting_rank
 from discord.ext.pages import Page as _Page
 
-from Helpers.variables import wynn_ranks, welcome_channel
+from Helpers.variables import wynn_ranks, welcome_channel, discord_ranks
 
 WELCOME_CHANNEL = welcome_channel
 
@@ -428,10 +428,7 @@ class NewMember(Modal):
     def __init__(self, user, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.user = user
-        self.to_remove = ['Land Crab', 'Honored Fish', 'Ex-Member']
-        self.to_add = ['Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
-                       '🛠️ PROFESSIONS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', 
-                       'CONTRIBUTION ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
+        self.to_remove = ['Land Crab', 'Honored Fish', 'Retired Chief', 'Ex-Member']
         self.roles_to_add = []
         self.roles_to_remove = []
         self.add_item(InputText(label="Player's Name", placeholder="Player's In-Game Name without rank"))
@@ -452,8 +449,11 @@ class NewMember(Modal):
             await msg.edit(embed=embed)
             return
 
-        to_remove = ['Land Crab', 'Honored Fish', 'Ex-Member']
-        to_add = ['Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+        starting_rank = determine_starting_rank(self.user)
+        rank_roles = discord_ranks[starting_rank]['roles']
+
+        to_remove = ['Land Crab', 'Honored Fish', 'Retired Chief', 'Ex-Member']
+        to_add = ['Member', 'The Aquarium [TAq]', *rank_roles, '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
                   '🛠️ PROFESSIONS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
         roles_to_add = []
         roles_to_remove = []
@@ -476,17 +476,17 @@ class NewMember(Modal):
         if len(rows) != 0:
             db.cursor.execute(
                 'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s WHERE discord_id = %s',
-                ('Starfish', self.children[0].value, pdata.wars, pdata.UUID, self.user.id)
+                (starting_rank, self.children[0].value, pdata.wars, pdata.UUID, self.user.id)
             )
             db.connection.commit()
         else:
             db.cursor.execute(
                 'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join) VALUES (%s, %s, %s, %s, %s, %s)',
-                (self.user.id, pdata.username, pdata.UUID, False, 'Starfish', pdata.wars)
+                (self.user.id, pdata.username, pdata.UUID, False, starting_rank, pdata.wars)
             )
             db.connection.commit()
         db.close()
-        await self.user.edit(nick="Starfish " + self.children[0].value)
+        await self.user.edit(nick=f"{starting_rank} {self.children[0].value}")
         embed = discord.Embed(title=':white_check_mark: New member registered',
                               description=f'<@{self.user.id}> was linked to `{pdata.username}`', color=0x3ed63e)
         await msg.edit('', embed=embed)
