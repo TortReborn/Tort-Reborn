@@ -460,18 +460,22 @@ class NewMember(Modal):
         all_roles = interaction.guild.roles
         for add_role in to_add:
             role = discord.utils.find(lambda r: r.name == add_role, all_roles)
-            roles_to_add.append(role)
+            if role is not None:
+                roles_to_add.append(role)
 
-        await self.user.add_roles(*roles_to_add, reason=f"New member registration (ran by {interaction.user.name})",
-                                  atomic=True)
+        if roles_to_add:
+            await self.user.add_roles(*roles_to_add, reason=f"New member registration (ran by {interaction.user.name})",
+                                      atomic=True)
 
         for remove_role in to_remove:
             role = discord.utils.find(lambda r: r.name == remove_role, all_roles)
-            roles_to_remove.append(role)
+            if role is not None:
+                roles_to_remove.append(role)
 
-        await self.user.remove_roles(*roles_to_remove,
-                                     reason=f"New member registration (ran by {interaction.user.name})",
-                                     atomic=True)
+        if roles_to_remove:
+            await self.user.remove_roles(*roles_to_remove,
+                                         reason=f"New member registration (ran by {interaction.user.name})",
+                                         atomic=True)
 
         if len(rows) != 0:
             db.cursor.execute(

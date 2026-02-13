@@ -278,7 +278,7 @@ class UpdateMemberData(commands.Cog):
         else:
             participants = self.raid_participants[raid]["validated"]
             names = [participants[uid]["name"] for uid in group]
-        bolded = [f"**{n}**" for n in names]
+        bolded = [f"**{discord.utils.escape_markdown(n)}**" for n in names]
         names_str = ", ".join(bolded[:-1]) + ", and " + bolded[-1] if len(bolded) > 1 else bolded[0]
         if raid:
             emoji = RAID_EMOJIS.get(raid, "")
@@ -349,10 +349,11 @@ class UpdateMemberData(commands.Cog):
             def add_chunked(embed, title, items):
                 chunk = ''
                 for ign in items:
-                    piece = f"**{ign}**" if not chunk else f", **{ign}**"
+                    safe = discord.utils.escape_markdown(ign)
+                    piece = f"**{safe}**" if not chunk else f", **{safe}**"
                     if len(chunk)+len(piece)>1024:
                         embed.add_field(name=title, value=chunk, inline=False)
-                        chunk=f"**{ign}**"; title+=' cont.'
+                        chunk=f"**{safe}**"; title+=' cont.'
                     else:
                         chunk+=piece
                 if chunk: embed.add_field(name=title, value=chunk, inline=False)
@@ -380,7 +381,7 @@ class UpdateMemberData(commands.Cog):
             ch = self.client.get_channel(LOG_CHANNEL)
             er = discord.Embed(title='Guild Rank Changes', timestamp=now, color=0x0000FF)
             for _,name,old,new in role_changes:
-                er.add_field(name=name,value=f"{old} → {new}",inline=False)
+                er.add_field(name=discord.utils.escape_markdown(name),value=f"{old} → {new}",inline=False)
             await ch.send(embed=er)
 
         # 5: Update presence
@@ -646,6 +647,12 @@ class UpdateMemberData(commands.Cog):
                        SET linked = TRUE, rank = %s, ign = %s, wars_on_join = %s
                        WHERE discord_id = %s""",
                     (rank, ign_val, wars, did)
+                )
+                # Clear guild_leave_pending if this user had a pending-leave application
+                db.cursor.execute(
+                    """UPDATE new_app SET guild_leave_pending = FALSE
+                       WHERE applicant_discord_id = %s AND guild_leave_pending = TRUE""",
+                    (did,)
                 )
                 db.connection.commit()
             finally:
