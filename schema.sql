@@ -185,6 +185,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'discord_links' AND column_name = 'app_channel') THEN
     ALTER TABLE discord_links ADD COLUMN app_channel BIGINT;
   END IF;
+
+  -- guild leave tracking for accepted applicants currently in another guild
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'guild_leave_pending') THEN
+    ALTER TABLE new_app ADD COLUMN guild_leave_pending BOOLEAN DEFAULT FALSE;
+  END IF;
 END $$;
 
 -- =============================================================================

@@ -19,7 +19,7 @@ class NewMember(commands.Cog):
         if message.interaction.user.guild_permissions.manage_roles:
             db = DB()
             db.connect()
-            db.cursor.execute(f'SELECT * FROM discord_links WHERE discord_id = \'{user.id}\'')
+            db.cursor.execute('SELECT * FROM discord_links WHERE discord_id = %s', (user.id,))
             rows = db.cursor.fetchall()
             await message.defer(ephemeral=True)
             pdata = BasicPlayerStats(ign)

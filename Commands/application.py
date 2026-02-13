@@ -11,7 +11,7 @@ from discord.ext import commands
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.embed_updater import update_poll_embed
-from Helpers.functions import generate_applicant_info, getPlayerUUID, getNameFromUUID
+from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3, getNameFromUUID
 from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign, parse_application
 from Helpers.sheets import add_row
 from Helpers.variables import (
@@ -29,11 +29,13 @@ class ApplicationCommands(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    async def _lookup_app(self, ctx) -> tuple | None:
+    async def _lookup_app(self, ctx, allow_decided=False) -> tuple | None:
         """Look up an application record from a ticket channel or exec thread.
 
         Returns (ticket_channel, row) or None if not found / already decided.
         row = (applicant_discord_id, thread_id, app_type, decision, ign, channel_id)
+
+        If allow_decided=True, skip the "already decided" check (used by /invite).
         """
         source = ctx.channel
 
@@ -63,7 +65,7 @@ class ApplicationCommands(commands.Cog):
 
         applicant_discord_id, thread_id, app_type, existing_decision, stored_ign, ticket_channel_id = row
 
-        if existing_decision is not None:
+        if not allow_decided and existing_decision is not None:
             await ctx.followup.send(
                 f"This application has already been **{existing_decision}**.",
                 ephemeral=True,
@@ -122,17 +124,8 @@ class ApplicationCommands(commands.Cog):
         mention = applicant.mention if applicant else "Applicant"
         partytort = discord.utils.get(channel.guild.emojis, name="partytort")
         party_emoji = str(partytort) if partytort else "\U0001F389"
-        await channel.send(
-            f"Hey {mention},\n\n"
-            f"Congratulations, your application to join **The Aquarium** has been "
-            f"**accepted**! {party_emoji}\n\n"
-            f"To join, just type `/gu join TAq` next time you're online. "
-            f"Once you join the guild in-game, you will be given your Discord roles.\n\n"
-            f"Best Regards,\n"
-            f"The Aquarium Applications Team"
-        )
 
-        # Extract IGN: use stored IGN if available, otherwise extract from channel messages
+        # Extract IGN first (needed for guild membership check before sending message)
         ign = stored_ign or ""
         if not ign:
             application_text = await self._collect_application_text(channel, applicant)
@@ -142,6 +135,48 @@ class ApplicationCommands(commands.Cog):
         else:
             confidence = 1.0  # Already stored from AI detection
 
+        # Check if player is currently in a guild
+        uuid = None
+        in_guild = False
+        current_guild_name = None
+
+        if confidence >= 0.7 and ign:
+            uuid_data = await asyncio.to_thread(getPlayerUUID, ign)
+            uuid = uuid_data[1] if uuid_data else None
+
+            if uuid:
+                player_data = await asyncio.to_thread(getPlayerDatav3, uuid)
+                if isinstance(player_data, dict):
+                    guild_info = player_data.get("guild")
+                    if guild_info and isinstance(guild_info, dict):
+                        current_guild_name = guild_info.get("name")
+                        if current_guild_name:
+                            in_guild = True
+
+        # Send appropriate message based on guild status
+        if in_guild:
+            await channel.send(
+                f"Hey {mention},\n\n"
+                f"Congratulations, your application to join **The Aquarium** has been "
+                f"**accepted**! {party_emoji}\n\n"
+                f"However, you're currently in **{current_guild_name}**. "
+                f"Please leave your current guild so we can invite you. "
+                f"Let us know when you've left!\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
+        else:
+            await channel.send(
+                f"Hey {mention},\n\n"
+                f"Congratulations, your application to join **The Aquarium** has been "
+                f"**accepted**! {party_emoji}\n\n"
+                f"To join, just type `/gu join TAq` next time you're online. "
+                f"Once you join the guild in-game, you will be given your Discord roles.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
+
+        # IGN confidence feedback and discord_links linking
         if confidence < 0.7 or not ign:
             await ctx.followup.send(
                 f"Application accepted. **Could not auto-extract IGN** "
@@ -151,12 +186,9 @@ class ApplicationCommands(commands.Cog):
                 ephemeral=True,
             )
         else:
-            # Auto-link in discord_links (use discord_id even if member object wasn't resolved)
+            # Auto-link in discord_links
             link_id = applicant.id if applicant else applicant_discord_id
-            if link_id:
-                uuid_data = await asyncio.to_thread(getPlayerUUID, ign)
-                uuid = uuid_data[1] if uuid_data else None
-
+            if link_id and uuid:
                 db = DB(); db.connect()
                 db.cursor.execute(
                     """INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, app_channel)
@@ -170,42 +202,52 @@ class ApplicationCommands(commands.Cog):
                 db.connection.commit()
                 db.close()
 
-            await ctx.followup.send(
-                f"Application accepted. IGN: `{ign}` (confidence: {confidence:.0%}). "
-                f"User will be auto-registered when they join the guild in-game.",
-                ephemeral=True,
-            )
-
-        # Move ticket to "Invited" category and rename
-        guild = self.client.get_guild(channel.guild.id) or channel.guild
-        invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
-        if invited_cat:
-            try:
-                await channel.edit(category=invited_cat)
-            except discord.Forbidden:
+            if in_guild:
                 await ctx.followup.send(
-                    "Could not move ticket to Invited category (missing permissions).",
+                    f"Application accepted. IGN: `{ign}` (confidence: {confidence:.0%}). "
+                    f"Player is currently in **{current_guild_name}**. Monitoring for guild leave.",
                     ephemeral=True,
                 )
+            else:
+                await ctx.followup.send(
+                    f"Application accepted. IGN: `{ign}` (confidence: {confidence:.0%}). "
+                    f"User will be auto-registered when they join the guild in-game.",
+                    ephemeral=True,
+                )
+
+        # Move ticket / set poll embed based on guild status
+        if in_guild:
+            await update_poll_embed(self.client, channel.id, ":yellow_circle: Accepted - Pending Leave", 0xFFE019)
         else:
-            await ctx.followup.send(
-                f"Could not find category named \"{invited_category_name}\" in the server.",
-                ephemeral=True,
-            )
+            # Normal flow: move to Invited
+            guild = self.client.get_guild(channel.guild.id) or channel.guild
+            invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
+            if invited_cat:
+                try:
+                    await channel.edit(category=invited_cat)
+                except discord.Forbidden:
+                    await ctx.followup.send(
+                        "Could not move ticket to Invited category (missing permissions).",
+                        ephemeral=True,
+                    )
+            else:
+                await ctx.followup.send(
+                    f"Could not find category named \"{invited_category_name}\" in the server.",
+                    ephemeral=True,
+                )
+            await update_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
 
         # Update DB
         db = DB(); db.connect()
         db.cursor.execute(
             """UPDATE new_app
-               SET decision = 'accepted', decision_at = %s, app_type = %s, ign = %s
+               SET decision = 'accepted', decision_at = %s, app_type = %s, ign = %s,
+                   guild_leave_pending = %s
                WHERE channel = %s""",
-            (now, "guild_member", ign or None, channel.id)
+            (now, "guild_member", ign or None, in_guild, channel.id)
         )
         db.connection.commit()
         db.close()
-
-        # Update poll embed status
-        await update_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
 
         # Update exec thread
         await self._update_exec_thread(thread_id, "accepted", "guild_member", ign)
@@ -376,6 +418,96 @@ class ApplicationCommands(commands.Cog):
 
         await ctx.followup.send(
             "Application denied.",
+            ephemeral=True,
+        )
+
+    @discord.slash_command(
+        name="invite",
+        description="Invite an accepted applicant who has left their previous guild",
+        guild_ids=guilds + [te],
+        default_member_permissions=discord.Permissions(manage_channels=True),
+    )
+    async def invite(self, ctx: ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        result = await self._lookup_app(ctx, allow_decided=True)
+        if result is None:
+            return
+
+        channel, (applicant_discord_id, thread_id, app_type, existing_decision, stored_ign) = result
+
+        # Validate: must be an accepted guild_member application
+        if existing_decision != "accepted" or app_type != "guild_member":
+            await ctx.followup.send(
+                "This command is only for accepted guild member applications.",
+                ephemeral=True,
+            )
+            return
+
+        # Check guild_leave_pending status
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "SELECT guild_leave_pending FROM new_app WHERE channel = %s",
+            (channel.id,)
+        )
+        pending_row = db.cursor.fetchone()
+        db.close()
+
+        if pending_row and pending_row[0]:
+            await ctx.followup.send(
+                "This applicant has not left their guild yet. "
+                "The bot will notify you when they do.",
+                ephemeral=True,
+            )
+            return
+
+        applicant = None
+        if applicant_discord_id:
+            applicant = await self._resolve_member(channel, applicant_discord_id)
+
+        mention = applicant.mention if applicant else "Applicant"
+        partytort = discord.utils.get(channel.guild.emojis, name="partytort")
+        party_emoji = str(partytort) if partytort else "\U0001F389"
+
+        await channel.send(
+            f"Hey {mention},\n\n"
+            f"Great news! You're now ready to join **The Aquarium**! {party_emoji}\n\n"
+            f"To join, just type `/gu join TAq` next time you're online. "
+            f"Once you join the guild in-game, you will be given your Discord roles.\n\n"
+            f"Best Regards,\n"
+            f"The Aquarium Applications Team"
+        )
+
+        # Move ticket to "Invited" category
+        guild = self.client.get_guild(channel.guild.id) or channel.guild
+        invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
+        if invited_cat:
+            try:
+                await channel.edit(category=invited_cat)
+            except discord.Forbidden:
+                await ctx.followup.send(
+                    "Could not move ticket to Invited category (missing permissions).",
+                    ephemeral=True,
+                )
+        else:
+            await ctx.followup.send(
+                f"Could not find category named \"{invited_category_name}\" in the server.",
+                ephemeral=True,
+            )
+
+        # Rename channel
+        num_match = re.search(r'(\d+)', channel.name)
+        ticket_num = num_match.group(1) if num_match else channel.name.split("-", 1)[-1]
+        try:
+            await channel.edit(name=f"invited-{ticket_num}")
+        except discord.Forbidden:
+            pass
+
+        # Update poll embed
+        await update_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
+
+        await ctx.followup.send(
+            f"Invite sent. User will be auto-registered when they join the guild in-game.",
             ephemeral=True,
         )
 
@@ -639,7 +771,7 @@ class ApplicationCommands(commands.Cog):
 
         # Send thank-you message in the ticket channel
         await ctx.channel.send(
-            f"Hi {target_message.author.mention},\n\n"
+            f"Hi {target_message.author.display_name},\n\n"
             f"Thank you for your interest in joining The Aquarium! \U0001F420\n"
             f"Your application has been received and is greatly appreciated.\n\n"
             f"We'll be carefully reviewing it and aim to get back to you within 12 hours.\n\n"
