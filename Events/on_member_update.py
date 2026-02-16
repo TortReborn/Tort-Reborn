@@ -48,7 +48,7 @@ class OnMemberUpdate(commands.Cog):
             return
 
         try:
-            from Helpers.sheets import find_by_ign, update_promo
+            from Helpers.sheets import find_by_ign, update_promo, update_paid
 
             # Look up UUID from discord_links (blocking, run in thread)
             uuid = await asyncio.to_thread(_db_lookup_uuid, after.id)
@@ -75,6 +75,11 @@ class OnMemberUpdate(commands.Cog):
                 if not sheet_row["data"].get("manateePromo", False):
                     await asyncio.to_thread(update_promo, ign, "manateePromo")
             await asyncio.to_thread(update_promo, ign, promo)
+
+            # Update paid to "N" on Piranha promo if still "NYP"
+            if promo == "piranhaPromo":
+                if sheet_row["data"].get("paid") == "NYP":
+                    await asyncio.to_thread(update_paid, ign, "N")
 
         except Exception as e:
             err_ch = self.client.get_channel(error_channel)

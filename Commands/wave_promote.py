@@ -174,7 +174,7 @@ class WavePromote(commands.Cog):
 
                 # Google Sheets tracking (non-fatal)
                 try:
-                    from Helpers.sheets import update_promo
+                    from Helpers.sheets import update_promo, find_by_ign, update_paid
                     from Helpers.functions import getUsernameFromUUID
                     name_result = await asyncio.to_thread(getUsernameFromUUID, uuid)
                     if name_result:
@@ -182,6 +182,10 @@ class WavePromote(commands.Cog):
                             await asyncio.to_thread(update_promo, name_result, "manateePromo")
                         if new_index >= ranks_list.index("Piranha"):
                             await asyncio.to_thread(update_promo, name_result, "piranhaPromo")
+                            sheet_row = await asyncio.to_thread(find_by_ign, name_result)
+                            if sheet_row.get("success") and sheet_row.get("data"):
+                                if sheet_row["data"].get("paid") == "NYP":
+                                    await asyncio.to_thread(update_paid, name_result, "N")
                 except Exception as e:
                     err_ch = self.client.get_channel(error_channel)
                     if err_ch:

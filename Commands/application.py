@@ -12,7 +12,7 @@ from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.embed_updater import update_poll_embed
 from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3, getNameFromUUID
-from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign, parse_application
+from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign, parse_application, match_recruiter_name
 from Helpers.sheets import add_row
 from Helpers.variables import (
     guilds,
@@ -253,7 +253,7 @@ class ApplicationCommands(commands.Cog):
         await self._update_exec_thread(thread_id, "accepted", "guild_member", ign)
 
         # Process recruiter tracking (Google Sheets)
-        await self._process_recruiter_tracking(channel, ign)
+        await self._process_recruiter_tracking(channel, ign, applicant_discord_id)
 
     async def _accept_community_member(self, ctx, channel, applicant, applicant_discord_id, thread_id, stored_ign, now):
         """Handle community member acceptance."""
@@ -852,7 +852,7 @@ class ApplicationCommands(commands.Cog):
 
         await thread.send(embed=embed)
 
-    async def _process_recruiter_tracking(self, channel, ign):
+    async def _process_recruiter_tracking(self, channel, ign, applicant_discord_id=None):
         """Process recruiter tracking for accepted guild member applications."""
         ticket_num_match = re.search(r'(\d+)', channel.name)
         ticket_num = ticket_num_match.group(1) if ticket_num_match else channel.name
@@ -884,9 +884,94 @@ class ApplicationCommands(commands.Cog):
 
         recruiter = result.get("recruiter", "")
         certainty = result.get("certainty", 0.0)
+        is_old_member = result.get("is_old_member", False)
 
+        recruiter_format = None
+        paid = "NYP"
+
+        # --- Old member detection ---
+        if not is_old_member and applicant_discord_id:
+            # Check discord_links DB for existing UUID
+            uuid_row = await asyncio.to_thread(self._db_check_existing_uuid, applicant_discord_id)
+            if uuid_row:
+                is_old_member = True
+
+        if not is_old_member and applicant_discord_id:
+            # Check Discord roles for Ex-Member / Honored Fish / Retired Chief
+            applicant = await self._resolve_member(channel, applicant_discord_id)
+            if applicant:
+                ex_member_role_names = {'Ex-Member', 'Honored Fish', 'Retired Chief'}
+                member_role_names = {r.name for r in applicant.roles}
+                if ex_member_role_names & member_role_names:
+                    is_old_member = True
+
+        if is_old_member:
+            recruiter = "old member"
+            recruiter_format = {"bold": True, "fontColor": "#BF9000"}
+            paid = "NP"
+
+        # --- Recruiter matching (only if not old member and recruiter non-empty) ---
+        if not is_old_member and recruiter:
+            from Helpers.classes import Guild as WynnGuild
+            try:
+                guild_data = await asyncio.to_thread(WynnGuild, "TAq")
+                guild_members = guild_data.all_members
+                member_names = [m['name'] for m in guild_members]
+                member_rank_map = {m['name'].lower(): m['rank'] for m in guild_members}
+
+                # Supplement with discord_links names
+                db_names = await asyncio.to_thread(self._db_get_all_igns)
+                for name in db_names:
+                    if name not in member_names:
+                        member_names.append(name)
+
+                # Try local fuzzy match first
+                matched = _fuzzy_match_recruiter(recruiter, member_names)
+
+                if matched is None:
+                    # AI fallback
+                    ai_result = await asyncio.to_thread(match_recruiter_name, recruiter, member_names)
+                    if not ai_result.get("error") and ai_result.get("confidence", 0) >= 0.70:
+                        matched = ai_result["matched_name"]
+                    elif not ai_result.get("error") and ai_result.get("matched_name"):
+                        # Low confidence — flag for manual review
+                        matched = None
+
+                if matched:
+                    recruiter = matched
+                    # Check chief/owner coloring
+                    wynn_rank = member_rank_map.get(matched.lower())
+                    if wynn_rank == "owner":
+                        recruiter_format = {"fontColor": "#A64D79"}
+                        paid = "NP"
+                    elif wynn_rank == "chief":
+                        discord_rank = await asyncio.to_thread(self._get_discord_rank_for_ign, matched)
+                        if discord_rank == "Narwhal":
+                            recruiter_format = {"fontColor": "#A64D79"}
+                        else:
+                            recruiter_format = {"fontColor": "#9900FF"}
+                        paid = "NP"
+                else:
+                    # Recruiter not matched to a guild member (general source like "forums", etc.)
+                    paid = "NP"
+            except Exception as e:
+                err_ch = self.client.get_channel(error_channel)
+                if err_ch:
+                    await err_ch.send(
+                        f"## Recruiter Tracker - Match Error\n"
+                        f"**Ticket:** `{channel.name}` | **Recruiter:** `{recruiter}`\n"
+                        f"```\n{str(e)[:500]}\n```"
+                    )
+        elif not is_old_member and not recruiter:
+            # No recruiter — nobody to pay
+            paid = "NP"
+
+        # --- Write to sheet or flag for review ---
         if certainty >= 0.90 and ign:
-            sheet_result = await asyncio.to_thread(add_row, ticket_num, ign, recruiter)
+            sheet_result = await asyncio.to_thread(
+                add_row, ticket_num, ign, recruiter,
+                paid=paid, recruiter_format=recruiter_format,
+            )
             if not sheet_result.get("success"):
                 err_ch = self.client.get_channel(error_channel)
                 if err_ch:
@@ -904,6 +989,43 @@ class ApplicationCommands(commands.Cog):
                     f"**Parsed Recruiter:** `{recruiter}` | **Certainty:** `{certainty:.0%}`\n"
                     f"Please update the recruiter sheet manually."
                 )
+
+    @staticmethod
+    def _db_check_existing_uuid(discord_id: int):
+        """Blocking: check if a discord_id already has a UUID in discord_links."""
+        db = DB(); db.connect()
+        try:
+            db.cursor.execute(
+                "SELECT uuid FROM discord_links WHERE discord_id = %s AND uuid IS NOT NULL",
+                (discord_id,)
+            )
+            return db.cursor.fetchone()
+        finally:
+            db.close()
+
+    @staticmethod
+    def _db_get_all_igns() -> list[str]:
+        """Blocking: get all IGNs from discord_links."""
+        db = DB(); db.connect()
+        try:
+            db.cursor.execute("SELECT ign FROM discord_links WHERE ign IS NOT NULL AND ign != ''")
+            return [row[0] for row in db.cursor.fetchall()]
+        finally:
+            db.close()
+
+    @staticmethod
+    def _get_discord_rank_for_ign(ign: str) -> str | None:
+        """Blocking: look up the Discord rank for an IGN."""
+        db = DB(); db.connect()
+        try:
+            db.cursor.execute(
+                "SELECT rank FROM discord_links WHERE LOWER(ign) = LOWER(%s)",
+                (ign,)
+            )
+            row = db.cursor.fetchone()
+            return row[0] if row else None
+        finally:
+            db.close()
 
     async def _extract_ign_from_text(self, text) -> str:
         """Try to extract an IGN from a wynncraft stats link in the text."""
@@ -945,6 +1067,27 @@ class ApplicationCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         pass
+
+
+def _fuzzy_match_recruiter(recruiter_input: str, member_names: list[str]) -> str | None:
+    """Try to match a recruiter name locally.
+
+    Returns the matched name, or None if ambiguous/no match (triggers AI fallback).
+    """
+    lower_input = recruiter_input.lower()
+
+    # Exact case-insensitive match
+    for name in member_names:
+        if name.lower() == lower_input:
+            return name
+
+    # Substring match (input is substring of a member name)
+    matches = [name for name in member_names if lower_input in name.lower()]
+    if len(matches) == 1:
+        return matches[0]
+
+    # Multiple matches or no matches → return None for AI fallback
+    return None
 
 
 def setup(client):
