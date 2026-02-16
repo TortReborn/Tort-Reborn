@@ -21,14 +21,25 @@ def _post(payload: dict) -> dict:
         return {"success": False, "error": str(e)}
 
 
-def add_row(ticket: str, ign: str, recruiter: str, type_: str = "Member") -> dict:
-    return _post({
+def add_row(
+    ticket: str,
+    ign: str,
+    recruiter: str,
+    type_: str = "Member",
+    paid: str = "NYP",
+    recruiter_format: dict | None = None,
+) -> dict:
+    payload = {
         "action": "addRow",
         "ticket": ticket,
         "type": type_,
         "ign": ign,
         "recruiter": recruiter,
-    })
+        "paid": paid,
+    }
+    if recruiter_format is not None:
+        payload["recruiterFormat"] = recruiter_format
+    return _post(payload)
 
 
 def update_type(ign: str, type_: str) -> dict:

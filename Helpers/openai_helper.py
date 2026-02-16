@@ -16,6 +16,7 @@ class ApplicationParse(BaseModel):
     ign: str
     recruiter: str
     certainty: float
+    is_old_member: bool
 
 
 class ApplicationDetection(BaseModel):
@@ -65,6 +66,7 @@ def query(
                     "type": "json_schema",
                     "name": json_schema.__name__,
                     "schema": _strict_schema(json_schema),
+                    "strict": True,
                 }
             }
         response = client.responses.create(**kwargs)
@@ -80,19 +82,52 @@ def query(
 
 
 _PARSE_INSTRUCTIONS = """\
-Extract the in-game name (IGN) and recruiter from this Wynncraft guild application.
+You are parsing a Wynncraft guild application for The Aquarium [TAq].
 
-The IGN is usually one of the first things mentioned, after "IGN:", "Username:", or similar.
-A Wynncraft stats link like wynncraft.com/stats/player/NAME also contains the IGN.
+Extract the following from the application text:
 
-The recruiter is the person who referred the applicant to the guild. Look for answers to
-questions like "How did you learn about TAq?", "Who referred you?", "Reference for application",
-or similar. The recruiter is typically another player's in-game name. If no recruiter is
-mentioned or the applicant found the guild on their own (e.g. "guild list", "forums",
-"I found it myself"), return an empty string for recruiter.
+1. **IGN (in-game name)**: Usually one of the first things mentioned, after "IGN:", \
+"Username:", or similar. A Wynncraft stats link like wynncraft.com/stats/player/NAME \
+also contains the IGN as the last path segment.
 
-Return your certainty (0.0-1.0) for the overall extraction accuracy.
-If you cannot find either field, return empty strings with certainty 0.0."""
+2. **Recruiter**: The person who referred the applicant to the guild. Look for answers \
+to questions like "How did you learn about TAq?", "Who referred you?", "Reference for \
+application", or similar.
+   - If the applicant was referred by a specific player, return that player's in-game name.
+   - If multiple players are mentioned as recruiters, return them comma-separated \
+(e.g. "Player1, Player2").
+   - If the applicant found the guild via a general source (e.g. "server list", "forums", \
+"guild list", "I found it myself", "Google"), return that source name as the recruiter \
+(e.g. "server list", "forums").
+   - If no referral source is mentioned at all, return an empty string.
+
+3. **Certainty**: Your confidence (0.0-1.0) for the overall extraction accuracy. \
+If you cannot find either field, return empty strings with certainty 0.0.
+
+4. **is_old_member**: Whether the applicant indicates they were previously in the guild. \
+Look for language like "I was in the guild before", "returning member", "rejoin", \
+"was kicked for inactivity", "coming back", "I used to be in TAq", "reapplying", \
+"I left and want to come back", or other prior membership indicators. \
+Set to true if any such language is present, false otherwise."""
+
+
+class RecruiterMatch(BaseModel):
+    matched_name: str
+    confidence: float
+
+
+_RECRUITER_MATCH_INSTRUCTIONS = """\
+You are matching a recruiter name from a guild application to the correct member in \
+the guild member list. The recruiter name may be misspelled, abbreviated, or a partial match.
+
+Given the recruiter input and a list of guild member names, find the best match.
+
+Rules:
+- If a name clearly matches (exact, case-insensitive, or obvious typo), return it with \
+high confidence (0.9-1.0).
+- If a name partially matches but is ambiguous, return the best guess with lower confidence.
+- If no reasonable match exists, return an empty string with confidence 0.0.
+- Only return one name, even if multiple partial matches exist — pick the best one."""
 
 
 def parse_application(message_text: str) -> dict:
@@ -105,12 +140,35 @@ def parse_application(message_text: str) -> dict:
         max_tokens=200,
     )
     if result["error"]:
-        return {"ign": "", "recruiter": "", "certainty": 0.0, "error": result["error"]}
+        return {"ign": "", "recruiter": "", "certainty": 0.0, "is_old_member": False, "error": result["error"]}
     data = result["data"]
     return {
         "ign": data.get("ign", ""),
         "recruiter": data.get("recruiter", ""),
         "certainty": data.get("certainty", 0.0),
+        "is_old_member": data.get("is_old_member", False),
+        "error": None,
+    }
+
+
+def match_recruiter_name(recruiter_input: str, member_names: list[str]) -> dict:
+    """Use OpenAI to fuzzy-match a recruiter name against guild member names."""
+    names_text = "\n".join(member_names)
+    input_text = f"Recruiter from application: {recruiter_input}\n\nGuild member names:\n{names_text}"
+    result = query(
+        instructions=_RECRUITER_MATCH_INSTRUCTIONS,
+        input_text=input_text,
+        json_schema=RecruiterMatch,
+        model="gpt-4.1-nano",
+        temperature=0.0,
+        max_tokens=100,
+    )
+    if result["error"]:
+        return {"matched_name": "", "confidence": 0.0, "error": result["error"]}
+    data = result["data"]
+    return {
+        "matched_name": data.get("matched_name", ""),
+        "confidence": data.get("confidence", 0.0),
         "error": None,
     }
 

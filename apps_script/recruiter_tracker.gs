@@ -53,7 +53,7 @@ function getSheet() {
 
 /**
  * Add a new row to the spreadsheet.
- * payload: { ticket, type, ign, recruiter }
+ * payload: { ticket, type, ign, recruiter, paid?, recruiterFormat?: {bold, fontColor} }
  */
 function addRow(payload) {
   var sheet = getSheet();
@@ -61,6 +61,7 @@ function addRow(payload) {
   var type = payload.type || "Member";
   var ign = payload.ign || "";
   var recruiter = payload.recruiter || "";
+  var paid = payload.paid || "NYP";
 
   // Insert at row 2 (top, below header) with empty promo columns
   sheet.insertRowAfter(1);
@@ -69,7 +70,26 @@ function addRow(payload) {
   newRow.clearDataValidations();
   // Copy formatting from existing data row (row 3) so alternating colors stay correct
   sheet.getRange(3, 1, 1, lastCol).copyTo(newRow, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
-  sheet.getRange(2, 1, 1, 7).setValues([[ticket, type, ign, recruiter, "", "", "NYP"]]);
+  sheet.getRange(2, 1, 1, 7).setValues([[ticket, type, ign, recruiter, "", "", paid]]);
+
+  // Apply optional formatting to recruiter cell (column D)
+  var fmt = payload.recruiterFormat;
+  if (fmt) {
+    var recruiterCell = sheet.getRange(2, 4);
+    if (fmt.bold) {
+      recruiterCell.setFontWeight("bold");
+    }
+    if (fmt.fontColor) {
+      recruiterCell.setFontColor(fmt.fontColor);
+    }
+  }
+
+  // Sort data rows by ticket number (column A) descending so highest is at top
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, lastCol).sort({ column: 1, ascending: false });
+  }
+
   return { success: true };
 }
 

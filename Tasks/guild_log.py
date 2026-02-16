@@ -98,11 +98,33 @@ class GuildLog(commands.Cog):
                 try:
                     from Helpers.sheets import find_by_ign, update_type, update_paid
                     sheet_row = await asyncio.to_thread(find_by_ign, player['name'])
+
+                    # UUID fallback: if not found by API name, try DB-stored IGN
+                    sheet_ign = player['name']
+                    if not (sheet_row.get("success") and sheet_row.get("data")):
+                        alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
+                        if alt_ign and alt_ign.lower() != player['name'].lower():
+                            sheet_row = await asyncio.to_thread(find_by_ign, alt_ign)
+                            if sheet_row.get("success") and sheet_row.get("data"):
+                                sheet_ign = alt_ign
+
                     if sheet_row.get("success") and sheet_row.get("data"):
-                        await asyncio.to_thread(update_type, player['name'], "Left")
+                        await asyncio.to_thread(update_type, sheet_ign, "Left")
                         paid = sheet_row["data"].get("paid", "")
                         if paid in ("NYP", "NP"):
-                            await asyncio.to_thread(update_paid, player['name'], "LG")
+                            await asyncio.to_thread(update_paid, sheet_ign, "LG")
+                    else:
+                        # Send diagnostic if we couldn't find them at all
+                        alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
+                        err_ch = self.client.get_channel(error_channel)
+                        if err_ch:
+                            await err_ch.send(
+                                f"## Recruiter Tracker - Leave: IGN Not Found\n"
+                                f"**API Name:** `{player['name']}` | "
+                                f"**DB Name:** `{alt_ign or 'N/A'}` | "
+                                f"**UUID:** `{uuid}`\n"
+                                f"Player left guild but was not found on the recruiter sheet."
+                            )
                 except Exception as e:
                     err_ch = self.client.get_channel(error_channel)
                     if err_ch:
@@ -149,6 +171,20 @@ class GuildLog(commands.Cog):
                     '🟩 <t:' + str(int(u_timenow)) + ':d> <t:' + str(int(u_timenow)) + ':t> | **' + player[
                         'name'].replace(
                         '_', '\\_') + f'** {discord_id} joined the guild! | ' + player['rank'].upper())
+
+    @staticmethod
+    def _db_get_ign_by_uuid(uuid: str) -> str | None:
+        """Blocking: look up stored IGN by UUID in discord_links."""
+        db = DB(); db.connect()
+        try:
+            db.cursor.execute(
+                "SELECT ign FROM discord_links WHERE uuid = %s",
+                (uuid,)
+            )
+            row = db.cursor.fetchone()
+            return row[0] if row else None
+        finally:
+            db.close()
 
     @guild_log.before_loop
     async def guild_log_before_loop(self):
