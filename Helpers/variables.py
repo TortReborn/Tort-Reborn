@@ -461,3 +461,23 @@ claims = {
         ],
     }
 }
+
+# ---------------------------------------------------------------------------
+# Application format templates
+# ---------------------------------------------------------------------------
+
+APPLICATION_FORMAT_MESSAGE = (
+    "\U0001f4dd **Application format:**\n"
+    "IGN: \n\n"
+    "Timezone (in relation to gmt):\n\n"
+    "Link to stats page (wynncraft.com/stats):\n\n"
+    "Age (optional):\n\n"
+    "Estimated playtime per day:\n\n"
+    "Do you have any previous guild experience (name of the guild, rank, reason for leaving)?\n\n"
+    "Are you interested in warring? If so, do you already have experience?\n\n"
+    "What do you know about TAq?\n\n"
+    "What would you like to gain from joining TAq?\n\n"
+    "What would you contribute to TAq?\n\n"
+    "Anything else you would like to tell us?  (optional)\n\n"
+    "How did you learn about TAq/reference for application: "
+)

@@ -198,6 +198,7 @@ extensions = [
 
     # Events
     'Events.on_message',
+    'Events.on_message_edit',
     'Events.on_guild_channel_create',
     'Events.on_guild_channel_update',
     'Events.on_raw_reaction_add',

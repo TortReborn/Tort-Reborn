@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS new_app (
   decision             VARCHAR(20),
   decision_at          TIMESTAMPTZ,
   ign                  VARCHAR(64),
-  poll_message_id      BIGINT
+  poll_message_id      BIGINT,
+  app_complete         BOOLEAN      DEFAULT FALSE,
+  app_message_id       BIGINT
 );
 
 -- =============================================================================
@@ -189,6 +191,14 @@ BEGIN
   -- guild leave tracking for accepted applicants currently in another guild
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'guild_leave_pending') THEN
     ALTER TABLE new_app ADD COLUMN guild_leave_pending BOOLEAN DEFAULT FALSE;
+  END IF;
+
+  -- Application completeness validation columns
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'app_complete') THEN
+    ALTER TABLE new_app ADD COLUMN app_complete BOOLEAN DEFAULT FALSE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'app_message_id') THEN
+    ALTER TABLE new_app ADD COLUMN app_message_id BIGINT;
   END IF;
 END $$;
 
