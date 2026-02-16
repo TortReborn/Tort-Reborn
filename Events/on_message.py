@@ -10,8 +10,11 @@ from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.functions import generate_applicant_info, getNameFromUUID
 from Helpers.embed_updater import update_poll_embed
-from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign
-from Helpers.variables import application_manager_role_id
+from Helpers.openai_helper import (
+    detect_application, detect_rejoin_intent, extract_ign,
+    validate_application_completeness, validate_exmember_completeness,
+)
+from Helpers.variables import application_manager_role_id, APPLICATION_FORMAT_MESSAGE
 
 
 class OnMessage(commands.Cog):
@@ -50,7 +53,7 @@ class OnMessage(commands.Cog):
         db = DB()
         db.connect()
         db.cursor.execute(
-            "SELECT applicant_discord_id, app_type, thread_id FROM new_app WHERE channel = %s",
+            "SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id FROM new_app WHERE channel = %s",
             (message.channel.id,)
         )
         row = db.cursor.fetchone()
@@ -59,7 +62,7 @@ class OnMessage(commands.Cog):
         if not row:
             return
 
-        stored_discord_id, app_type, thread_id = row
+        stored_discord_id, app_type, thread_id, app_complete, app_message_id = row
 
         # If we don't have the applicant_discord_id yet, try to parse from Ticket Tool message
         if stored_discord_id is None:
@@ -77,11 +80,11 @@ class OnMessage(commands.Cog):
         if message.author.id != stored_discord_id:
             return
 
-        # If we already detected an application type, don't re-process
-        if app_type is not None:
+        # If the application is already complete and forwarded, nothing to do
+        if app_type is not None and app_complete:
             return
 
-        # --- Ex-member check: looser rejoin detection ---
+        # --- Determine ex-member status (needed for both first-time and revalidation) ---
         is_ex_member = False
         mc_name = ""
 
@@ -106,6 +109,15 @@ class OnMessage(commands.Cog):
             if ex_member_role_names & member_role_names:
                 is_ex_member = True
 
+        # If app_type detected but NOT complete, this is a follow-up message — revalidate
+        if app_type is not None and not app_complete:
+            await self._handle_revalidation(message, app_type, thread_id, is_ex_member, mc_name)
+            return
+
+        # =====================================================================
+        # First-time detection (app_type is None)
+        # =====================================================================
+
         if is_ex_member:
             # Lenient rejoin intent detection
             detection = await asyncio.to_thread(detect_rejoin_intent, message.content)
@@ -124,6 +136,14 @@ class OnMessage(commands.Cog):
                     ign_result = await asyncio.to_thread(extract_ign, message.content)
                     if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.5:
                         mc_name = ign_result["ign"]
+
+            # Validate completeness for guild_member apps
+            if detected_type == "guild_member":
+                validation = await asyncio.to_thread(validate_exmember_completeness, message.content)
+                if not validation.get("error") and not validation["complete"]:
+                    await self._save_incomplete(message, detected_type, mc_name)
+                    await self._notify_incomplete(message, validation["missing_fields"], is_ex_member=True)
+                    return
 
             await self._process_detected_application(message, detected_type, mc_name, thread_id)
             return
@@ -147,7 +167,89 @@ class OnMessage(commands.Cog):
             if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.7:
                 mc_name = ign_result["ign"]
 
+        # Validate completeness for guild_member apps (community_member stays lax)
+        if detected_type == "guild_member":
+            validation = await asyncio.to_thread(validate_application_completeness, message.content)
+            if not validation.get("error") and not validation["complete"]:
+                await self._save_incomplete(message, detected_type, mc_name)
+                await self._notify_incomplete(message, validation["missing_fields"], is_ex_member=False)
+                return
+
         await self._process_detected_application(message, detected_type, mc_name, thread_id)
+
+    # =====================================================================
+    # Completeness helpers
+    # =====================================================================
+
+    async def _save_incomplete(self, message, detected_type, mc_name):
+        """Save app_type and message ID to DB without marking as complete."""
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
+            (detected_type, mc_name or None, message.id, message.channel.id)
+        )
+        db.connection.commit()
+        db.close()
+
+    async def _notify_incomplete(self, message, missing_fields, is_ex_member):
+        """Send the incomplete application notification to the ticket channel."""
+        missing_list = "\n".join(f"- {field}" for field in missing_fields)
+
+        await message.channel.send(
+            f"Hey {message.author.mention},\n\n"
+            f"Thanks for your interest in The Aquarium! It looks like your application "
+            f"is missing some required information:\n\n"
+            f"**Missing fields:**\n{missing_list}\n\n"
+            f"Please fill out all required fields. You can either **edit your existing message** "
+            f"or **send a new message** with the complete application.\n\n"
+            f"{APPLICATION_FORMAT_MESSAGE}\n"
+            f"\u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b "
+            f"\u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b "
+            f"\u200b \u200b \u200b \u200b \u200b  \u200b \u200b \u200b \u200b \u200b \u200b \u200b "
+            f"\u200b\u200b \u200b \u200b \u200b  \u200b \u200b \u200b  \u200b \u200b \u200b \u200b "
+            f"(Copy and fill out in your application ticket)"
+        )
+
+    async def _handle_revalidation(self, message, app_type, thread_id, is_ex_member, mc_name):
+        """Re-validate when applicant sends a new message after an incomplete detection."""
+        if app_type == "community_member":
+            return  # Community member apps don't need strict validation
+
+        validator = validate_exmember_completeness if is_ex_member else validate_application_completeness
+        validation = await asyncio.to_thread(validator, message.content)
+
+        if validation.get("error"):
+            print(f"[on_message] Revalidation error for {message.channel.name}: {validation['error']}")
+            return
+
+        # Try to extract IGN from the new message if we don't have one
+        if not mc_name:
+            mc_name = await self._extract_ign_from_text(message.content)
+            if not mc_name:
+                ign_result = await asyncio.to_thread(extract_ign, message.content)
+                conf_threshold = 0.5 if is_ex_member else 0.7
+                if not ign_result.get("error") and ign_result.get("confidence", 0) >= conf_threshold:
+                    mc_name = ign_result["ign"]
+
+        # Update message ID and IGN
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "UPDATE new_app SET app_message_id = %s, ign = %s WHERE channel = %s",
+            (message.id, mc_name or None, message.channel.id)
+        )
+        db.connection.commit()
+        db.close()
+
+        if not validation["complete"]:
+            # Still incomplete — don't spam the format message again
+            return
+
+        # Complete! Forward to app managers
+        await self._process_detected_application(message, app_type, mc_name, thread_id)
+
+    # =====================================================================
+    # IGN extraction
+    # =====================================================================
 
     async def _extract_ign_from_text(self, text) -> str:
         """Try to extract an IGN from a wynncraft stats link in the text."""
@@ -166,8 +268,24 @@ class OnMessage(commands.Cog):
                 return captured
         return ""
 
+    # =====================================================================
+    # Application forwarding (shared by on_message, on_message_edit, /receive)
+    # =====================================================================
+
     async def _process_detected_application(self, message, detected_type, mc_name, thread_id):
-        """Shared processing after an application is detected (regular or ex-member rejoin)."""
+        """Shared processing after an application is detected and validated as complete."""
+        # Atomically mark as complete — prevents double-processing from edits + new messages
+        db = DB(); db.connect()
+        db.cursor.execute(
+            "UPDATE new_app SET app_complete = TRUE WHERE channel = %s AND app_complete = FALSE RETURNING channel",
+            (message.channel.id,)
+        )
+        updated = db.cursor.fetchone()
+        db.connection.commit()
+        db.close()
+        if not updated:
+            return  # Another handler already processed this
+
         # Generate player stats image
         pdata = None
         blacklist_warning = ""
@@ -189,11 +307,11 @@ class OnMessage(commands.Cog):
                 except FileNotFoundError:
                     pass
 
-        # Update DB with the detected type and IGN
+        # Update DB with the detected type, IGN, and message ID
         db = DB(); db.connect()
         db.cursor.execute(
-            "UPDATE new_app SET app_type = %s, ign = %s WHERE channel = %s",
-            (detected_type, mc_name or None, message.channel.id)
+            "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
+            (detected_type, mc_name or None, message.id, message.channel.id)
         )
         db.connection.commit()
         db.close()
