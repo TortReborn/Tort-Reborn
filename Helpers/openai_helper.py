@@ -30,6 +30,21 @@ class RejoinDetection(BaseModel):
     confidence: float
 
 
+class ApplicationCompleteness(BaseModel):
+    has_ign: bool
+    has_timezone: bool
+    has_stats_link: bool
+    has_playtime: bool
+    has_guild_experience: bool
+    has_warring_interest: bool
+    has_know_about_taq: bool
+    has_gain_from_taq: bool
+    has_contribute_to_taq: bool
+    has_how_learned: bool
+    missing_fields: list[str]
+    confidence: float
+
+
 class IGNExtraction(BaseModel):
     ign: str
     confidence: float
@@ -251,5 +266,99 @@ def extract_ign(application_text: str) -> dict:
     return {
         "ign": data.get("ign", ""),
         "confidence": data.get("confidence", 0.0),
+        "error": None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Application completeness validation
+# ---------------------------------------------------------------------------
+
+_VALIDATE_INSTRUCTIONS = """\
+You are analyzing a guild application message for The Aquarium, a Wynncraft guild.
+Determine which of the following required fields have been answered in the application text.
+People write informally — a field is "present" if the applicant has provided ANY answer to it,
+even if brief, informal, or not labeled with the exact field name.
+
+Required fields to check:
+1. IGN (in-game name) — look for "IGN:", a username, or a wynncraft.com/stats link
+2. Timezone — any mention of timezone, GMT offset, region, or time zone name (e.g. "EST", "GMT+2", "UK")
+3. Stats link — a wynncraft.com/stats link or similar URL
+4. Estimated playtime per day — any mention of how much they play per day/week
+5. Previous guild experience — any mention of past guilds, "no guild experience", or similar
+6. Warring interest — any answer about warring, wars, or war experience
+7. What they know about TAq — any answer about knowledge of The Aquarium
+8. What they'd like to gain from TAq — any answer about goals or expectations from joining
+9. What they'd contribute to TAq — any answer about contributions
+10. How they learned about TAq — any answer about how they found/heard about TAq (e.g. a referral, friend, guild list)
+
+For missing_fields, return a human-readable list of field names that are NOT present.
+Use these exact names for missing fields:
+- "IGN"
+- "Timezone"
+- "Stats link"
+- "Estimated playtime per day"
+- "Previous guild experience"
+- "Warring interest"
+- "What you know about TAq"
+- "What you'd like to gain from TAq"
+- "What you'd contribute to TAq"
+- "How you learned about TAq"
+
+Set confidence between 0.0 and 1.0 for your overall assessment accuracy."""
+
+
+def validate_application_completeness(message_text: str) -> dict:
+    """Check which required application fields are present in the message text."""
+    result = query(
+        instructions=_VALIDATE_INSTRUCTIONS,
+        input_text=message_text,
+        json_schema=ApplicationCompleteness,
+        model="gpt-4.1-nano",
+        temperature=0.0,
+        max_tokens=400,
+    )
+    if result["error"]:
+        return {"complete": False, "fields": {}, "missing_fields": [], "error": result["error"]}
+    data = result["data"]
+
+    all_fields = [
+        "has_ign", "has_timezone", "has_stats_link", "has_playtime",
+        "has_guild_experience", "has_warring_interest", "has_know_about_taq",
+        "has_gain_from_taq", "has_contribute_to_taq", "has_how_learned",
+    ]
+    is_complete = all(data.get(f, False) for f in all_fields)
+
+    return {
+        "complete": is_complete,
+        "fields": data,
+        "missing_fields": data.get("missing_fields", []),
+        "error": None,
+    }
+
+
+def validate_exmember_completeness(message_text: str) -> dict:
+    """Check required fields for an ex-member rejoin application.
+
+    Ex-members only need: IGN, Timezone, Stats link.
+    """
+    result = validate_application_completeness(message_text)
+    if result.get("error"):
+        return result
+
+    fields = result.get("fields", {})
+    required = ["has_ign", "has_timezone", "has_stats_link"]
+    is_complete = all(fields.get(f, False) for f in required)
+
+    exmember_field_names = {"IGN", "Timezone", "Stats link"}
+    filtered_missing = [
+        f for f in result.get("missing_fields", [])
+        if any(name.lower() in f.lower() for name in exmember_field_names)
+    ]
+
+    return {
+        "complete": is_complete,
+        "fields": fields,
+        "missing_fields": filtered_missing,
         "error": None,
     }

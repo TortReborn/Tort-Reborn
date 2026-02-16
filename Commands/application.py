@@ -12,7 +12,10 @@ from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.embed_updater import update_poll_embed
 from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3, getNameFromUUID
-from Helpers.openai_helper import detect_application, detect_rejoin_intent, extract_ign, parse_application
+from Helpers.openai_helper import (
+    detect_application, detect_rejoin_intent, extract_ign, parse_application,
+    validate_application_completeness, validate_exmember_completeness,
+)
 from Helpers.sheets import add_row
 from Helpers.variables import (
     guilds,
@@ -22,6 +25,7 @@ from Helpers.variables import (
     invited_category_name,
     error_channel,
     manual_review_role_id,
+    APPLICATION_FORMAT_MESSAGE,
 )
 
 
@@ -535,7 +539,7 @@ class ApplicationCommands(commands.Cog):
         # Look up the application record
         db = DB(); db.connect()
         db.cursor.execute(
-            "SELECT applicant_discord_id, app_type, thread_id FROM new_app WHERE channel = %s",
+            "SELECT applicant_discord_id, app_type, thread_id, app_complete FROM new_app WHERE channel = %s",
             (ctx.channel.id,)
         )
         row = db.cursor.fetchone()
@@ -548,11 +552,11 @@ class ApplicationCommands(commands.Cog):
             )
             return
 
-        stored_discord_id, app_type, thread_id = row
+        stored_discord_id, app_type, thread_id, app_complete = row
 
-        if app_type is not None:
+        if app_type is not None and app_complete:
             await ctx.followup.send(
-                f"This application has already been detected as **{app_type}**.",
+                f"This application has already been detected as **{app_type}** and forwarded.",
                 ephemeral=True,
             )
             return
@@ -665,6 +669,46 @@ class ApplicationCommands(commands.Cog):
                 if not ign_result.get("error") and ign_result.get("confidence", 0) >= 0.7:
                     mc_name = ign_result["ign"]
 
+        # --- Validate completeness for guild_member apps ---
+        if detected_type == "guild_member":
+            validator = validate_exmember_completeness if is_ex_member else validate_application_completeness
+            validation = await asyncio.to_thread(validator, target_message.content)
+
+            if not validation.get("error") and not validation["complete"]:
+                # Save app_type but don't mark complete
+                db = DB(); db.connect()
+                db.cursor.execute(
+                    "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
+                    (detected_type, mc_name or None, target_message.id, ctx.channel.id)
+                )
+                db.connection.commit()
+                db.close()
+
+                # Notify the applicant
+                missing_list = "\n".join(f"- {field}" for field in validation["missing_fields"])
+                await ctx.channel.send(
+                    f"Hey {target_message.author.mention},\n\n"
+                    f"Thanks for your interest in The Aquarium! It looks like your application "
+                    f"is missing some required information:\n\n"
+                    f"**Missing fields:**\n{missing_list}\n\n"
+                    f"Please fill out all required fields. You can either **edit your existing message** "
+                    f"or **send a new message** with the complete application.\n\n"
+                    f"{APPLICATION_FORMAT_MESSAGE}\n"
+                    f"\u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b "
+                    f"\u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b \u200b "
+                    f"\u200b \u200b \u200b \u200b \u200b  \u200b \u200b \u200b \u200b \u200b \u200b \u200b "
+                    f"\u200b\u200b \u200b \u200b \u200b  \u200b \u200b \u200b  \u200b \u200b \u200b \u200b "
+                    f"(Copy and fill out in your application ticket)"
+                )
+
+                await ctx.followup.send(
+                    f"Application detected as **{detected_type}** but is **incomplete**.\n"
+                    f"Missing: {', '.join(validation['missing_fields'])}\n"
+                    f"The applicant has been notified. The app will be forwarded once complete.",
+                    ephemeral=True,
+                )
+                return
+
         # --- Process the detected application (mirrors on_message._process_detected_application) ---
         # Generate player stats image
         pdata = None
@@ -686,11 +730,11 @@ class ApplicationCommands(commands.Cog):
                 except FileNotFoundError:
                     pass
 
-        # Update DB with the detected type and IGN
+        # Update DB with the detected type, IGN, and mark complete
         db = DB(); db.connect()
         db.cursor.execute(
-            "UPDATE new_app SET app_type = %s, ign = %s WHERE channel = %s",
-            (detected_type, mc_name or None, ctx.channel.id)
+            "UPDATE new_app SET app_type = %s, ign = %s, app_complete = TRUE, app_message_id = %s WHERE channel = %s",
+            (detected_type, mc_name or None, target_message.id, ctx.channel.id)
         )
         db.connection.commit()
         db.close()
