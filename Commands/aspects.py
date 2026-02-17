@@ -24,8 +24,8 @@ from Helpers import aspect_db
 
 
 GUILD_ID = te
-AVATAR_CACHE_FILE = "avatar_cache.json"
-AVATAR_CACHE_DIR = "avatar_cache"
+AVATAR_CACHE_FILE = "cache/avatar_index.json"
+AVATAR_CACHE_DIR = "cache/avatars"
 MAX_COLUMNS = 4
 ROWS_PER_COLUMN = 10
 CELL_WIDTH = 205

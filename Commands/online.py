@@ -22,7 +22,7 @@ class Online(commands.Cog):
         self.client = client
 
         # Cache directory for banners
-        self.cache_dir = os.path.join(os.getcwd(), 'banner_cache')
+        self.cache_dir = os.path.join(os.getcwd(), 'cache', 'banners')
         os.makedirs(self.cache_dir, exist_ok=True)
 
         # Fonts (2x sizes)

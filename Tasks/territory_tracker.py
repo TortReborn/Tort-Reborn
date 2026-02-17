@@ -604,7 +604,7 @@ def _load_territory_externals():
     if _TERRITORY_EXTERNALS_CACHE is not None:
         return _TERRITORY_EXTERNALS_CACHE
     try:
-        with open("territory_externals.json", "r", encoding="utf-8") as f:
+        with open("data/territory_externals.json", "r", encoding="utf-8") as f:
             _TERRITORY_EXTERNALS_CACHE = json.load(f)
     except Exception:
         _TERRITORY_EXTERNALS_CACHE = {}
