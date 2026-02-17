@@ -171,12 +171,111 @@ class CheckApps(commands.Cog):
     async def before_check_guild_leave(self):
         await self.client.wait_until_ready()
 
+    # --- Guild leave monitoring for WEBSITE applications ---
+
+    @tasks.loop(minutes=3)
+    async def check_web_guild_leave(self):
+        """Monitor accepted website guild applications where the player needs to leave their current guild."""
+        db = DB()
+        db.connect()
+        db.cursor.execute(
+            """
+            SELECT id, channel_id, thread_id, discord_id, answers->>'ign' AS ign
+              FROM applications
+             WHERE status = 'accepted'
+               AND application_type = 'guild'
+               AND guild_leave_pending = TRUE
+            """
+        )
+        rows = db.cursor.fetchall()
+        db.close()
+
+        if not rows:
+            return
+
+        for app_id, channel_id, thread_id, discord_id, ign in rows:
+            try:
+                await self._check_web_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
+            except Exception as e:
+                print(f"[check_web_guild_leave] Error for app {app_id}: {e}")
+
+    async def _check_web_pending_leave(self, app_id, channel_id, thread_id, ign, discord_id):
+        """Check if a website applicant with pending guild leave has left their guild."""
+        if not ign:
+            return
+
+        # Get UUID
+        uuid = None
+        if discord_id:
+            db = DB()
+            db.connect()
+            db.cursor.execute(
+                "SELECT uuid FROM discord_links WHERE discord_id = %s",
+                (int(discord_id),)
+            )
+            link_row = db.cursor.fetchone()
+            db.close()
+            if link_row and link_row[0]:
+                uuid = str(link_row[0])
+
+        if not uuid:
+            uuid_data = await asyncio.to_thread(getPlayerUUID, ign)
+            uuid = uuid_data[1] if uuid_data else None
+
+        if not uuid:
+            return
+
+        player_data = await asyncio.to_thread(getPlayerDatav3, uuid)
+        if not isinstance(player_data, dict):
+            return
+
+        guild_info = player_data.get("guild")
+        still_in_guild = bool(guild_info and isinstance(guild_info, dict) and guild_info.get("name"))
+
+        if still_in_guild:
+            return
+
+        # Player has left their guild
+        db = DB()
+        db.connect()
+        db.cursor.execute(
+            "UPDATE applications SET guild_leave_pending = FALSE WHERE id = %s",
+            (app_id,)
+        )
+        db.connection.commit()
+        db.close()
+
+        if thread_id:
+            thread = self.client.get_channel(thread_id)
+            if thread is None:
+                try:
+                    thread = await self.client.fetch_channel(thread_id)
+                except Exception:
+                    thread = None
+
+            if thread:
+                if getattr(thread, "archived", False):
+                    await thread.edit(archived=False)
+                await thread.send(
+                    f"{application_manager_role_id} **{ign}** has left their guild! "
+                    f"They can now be invited.\n"
+                    f"Run `/app invited` in the ticket channel or this thread to send them the invite message."
+                )
+
+        print(f"[check_web_guild_leave] {ign} has left their guild. Notified exec thread.")
+
+    @check_web_guild_leave.before_loop
+    async def before_check_web_guild_leave(self):
+        await self.client.wait_until_ready()
+
     @commands.Cog.listener()
     async def on_ready(self):
         if not self.check_apps.is_running():
             self.check_apps.start()
         if not self.check_guild_leave.is_running():
             self.check_guild_leave.start()
+        if not self.check_web_guild_leave.is_running():
+            self.check_web_guild_leave.start()
 
 
 def setup(client):
