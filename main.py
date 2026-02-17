@@ -13,6 +13,7 @@ from discord import Embed
 
 from Helpers.classes import Guild
 from Helpers.variables import test
+from Commands.generate_app_header import ApplicationButtonView
 
 
 
@@ -63,6 +64,7 @@ sys.excepthook = on_crash
 @client.event
 async def on_ready():
     if not getattr(client, 'synced', False):
+        client.add_view(ApplicationButtonView())
         await client.sync_commands()
         client.synced = True
         print("✅ Slash commands synced.")
@@ -179,6 +181,8 @@ extensions = [
     'Commands.top_wars',
     'Commands.agenda',
     'Commands.wave_promote',
+    'Commands.generate_app_header',
+    'Commands.app_commands',
 
     # Dev Commands
     'Commands.render_text',
@@ -213,6 +217,7 @@ extensions = [
     'Tasks.graid_event_stop',
     'Tasks.recruitment_checker',
     'Tasks.cache_guild_colors',
+    'Tasks.check_website_apps',
 ]
 
 for ext in extensions:
