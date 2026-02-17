@@ -184,8 +184,6 @@ extensions = [
 
     # Dev Commands
     'Commands.render_text',
-    'Commands.send_changelog',
-    'Commands.preview_changelog',
     # 'Commands.check_app',
     # 'Commands.custom_profile',
     'Commands.progress_bar',
