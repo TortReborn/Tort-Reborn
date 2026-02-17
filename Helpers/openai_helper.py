@@ -368,15 +368,17 @@ Set confidence between 0.0 and 1.0 for your overall assessment accuracy."""
 
 def validate_application_completeness(message_text: str) -> dict:
     """Check which required application fields are present in the message text."""
+    preview = message_text[:100].replace('\n', ' ')
     result = query(
         instructions=_VALIDATE_INSTRUCTIONS,
         input_text=message_text,
         json_schema=ApplicationCompleteness,
-        model="gpt-4.1-nano",
+        model="gpt-4.1-mini",
         temperature=0.0,
         max_tokens=400,
     )
     if result["error"]:
+        print(f"[validate_app] \"{preview}\" -> error: {result['error']}")
         return {"complete": False, "fields": {}, "missing_fields": [], "error": result["error"]}
     data = result["data"]
 
@@ -387,10 +389,14 @@ def validate_application_completeness(message_text: str) -> dict:
     ]
     is_complete = all(data.get(f, False) for f in all_fields)
 
+    present = [f for f in all_fields if data.get(f, False)]
+    missing = data.get("missing_fields", [])
+    print(f"[validate_app] \"{preview}\" -> complete={is_complete}, present={len(present)}/10, missing={missing}")
+
     return {
         "complete": is_complete,
         "fields": data,
-        "missing_fields": data.get("missing_fields", []),
+        "missing_fields": missing,
         "error": None,
     }
 
