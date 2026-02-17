@@ -62,21 +62,19 @@ class OnGuildChannelUpdate(commands.Cog):
                 # Check website applications table
                 db = DB(); db.connect()
                 db.cursor.execute(
-                    "SELECT application_type, status FROM applications WHERE channel_id = %s",
+                    "SELECT application_type, status, discord_username FROM applications WHERE channel_id = %s",
                     (after.id,)
                 )
                 web_row = db.cursor.fetchone()
                 db.close()
 
                 if web_row:
-                    app_type, status = web_row
-                    num_match = re.search(r'(\d+)$', after.name)
-                    app_num = num_match.group(1) if num_match else after.name.split("-")[-1]
+                    app_type, status, username = web_row
 
                     if status == "accepted":
-                        new_name = f"web-accepted-{app_num}" if app_type == "guild" else f"web-c-accepted-{app_num}"
+                        new_name = f"web-accepted-{username}" if app_type == "guild" else f"web-c-accepted-{username}"
                     elif status == "denied":
-                        new_name = f"web-denied-{app_num}" if app_type == "guild" else f"web-c-denied-{app_num}"
+                        new_name = f"web-denied-{username}" if app_type == "guild" else f"web-c-denied-{username}"
                     else:
                         new_name = None
 

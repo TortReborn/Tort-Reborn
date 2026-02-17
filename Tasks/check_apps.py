@@ -1,11 +1,13 @@
 import asyncio
 import datetime
 
+import discord
 from discord.ext import tasks, commands
 
 from Helpers.database import DB
+from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
-from Helpers.variables import application_manager_role_id
+from Helpers.variables import application_manager_role_id, guilds, closed_category_name
 
 
 class CheckApps(commands.Cog):
@@ -268,6 +270,109 @@ class CheckApps(commands.Cog):
     async def before_check_web_guild_leave(self):
         await self.client.wait_until_ready()
 
+    # --- Auto-close for website applications ---
+
+    @tasks.loop(minutes=5)
+    async def auto_close_web_apps(self):
+        """Auto-close denied web apps after 24h and accepted web apps when user has roles."""
+        guild = self.client.get_guild(guilds[0])
+        if not guild:
+            return
+
+        closed_cat = discord.utils.get(guild.categories, name=closed_category_name)
+        if not closed_cat:
+            return
+
+        # --- Denied apps: 24 hours after review ---
+        denied_rows = await asyncio.to_thread(self._fetch_auto_close_denied)
+        for app_id, channel_id in denied_rows:
+            try:
+                await self._auto_close_channel(guild, closed_cat, channel_id,
+                                               "This application has been automatically closed.")
+            except Exception as e:
+                print(f"[auto_close_web_apps] Error closing denied app {app_id}: {e}")
+
+        # --- Accepted apps: user is linked in discord_links (joined + processed) + 1h after review ---
+        accepted_guild_rows = await asyncio.to_thread(self._fetch_auto_close_accepted, "guild")
+        for app_id, channel_id in accepted_guild_rows:
+            try:
+                await self._auto_close_channel(
+                    guild, closed_cat, channel_id,
+                    "This application has been automatically closed — welcome to the guild! \U0001F420"
+                )
+            except Exception as e:
+                print(f"[auto_close_web_apps] Error closing accepted guild app {app_id}: {e}")
+
+        accepted_community_rows = await asyncio.to_thread(self._fetch_auto_close_accepted, "community")
+        for app_id, channel_id in accepted_community_rows:
+            try:
+                await self._auto_close_channel(
+                    guild, closed_cat, channel_id,
+                    "This application has been automatically closed — welcome to the community! \U0001F420"
+                )
+            except Exception as e:
+                print(f"[auto_close_web_apps] Error closing accepted community app {app_id}: {e}")
+
+    async def _auto_close_channel(self, guild, closed_cat, channel_id, message):
+        """Move a web app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
+        channel = self.client.get_channel(channel_id)
+        if not channel:
+            try:
+                channel = await self.client.fetch_channel(channel_id)
+            except Exception:
+                return
+
+        # Skip if already in closed category
+        if getattr(channel, "category", None) == closed_cat:
+            return
+
+        await channel.send(message)
+        await channel.edit(category=closed_cat)
+
+    @staticmethod
+    def _fetch_auto_close_denied():
+        """Fetch denied web apps older than 24 hours that aren't closed yet."""
+        db = DB()
+        db.connect()
+        try:
+            db.cursor.execute(
+                """SELECT id, channel_id FROM applications
+                   WHERE status = 'denied'
+                     AND poll_status != ':red_circle: Closed'
+                     AND reviewed_at IS NOT NULL
+                     AND reviewed_at + interval '24 hours' < NOW()
+                     AND channel_id IS NOT NULL AND channel_id > 0"""
+            )
+            return db.cursor.fetchall()
+        finally:
+            db.close()
+
+    @staticmethod
+    def _fetch_auto_close_accepted(app_type):
+        """Fetch accepted web apps where the user is linked (joined + processed) and 1h+ since review."""
+        db = DB()
+        db.connect()
+        try:
+            db.cursor.execute(
+                """SELECT a.id, a.channel_id FROM applications a
+                   JOIN discord_links dl ON dl.discord_id = CAST(a.discord_id AS BIGINT)
+                   WHERE a.status = 'accepted'
+                     AND a.application_type = %s
+                     AND a.poll_status != ':red_circle: Closed'
+                     AND a.reviewed_at IS NOT NULL
+                     AND a.reviewed_at + interval '1 hour' < NOW()
+                     AND a.channel_id IS NOT NULL AND a.channel_id > 0
+                     AND dl.linked = TRUE""",
+                (app_type,)
+            )
+            return db.cursor.fetchall()
+        finally:
+            db.close()
+
+    @auto_close_web_apps.before_loop
+    async def before_auto_close_web_apps(self):
+        await self.client.wait_until_ready()
+
     @commands.Cog.listener()
     async def on_ready(self):
         if not self.check_apps.is_running():
@@ -276,6 +381,8 @@ class CheckApps(commands.Cog):
             self.check_guild_leave.start()
         if not self.check_web_guild_leave.is_running():
             self.check_web_guild_leave.start()
+        if not self.auto_close_web_apps.is_running():
+            self.auto_close_web_apps.start()
 
 
 def setup(client):

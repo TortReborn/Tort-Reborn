@@ -21,7 +21,7 @@ else:
     sys.stdout = _os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
 from Helpers.classes import Guild, DB, BasicPlayerStats
-from Helpers.embed_updater import update_poll_embed
+from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank
 from Helpers.variables import (
     raid_log_channel,
@@ -654,15 +654,22 @@ class UpdateMemberData(commands.Cog):
                        WHERE applicant_discord_id = %s AND guild_leave_pending = TRUE""",
                     (did,)
                 )
+                # Also clear for website applications
+                db.cursor.execute(
+                    """UPDATE applications SET guild_leave_pending = FALSE
+                       WHERE discord_id = %s::TEXT AND guild_leave_pending = TRUE""",
+                    (did,)
+                )
                 db.connection.commit()
             finally:
                 db.close()
 
         await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, wars_on_join, starting_rank)
 
-        # Update poll embed
+        # Update poll embed (try legacy new_app first, then website applications)
         if app_channel_id:
             await update_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
+            await update_web_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
 
         # Send welcome embed
         welcome_ch = self.client.get_channel(welcome_channel)

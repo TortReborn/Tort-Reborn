@@ -1,6 +1,5 @@
 import asyncio
 import json
-import re
 from datetime import datetime, timezone
 from io import BytesIO
 
@@ -20,15 +19,11 @@ from Helpers.variables import (
     member_app_channel,
     application_manager_role_id,
     invited_category_name,
+    closed_category_name,
+    applications_archive_channel_name,
     error_channel,
     manual_review_role_id,
 )
-
-
-def _extract_app_id(channel_name: str) -> str | None:
-    """Extract the numeric app ID from a web app channel name like web-42 or web-invited-42."""
-    m = re.search(r'(\d+)$', channel_name)
-    return m.group(1) if m else None
 
 
 class WebAppCommands(commands.Cog):
@@ -60,7 +55,7 @@ class WebAppCommands(commands.Cog):
                 # Try channel_id first, then thread_id
                 db.cursor.execute(
                     """SELECT id, application_type, discord_id, thread_id, status,
-                              channel_id, guild_leave_pending, answers
+                              channel_id, guild_leave_pending, answers, discord_username
                        FROM applications WHERE channel_id = %s""",
                     (source_id,)
                 )
@@ -68,7 +63,7 @@ class WebAppCommands(commands.Cog):
                 if not row:
                     db.cursor.execute(
                         """SELECT id, application_type, discord_id, thread_id, status,
-                                  channel_id, guild_leave_pending, answers
+                                  channel_id, guild_leave_pending, answers, discord_username
                            FROM applications WHERE thread_id = %s""",
                         (source_id,)
                     )
@@ -86,7 +81,7 @@ class WebAppCommands(commands.Cog):
             )
             return None
 
-        app_id, app_type, discord_id, thread_id, status, channel_id, guild_leave_pending, answers = row
+        app_id, app_type, discord_id, thread_id, status, channel_id, guild_leave_pending, answers, discord_username = row
 
         if require_status and status != require_status:
             await ctx.followup.send(
@@ -121,6 +116,7 @@ class WebAppCommands(commands.Cog):
             "id": app_id,
             "application_type": app_type,
             "discord_id": discord_id,
+            "discord_username": discord_username or str(app_id),
             "thread_id": thread_id,
             "status": status,
             "channel_id": channel_id,
@@ -204,7 +200,7 @@ class WebAppCommands(commands.Cog):
             await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
 
         # Update poll embed and channel based on guild status
-        num = _extract_app_id(channel.name) or str(app_id)
+        username = app["discord_username"]
         if in_guild:
             await update_web_poll_embed(self.client, channel.id, ":yellow_circle: Accepted - Pending Leave", 0xFFE019)
             feedback = (
@@ -223,7 +219,7 @@ class WebAppCommands(commands.Cog):
                         ephemeral=True,
                     )
             try:
-                await channel.edit(name=f"web-invited-{num}")
+                await channel.edit(name=f"web-invited-{username}")
             except discord.Forbidden:
                 pass
             await update_web_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
@@ -238,7 +234,7 @@ class WebAppCommands(commands.Cog):
         await self._update_exec_thread(app["thread_id"], "accepted", "Guild Member", ign)
 
         # Recruiter tracking
-        await self._process_recruiter_tracking(channel, ign, int(app["discord_id"]))
+        await self._process_recruiter_tracking(channel, ign, int(app["discord_id"]), app["id"])
 
         await ctx.followup.send(feedback, ephemeral=True)
 
@@ -286,9 +282,9 @@ class WebAppCommands(commands.Cog):
             role_status = "**Role skipped** (member not found)."
 
         # Rename channel
-        num = _extract_app_id(channel.name) or str(app_id)
+        username = app["discord_username"]
         try:
-            await channel.edit(name=f"web-c-accepted-{num}")
+            await channel.edit(name=f"web-c-accepted-{username}")
         except discord.Forbidden:
             pass
 
@@ -332,8 +328,8 @@ class WebAppCommands(commands.Cog):
         )
 
         # Rename channel
-        num = _extract_app_id(channel.name) or str(app["id"])
-        new_name = f"web-denied-{num}" if app["application_type"] == "guild" else f"web-c-denied-{num}"
+        username = app["discord_username"]
+        new_name = f"web-denied-{username}" if app["application_type"] == "guild" else f"web-c-denied-{username}"
         try:
             await channel.edit(name=new_name)
         except discord.Forbidden:
@@ -404,9 +400,9 @@ class WebAppCommands(commands.Cog):
                 )
 
         # Rename channel
-        num = _extract_app_id(channel.name) or str(app["id"])
+        username = app["discord_username"]
         try:
-            await channel.edit(name=f"web-invited-{num}")
+            await channel.edit(name=f"web-invited-{username}")
         except discord.Forbidden:
             pass
 
@@ -417,6 +413,133 @@ class WebAppCommands(commands.Cog):
             "Invite sent. User will be auto-registered when they join the guild in-game.",
             ephemeral=True,
         )
+
+    # --- /app close ---
+
+    @app_group.command(name='close', description='Close this application ticket')
+    async def close(self, ctx: ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        result = await self._lookup_web_app(ctx)
+        if result is None:
+            return
+
+        channel, app = result
+
+        # Check if already closed
+        guild = self.client.get_guild(channel.guild.id) or channel.guild
+        closed_cat = discord.utils.get(guild.categories, name=closed_category_name)
+        if closed_cat and getattr(channel, 'category', None) == closed_cat:
+            await ctx.followup.send("This application is already closed.", ephemeral=True)
+            return
+
+        # Send close message
+        await channel.send("This application has been closed.")
+
+        # Move to Closed Applications category (on_guild_channel_update handles rename + poll update)
+        if closed_cat:
+            try:
+                await channel.edit(category=closed_cat)
+            except discord.Forbidden:
+                await ctx.followup.send(
+                    "Could not move channel to Closed Applications (missing permissions).",
+                    ephemeral=True,
+                )
+                return
+
+        await ctx.followup.send("Application closed.", ephemeral=True)
+
+    # --- /app transcribe ---
+
+    @app_group.command(name='transcribe', description='Transcribe this application to the archive channel')
+    async def transcribe(self, ctx: ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        result = await self._lookup_web_app(ctx)
+        if result is None:
+            return
+
+        channel, app = result
+        guild = self.client.get_guild(channel.guild.id) or channel.guild
+
+        # Find the archive channel by name
+        archive_chan = discord.utils.get(guild.text_channels, name=applications_archive_channel_name)
+        if not archive_chan:
+            await ctx.followup.send(
+                f"Archive channel `#{applications_archive_channel_name}` not found.",
+                ephemeral=True,
+            )
+            return
+
+        # Fetch all messages
+        messages = []
+        async for msg in channel.history(limit=500, oldest_first=True):
+            messages.append(msg)
+
+        if not messages:
+            await ctx.followup.send("No messages found in this channel.", ephemeral=True)
+            return
+
+        # Build transcript
+        ign = (app["answers"].get("ign") or "").strip()
+        type_label = "Guild Member" if app["application_type"] == "guild" else "Community Member"
+        created_at = messages[0].created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        transcript_lines = [
+            f"=== Application Transcript ===",
+            f"Channel: #{channel.name}",
+            f"Type: {type_label}",
+            f"Applicant: {app['discord_username']} ({app['discord_id']})",
+            f"IGN: {ign or 'N/A'}",
+            f"Status: {app['status']}",
+            f"Created: {created_at}",
+            f"Messages: {len(messages)}",
+            f"{'=' * 40}",
+            "",
+        ]
+
+        for msg in messages:
+            timestamp = msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            author = msg.author.display_name
+            bot_tag = " [BOT]" if msg.author.bot else ""
+            transcript_lines.append(f"[{timestamp}] {author}{bot_tag}")
+
+            if msg.content:
+                transcript_lines.append(msg.content)
+
+            for embed in msg.embeds:
+                if embed.title:
+                    transcript_lines.append(f"  [Embed: {embed.title}]")
+                if embed.description:
+                    transcript_lines.append(f"  {embed.description}")
+                for field in embed.fields:
+                    transcript_lines.append(f"  {field.name}: {field.value}")
+
+            for att in msg.attachments:
+                transcript_lines.append(f"  [Attachment: {att.filename} — {att.url}]")
+
+            transcript_lines.append("")
+
+        transcript_text = "\n".join(transcript_lines)
+
+        # Build summary embed
+        embed = discord.Embed(
+            title=f"Transcript: #{channel.name}",
+            color=0x2F3136,
+        )
+        embed.add_field(name="Type", value=type_label, inline=True)
+        embed.add_field(name="Status", value=app["status"].title(), inline=True)
+        embed.add_field(name="Applicant", value=f"<@{app['discord_id']}>", inline=True)
+        if ign:
+            embed.add_field(name="IGN", value=ign, inline=True)
+        embed.add_field(name="Messages", value=str(len(messages)), inline=True)
+
+        # Send as file attachment
+        buf = BytesIO(transcript_text.encode("utf-8"))
+        file = discord.File(buf, filename=f"transcript-{channel.name}.txt")
+
+        await archive_chan.send(embed=embed, file=file)
+        await ctx.followup.send(f"Transcript saved to {archive_chan.mention}.", ephemeral=True)
 
     # --- DB helpers ---
 
@@ -509,8 +632,8 @@ class WebAppCommands(commands.Cog):
 
     # --- Recruiter tracking ---
 
-    async def _process_recruiter_tracking(self, channel, ign, applicant_discord_id=None):
-        num = _extract_app_id(channel.name) or channel.name
+    async def _process_recruiter_tracking(self, channel, ign, applicant_discord_id=None, app_id=None):
+        num = str(app_id) if app_id else channel.name
 
         text = ""
         async for msg in channel.history(limit=50, oldest_first=True):
