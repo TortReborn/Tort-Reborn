@@ -53,6 +53,7 @@ if test:
     app_category_name = "Guild Applications"
     invited_category_name = "Invited"
     closed_category_name = "Closed Applications"
+    applications_archive_channel_name = "applications-archive"
 else:
     RATES_THREAD_ID = 1279379192626282579
     guilds = [729147655875199017, 1364751619018850405]
@@ -100,6 +101,7 @@ else:
     app_category_name = "Guild Applications"
     invited_category_name = "Invited"
     closed_category_name = "Closed Applications"
+    applications_archive_channel_name = "applications-archive"
 
 WEBSITE_URL = "http://localhost:3000" if test else "https://the-aquarium.com"
 
