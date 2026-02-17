@@ -19,18 +19,15 @@ CLAUDE.md
 
 .vscode/
 
-Archive/theaquarium.json
-current_activity.json
 credentials.json
 token.json
 
-player_activity.json
-aspect_distribution.json
 last_online.json
 member_list.json
 previous_data.json
 territories.json
 current_recruitment_list.json
+shell.log
 
 avatar_cache/
 avatar_cache.json

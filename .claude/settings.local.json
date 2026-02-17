@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(findstr:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(del player_activity.json current_activity.json aspect_blacklist.json aspect_distribution.json previous_guild_data.json previous_raid_data.json guild_prefix.json guild_bank.json backgrounds.json claim.json mapmaker_decompression.json neighbor_terrs.json items.json items_data.json custom_items.json activity2.py nul)"
     ]
   }
 }
