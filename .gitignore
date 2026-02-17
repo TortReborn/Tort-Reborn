@@ -16,6 +16,7 @@ __pycache__/
 # Claude Code files
 CLAUDE.md
 .mcp.json
+.claude/
 
 .vscode/
 
