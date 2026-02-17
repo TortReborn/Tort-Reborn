@@ -54,49 +54,6 @@ def getPlayerDatav3(uuid):
         return False
 
 
-def getGuildFromShort(short):
-    url = ('https://api.wynncraft.com/public_api.php'
-           '?action=statsLeaderboard&type=guild&timeframe=alltime')
-    try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
-        resp.raise_for_status()
-        data = resp.json()
-    except requests.RequestException:
-        return False
-
-    for guild in data.get('data', []):
-        if guild['prefix'].lower() == short.lower():
-            return guild['name']
-
-    # fallback to local cache
-    with open('guild_prefix.json', 'r') as f:
-        guilds = json.load(f)
-    return guilds.get(short.lower(), False)
-
-
-
-def search(item, type):
-    try_prefix = getGuildFromShort(item)
-    if try_prefix:
-        return [True, try_prefix]
-
-    searchurl = (
-      'https://api.wynncraft.com/public_api.php'
-      f'?action=statsSearch&search={urlify(item)}'
-    )
-    try:
-        resp = requests.get(searchurl, timeout=10)
-        resp.raise_for_status()
-        jsondata = resp.json()
-    except requests.RequestException:
-        return [False]
-
-    for datum in jsondata.get(type, []):
-        if item.lower() == datum.lower():
-            return [True, datum]
-    return [False]
-
-
 def getData(guild):
     url = f"https://api.wynncraft.com/v3/guild/{urlify(guild)}"
     try:
@@ -500,31 +457,6 @@ def generate_banner(guild, scale, style=''):
     bg = bg.resize((bg.width * scale, bg.height * scale), Image.NEAREST)
 
     return bg
-
-
-def update_items():
-    ITEMS = []
-
-    req = requests.get('https://api.wynncraft.com/v3/item/database?fullResult', headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
-    items = req.json()
-
-    for item in items:
-        if item != 'default':
-            ITEMS.append(item)
-
-    with open('custom_items.json', 'r') as f:
-        custom_items = json.load(f)
-        for custom_item in custom_items:
-            ITEMS.append(custom_item['name'])
-            # items.append(custom_item)
-        f.close()
-
-    with open('items.json', 'w') as f:
-        json.dump({"items": ITEMS}, f)
-        f.close()
-    with open('items_data.json', 'w') as f:
-        json.dump({"items": items}, f)
-        f.close()
 
 
 def addLine(text, draw, font, x, y, drop_x=2, drop_y=2, anchor=None):
