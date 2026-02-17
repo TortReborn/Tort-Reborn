@@ -166,21 +166,28 @@ class CheckWebsiteApps(commands.Cog):
                 view_channel=True, send_messages=True, read_message_history=True
             )
 
-        channel_name = f"web-{app_id}"
+        channel_name = f"web-{discord_username}"
         channel = await guild.create_text_channel(
             name=channel_name,
             category=category,
             overwrites=overwrites,
         )
 
-        # Format and post the application in the channel
+        # Format and post the combined welcome + application in the channel
         mention = applicant.mention if applicant else f"<@{discord_id}>"
         formatted = _format_answers(answers, app_type)
 
-        await channel.send(
-            f"Welcome {mention}! Your **{type_label}** application has been received.\n\n"
-            f">>> {formatted}"
+        intro = (
+            f"Hi {mention}, thank you for applying! \U0001F420\n"
+            f"Your **{type_label}** application has been received and is being reviewed. "
+            f"We aim to get back to you within 12 hours.\n\n"
         )
+        combined = f"{intro}>>> {formatted}"
+        if len(combined) <= 2000:
+            await channel.send(combined)
+        else:
+            await channel.send(intro)
+            await channel.send(f">>> {formatted}")
 
         # Post poll embed in exec channel
         exec_chan = self.client.get_channel(member_app_channel)
@@ -190,7 +197,7 @@ class CheckWebsiteApps(commands.Cog):
             return
 
         poll_embed = discord.Embed(
-            title=f"Application web-{app_id}",
+            title=f"Application web-{discord_username}",
             description="A new website application has been submitted\u2014please vote below:",
             colour=0x3ED63E,
         )
@@ -210,10 +217,10 @@ class CheckWebsiteApps(commands.Cog):
                     buf = BytesIO()
                     img.save(buf, format="PNG")
                     buf.seek(0)
-                    filename = f"web-{app_id}-{pdata.UUID}.png"
+                    filename = f"web-{discord_username}-{pdata.UUID}.png"
                     player_info_file = discord.File(buf, filename=filename)
                     poll_embed.set_image(url=f"attachment://{filename}")
-                    poll_embed.title = f"Application web-{app_id} ({pdata.username})"
+                    poll_embed.title = f"Application web-{discord_username} ({pdata.username})"
 
                     # Check blacklist
                     try:
@@ -246,7 +253,7 @@ class CheckWebsiteApps(commands.Cog):
 
         # Create discussion thread and add reactions
         thread = await poll_msg.create_thread(
-            name=f"web-{app_id}", auto_archive_duration=1440
+            name=f"web-{discord_username}", auto_archive_duration=1440
         )
         for emoji in ("\U0001F44D", "\U0001F937", "\U0001F44E"):
             await poll_msg.add_reaction(emoji)
@@ -256,16 +263,6 @@ class CheckWebsiteApps(commands.Cog):
 
         # Update applications table with channel_id, thread_id, poll_message_id
         await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id)
-
-        # Send acknowledgment in the app channel
-        await channel.send(
-            f"Hi {mention},\n\n"
-            f"Thank you for your interest in joining The Aquarium! \U0001F420\n"
-            f"Your application has been received and is greatly appreciated.\n\n"
-            f"We'll be carefully reviewing it and aim to get back to you within 12 hours.\n\n"
-            f"Best regards,\n"
-            f"The Aquarium Applications Team"
-        )
 
     @staticmethod
     def _update_application(app_id, channel_id, thread_id, poll_message_id):
