@@ -21,7 +21,7 @@ def mapCreator(guild_prefix: Optional[str] = None):
     map_img = Image.open("images/map/wynncraft_map.png").convert("RGBA")
     font = ImageFont.truetype("lib/documents/arial.ttf", 40)
 
-    with open("territories_verbose.json", "r") as f:
+    with open("data/territories_verbose.json", "r") as f:
         local_territories = json.load(f)
 
     # Build a map of guild prefix to color

@@ -98,7 +98,7 @@ class LootPool(commands.Cog):
 
         # Load mapping JSON and invert to {aspect_name: class}
         try:
-            with open('aspect_class_map.json', 'r') as f:
+            with open('data/aspect_class_map.json', 'r') as f:
                 class_map = json.load(f)
         except Exception:
             class_map = {}
