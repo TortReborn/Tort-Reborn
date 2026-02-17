@@ -1,4 +1,3 @@
-import json
 import re
 import os
 import random
@@ -6,6 +5,8 @@ import asyncio
 from datetime import datetime, timezone
 from discord.ext import tasks, commands
 import aiohttp
+
+from Helpers.database import save_recruitment_data
 
 
 class RecruitmentChecker(commands.Cog):
@@ -164,8 +165,7 @@ class RecruitmentChecker(commands.Cog):
                 'candidates': candidates
             }
 
-            with open('current_recruitment_list.json', 'w', encoding='utf-8') as f:
-                json.dump(result, f, indent=2)
+            save_recruitment_data(result)
 
             print(f"[RecruitmentChecker] Scan complete. Found {len(candidates)} guildless candidates "
                   f"out of {total_scanned}/{total_players} players in {duration:.1f}s")

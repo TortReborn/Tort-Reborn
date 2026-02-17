@@ -231,10 +231,5 @@ def xp_data(uuid):
     return {"xp_contribution": xp_contribution, "days": days_list}
 
 
-@app.route('/download_welcome_messages', methods=['GET'])
-def download_welcome_messages():
-    return send_file('welcome_messages.txt', as_attachment=True)
-
-
 serve(app, host='0.0.0.0', port=8001)
 # app.run(host='0.0.0.0', port=8001)

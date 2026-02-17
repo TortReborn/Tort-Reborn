@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 from Helpers.classes import BasicPlayerStats
-from Helpers.database import DB
+from Helpers.database import DB, get_blacklist
 from Helpers.functions import generate_applicant_info, getNameFromUUID
 from Helpers.embed_updater import update_poll_embed
 from Helpers.openai_helper import (
@@ -295,17 +295,13 @@ class OnMessage(commands.Cog):
                 pdata = None
             else:
                 # Blacklist check
-                try:
-                    with open('blacklist.json', 'r') as f:
-                        blacklist = json.load(f)
-                    for player in blacklist:
-                        if pdata.UUID == player['UUID']:
-                            blacklist_warning = (
-                                f':no_entry: Player present on blacklist!\n'
-                                f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
-                            )
-                except FileNotFoundError:
-                    pass
+                blacklist = get_blacklist()
+                for player in blacklist:
+                    if pdata.UUID == player['UUID']:
+                        blacklist_warning = (
+                            f':no_entry: Player present on blacklist!\n'
+                            f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
+                        )
 
         # Update DB with the detected type, IGN, and message ID
         db = DB(); db.connect()

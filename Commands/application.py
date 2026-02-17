@@ -9,7 +9,7 @@ from discord import ApplicationContext
 from discord.ext import commands
 
 from Helpers.classes import BasicPlayerStats
-from Helpers.database import DB
+from Helpers.database import DB, get_blacklist
 from Helpers.embed_updater import update_poll_embed
 from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3, getNameFromUUID
 from Helpers.openai_helper import (
@@ -718,17 +718,13 @@ class ApplicationCommands(commands.Cog):
             if pdata.error:
                 pdata = None
             else:
-                try:
-                    with open('blacklist.json', 'r') as f:
-                        blacklist = json.load(f)
-                    for player in blacklist:
-                        if pdata.UUID == player['UUID']:
-                            blacklist_warning = (
-                                f':no_entry: Player present on blacklist!\n'
-                                f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
-                            )
-                except FileNotFoundError:
-                    pass
+                blacklist = get_blacklist()
+                for player in blacklist:
+                    if pdata.UUID == player['UUID']:
+                        blacklist_warning = (
+                            f':no_entry: Player present on blacklist!\n'
+                            f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
+                        )
 
         # Update DB with the detected type, IGN, and mark complete
         db = DB(); db.connect()

@@ -180,3 +180,74 @@ def get_territory_data() -> dict:
         return {}
     finally:
         db.close()
+
+
+def get_blacklist() -> list:
+    """Load blacklist from cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'blacklist'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            data = row[0] if isinstance(row[0], list) else json.loads(row[0])
+            return data
+        return []
+    except Exception:
+        return []
+    finally:
+        db.close()
+
+
+def save_blacklist(data: list):
+    """Save blacklist to cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at)
+            VALUES ('blacklist', %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                data = EXCLUDED.data, created_at = NOW()
+        """, (json.dumps(data), epoch))
+        db.connection.commit()
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
+def get_recruitment_data() -> dict:
+    """Load recruitment scan data from cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'recruitmentList'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    except Exception:
+        return {}
+    finally:
+        db.close()
+
+
+def save_recruitment_data(data: dict):
+    """Save recruitment scan data to cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at)
+            VALUES ('recruitmentList', %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                data = EXCLUDED.data, created_at = NOW()
+        """, (json.dumps(data), epoch))
+        db.connection.commit()
+    except Exception as e:
+        print(f"[recruitment] save failed: {e}")
+    finally:
+        db.close()
