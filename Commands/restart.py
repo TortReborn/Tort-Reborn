@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 import time
@@ -6,6 +5,7 @@ import time
 from discord.ext import commands
 from discord import slash_command
 
+from Helpers.database import set_last_online
 from Helpers.variables import guilds
 
 
@@ -16,8 +16,7 @@ class Restart(commands.Cog):
     @slash_command(guild_ids=[guilds[1]])
     async def restart(self, message):
         crash = {"type": 'Restart', "value": str(message.user) + ' ran the restart command', "timestamp": int(time.time())}
-        with open('last_online.json', 'w') as f:
-            json.dump(crash, f)
+        set_last_online(crash)
         await message.respond('Restarting...', ephemeral=True)
         os.execv(sys.executable, ['python'] + sys.argv)
 

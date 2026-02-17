@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 from io import BytesIO
 import re
 
@@ -97,12 +96,18 @@ class BackgroundAdmin(commands.Cog):
         bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
         embed.set_image(url=f"attachment://{bg_id}.png")
 
-        with open('background.log', 'a') as f:
-            curr_datetime = datetime.now()
-            curr_datetime_str = curr_datetime.strftime("%d/%m/%Y, %H:%M:%S")
-            f.write(
-                f'[{curr_datetime_str}] {message.author.name} ({message.author.id}) uploaded {name} (ID: {bg_id}, Description: {description}, Public: {public}, Price: {price})\n')
-            f.close()
+        try:
+            log_db = DB()
+            log_db.connect()
+            log_db.cursor.execute(
+                "INSERT INTO audit_log (log_type, actor_name, actor_id, action) VALUES (%s, %s, %s, %s)",
+                ('background', message.author.name, message.author.id,
+                 f'uploaded {name} (ID: {bg_id}, Description: {description}, Public: {public}, Price: {price})')
+            )
+            log_db.connection.commit()
+            log_db.close()
+        except Exception as e:
+            print(f"[background_admin] audit_log write failed: {e}")
 
         await message.respond(embed=embed, file=bg_file)
 
@@ -153,12 +158,15 @@ class BackgroundAdmin(commands.Cog):
         )
         db.connection.commit()
 
-        with open('background.log', 'a') as f:
-            curr_datetime = datetime.now()
-            curr_datetime_str = curr_datetime.strftime("%d/%m/%Y, %H:%M:%S")
-            f.write(
-                f'[{curr_datetime_str}] {message.author.name} ({message.author.id}) unlocked {background} ({bg_id}) for {user.name} ({user.id})\n')
-            f.close()
+        try:
+            db.cursor.execute(
+                "INSERT INTO audit_log (log_type, actor_name, actor_id, action) VALUES (%s, %s, %s, %s)",
+                ('background', message.author.name, message.author.id,
+                 f'unlocked {background} ({bg_id}) for {user.name} ({user.id})')
+            )
+            db.connection.commit()
+        except Exception as e:
+            print(f"[background_admin] audit_log write failed: {e}")
 
         embed = discord.Embed(title=':unlock: Background unlocked!',
                               description=f':frame_photo: **{bg_name}** was unlocked for <@{user.id}>.',
@@ -206,12 +214,15 @@ class BackgroundAdmin(commands.Cog):
         )
         db.connection.commit()
 
-        with open('background.log', 'a') as f:
-            curr_datetime = datetime.now()
-            curr_datetime_str = curr_datetime.strftime("%d/%m/%Y, %H:%M:%S")
-            f.write(
-                f'[{curr_datetime_str}] {message.author.name} ({message.author.id}) set {background} ({bg_id}) for {user.name} ({user.id})\n')
-            f.close()
+        try:
+            db.cursor.execute(
+                "INSERT INTO audit_log (log_type, actor_name, actor_id, action) VALUES (%s, %s, %s, %s)",
+                ('background', message.author.name, message.author.id,
+                 f'set {background} ({bg_id}) for {user.name} ({user.id})')
+            )
+            db.connection.commit()
+        except Exception as e:
+            print(f"[background_admin] audit_log write failed: {e}")
 
         embed = discord.Embed(title=':white_check_mark: Background set!',
                               description=f':frame_photo: **{bg_name}** was set as active background for <@{user.id}>.',

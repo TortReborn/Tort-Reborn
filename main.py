@@ -1,5 +1,4 @@
 import datetime
-import json
 import sys
 import time
 import traceback
@@ -12,6 +11,7 @@ import discord
 from discord import Embed
 
 from Helpers.classes import Guild
+from Helpers.database import get_last_online, set_last_online
 from Helpers.variables import test
 from Commands.generate_app_header import ApplicationButtonView
 
@@ -54,8 +54,7 @@ def on_crash(exc_type, value, tb):
         "tb": "".join(traceback.format_tb(tb)),
         "timestamp": int(time.time())
     }
-    with open('last_online.json', 'w') as f:
-        json.dump(crash, f)
+    set_last_online(crash)
 
 
 sys.excepthook = on_crash
@@ -79,7 +78,7 @@ async def on_ready():
 
     if not test:
         now = int(time.time())
-        crash_report = json.load(open('last_online.json', 'r'))
+        crash_report = get_last_online()
         downtime = now - crash_report['timestamp']
 
         desc = f'🕙 **Downtime**\n`{datetime.timedelta(seconds=downtime)}`\n\n'
@@ -108,8 +107,7 @@ async def on_connect():
         "tb": "",
         "timestamp": int(time.time())
     }
-    with open('last_online.json', 'w') as f:
-        json.dump(last_online, f)
+    set_last_online(last_online)
 
 
 if not test or test:

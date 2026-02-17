@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import re
 import sys
 import discord
@@ -238,33 +237,43 @@ class UpdateMemberData(commands.Cog):
     def __init__(self, client):
         self.client = client
         self._has_started = False
-        self.previous_data = self._load_json("previous_data.json", {})
-        self.member_file = "member_list.json"
-        self.previous_members = self._load_json(self.member_file, {})
-        self.member_file_exists = os.path.exists(self.member_file)
+        self.previous_data = self._load_from_cache("previousMemberData", {})
+        self.previous_members = self._load_from_cache("memberList", {})
+        self.member_list_exists = bool(self.previous_members)
         self.raid_participants = {raid: {"unvalidated": {}, "validated": {}} for raid in self.RAID_NAMES}
         self.xp_only_validated = {}  # uuid -> {"name": str, "first_seen": datetime} for players with XP jump but no detected raid type
         self.cold_start = True
         self.request_times = deque()
         self._semaphore = asyncio.Semaphore(5)
 
-    def _load_json(self, path, default):
+    def _load_from_cache(self, key, default):
         try:
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    return json.load(f)
+            db = _db_connect_with_retry()
+            db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = %s", (key,))
+            row = db.cursor.fetchone()
+            db.close()
+            if row and row[0]:
+                return row[0] if isinstance(row[0], dict) else json.loads(row[0])
         except Exception:
             traceback.print_exc()
         return default
 
-    def _save_json(self, path, data):
+    def _save_to_cache(self, key, data):
         try:
-            with open(path, "w") as f:
-                json.dump(data, f, indent=2)
-            return True
+            db = _db_connect_with_retry()
+            epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+            db.cursor.execute("""
+                INSERT INTO cache_entries (cache_key, data, expires_at)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (cache_key) DO UPDATE SET
+                    data = EXCLUDED.data, created_at = NOW(),
+                    expires_at = EXCLUDED.expires_at,
+                    fetch_count = cache_entries.fetch_count + 1
+            """, (key, json.dumps(data), epoch))
+            db.connection.commit()
+            db.close()
         except Exception:
             traceback.print_exc()
-        return False
 
     def _make_progress_bar(self, percent: int, length: int = 20) -> str:
         filled = int(length * percent / 100)
@@ -344,7 +353,7 @@ class UpdateMemberData(commands.Cog):
         prev_map = self.previous_members
         curr_map = {m['uuid']: {'name': m['name'], 'rank': m.get('rank')} for m in guild.all_members}
         joined, left = set(curr_map) - set(prev_map), set(prev_map) - set(curr_map)
-        if (joined or left) and not (self.cold_start and not self.member_file_exists):
+        if (joined or left) and not (self.cold_start and not self.member_list_exists):
             ch = self.client.get_channel(LOG_CHANNEL)
             def add_chunked(embed, title, items):
                 chunk = ''
@@ -372,12 +381,12 @@ class UpdateMemberData(commands.Cog):
                 add_chunked(el, 'Left', [prev_map[u]['name'] for u in left])
                 await ch.send(embed=el)
         self.previous_members = curr_map
-        self._save_json(self.member_file, curr_map)
+        self._save_to_cache("memberList", curr_map)
 
         # 4: Rank changes
         role_changes = [(u, curr_map[u]['name'], prev_map[u]['rank'], curr_map[u]['rank'])
                         for u in curr_map if u in prev_map and prev_map[u].get('rank')!=curr_map[u]['rank']]
-        if role_changes and not (self.cold_start and not self.member_file_exists):
+        if role_changes and not (self.cold_start and not self.member_list_exists):
             ch = self.client.get_channel(LOG_CHANNEL)
             er = discord.Embed(title='Guild Rank Changes', timestamp=now, color=0x0000FF)
             for _,name,old,new in role_changes:
@@ -551,7 +560,7 @@ class UpdateMemberData(commands.Cog):
 
         # --- 12: Persist (unchanged, but now includes carry-forward) ---
         self.previous_data = new_data
-        self._save_json("previous_data.json", new_data)
+        self._save_to_cache("previousMemberData", new_data)
         self.cold_start = False
 
         # Build pf_map ONLY from fresh results for the current snapshot write
