@@ -463,37 +463,33 @@ async def getTerritoryData():
     except Exception:
         return False
 
-# ---------- File I/O (run in thread) ----------
+# ---------- Territory persistence (database cache) ----------
 
 def _read_territories_sync() -> dict:
     try:
-        with open('territories.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
+        db = DB()
+        db.connect()
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'territories'")
+        row = db.cursor.fetchone()
+        db.close()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
     except Exception:
-        return {}
+        pass
+    return {}
 
 def saveTerritoryData(data):
-    # Save to JSON file
-    with open('territories.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4)
-        f.close()
-    
-    # Save to database cache
     try:
         db = DB()
         db.connect()
-        
-        # Set expiration to epoch time (January 1, 1970)
+
         epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
-        
-        # Use ON CONFLICT to either insert or update the cache entry
+
         db.cursor.execute("""
             INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
             VALUES (%s, %s, %s, 1)
-            ON CONFLICT (cache_key) 
-            DO UPDATE SET 
+            ON CONFLICT (cache_key)
+            DO UPDATE SET
                 data = EXCLUDED.data,
                 created_at = NOW(),
                 expires_at = EXCLUDED.expires_at,
@@ -501,13 +497,12 @@ def saveTerritoryData(data):
                 last_error = NULL,
                 error_count = 0
         """, ('territories', json.dumps(data), epoch_time))
-        
+
         db.connection.commit()
         db.close()
-        
+
     except Exception as e:
         print(f"[saveTerritoryData] Failed to save to cache: {e}")
-        # Don't let database errors prevent the file save from working
         if 'db' in locals():
             try:
                 db.close()
