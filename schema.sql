@@ -313,3 +313,19 @@ CREATE TABLE IF NOT EXISTS agenda_requested_topics (
   submitted_by BIGINT       NOT NULL,
   created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+-- =============================================================================
+-- Audit Log (replaces background.log and shell.log)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id         SERIAL       PRIMARY KEY,
+  log_type   VARCHAR(50)  NOT NULL,
+  actor_name VARCHAR(100),
+  actor_id   BIGINT,
+  action     TEXT         NOT NULL,
+  created_at TIMESTAMPTZ  DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_type ON audit_log(log_type);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);

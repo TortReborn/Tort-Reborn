@@ -2,8 +2,9 @@ import discord
 from discord.ext import commands, pages
 from discord.commands import slash_command
 import datetime
-import json
 import math
+
+from Helpers.database import get_territory_data
 
 
 class Treasury(commands.Cog):
@@ -16,8 +17,7 @@ class Treasury(commands.Cog):
 
         try:
             # 1. Load territory data
-            with open('territories.json', 'r', encoding='utf-8') as f:
-                all_territories = json.load(f)
+            all_territories = get_territory_data()
 
             if not all_territories:
                 embed = discord.Embed(
@@ -111,13 +111,6 @@ class Treasury(commands.Cog):
 
             await paginator.respond(ctx.interaction)
 
-        except FileNotFoundError:
-            error_embed = discord.Embed(
-                title='Error',
-                description='Territory data file not found.',
-                color=discord.Color.red()
-            )
-            await ctx.followup.send(embed=error_embed, ephemeral=True)
         except Exception as e:
             error_embed = discord.Embed(
                 title='Error',

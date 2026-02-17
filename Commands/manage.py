@@ -257,9 +257,14 @@ class Manage(commands.Cog):
 
             db.connection.commit()
 
-            with open('shell.log', 'a') as f:
-                ts = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
-                f.write(f'[{ts}] {ctx.user.name} {operation}ed {amount} to {player.username}.\n')
+            try:
+                db.cursor.execute(
+                    "INSERT INTO audit_log (log_type, actor_name, actor_id, action) VALUES (%s, %s, %s, %s)",
+                    ('shell', ctx.user.name, ctx.user.id, f'{operation}ed {amount} to {player.username}.')
+                )
+                db.connection.commit()
+            except Exception as e:
+                print(f"[manage shells] audit_log write failed: {e}")
 
             img = ImageOps.expand(img, border=(2,2), fill='#100010e2')
             draw = ImageDraw.Draw(img)

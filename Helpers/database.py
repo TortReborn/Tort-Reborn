@@ -1,5 +1,7 @@
+import datetime
 import json
 import os
+import time
 
 import psycopg2
 from psycopg2 import OperationalError
@@ -122,5 +124,59 @@ def get_player_activity_baseline(uuid: str, key: str, days: int) -> tuple:
     except Exception as e:
         print(f"[get_player_activity_baseline] Error for {uuid}/{key}: {e}")
         return (0, True)
+    finally:
+        db.close()
+
+
+def get_last_online() -> dict:
+    """Load last online/crash data from cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'lastOnline'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {"type": "Online", "timestamp": int(time.time())}
+    except Exception:
+        return {"type": "Online", "timestamp": int(time.time())}
+    finally:
+        db.close()
+
+
+def set_last_online(data: dict):
+    """Save last online/crash data to cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at)
+            VALUES ('lastOnline', %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                data = EXCLUDED.data, created_at = NOW()
+        """, (json.dumps(data), epoch))
+        db.connection.commit()
+    except Exception:
+        pass
+    finally:
+        db.close()
+
+
+def get_territory_data() -> dict:
+    """Load territory data from cache_entries.
+    Replaces: territories.json reads
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'territories'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    except Exception as e:
+        print(f"[get_territory_data] Error: {e}")
+        return {}
     finally:
         db.close()
