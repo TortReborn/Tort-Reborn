@@ -166,7 +166,6 @@ extensions = [
     # 'Commands.build',
     # 'Commands.withdraw',
     # 'Commands.update_claim',
-    # 'Commands.welcome_admin',
     # 'Commands.suggest_promotion',
     # 'Commands.ranking_up_setup',
     'Commands.raid_collecting',

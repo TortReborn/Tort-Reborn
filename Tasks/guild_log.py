@@ -2,8 +2,6 @@ import asyncio
 import datetime
 import json
 import time
-import random
-
 import dateutil
 import discord
 from discord.ext import tasks, commands
@@ -150,18 +148,13 @@ class GuildLog(commands.Cog):
                 db.close()
                 discord_id = f' (<@{rows[0][0]}>) ' if len(rows) != 0 else ''
                 if len(rows) != 0:
-                    with open('welcome_messages.txt', 'r') as f:
-                        messages = f.readlines()
-                        f.close()
-
-                    messages.pop()
-
                     if test:
                         guild_general = self.client.get_channel(1367285315236008036)
                     else:
                         guild_general = self.client.get_channel(748900470575071293)
+                    welcome_msg = f"Dive right in, <@{rows[0][0]}>! The water's fine."
                     embed = discord.Embed(title='',
-                                          description=f':ocean: {random.choice(messages).replace("[User]", f"<@{rows[0][0]}>")}',
+                                          description=f':ocean: {welcome_msg}',
                                           color=0x4287f5)
                     await guild_general.send(embed=embed)
                     ping_msg = await guild_general.send(f"<@{rows[0][0]}>")

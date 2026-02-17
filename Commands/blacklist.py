@@ -1,4 +1,3 @@
-import json
 import math
 
 import discord
@@ -7,15 +6,14 @@ from discord import SlashCommandGroup
 from discord.ext import commands
 from discord.ext import pages
 
+from Helpers.database import get_blacklist, save_blacklist
 from Helpers.functions import getPlayerUUID, getNameFromUUID
 from Helpers.variables import te
 
 
 async def getBlacklistedPlayers(message: discord.AutocompleteContext):
-    with open('blacklist.json', 'r') as f:
-        PLAYERS = json.load(f)
-        f.close()
-    return [player['ign'] for player in PLAYERS if message.value.lower() in player['ign'].lower()]
+    blacklist = get_blacklist()
+    return [player['ign'] for player in blacklist if message.value.lower() in player['ign'].lower()]
 
 
 class Blacklist(commands.Cog):
@@ -29,9 +27,7 @@ class Blacklist(commands.Cog):
     async def add(self, message,
                   ign: discord.Option(str, name='player', required=True,
                                       description='In-game name or UUID of the player')):
-        with open('blacklist.json', 'r') as f:
-            blacklist_list = json.load(f)
-            f.close()
+        blacklist_list = get_blacklist()
 
         if len(ign) > 16:
             UUID = getNameFromUUID(ign)
@@ -55,6 +51,7 @@ class Blacklist(commands.Cog):
                     return
                 else:
                     blacklist_list[i] = {'ign': UUID[0], 'UUID': UUID[1]}
+                    save_blacklist(blacklist_list)
                     embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
                                           description=f'{UUID[0]} is already blacklisted as {player["ign"]}. Updated In-Game name.',
                                           color=0xe33232)
@@ -62,10 +59,7 @@ class Blacklist(commands.Cog):
                     return
 
         blacklist_list.append({'ign': UUID[0], 'UUID': UUID[1]})
-
-        with open('blacklist.json', 'w') as f:
-            json.dump(blacklist_list, f)
-            f.close()
+        save_blacklist(blacklist_list)
 
         await message.respond(f':no_entry: Blacklisted `{UUID[0]}` (*{UUID[1]}*)')
 
@@ -73,9 +67,7 @@ class Blacklist(commands.Cog):
     @option("player", description="In-game name or UUID of the player", autocomplete=getBlacklistedPlayers)
     async def remove(self, message,
                      player):
-        with open('blacklist.json', 'r') as f:
-            blacklist_list = json.load(f)
-            f.close()
+        blacklist_list = get_blacklist()
 
         removed = False
         for i, players in enumerate(blacklist_list):
@@ -97,9 +89,7 @@ class Blacklist(commands.Cog):
             await message.respond(embed=embed, ephemeral=True)
             return
 
-        with open('blacklist.json', 'w') as f:
-            json.dump(blacklist_list, f)
-            f.close()
+        save_blacklist(blacklist_list)
 
         await message.respond(
             f':white_check_mark: Removed `{removed_player["ign"]}` (*{removed_player["UUID"]}*) from the blacklist.')
@@ -107,9 +97,7 @@ class Blacklist(commands.Cog):
     @blacklist_group.command()
     async def check(self, message, ign: discord.Option(str, name='player', required=True,
                                       description='In-game name or UUID of the player')):
-        with open('blacklist.json', 'r') as f:
-            blacklist_list = json.load(f)
-            f.close()
+        blacklist_list = get_blacklist()
 
         if len(ign) > 16:
             UUID = getNameFromUUID(ign)
@@ -137,14 +125,9 @@ class Blacklist(commands.Cog):
         await message.respond(
             f':white_check_mark: `{UUID[0]}` (*{UUID[1]}*) is not blacklisted.')
 
-
-
-
     @blacklist_group.command()
     async def list(self, message):
-        with open('blacklist.json', 'r') as f:
-            blacklist_list = json.load(f)
-            f.close()
+        blacklist_list = get_blacklist()
 
         book = []
         blacklist_list.sort(key=lambda x: x['ign'], reverse=False)
@@ -152,10 +135,10 @@ class Blacklist(commands.Cog):
         page_num = 1 if page_num == 0 else page_num
         for page in range(page_num):
             page_blacklist = blacklist_list[(30 * page):30 + (30 * page)]
-            all_data = '```ansi\n[1;37m Player Name        UUID' \
+            all_data = '```ansi\n[1;37m Player Name        UUID' \
                        '\n╘═════════════════╪═════════════════════════════════════╛\n'
             for player in page_blacklist:
-                all_data = all_data + '[0;0m {:16s} │ {:36s} \n'.format(player['ign'], player['UUID'])
+                all_data = all_data + '[0;0m {:16s} │ {:36s} \n'.format(player['ign'], player['UUID'])
             all_data += '```'
             embed = discord.Embed(title='Blacklisted players',
                                   description=all_data)

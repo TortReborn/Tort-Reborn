@@ -6,7 +6,7 @@ import discord
 from discord.ext import tasks, commands
 
 from Helpers.classes import BasicPlayerStats
-from Helpers.database import DB
+from Helpers.database import DB, get_blacklist
 from Helpers.functions import generate_applicant_info
 from Helpers.variables import (
     guilds,
@@ -223,18 +223,14 @@ class CheckWebsiteApps(commands.Cog):
                     poll_embed.title = f"Application web-{discord_username} ({pdata.username})"
 
                     # Check blacklist
-                    try:
-                        with open("blacklist.json", "r") as f:
-                            blacklist = json.load(f)
-                        for player in blacklist:
-                            if pdata.UUID == player["UUID"]:
-                                poll_embed.description = (
-                                    f":no_entry: Player present on blacklist!\n"
-                                    f"**Name:** {pdata.username}\n**UUID:** {pdata.UUID}"
-                                )
-                                break
-                    except FileNotFoundError:
-                        pass
+                    blacklist = get_blacklist()
+                    for player in blacklist:
+                        if pdata.UUID == player["UUID"]:
+                            poll_embed.description = (
+                                f":no_entry: Player present on blacklist!\n"
+                                f"**Name:** {pdata.username}\n**UUID:** {pdata.UUID}"
+                            )
+                            break
             except Exception as e:
                 print(f"[check_website_apps] Stats image error for {ign}: {e}")
 

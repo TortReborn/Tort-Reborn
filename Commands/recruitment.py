@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
 from discord.commands import slash_command
+from Helpers.database import get_recruitment_data
 from Helpers.variables import te
 from datetime import datetime
-import json
 import csv
 import io
 
@@ -50,19 +50,11 @@ class Recruitment(commands.Cog):
         await ctx.defer(ephemeral=True)
 
         # Load cached data
-        try:
-            with open('current_recruitment_list.json', 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except FileNotFoundError:
+        data = get_recruitment_data()
+        if not data:
             await ctx.followup.send(
                 "No recruitment data available yet. The background scanner is still collecting data. "
                 "Please try again in a few minutes.",
-                ephemeral=True
-            )
-            return
-        except json.JSONDecodeError:
-            await ctx.followup.send(
-                "Error reading recruitment data. Please try again later.",
                 ephemeral=True
             )
             return
