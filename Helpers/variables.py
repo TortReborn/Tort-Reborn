@@ -101,6 +101,8 @@ else:
     invited_category_name = "Invited"
     closed_category_name = "Closed Applications"
 
+WEBSITE_URL = "http://localhost:3000" if test else "https://the-aquarium.com"
+
 TICKET_TOOL_BOT_ID = 557628352828014614
 RATES_PING_ROLE_ID = 1050233131183112255
 LEGACY_WEBHOOK_URL = "https://discord.com/api/webhooks/1135511106085994526/FvH7NuTcK9NyTwRDbwDcaDkekoedk2Gg-HL0cgiqVNUrjBNP22n7IfVahMXPmiBCX5ql"

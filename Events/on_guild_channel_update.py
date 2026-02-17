@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.embed_updater import update_poll_embed
+from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
 from Helpers.variables import closed_category_name
 
 
@@ -58,6 +58,35 @@ class OnGuildChannelUpdate(commands.Cog):
                         await after.edit(name=new_name)
                     except Exception:
                         pass
+            else:
+                # Check website applications table
+                db = DB(); db.connect()
+                db.cursor.execute(
+                    "SELECT application_type, status FROM applications WHERE channel_id = %s",
+                    (after.id,)
+                )
+                web_row = db.cursor.fetchone()
+                db.close()
+
+                if web_row:
+                    app_type, status = web_row
+                    num_match = re.search(r'(\d+)$', after.name)
+                    app_num = num_match.group(1) if num_match else after.name.split("-")[-1]
+
+                    if status == "accepted":
+                        new_name = f"web-accepted-{app_num}" if app_type == "guild" else f"web-c-accepted-{app_num}"
+                    elif status == "denied":
+                        new_name = f"web-denied-{app_num}" if app_type == "guild" else f"web-c-denied-{app_num}"
+                    else:
+                        new_name = None
+
+                    if new_name and new_name != after.name:
+                        try:
+                            await after.edit(name=new_name)
+                        except Exception:
+                            pass
+
+                    await update_web_poll_embed(self.client, after.id, ":red_circle: Closed", 0xD93232)
 
     @commands.Cog.listener()
     async def on_ready(self):
