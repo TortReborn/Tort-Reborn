@@ -12,7 +12,7 @@ from discord import Embed
 
 from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
-from Helpers.variables import test
+from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID
 from Commands.generate_app_header import ApplicationButtonView
 
 
@@ -76,7 +76,7 @@ async def on_ready():
     for g in client.guilds:
         print(f'🟪 Connected to guild: {g.name}')
 
-    if not test:
+    if not IS_TEST_MODE:
         now = int(time.time())
         crash_report = get_last_online()
         downtime = now - crash_report['timestamp']
@@ -95,7 +95,7 @@ async def on_ready():
             description=desc,
             colour=0x1cd641
         )
-        ch = client.get_channel(1367285315236008036)
+        ch = client.get_channel(ERROR_CHANNEL_ID)
         await ch.send(embed=embed)
 
 
@@ -110,7 +110,7 @@ async def on_connect():
     set_last_online(last_online)
 
 
-if not test or test:
+if not IS_TEST_MODE or IS_TEST_MODE:
     @client.event
     async def on_application_command_error(
         ctx: discord.ApplicationContext,
@@ -126,7 +126,7 @@ if not test or test:
         if len(traceback_string) >= 1500:
             traceback_string = "…(truncated)…\n" + traceback_string
 
-        ch = client.get_channel(1367285315236008036)
+        ch = client.get_channel(ERROR_CHANNEL_ID)
         await ch.send(
             f'## {ctx.author} in <#{ctx.channel_id}>:\n'
             f'```\n/{ctx.command.qualified_name}{options}\n```'

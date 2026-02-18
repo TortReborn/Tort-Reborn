@@ -11,7 +11,7 @@ from discord.ui import Select, View
 
 from Helpers.classes import PlayerStats
 from Helpers.functions import getPlayerData, fix_progressbar, getPlayerUUID, generate_rank_badge, create_progress_bar
-from Helpers.variables import class_map
+from Helpers.variables import class_map, ALL_GUILD_IDS
 from StringProgressBar import progressBar
 import re
 import math
@@ -21,7 +21,7 @@ class Progress(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays player\'s Wynncraft progress')
+    @slash_command(description='Displays player\'s Wynncraft progress', guild_ids=ALL_GUILD_IDS)
     async def progress(self, message, name: discord.Option(str, require=True)):
         playerdata = PlayerStats(name, 7)
 

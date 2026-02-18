@@ -7,10 +7,9 @@ from pathlib import Path
 from textwrap import dedent
 
 from Helpers.database import DB
-from Helpers.variables import guilds, raid_collecting_channel, shell_emoji_id, aspect_emoji_id
+from Helpers.variables import TAQ_GUILD_IDS, RAID_COLLECTING_CHANNEL_ID, SHELL_EMOJI, ASPECT_EMOJI
 
-CHANNEL_ID = raid_collecting_channel
-GUILD_ID   = guilds[0]
+CHANNEL_ID = RAID_COLLECTING_CHANNEL_ID
 
 class ClaimView(View):
     def __init__(self):
@@ -173,7 +172,7 @@ class RaidCollecting(commands.Cog):
         self.client = client
 
     @slash_command(
-        guild_ids=[GUILD_ID],
+        guild_ids=TAQ_GUILD_IDS,
         description="Post the Raid Collecting panel into the designated channel.",
         default_member_permissions=Permissions(administrator=True),
         dm_permission=False
@@ -205,10 +204,10 @@ class RaidCollecting(commands.Cog):
 
             Make sure to check your eligibility by clicking on the **Claim rewards** button below. You'll see how many raids you've completed and which rewards are available.
 
-            {aspect_emoji_id} **Claim Aspects**
+            {ASPECT_EMOJI} **Claim Aspects**
             • 1 Aspect for every 2 Guild Raids you complete.
 
-            {shell_emoji_id} **Claim Shells**
+            {SHELL_EMOJI} **Claim Shells**
             • 1 Shell for every Guild Raid you complete.
 
             **How to Claim**

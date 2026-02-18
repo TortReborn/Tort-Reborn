@@ -9,7 +9,7 @@ from discord import SlashCommandGroup, option
 from discord.ext import commands
 from discord.ui import View
 
-from Helpers.variables import test, guildbank_channel, log_channel
+from Helpers.variables import GUILD_BANK_CHANNEL_ID, BOT_LOG_CHANNEL_ID, ALL_GUILD_IDS
 
 
 class itemViewTaken(View):
@@ -19,10 +19,7 @@ class itemViewTaken(View):
     @discord.ui.button(label='Deposit', custom_id='deposit-button', style=discord.ButtonStyle.red)
     async def return_item(self, button, ctx: discord.ApplicationContext):
         await ctx.response.defer(ephemeral=True)
-        if not test:
-            log_channel = log_channel
-        else:
-            log_channel = log_channel
+        log_channel = BOT_LOG_CHANNEL_ID
         with open('guild_bank.json', 'r') as f:
             mythics = json.load(f)
             f.close()
@@ -52,12 +49,12 @@ async def get_mythics(message: discord.AutocompleteContext):
 class BankLog(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.gbank_channel = guildbank_channel
-        self.log_channel = log_channel
+        self.gbank_channel = GUILD_BANK_CHANNEL_ID
+        self.log_channel = BOT_LOG_CHANNEL_ID
 
     bank_log_group = SlashCommandGroup('bank_admin', 'Bank log admin commands',
                                        default_member_permissions=discord.Permissions(administrator=True),
-                                       guild_only=True)
+                                       guild_ids=ALL_GUILD_IDS)
 
     @bank_log_group.command(description="Register new item to guild bank")
     async def register(self, message, item: discord.Option(str, require=True),

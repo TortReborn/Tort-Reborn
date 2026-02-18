@@ -11,7 +11,7 @@ from discord import default_permissions, Option
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 # simple TTL cache to avoid hammering DB
 _EVENT_CACHE = {"items": [], "ts": 0.0}
@@ -85,7 +85,7 @@ class GraidEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(name="graid_event_start", guild_ids=guilds, description="Start a new GRAID event")
+    @slash_command(name="graid_event_start", guild_ids=ALL_GUILD_IDS, description="Start a new GRAID event")
     @default_permissions(manage_roles=True)
     async def graid_start(
         self, ctx: discord.ApplicationContext,
@@ -129,7 +129,7 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @slash_command(name="graid_event_stop", guild_ids=guilds, description="Stop the current GRAID event")
+    @slash_command(name="graid_event_stop", guild_ids=ALL_GUILD_IDS, description="Stop the current GRAID event")
     @default_permissions(manage_roles=True)
     async def graid_stop(self, ctx: discord.ApplicationContext):
         db = _db()
@@ -159,7 +159,7 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @slash_command(name="graid_event_info", guild_ids=guilds, description="Show the active GRAID event")
+    @slash_command(name="graid_event_info", guild_ids=ALL_GUILD_IDS, description="Show the active GRAID event")
     @default_permissions(manage_roles=True)
     async def graid_info(self, ctx: discord.ApplicationContext):
         db = _db()

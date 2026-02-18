@@ -24,7 +24,7 @@ from Helpers.database import DB
 from Helpers.variables import (
     discord_ranks,
     minecraft_banner_colors,
-    guilds,
+    ALL_GUILD_IDS,
     wynn_ranks,
 )
 
@@ -84,7 +84,7 @@ class Rank(commands.Cog):
     @slash_command(
         name="rank",
         description="Show Elo and key stats for a player",
-        guild_ids=guilds,
+        guild_ids=ALL_GUILD_IDS,
     )
     async def rank(self,
                    ctx: discord.ApplicationContext,

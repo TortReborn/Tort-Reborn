@@ -6,14 +6,14 @@ from discord import default_permissions
 from Helpers.classes import LinkAccount, PlayerStats, BasicPlayerStats
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID, determine_starting_rank
-from Helpers.variables import guilds, discord_ranks
+from Helpers.variables import ALL_GUILD_IDS, discord_ranks
 
 
 class NewMember(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(guild_ids=guilds)
+    @slash_command(guild_ids=ALL_GUILD_IDS)
     @default_permissions(manage_roles=True)
     async def new_member(self, message, user: discord.Member, ign):
         if message.interaction.user.guild_permissions.manage_roles:

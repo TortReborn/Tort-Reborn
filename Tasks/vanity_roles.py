@@ -11,7 +11,7 @@ from discord.commands import slash_command
 from discord import default_permissions
 
 from Helpers.database import DB, get_current_guild_data
-from Helpers.variables import guilds, announcement_channel, faq_channel, VANITY_ROLE_IDS
+from Helpers.variables import ALL_GUILD_IDS, TAQ_GUILD_ID, ANNOUNCEMENT_CHANNEL_ID, FAQ_CHANNEL_ID, VANITY_ROLE_IDS
 
 START_DATE_UTC = date(2025, 8, 31)  # first run date (YYYY, M, D)
 
@@ -285,9 +285,9 @@ class VanityRoles(commands.Cog):
             return
 
         async with self._running:
-            guild = self.client.get_guild(guilds[0])
+            guild = self.client.get_guild(TAQ_GUILD_ID)
             if guild is None:
-                print("[vanity_roles] Guild not found; check Helpers.variables.guilds[0].")
+                print("[vanity_roles] Guild not found; check Helpers.variables.TAQ_GUILD_ID.")
                 return
 
             print(f"[vanity_roles] Running for guild: {guild.name} ({guild.id})")
@@ -347,13 +347,13 @@ class VanityRoles(commands.Cog):
     async def _send_announcement_embed(self, guild: discord.Guild,
                                     winners: Dict[str, Dict[str, List[int]]],
                                     resolved: Dict[str, Dict[str, discord.Role]]):
-        channel = self.client.get_channel(announcement_channel) or guild.system_channel
+        channel = self.client.get_channel(ANNOUNCEMENT_CHANNEL_ID) or guild.system_channel
         if channel is None:
             print("[vanity_roles] Announcement channel not found.")
             return
 
         title = "🎉 Vanity Roles Awarded"
-        faq_hint = f"\nFor more information see <#{faq_channel}>"
+        faq_hint = f"\nFor more information see <#{FAQ_CHANNEL_ID}>"
         desc = f"Congrats to our top contributors over the last **{WINDOW_DAYS} days**!{faq_hint}"
         embed = discord.Embed(title=title, description=desc, color=discord.Color.blurple())
 
@@ -409,7 +409,7 @@ class VanityRoles(commands.Cog):
             # Optional: post a “no awards” embed instead of silent skip
             empty = discord.Embed(
                 title="🎉 Vanity Roles Awarded",
-                description=f"No vanity roles awarded this cycle.\nFor more information see <#{faq_channel}>",
+                description=f"No vanity roles awarded this cycle.\nFor more information see <#{FAQ_CHANNEL_ID}>",
                 color=discord.Color.blurple(),
             )
             try:
@@ -429,12 +429,12 @@ class VanityRoles(commands.Cog):
     # -----------------------------
     # Slash command: preview/run
     # -----------------------------
-    @slash_command(name="vanityroles", guild_ids=guilds, description="Admin: preview or run the bi-weekly vanity role job")
+    @slash_command(name="vanityroles", guild_ids=ALL_GUILD_IDS, description="Admin: preview or run the bi-weekly vanity role job")
     @default_permissions(administrator=True)
     async def vanityroles(self, ctx: discord.ApplicationContext, action: discord.Option(str, choices=["run", "preview"])):
         """Admin helper: 'run' applies changes now + announces; 'preview' prints counts only."""
         await ctx.defer(ephemeral=True)
-        guild = self.client.get_guild(guilds[0])
+        guild = self.client.get_guild(TAQ_GUILD_ID)
         if guild is None:
             await ctx.respond("Guild not found. Fix guild ID.", ephemeral=True)
             return

@@ -14,6 +14,7 @@ from discord.ext import commands
 from discord.commands import slash_command
 
 from Helpers.functions import addLine, get_transition_color, split_sentence, expand_image
+from Helpers.variables import ALL_GUILD_IDS
 
 base_stats = {'weapon': ['damage', 'earthDamage', 'thunderDamage', 'waterDamage', 'fireDamage', 'airDamage'],
               'armor': ['health', 'earthDefense', 'thunderDefense', 'waterDefense', 'fireDefense', 'airDefense'],
@@ -192,7 +193,7 @@ class Id(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Identifies a chosen item!')
+    @slash_command(description='Identifies a chosen item!', guild_ids=ALL_GUILD_IDS)
     @option("item", description="Pick an item!", autocomplete=get_items)
     async def id(self, message, item: str, corkian_amplifier: discord.Option(int, min_value=1, max_value=3, default=0,
                                                                              description="Corkian Amplifier tier ranging from 1 to 3")):

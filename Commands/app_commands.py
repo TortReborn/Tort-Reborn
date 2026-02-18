@@ -14,15 +14,14 @@ from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerD
 from Helpers.openai_helper import parse_application, match_recruiter_name
 from Helpers.sheets import add_row
 from Helpers.variables import (
-    guilds,
-    te,
-    member_app_channel,
-    application_manager_role_id,
-    invited_category_name,
-    closed_category_name,
-    applications_archive_channel_name,
-    error_channel,
-    manual_review_role_id,
+    ALL_GUILD_IDS,
+    MEMBER_APP_CHANNEL_ID,
+    APP_MANAGER_ROLE_MENTION,
+    INVITED_CATEGORY_NAME,
+    CLOSED_CATEGORY_NAME,
+    APP_ARCHIVE_CHANNEL_NAME,
+    ERROR_CHANNEL_ID,
+    MANUAL_REVIEW_ROLE_ID,
 )
 
 
@@ -32,8 +31,8 @@ class WebAppCommands(commands.Cog):
 
     app_group = SlashCommandGroup(
         'app', 'Website application management commands',
-        guild_ids=guilds + [te],
-        default_member_permissions=discord.Permissions(manage_channels=True)
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=discord.Permissions(manage_roles=True)
     )
 
     # --- Lookup helper ---
@@ -209,7 +208,7 @@ class WebAppCommands(commands.Cog):
             )
         else:
             guild = self.client.get_guild(channel.guild.id) or channel.guild
-            invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
+            invited_cat = discord.utils.get(guild.categories, name=INVITED_CATEGORY_NAME)
             if invited_cat:
                 try:
                     await channel.edit(category=invited_cat)
@@ -389,7 +388,7 @@ class WebAppCommands(commands.Cog):
 
         # Move to Invited category
         guild = self.client.get_guild(channel.guild.id) or channel.guild
-        invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
+        invited_cat = discord.utils.get(guild.categories, name=INVITED_CATEGORY_NAME)
         if invited_cat:
             try:
                 await channel.edit(category=invited_cat)
@@ -428,7 +427,7 @@ class WebAppCommands(commands.Cog):
 
         # Check if already closed
         guild = self.client.get_guild(channel.guild.id) or channel.guild
-        closed_cat = discord.utils.get(guild.categories, name=closed_category_name)
+        closed_cat = discord.utils.get(guild.categories, name=CLOSED_CATEGORY_NAME)
         if closed_cat and getattr(channel, 'category', None) == closed_cat:
             await ctx.followup.send("This application is already closed.", ephemeral=True)
             return
@@ -463,10 +462,10 @@ class WebAppCommands(commands.Cog):
         guild = self.client.get_guild(channel.guild.id) or channel.guild
 
         # Find the archive channel by name
-        archive_chan = discord.utils.get(guild.text_channels, name=applications_archive_channel_name)
+        archive_chan = discord.utils.get(guild.text_channels, name=APP_ARCHIVE_CHANNEL_NAME)
         if not archive_chan:
             await ctx.followup.send(
-                f"Archive channel `#{applications_archive_channel_name}` not found.",
+                f"Archive channel `#{APP_ARCHIVE_CHANNEL_NAME}` not found.",
                 ephemeral=True,
             )
             return
@@ -651,7 +650,7 @@ class WebAppCommands(commands.Cog):
 
         result = await asyncio.to_thread(parse_application, text)
         if result.get("error"):
-            err_ch = self.client.get_channel(error_channel)
+            err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
             if err_ch:
                 await err_ch.send(
                     f"## Recruiter Tracker - OpenAI Error\n"
@@ -723,7 +722,7 @@ class WebAppCommands(commands.Cog):
                 else:
                     paid = "NP"
             except Exception as e:
-                err_ch = self.client.get_channel(error_channel)
+                err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                 if err_ch:
                     await err_ch.send(
                         f"## Recruiter Tracker - Match Error\n"
@@ -740,7 +739,7 @@ class WebAppCommands(commands.Cog):
                 paid=paid, recruiter_format=recruiter_format,
             )
             if not sheet_result.get("success"):
-                err_ch = self.client.get_channel(error_channel)
+                err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                 if err_ch:
                     await err_ch.send(
                         f"## Recruiter Tracker - Sheets Error\n"
@@ -748,10 +747,10 @@ class WebAppCommands(commands.Cog):
                         f"```\n{sheet_result.get('error', 'Unknown')[:500]}\n```"
                     )
         else:
-            review_ch = self.client.get_channel(member_app_channel)
+            review_ch = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
             if review_ch:
                 await review_ch.send(
-                    f"<@&{manual_review_role_id}> **Recruiter tracking needs manual review**\n"
+                    f"<@&{MANUAL_REVIEW_ROLE_ID}> **Recruiter tracking needs manual review**\n"
                     f"**Ticket:** `{channel.name}` | **Parsed IGN:** `{ign}` | "
                     f"**Parsed Recruiter:** `{recruiter}` | **Certainty:** `{certainty:.0%}`\n"
                     f"Please update the recruiter sheet manually."

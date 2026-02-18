@@ -8,7 +8,7 @@ import time
 import discord
 from discord.ext import commands
 
-from Helpers.variables import guilds, te, WEBSITE_URL
+from Helpers.variables import ALL_GUILD_IDS, WEBSITE_URL
 
 APPLICATION_TOKEN_SECRET = os.getenv("APPLICATION_TOKEN_SECRET", "")
 
@@ -85,7 +85,7 @@ class GenerateAppHeader(commands.Cog):
     @discord.slash_command(
         name="generate-app-header",
         description="Post or update the application header with buttons in this channel",
-        guild_ids=guilds + [te],
+        guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(administrator=True),
     )
     async def generate_app_header(

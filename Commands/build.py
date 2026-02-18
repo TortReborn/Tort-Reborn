@@ -11,12 +11,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from Helpers.variables import ALL_GUILD_IDS
+
 
 class Build(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Search for a build specific to your requirements')
+    @slash_command(description='Search for a build specific to your requirements', guild_ids=ALL_GUILD_IDS)
     async def build(self, message,
                     wynn_class: discord.Option(str, name='class', choices=['Archer/Hunter', 'Warrior/Knight',
                                                                            'Assassin/Ninja', 'Mage/Dark Wizard',

@@ -13,7 +13,7 @@ import requests
 from Helpers.classes import LinkAccount, PlayerStats, PlayerShells
 from Helpers.database import DB
 from Helpers.functions import addLine, split_sentence, expand_image, getPlayerUUID
-from Helpers.variables import guilds, discord_ranks, discord_rank_roles
+from Helpers.variables import ALL_GUILD_IDS, discord_ranks, discord_rank_roles
 
 
 class ShellModalName(Modal):
@@ -86,7 +86,7 @@ class Manage(commands.Cog):
 
     manage_group = SlashCommandGroup(
         'manage', 'Guild management commands',
-        guild_ids=guilds,
+        guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
 

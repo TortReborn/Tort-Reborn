@@ -5,7 +5,7 @@ from discord.commands import user_command
 from Helpers.classes import LinkAccount, NewMember
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import guilds, discord_ranks, discord_rank_roles
+from Helpers.variables import ALL_GUILD_IDS, discord_ranks, discord_rank_roles
 
 
 class RankDemote(commands.Cog):
@@ -15,7 +15,7 @@ class RankDemote(commands.Cog):
     @user_command(
         name='Rank | Demote',
         default_member_permissions=discord.Permissions(manage_roles=True),
-        guild_ids=guilds
+        guild_ids=ALL_GUILD_IDS
     )
     async def demote_member(self, interaction: discord.Interaction, user: discord.Member):
         # Ensure the invoker has the Manage Roles permission

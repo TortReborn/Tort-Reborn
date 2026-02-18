@@ -7,7 +7,7 @@ from discord.ext import tasks, commands
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
-from Helpers.variables import application_manager_role_id, guilds, closed_category_name
+from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME
 
 
 class CheckApps(commands.Cog):
@@ -52,7 +52,7 @@ class CheckApps(commands.Cog):
                     continue
 
                 hours = int(elapsed // 3600)
-                await thread.send(f"{application_manager_role_id} {hours} hours passed since app creation.")
+                await thread.send(f"{APP_MANAGER_ROLE_MENTION} {hours} hours passed since app creation.")
 
                 db = DB()
                 db.connect()
@@ -162,7 +162,7 @@ class CheckApps(commands.Cog):
                 if getattr(thread, "archived", False):
                     await thread.edit(archived=False)
                 await thread.send(
-                    f"{application_manager_role_id} **{ign}** has left their guild! "
+                    f"{APP_MANAGER_ROLE_MENTION} **{ign}** has left their guild! "
                     f"They can now be invited.\n"
                     f"Run `/invite` in the ticket channel or this thread to send them the invite message."
                 )
@@ -259,7 +259,7 @@ class CheckApps(commands.Cog):
                 if getattr(thread, "archived", False):
                     await thread.edit(archived=False)
                 await thread.send(
-                    f"{application_manager_role_id} **{ign}** has left their guild! "
+                    f"{APP_MANAGER_ROLE_MENTION} **{ign}** has left their guild! "
                     f"They can now be invited.\n"
                     f"Run `/app invited` in the ticket channel or this thread to send them the invite message."
                 )
@@ -275,11 +275,11 @@ class CheckApps(commands.Cog):
     @tasks.loop(minutes=5)
     async def auto_close_web_apps(self):
         """Auto-close denied web apps after 24h and accepted web apps when user has roles."""
-        guild = self.client.get_guild(guilds[0])
+        guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
             return
 
-        closed_cat = discord.utils.get(guild.categories, name=closed_category_name)
+        closed_cat = discord.utils.get(guild.categories, name=CLOSED_CATEGORY_NAME)
         if not closed_cat:
             return
 

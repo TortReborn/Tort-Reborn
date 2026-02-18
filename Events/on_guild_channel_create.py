@@ -8,7 +8,7 @@ from discord.ui import View
 from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.database import DB
-from Helpers.variables import guilds, member_app_channel
+from Helpers.variables import TAQ_GUILD_ID, MEMBER_APP_CHANNEL_ID
 
 
 class OnGuildChannelCreate(commands.Cog):
@@ -19,7 +19,7 @@ class OnGuildChannelCreate(commands.Cog):
     async def on_guild_channel_create(self, channel):
         if not (
             channel.name.startswith("ticket-")
-            and channel.guild.id == guilds[0]
+            and channel.guild.id == TAQ_GUILD_ID
             and channel.category
             and channel.category.name == "Guild Applications"
         ):
@@ -60,9 +60,9 @@ class OnGuildChannelCreate(commands.Cog):
         view = View()
         await channel.send(file=welcome_file, view=view)
 
-        exec_chan = self.client.get_channel(member_app_channel)
+        exec_chan = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
         if not exec_chan:
-            print(f"🚨 Exec channel {member_app_channel} not found")
+            print(f"🚨 Exec channel {MEMBER_APP_CHANNEL_ID} not found")
             return
 
         ticket_num = channel.name.replace("ticket-", "")

@@ -6,7 +6,7 @@ from discord import option, default_permissions, slash_command
 from discord.ext import commands
 from discord.ui import View
 
-from Helpers.variables import test, guilds, eco_learning_channel
+from Helpers.variables import IS_TEST_MODE, ALL_GUILD_IDS, ECO_LEARNING_CHANNEL_ID
 
 
 class buttonView(View):
@@ -27,7 +27,7 @@ class buttonView(View):
 
         if user_id in cd:
             if t - 604800 > cd[user_id]:
-                await self.client.get_channel(eco_learning_channel).send(
+                await self.client.get_channel(ECO_LEARNING_CHANNEL_ID).send(
                     f'**{ctx.user.name}** is interested in learning eco!')
                 cd[ctx.user.id] = t
                 with open('eco_cd.json', 'w') as f:
@@ -43,7 +43,7 @@ class buttonView(View):
                                       color=0xbf2828)
                 await ctx.followup.send(embed=embed, delete_after=5, ephemeral=True)
         else:
-            await self.client.get_channel(eco_learning_channel).send(
+            await self.client.get_channel(ECO_LEARNING_CHANNEL_ID).send(
                f'**{ctx.user.name}** is interested in learning eco!')
             cd[user_id] = t
             with open('eco_cd.json', 'w') as f:
@@ -59,7 +59,7 @@ class EcoLearningSetup(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description="Set up the eco learning channel", default_member_permissions=discord.Permissions(administrator=True), guild_ids=guilds)
+    @slash_command(description="Set up the eco learning channel", default_member_permissions=discord.Permissions(administrator=True), guild_ids=ALL_GUILD_IDS)
     async def eco_learning_setup(self, message, json_data: discord.Option(str, description='JSON data from Discohook website'), button: discord.Option(bool, default=True, description='Include the ping button')):
         await message.defer(ephemeral=True)
         embed_data = json.loads(json_data)

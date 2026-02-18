@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.commands import slash_command
 from discord.ui import InputText, Modal
 
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 
 class SuggestionModal(Modal):
@@ -38,7 +38,7 @@ class Suggest(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(default_permission=False, description='Opens a suggestion form', guild_ids=guilds)
+    @slash_command(default_permission=False, description='Opens a suggestion form', guild_ids=ALL_GUILD_IDS)
     async def suggest(self, message):
         modal = SuggestionModal(self.client, title="Creating new suggestion")
         await message.interaction.response.send_modal(modal)
