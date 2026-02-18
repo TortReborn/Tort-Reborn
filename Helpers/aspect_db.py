@@ -12,9 +12,10 @@ import json
 from Helpers.database import DB
 from Helpers.classes import Guild
 from Helpers.logger import log, ERROR
+from Helpers.variables import IS_TEST_MODE
 
 
-WEEKLY_THRESHOLD = 5  # hours of playtime required
+WEEKLY_THRESHOLD = 0 if IS_TEST_MODE else 5  # hours of playtime required
 
 
 def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
@@ -150,7 +151,7 @@ def rebuild_queue(db: DB) -> Tuple[List[str], int]:
     
     # Get guild members
     guild = Guild("The Aquarium")
-    cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=7)
+    cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=0 if IS_TEST_MODE else 7)
     
     # Build eligible list in guild member order
     eligible = []

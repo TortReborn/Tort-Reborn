@@ -133,6 +133,7 @@ if not IS_TEST_MODE or IS_TEST_MODE:
 
         ch = client.get_channel(ERROR_CHANNEL_ID)
         await ch.send(
+            f'<@170719819715313665>\n'
             f'## {ctx.author} in <#{ctx.channel_id}>:\n'
             f'```\n/{ctx.command.qualified_name}{options}\n```'
             f'## Traceback:\n'

@@ -5,7 +5,6 @@ Aspect distribution commands - now using database storage.
 
 import io
 import os
-import json
 import asyncio
 import datetime
 from datetime import timezone, timedelta
@@ -19,13 +18,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
-from Helpers.variables import EXEC_GUILD_IDS
+from Helpers.variables import EXEC_GUILD_IDS, IS_TEST_MODE
 from Helpers.logger import log, WARN, ERROR
 from Helpers import aspect_db
-
-
-AVATAR_CACHE_FILE = "cache/avatar_index.json"
-AVATAR_CACHE_DIR = "cache/avatars"
+from Helpers.storage import get_cached_avatar, save_cached_avatar
 MAX_COLUMNS = 4
 ROWS_PER_COLUMN = 10
 CELL_WIDTH = 205
@@ -40,22 +36,6 @@ class AspectDistribution(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        os.makedirs(AVATAR_CACHE_DIR, exist_ok=True)
-        
-        if not os.path.exists(AVATAR_CACHE_FILE):
-            with open(AVATAR_CACHE_FILE, "w") as f:
-                json.dump({}, f)
-
-    def load_json(self, path, default):
-        try:
-            with open(path, "r") as f:
-                return json.load(f)
-        except Exception:
-            return default
-
-    def save_json(self, path, data):
-        with open(path, "w") as f:
-            json.dump(data, f, indent=2)
 
     def create_default_avatar(self, uuid: str) -> bytes:
         """Create a simple default avatar with a question mark."""
@@ -82,11 +62,9 @@ class AspectDistribution(commands.Cog):
         return buf.read()
 
     async def get_avatar(self, uuid: str) -> bytes:
-        cache = self.load_json(AVATAR_CACHE_FILE, {})
-        if uuid in cache:
-            path = os.path.join(AVATAR_CACHE_DIR, cache[uuid])
-            if os.path.exists(path):
-                return open(path, 'rb').read()
+        cached = get_cached_avatar(uuid)
+        if cached:
+            return cached
 
         url = f"https://vzge.me/face/64/{uuid}"
         headers = {'User-Agent': os.getenv("visage_UA", "")}
@@ -110,11 +88,7 @@ class AspectDistribution(commands.Cog):
                         log(WARN, f"Invalid image data received for UUID {uuid}", context="aspects")
                         return None
 
-            fn = f"{uuid}.png"
-            with open(os.path.join(AVATAR_CACHE_DIR, fn), 'wb') as f:
-                f.write(data)
-            cache[uuid] = fn
-            self.save_json(AVATAR_CACHE_FILE, cache)
+            save_cached_avatar(uuid, data)
             return data
         except Exception as e:
             log(WARN, f"Failed to fetch avatar for UUID {uuid}: {e}", context="aspects")
@@ -179,7 +153,7 @@ class AspectDistribution(commands.Cog):
             
             # Get guild for member lookup
             guild = Guild("The Aquarium")
-            cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=7)
+            cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=0 if IS_TEST_MODE else 7)
             
             # Build member map for 7-day check
             member_map = {}
@@ -258,6 +232,9 @@ class AspectDistribution(commands.Cog):
             aspect_db.log_distribution(db, ctx.author.id, distribution_list, amount)
 
             # 7. Render and send
+            if not recipients:
+                await ctx.followup.send("No eligible members found to distribute aspects to.")
+                return
             buf = self.make_distribution_image(avatars, names)
             await ctx.followup.send(file=discord.File(buf, "distribution.png"))
 
