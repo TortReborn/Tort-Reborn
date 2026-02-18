@@ -1,7 +1,7 @@
 import asyncio
 
 from Helpers.database import DB
-from Helpers.variables import member_app_channel
+from Helpers.variables import MEMBER_APP_CHANNEL_ID
 
 
 async def update_poll_embed(client, channel_id: int, new_status: str, colour: int):
@@ -34,7 +34,7 @@ async def update_poll_embed(client, channel_id: int, new_status: str, colour: in
     if not poll_message_id:
         return
 
-    exec_chan = client.get_channel(member_app_channel)
+    exec_chan = client.get_channel(MEMBER_APP_CHANNEL_ID)
     if not exec_chan:
         return
 
@@ -88,7 +88,7 @@ async def update_web_poll_embed(client, channel_id: int, new_status: str, colour
     if not poll_message_id:
         return
 
-    exec_chan = client.get_channel(member_app_channel)
+    exec_chan = client.get_channel(MEMBER_APP_CHANNEL_ID)
     if not exec_chan:
         return
 

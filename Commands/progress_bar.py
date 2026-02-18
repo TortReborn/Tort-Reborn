@@ -6,14 +6,14 @@ from discord.commands import slash_command
 import discord
 
 from Helpers.functions import create_progress_bar
-from Helpers.variables import guilds
+from Helpers.variables import EXEC_GUILD_IDS
 
 
 class ProgressBar(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(guilds=[guilds[1]])
+    @slash_command(guild_ids=EXEC_GUILD_IDS)
     async def progress_bar(self, message, width: discord.Option(int, require=True),
                            colour: discord.Option(str, require=True),
                            percentage: discord.Option(int, min_value=0, max_value=100, require=True)):

@@ -6,7 +6,7 @@ from discord import option, default_permissions, slash_command
 from discord.ext import commands
 from discord.ui import View
 
-from Helpers.variables import attention_channel
+from Helpers.variables import ATTENTION_CHANNEL_ID, ALL_GUILD_IDS
 
 
 class buttonView(View):
@@ -27,7 +27,7 @@ class buttonView(View):
 
         if user_id in cd:
             if t - 604800 > cd[user_id]:
-                await self.client.get_channel(attention_channel).send(
+                await self.client.get_channel(ATTENTION_CHANNEL_ID).send(
                     f'<@559398197789720577> **{ctx.user.name}** requests attention!')
                 cd[ctx.user.id] = t
                 with open('button_cd.json', 'w') as f:
@@ -37,7 +37,7 @@ class buttonView(View):
             else:
                 await ctx.followup.send('Nuh uh. You already pressed this button this week.', delete_after=5, ephemeral=True)
         else:
-            await self.client.get_channel(attention_channel).send(
+            await self.client.get_channel(ATTENTION_CHANNEL_ID).send(
                f'<@559398197789720577> **{ctx.user.name}** requests attention!')
             cd[user_id] = t
             with open('button_cd.json', 'w') as f:
@@ -50,7 +50,7 @@ class Button(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description="Button setup", default_member_permissions=discord.Permissions(administrator=True))
+    @slash_command(description="ADMIN: Button setup", default_member_permissions=discord.Permissions(administrator=True), guild_ids=ALL_GUILD_IDS)
     async def button(self, message, channel: discord.Option(discord.TextChannel)):
         await message.defer(ephemeral=True)
         embedList = []

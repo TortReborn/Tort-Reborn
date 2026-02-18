@@ -13,7 +13,8 @@ from discord.ext import commands, pages
 from Helpers.classes import PlaceTemplate, Page
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, expand_image, generate_rank_badge
-from Helpers.variables import rank_map, discord_ranks
+from Helpers.logger import log, ERROR
+from Helpers.variables import rank_map, discord_ranks, ALL_GUILD_IDS
 
 # ============================
 # Core leaderboard generator
@@ -153,7 +154,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 current_val, _ = get_current_value(uuid, key)
                 return current_val, True
             except Exception as e:
-                print(f"[leaderboard] Error getting baseline for {uuid}/{key}: {e}")
+                log(ERROR, f"Error getting baseline for {uuid}/{key}: {e}", context="leaderboard")
                 current_val, _ = get_current_value(uuid, key)
                 return current_val, True
 
@@ -312,7 +313,7 @@ class Leaderboard(commands.Cog):
     def __init__(self, client: discord.Client):
         self.client = client
 
-    leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands')
+    leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands', guild_ids=ALL_GUILD_IDS)
 
     # ---- XP ----
     @leaderboard_group.command(description='Display the XP leaderboard')
@@ -324,7 +325,7 @@ class Leaderboard(commands.Cog):
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the XP leaderboard.", ephemeral=True)
-            print("Error in /xp:", e)
+            log(ERROR, f"Error in /xp: {e}", context="leaderboard")
 
     # ---- Wars ----
     @leaderboard_group.command(description='Display the Wars leaderboard')
@@ -336,7 +337,7 @@ class Leaderboard(commands.Cog):
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the wars leaderboard.", ephemeral=True)
-            print("Error in /wars:", e)
+            log(ERROR, f"Error in /wars: {e}", context="leaderboard")
 
     # ---- Playtime ----
     @leaderboard_group.command(description='Display the Playtime leaderboard')
@@ -348,7 +349,7 @@ class Leaderboard(commands.Cog):
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the playtime leaderboard.", ephemeral=True)
-            print("Error in /playtime:", e)
+            log(ERROR, f"Error in /playtime: {e}", context="leaderboard")
 
     # ---- Shells (now time-gated like others) ----
     @leaderboard_group.command(description='Display the Shells leaderboard')
@@ -360,7 +361,7 @@ class Leaderboard(commands.Cog):
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the shells leaderboard.", ephemeral=True)
-            print("Error in /shells:", e)
+            log(ERROR, f"Error in /shells: {e}", context="leaderboard")
 
     # ---- NEW: Raids ----
     @leaderboard_group.command(description='Display the Raids leaderboard')
@@ -373,7 +374,7 @@ class Leaderboard(commands.Cog):
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the raids leaderboard.", ephemeral=True)
-            print("Error in /raids:", e)
+            log(ERROR, f"Error in /raids: {e}", context="leaderboard")
 
     @commands.Cog.listener()
     async def on_ready(self):

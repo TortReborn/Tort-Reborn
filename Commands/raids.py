@@ -22,8 +22,7 @@ from Helpers.functions import (
 )
 from Helpers.classes import PlayerStats
 from Helpers.database import DB
-from Helpers.variables import discord_ranks, minecraft_banner_colors, guilds, wynn_ranks
-from Helpers.storage import get_background
+from Helpers.variables import discord_ranks, minecraft_banner_colors, ALL_GUILD_IDS, wynn_ranks
 
 # ---------------------------------------------------------------------------
 # Raids Command
@@ -57,7 +56,7 @@ class Raids(commands.Cog):
     @slash_command(
         name="raids",
         description="Show raid rankings and counts for a player",
-        guild_ids=guilds,
+        guild_ids=ALL_GUILD_IDS,
     )
     async def raids(self,
                     ctx: discord.ApplicationContext,
@@ -175,7 +174,16 @@ class Raids(commands.Cog):
         outline = round_corners(outline)
         card.paste(outline, (41, 100), outline)
 
-        bg_img = get_background(bg_index)
+        bg_dir = "images/profile_backgrounds"
+        bg_path = f"{bg_dir}/{bg_index}.png"
+        try:
+            bg_img = Image.open(bg_path).convert("RGBA")
+        except FileNotFoundError:
+            # Fallback to default background 1.png
+            try:
+                bg_img = Image.open(f"{bg_dir}/1.png").convert("RGBA")
+            except Exception:
+                bg_img = Image.new("RGBA", (818, 545), (0, 0, 0, 100))  # ultimate fallback
         bg_img = round_corners(bg_img, radius=20)
         card.paste(bg_img, (50, 110), bg_img)
 

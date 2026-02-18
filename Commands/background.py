@@ -9,8 +9,7 @@ import json
 
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import guilds
-from Helpers.storage import get_background_file
+from Helpers.variables import ALL_GUILD_IDS
 
 
 async def get_all_backgrounds(message: discord.AutocompleteContext):
@@ -30,7 +29,7 @@ class Background(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    background_group = SlashCommandGroup('background', 'Background commands', guild_ids=guilds)
+    background_group = SlashCommandGroup('background', 'Background commands', guild_ids=ALL_GUILD_IDS)
 
     @background_group.command(description="List all available backgrounds")
     async def list(self, message, owned_only: discord.Option(bool, default=False)):
@@ -113,7 +112,7 @@ class Background(commands.Cog):
         if bg_id in owned_backgrounds:
             embed.add_field(name=f':white_check_mark: Owned', value=f'You own this background, apply it by using:\n`/background set background: {bg_name}`', inline=False)
 
-        bg_file = get_background_file(bg_id)
+        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
         embed.set_image(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)
@@ -156,7 +155,7 @@ class Background(commands.Cog):
             embed = discord.Embed(title=':white_check_mark: Background set!',
                                   description=f':frame_photo: **{bg_name}** was set as your active background.',
                                   color=0x34eb40)
-            bg_file = get_background_file(bg_id)
+            bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
             embed.set_thumbnail(url=f"attachment://{bg_id}.png")
 
             await message.respond(embed=embed, file=bg_file)

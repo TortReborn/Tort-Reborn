@@ -13,15 +13,15 @@ import json
 
 from Helpers.classes import PlayerStats
 from Helpers.functions import pretty_date, generate_rank_badge, generate_banner, getData, format_number, addLine, vertical_gradient, round_corners, generate_badge
-from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors
-from Helpers.storage import get_background
+from Helpers.logger import log, ERROR
+from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors, ALL_GUILD_IDS
 
 
 class Profile(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays a guild profile of guild member')
+    @slash_command(description='Displays a guild profile of guild member', guild_ids=ALL_GUILD_IDS)
     async def profile(self, ctx: discord.ApplicationContext, name: discord.Option(str, required=True), days: discord.Option(int, min=1, max=30, default=7)):
         await ctx.defer()
         player = await asyncio.to_thread(PlayerStats, name, days)
@@ -71,11 +71,11 @@ class Profile(commands.Cog):
 
         # Background
         if is_christmas:
-            background = get_background("christmas_background")
+            background = Image.open("images/profile_backgrounds/christmas_background.png")
         elif is_new_years:
-            background = get_background("new_years_background")
+            background = Image.open("images/profile_backgrounds/new_years_background.png")
         else:
-            background = get_background(player.background)
+            background = Image.open(f"images/profile_backgrounds/{player.background}.png")
         background = round_corners(background, radius=20)
         card.paste(background, (50, 110), background)
 
@@ -90,7 +90,7 @@ class Profile(commands.Cog):
             response = requests.get(url, headers=headers)
             skin = Image.open(BytesIO(response.content))
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="profile")
             skin = Image.open('images/profile/x-steve500.png')
         skin.thumbnail((480, 480))
         card.paste(skin, (200, 156), skin)
@@ -229,7 +229,7 @@ class Profile(commands.Cog):
                 else:
                     card_entries['Quests'] = str(player.quests)
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="profile")
 
         entry_keys = list(card_entries.keys())
 

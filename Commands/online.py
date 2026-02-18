@@ -15,6 +15,7 @@ from Helpers.functions import (
     create_progress_bar, vertical_gradient, get_rank_stars,
     generate_badge
 )
+from Helpers.variables import ALL_GUILD_IDS
 
 
 class Online(commands.Cog):
@@ -61,7 +62,7 @@ class Online(commands.Cog):
         return max(0, bbox[2] - bbox[0]), max(0, bbox[3] - bbox[1])
     # ------------------------------------
 
-    @slash_command(description='Sends a list of online guild members')
+    @slash_command(description='Sends a list of online guild members', guild_ids=ALL_GUILD_IDS)
     async def online(self, ctx: discord.ApplicationContext, guild: discord.Option(str, required=True)):
         await ctx.defer()
 

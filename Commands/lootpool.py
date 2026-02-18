@@ -5,9 +5,10 @@ from discord.commands import SlashCommandGroup
 from datetime import datetime, timedelta, timezone
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from Helpers.variables import mythics
+from Helpers.variables import mythics, ALL_GUILD_IDS
 from Helpers.functions import wrap_text, get_multiline_text_size
 from Helpers.database import DB
+from Helpers.logger import log, ERROR
 import time
 import os
 import json
@@ -16,7 +17,8 @@ import json
 class LootPool(commands.Cog):
     lootpool = SlashCommandGroup(
         name="lootpool",
-        description="Commands to fetch weekly lootpool data"
+        description="Commands to fetch weekly lootpool data",
+        guild_ids=ALL_GUILD_IDS
     )
 
     def __init__(self, client):
@@ -52,7 +54,7 @@ class LootPool(commands.Cog):
             db.close()
             
         except Exception as e:
-            print(f"[LootPool._cache_data] Failed to save {cache_key} to cache: {e}")
+            log(ERROR, f"Failed to save {cache_key} to cache: {e}", context="lootpool")
             # Don't let database errors prevent the command from working
             try:
                 if 'db' in locals():
@@ -327,7 +329,7 @@ class LootPool(commands.Cog):
                         )
 
                 except Exception as e:
-                    print(e)
+                    log(ERROR, f"{e}", context="lootpool")
                     embed = discord.Embed(
                         title=":no_entry: Error",
                         description="Could not generate lootpool image. Please try again later.",

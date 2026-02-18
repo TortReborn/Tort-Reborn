@@ -13,7 +13,8 @@ from discord.ui import View, Modal, InputText
 
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import test, te, promotion_channel, guilds
+from Helpers.logger import log, ERROR
+from Helpers.variables import IS_TEST_MODE, EXEC_GUILD_IDS, PROMOTION_CHANNEL_ID
 
 
 async def get_members(message: discord.AutocompleteContext):
@@ -63,9 +64,9 @@ class LockConfirmation(Modal):
 class SuggestPromotion(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.promo_channel = promotion_channel
+        self.promo_channel = PROMOTION_CHANNEL_ID
 
-    @slash_command(description="Suggest promotion of a member", guild_ids=[te, guilds[1]])
+    @slash_command(description="Suggest promotion of a member", guild_ids=EXEC_GUILD_IDS)
     @option("member", description="In-Game name (case-sensitive)", autocomplete=get_members)
     async def suggest_promotion(self, message, member: str, description: str):
         await message.defer(ephemeral=True)
@@ -99,7 +100,7 @@ class SuggestPromotion(commands.Cog):
             response = requests.get(url, headers=headers)
             skin = Image.open(BytesIO(response.content))
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="suggest_promotion")
             skin = Image.open('images/profile/x-steve500.png')
 
         u_timenow = time.mktime(datetime.datetime.now().timetuple())

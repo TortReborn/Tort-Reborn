@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from Helpers.database import DB
 from Helpers.functions import getNameFromUUID
+from Helpers.logger import log, ERROR
 from Helpers.openai_helper import (
     extract_ign,
     validate_application_completeness,
@@ -100,7 +101,7 @@ class OnMessageEdit(commands.Cog):
         validation = await asyncio.to_thread(validator, new_content)
 
         if validation.get("error"):
-            print(f"[on_message_edit] Validation error for channel {channel_id}: {validation['error']}")
+            log(ERROR, f"Validation error for channel {channel_id}: {validation['error']}", context="on_message_edit")
             return
 
         # Extract IGN from updated content

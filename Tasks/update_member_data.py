@@ -21,33 +21,35 @@ else:
     import os as _os
     sys.stdout = _os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.classes import Guild, DB, BasicPlayerStats
 from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
 from Helpers.variables import (
-    raid_log_channel,
-    log_channel,
-    notg_emoji_id,
-    tcc_emoji_id,
-    tna_emoji_id,
-    nol_emoji_id,
-    aspect_emoji_id,
-    guilds,
-    welcome_channel,
+    RAID_LOG_CHANNEL_ID,
+    BOT_LOG_CHANNEL_ID,
+    NOTG_EMOJI,
+    TCC_EMOJI,
+    TNA_EMOJI,
+    NOL_EMOJI,
+    ASPECT_EMOJI,
+    ALL_GUILD_IDS,
+    TAQ_GUILD_ID,
+    WELCOME_CHANNEL_ID,
     discord_ranks,
 )
 
-RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
-LOG_CHANNEL = log_channel
+RAID_ANNOUNCE_CHANNEL_ID = RAID_LOG_CHANNEL_ID
+LOG_CHANNEL = BOT_LOG_CHANNEL_ID
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 100  # max calls per minute
 
 RAID_EMOJIS = {
-    "Nest of the Grootslangs": notg_emoji_id,
-    "The Canyon Colossus": tcc_emoji_id,
-    "The Nameless Anomaly": tna_emoji_id,
-    "Orphion's Nexus of Light": nol_emoji_id
+    "Nest of the Grootslangs": NOTG_EMOJI,
+    "The Canyon Colossus": TCC_EMOJI,
+    "The Nameless Anomaly": TNA_EMOJI,
+    "Orphion's Nexus of Light": NOL_EMOJI
 }
 
 # --- thread-safe DB + snapshot helpers ---
@@ -143,7 +145,7 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
             db.close()
 
         except Exception as e:
-            print(f"[_write_current_snapshot_sync] Failed to save empty snapshot to cache: {e}")
+            log(ERROR, f"Failed to save empty snapshot to cache: {e}", context="update_member_data")
             try:
                 if 'db' in locals():
                     db.close()
@@ -219,7 +221,7 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
         db.close()
         
     except Exception as e:
-        print(f"[_write_current_snapshot_sync] Failed to save to cache: {e}")
+        log(ERROR, f"Failed to save to cache: {e}", context="update_member_data")
         # Don't let database errors prevent the file save from working
         try:
             if 'db' in locals():
@@ -278,7 +280,7 @@ class UpdateMemberData(commands.Cog):
             traceback.print_exc()
 
     async def _announce_raid(self, raid, group, guild, participant_names=None):
-        print(f"Announcing raid {raid}: {group}", flush=True)
+        log(INFO, f"Announcing raid {raid}: {group}", context="update_member_data")
         if participant_names:
             names = [participant_names.get(uid, uid) for uid in group]
         else:
@@ -291,7 +293,7 @@ class UpdateMemberData(commands.Cog):
             emoji = RAID_EMOJIS.get(raid, "")
             title = f"{emoji} {raid} Completed!"
         else:
-            title = f"{aspect_emoji_id} Guild Raid Completed!"
+            title = f"{ASPECT_EMOJI} Guild Raid Completed!"
 
         channel = self.client.get_channel(RAID_ANNOUNCE_CHANNEL_ID)
         if channel:
@@ -347,7 +349,7 @@ class UpdateMemberData(commands.Cog):
     @tasks.loop(minutes=3)
     async def update_member_data(self):
         now = datetime.datetime.now(timezone.utc)
-        print(f"🟦 STARTING LOOP - {now.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
+        log(INFO, "STARTING LOOP", context="update_member_data")
 
         # fetch guild over HTTP off the event loop
         guild = await asyncio.to_thread(Guild, "The Aquarium")
@@ -362,7 +364,7 @@ class UpdateMemberData(commands.Cog):
                 first = info['first_seen']
                 if isinstance(first, str): first = datetime.datetime.fromisoformat(first)
                 if first < cutoff:
-                    print(f"{now} - PRUNE unvalidated {info['name']} in {raid}", flush=True)
+                    log(INFO, f"PRUNE unvalidated {info['name']} in {raid}", context="update_member_data")
                     queues['unvalidated'].pop(uid)
 
         # 2b: Prune stale xp_only_validated entries
@@ -371,7 +373,7 @@ class UpdateMemberData(commands.Cog):
             if isinstance(first, str):
                 first = datetime.datetime.fromisoformat(first)
             if first < cutoff:
-                print(f"{now} - PRUNE xp_only_validated {info['name']}", flush=True)
+                log(INFO, f"PRUNE xp_only_validated {info['name']}", context="update_member_data")
                 self.xp_only_validated.pop(uid)
 
         # 3: Member join/leave
@@ -400,7 +402,7 @@ class UpdateMemberData(commands.Cog):
                     try:
                         await self._auto_register_joined_member(uuid, curr_map[uuid]['name'])
                     except Exception as e:
-                        print(f"[auto_register] Error for {uuid}: {e}")
+                        log(ERROR, f"Error for {uuid}: {e}", context="auto_register")
             if left:
                 el = discord.Embed(title='Guild Members Left', timestamp=now, color=0xFF0000)
                 add_chunked(el, 'Left', [prev_map[u]['name'] for u in left])
@@ -430,7 +432,7 @@ class UpdateMemberData(commands.Cog):
                     self.request_times.popleft()
                 if len(self.request_times)>=RATE_LIMIT:
                     wait=(self.request_times[0]+timedelta(minutes=1)-datetime.datetime.now(timezone.utc)).total_seconds()
-                    print(f"Rate limit reached, sleeping {wait:.1f}s",flush=True)
+                    log(INFO, f"Rate limit reached, sleeping {wait:.1f}s", context="update_member_data")
                     await asyncio.sleep(wait)
                 self.request_times.append(datetime.datetime.now(timezone.utc))
                 res=await asyncio.to_thread(getPlayerDatav3,m['uuid'])
@@ -481,7 +483,7 @@ class UpdateMemberData(commands.Cog):
                             'first_seen': now,
                             'baseline_contrib': prev.get(uid, {}).get('contributed', 0)
                         }
-                        print(f"{now} - DETECT unvalidated {uname} in {raid}", flush=True)
+                        log(INFO, f"DETECT unvalidated {uname} in {raid}", context="update_member_data")
 
         # --- 8: XP jumps (only consider fresh data + existing baseline) ---
         xp_jumps = set()
@@ -492,7 +494,7 @@ class UpdateMemberData(commands.Cog):
             new_c = new_data[uid].get('contributed', 0)
             if new_c - old_c >= CONTRIBUTION_THRESHOLD:
                 xp_jumps.add(uid)
-                print(f"{now} - XP threshold met for {uid} (diff: {new_c-old_c} >= {CONTRIBUTION_THRESHOLD})", flush=True)
+                log(INFO, f"XP threshold met for {uid} (diff: {new_c-old_c} >= {CONTRIBUTION_THRESHOLD})", context="update_member_data")
 
         # --- 9: Validate via XP jump ---
         for raid, queues in self.raid_participants.items():
@@ -500,7 +502,7 @@ class UpdateMemberData(commands.Cog):
                 if uid in xp_jumps:
                     info = queues['unvalidated'].pop(uid)
                     queues['validated'][uid] = info
-                    print(f"{now} - VALIDATED {info['name']} for {raid} via XP jump", flush=True)
+                    log(INFO, f"VALIDATED {info['name']} for {raid} via XP jump", context="update_member_data")
 
         # --- 9b: Cross-validate — if a player entered unvalidated for a raid
         #     but was already in xp_only from a previous tick, validate immediately ---
@@ -510,21 +512,21 @@ class UpdateMemberData(commands.Cog):
                     info = queues['unvalidated'].pop(uid)
                     queues['validated'][uid] = info
                     self.xp_only_validated.pop(uid)
-                    print(f"{now} - CROSS-VALIDATED {info['name']} for {raid} (was in xp_only pool)", flush=True)
+                    log(INFO, f"CROSS-VALIDATED {info['name']} for {raid} (was in xp_only pool)", context="update_member_data")
 
         # --- 10: Validate via contrib diff (only if we have fresh data this tick) ---
         for raid, queues in self.raid_participants.items():
             for uid, info in list(queues['unvalidated'].items()):
                 if uid not in fresh:
                     # No fresh data for this UID this tick—don’t try to validate
-                    print(f"{datetime.datetime.now(timezone.utc)} - SKIP contrib validation for {uid}: no fresh data", flush=True)
+                    log(INFO, f"SKIP contrib validation for {uid}: no fresh data", context="update_member_data")
                     continue
                 base = info['baseline_contrib']
                 curr = new_data.get(uid, {}).get('contributed', 0)
                 if curr - base >= CONTRIBUTION_THRESHOLD:
                     queues['validated'][uid] = info
                     queues['unvalidated'].pop(uid)
-                    print(f"{now} - VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})", flush=True)
+                    log(INFO, f"VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})", context="update_member_data")
 
         # --- 10b: Add XP-jump players with no raid detection to xp_only pool ---
         for uid in xp_jumps:
@@ -538,7 +540,7 @@ class UpdateMemberData(commands.Cog):
                     "name": uname,
                     "first_seen": now
                 }
-                print(f"{now} - XP-ONLY validated {uname} (no raid type detected)", flush=True)
+                log(INFO, f"XP-ONLY validated {uname} (no raid type detected)", context="update_member_data")
 
         # --- 11: Announce raids (with xp_only backfill) ---
         for raid in self.RAID_NAMES:
@@ -561,7 +563,7 @@ class UpdateMemberData(commands.Cog):
                 for uid in xp_only_uids:
                     info = self.xp_only_validated.pop(uid)
                     vals[uid] = info
-                    print(f"{now} - BACKFILL {info['name']} from xp_only pool into {raid}", flush=True)
+                    log(INFO, f"BACKFILL {info['name']} from xp_only pool into {raid}", context="update_member_data")
 
                 group = set(list(vals)[:4])
                 await self._announce_raid(raid, group, guild)
@@ -580,7 +582,7 @@ class UpdateMemberData(commands.Cog):
             for uid in xp_only_uids:
                 self.xp_only_validated.pop(uid)
                 eligible_xp_only.pop(uid)
-            print(f"{now} - ALL-PRIVATE group formed: {participant_names}", flush=True)
+            log(INFO, f"ALL-PRIVATE group formed: {participant_names}", context="update_member_data")
             await self._announce_raid(None, group, guild, participant_names=participant_names)
 
         # --- 12: Persist (unchanged, but now includes carry-forward) ---
@@ -597,7 +599,7 @@ class UpdateMemberData(commands.Cog):
             contrib_map, rank_map, pf_map, online_map
         )
         
-        print(f"🟨 ENDING LOOP - {datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}",flush=True)
+        log(INFO, "ENDING LOOP", context="update_member_data")
 
     async def _auto_register_joined_member(self, uuid: str, ign: str):
         """Check if a joined member has a pending accepted application and auto-register them."""
@@ -624,7 +626,7 @@ class UpdateMemberData(commands.Cog):
 
         discord_id, app_channel_id = row
 
-        discord_guild = self.client.get_guild(guilds[0])
+        discord_guild = self.client.get_guild(TAQ_GUILD_ID)
         if not discord_guild:
             return
 
@@ -665,10 +667,10 @@ class UpdateMemberData(commands.Cog):
                 await member.remove_roles(*roles_to_remove, reason="Auto-registration from accepted application")
             await member.edit(nick=f"{starting_rank} {ign}")
         except discord.Forbidden:
-            print(f"[auto_register] Missing permissions to modify roles/nick for {member.name}")
+            log(ERROR, f"Missing permissions to modify roles/nick for {member.name}", context="auto_register")
             return
         except Exception as e:
-            print(f"[auto_register] Error modifying {member.name}: {e}")
+            log(ERROR, f"Error modifying {member.name}: {e}", context="auto_register")
             return
 
         # Update discord_links: mark as linked, set rank
@@ -706,7 +708,7 @@ class UpdateMemberData(commands.Cog):
             await update_web_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
 
         # Send welcome embed
-        welcome_ch = self.client.get_channel(welcome_channel)
+        welcome_ch = self.client.get_channel(WELCOME_CHANNEL_ID)
         if welcome_ch:
             welcome_embed = discord.Embed(
                 description=f":ocean: Dive right in, {member.mention}! The water's fine.",
@@ -715,7 +717,7 @@ class UpdateMemberData(commands.Cog):
             welcome_embed.set_author(name="Welcome Aboard!", icon_url=member.display_avatar.url)
             await welcome_ch.send(embed=welcome_embed)
 
-        print(f"[auto_register] Successfully registered {ign} ({member.name}) from accepted application.")
+        log(INFO, f"Successfully registered {ign} ({member.name}) from accepted application.", context="auto_register")
 
     async def _run_snapshot(self, target_date=None):
         """
@@ -731,7 +733,7 @@ class UpdateMemberData(commands.Cog):
         if target_date is None:
             target_date = datetime.datetime.now(timezone.utc).date()
 
-        print(f"Running snapshot for date: {target_date}", flush=True)
+        log(INFO, f"Running snapshot for date: {target_date}", context="update_member_data")
 
         db = DB()
         db.connect()
@@ -799,13 +801,13 @@ class UpdateMemberData(commands.Cog):
             if not failed_members or attempt >= max_retries:
                 if failed_members:
                     failed_names = [m['name'] for m in failed_members]
-                    print(f"[Snapshot] Final failures after {max_retries} retries: {', '.join(failed_names)}", flush=True)
+                    log(ERROR, f"Final failures after {max_retries} retries: {', '.join(failed_names)}", context="update_member_data")
                 break
 
             # Wait and retry failed members
             failed_names = [m['name'] for m in failed_members]
-            print(f"[Snapshot] {len(failed_members)} failed fetches: {', '.join(failed_names)}", flush=True)
-            print(f"[Snapshot] Waiting {retry_delay}s before retry {attempt + 1}/{max_retries}...", flush=True)
+            log(INFO, f"{len(failed_members)} failed fetches: {', '.join(failed_names)}", context="update_member_data")
+            log(INFO, f"Waiting {retry_delay}s before retry {attempt + 1}/{max_retries}...", context="update_member_data")
             await asyncio.sleep(retry_delay)
             pending_members = failed_members
 
@@ -836,18 +838,18 @@ class UpdateMemberData(commands.Cog):
                     db_rows_written += 1
             db.connection.commit()
             private_profiles = sum(1 for m in snap['members'] if m.get('playtime') is None)
-            print(f"Snapshot written to DB ({db_rows_written} rows, {failed_fetches} failed API, {private_profiles} private profiles)", flush=True)
+            log(INFO, f"Snapshot written to DB ({db_rows_written} rows, {failed_fetches} failed API, {private_profiles} private profiles)", context="update_member_data")
             db.close()
             return (True, db_rows_written, total_members, failed_fetches, private_profiles)
         except Exception as e:
-            print(f"[_run_snapshot] Failed to write to DB: {e}", flush=True)
+            log(ERROR, f"Failed to write to DB: {e}", context="update_member_data")
             traceback.print_exc()
             db.close()
             return (False, 0, total_members, failed_fetches, 0)
 
     @tasks.loop(time=dtime(hour=0, minute=1, tzinfo=timezone.utc))
     async def daily_activity_snapshot(self):
-        print("Starting daily activity snapshot", flush=True)
+        log(INFO, "Starting daily activity snapshot", context="update_member_data")
 
         # --- Guard: ensure only one snapshot per UTC day (check database) ---
         today_utc = datetime.datetime.now(timezone.utc).date()
@@ -861,7 +863,7 @@ class UpdateMemberData(commands.Cog):
             existing_count = db_check.cursor.fetchone()[0]
             db_check.close()
             if existing_count > 0:
-                print(f"Daily snapshot already exists for today ({existing_count} rows); skipping.", flush=True)
+                log(INFO, f"Daily snapshot already exists for today ({existing_count} rows); skipping.", context="update_member_data")
                 return
         except Exception:
             traceback.print_exc()
@@ -869,11 +871,11 @@ class UpdateMemberData(commands.Cog):
 
         success, written, total, failed_api, private = await self._run_snapshot(today_utc)
         if success:
-            print(f"Daily activity snapshot complete ({written}/{total} members, {failed_api} failed API, {private} private)", flush=True)
+            log(INFO, f"Daily activity snapshot complete ({written}/{total} members, {failed_api} failed API, {private} private)", context="update_member_data")
         else:
-            print("Daily activity snapshot failed", flush=True)
+            log(ERROR, "Daily activity snapshot failed", context="update_member_data")
 
-    @slash_command(name="force_snapshot", description="Force retry the daily activity snapshot (admin only)", guild_ids=guilds)
+    @slash_command(name="force_snapshot", description="Force retry the daily activity snapshot (admin only)", guild_ids=ALL_GUILD_IDS)
     @default_permissions(administrator=True)
     async def force_snapshot(self, ctx: discord.ApplicationContext):
         """
@@ -952,7 +954,7 @@ class UpdateMemberData(commands.Cog):
 
     @update_member_data.error
     async def on_update_member_data_error(self, error):
-        print("🚨 update_member_data loop raised:", file=sys.stderr)
+        log(ERROR, "update_member_data loop raised an exception", context="update_member_data")
         traceback.print_exc()
         # restart the loop after a short pause
         await asyncio.sleep(5)

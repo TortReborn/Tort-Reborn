@@ -6,13 +6,11 @@ from discord.ext import commands
 from discord.commands import slash_command
 
 from Helpers.database import DB, get_current_guild_data
-from Helpers.variables import test, guilds, shell_emoji_id
+from Helpers.variables import IS_TEST_MODE, ALL_GUILD_IDS, SHELL_EMOJI, ANNOUNCEMENT_CHANNEL_ID
 
 # Leadership ranks that are deprioritized
 LEADERSHIP_RANKS = {'Hydra', 'Narwhal', 'Dolphin'}
 SHELLS_REWARD = 15
-ANNOUNCEMENT_CHANNEL_TEST = 1411438316087148634
-ANNOUNCEMENT_CHANNEL_PROD = 729162124223447040
 TOP_N = 5
 
 
@@ -201,7 +199,7 @@ class ConfirmView(discord.ui.View):
             await interaction.followup.send("Shells awarded!", ephemeral=True)
 
             embed = discord.Embed(
-                title=f"{shell_emoji_id} Shell Payouts",
+                title=f"{SHELL_EMOJI} Shell Payouts",
                 description=f"**Top Warrers: {self.start_date} to {self.end_date}**\nThe top warrers of the past week receive their payout of **{SHELLS_REWARD} shells** each!",
                 color=discord.Color.gold()
             )
@@ -225,7 +223,7 @@ class ConfirmView(discord.ui.View):
                 failed_text = "\n".join(f"- {name}" for name in failed)
                 embed.add_field(name="Failed to award (no Discord link)", value=failed_text, inline=False)
 
-            channel_id = ANNOUNCEMENT_CHANNEL_TEST if test else ANNOUNCEMENT_CHANNEL_PROD
+            channel_id = ANNOUNCEMENT_CHANNEL_ID
             channel = self.client.get_channel(channel_id)
             target_channel = channel if channel else interaction.channel
 
@@ -256,9 +254,9 @@ class TopWars(commands.Cog):
         self.client = client
 
     @slash_command(
-        description="Display and reward top warrers for the week",
+        description="ADMIN: Display and reward top warrers for the week",
         default_member_permissions=discord.Permissions(administrator=True),
-        guild_ids=guilds
+        guild_ids=ALL_GUILD_IDS
     )
     async def top_wars(
         self,

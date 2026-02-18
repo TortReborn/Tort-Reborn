@@ -3,7 +3,7 @@ from discord import SlashCommandGroup, ApplicationContext
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 
 class Toggle(commands.Cog):
@@ -11,12 +11,12 @@ class Toggle(commands.Cog):
         self.client = client
 
     toggle_group = SlashCommandGroup(
-        'toggle', 'Toggle various bot settings',
-        guild_ids=guilds,
+        'toggle', 'HR: Toggle various bot settings',
+        guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
 
-    @toggle_group.command(name='attack_ping', description='Toggle whether Spearhead is pinged when a claim is attacked')
+    @toggle_group.command(name='attack_ping', description='HR: Toggle whether Spearhead is pinged when a claim is attacked')
     async def attack_ping(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.commands import user_command
 
 from Helpers.classes import NewMember
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 
 class GiveMemberRoles(commands.Cog):
@@ -13,7 +13,7 @@ class GiveMemberRoles(commands.Cog):
     @user_command(
         name='Member | Register',
         default_member_permissions=discord.Permissions(manage_roles=True),
-        guild_ids=guilds
+        guild_ids=ALL_GUILD_IDS
     )
     async def give_member_roles(self, interaction: discord.Interaction, user: discord.Member):
         if interaction.user.guild_permissions.manage_roles:

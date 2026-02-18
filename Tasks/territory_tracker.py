@@ -9,12 +9,13 @@ from typing import Dict, List, Set
 import aiohttp
 from discord.ext import tasks, commands
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.variables import (
-    spearhead_role_id,
-    territory_tracker_channel,
-    global_terr_tracker_channel,
-    military_channel,
+    SPEARHEAD_ROLE_ID,
+    TERRITORY_TRACKER_CHANNEL_ID,
+    GLOBAL_TERR_TRACKER_CHANNEL_ID,
+    MILITARY_CHANNEL_ID,
     claims,
 )
 
@@ -502,7 +503,7 @@ def saveTerritoryData(data):
         db.close()
 
     except Exception as e:
-        print(f"[saveTerritoryData] Failed to save to cache: {e}")
+        log(ERROR, f"Failed to save to cache: {e}", context="territory_tracker")
         if 'db' in locals():
             try:
                 db.close()
@@ -564,9 +565,9 @@ def save_territory_snapshot(territory_data: dict):
 
         db.connection.commit()
         db.close()
-        print(f"[save_territory_snapshot] Saved snapshot at {now.isoformat()}")
+        log(INFO, f"Saved snapshot at {now.isoformat()}", context="territory_tracker")
     except Exception as e:
-        print(f"[save_territory_snapshot] Failed: {e}")
+        log(ERROR, f"Failed to save snapshot: {e}", context="territory_tracker")
         if 'db' in locals():
             try:
                 db.close()
@@ -691,11 +692,11 @@ class TerritoryTracker(commands.Cog):
             if not self.client.is_ready():
                 return
 
-            channel = self.client.get_channel(territory_tracker_channel)
+            channel = self.client.get_channel(TERRITORY_TRACKER_CHANNEL_ID)
             if channel is None:
                 return
 
-            global_channel = self.client.get_channel(global_terr_tracker_channel)
+            global_channel = self.client.get_channel(GLOBAL_TERR_TRACKER_CHANNEL_ID)
 
             old_data = await asyncio.to_thread(_read_territories_sync)
 
@@ -785,7 +786,7 @@ class TerritoryTracker(commands.Cog):
                                     should_ping_spearhead = True
 
                         # Alert
-                        alert_chan = self.client.get_channel(military_channel)
+                        alert_chan = self.client.get_channel(MILITARY_CHANNEL_ID)
 
                         # Check if attack pings are enabled via toggle
                         if should_ping_spearhead and alert_chan:
@@ -809,13 +810,13 @@ class TerritoryTracker(commands.Cog):
                             attacker = new_data.get(lost_terr, {}).get("guild", {}).get("name", "Unknown")
                             attacker_prefix = new_data.get(lost_terr, {}).get("guild", {}).get("prefix", "???")
                             if should_ping_spearhead:
-                                mention = f"<@&{spearhead_role_id}>"
+                                mention = f"<@&{SPEARHEAD_ROLE_ID}>"
                                 msg = f"{mention} **Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
                             else:
                                 msg = f"**Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
                         else:
                             if should_ping_spearhead:
-                                mention = f"<@&{spearhead_role_id}>"
+                                mention = f"<@&{SPEARHEAD_ROLE_ID}>"
                                 msg = f"{mention} **Attack on {claim_name}!** A {terr_type} was taken."
                             else:
                                 msg = f"**Attack on {claim_name}!** A {terr_type} was taken."
@@ -881,20 +882,21 @@ class TerritoryTracker(commands.Cog):
 
                         if not mega_suppressed and difficulty_valid:
                             # Send congratulations message to military channel (no ping)
-                            alert_chan = self.client.get_channel(military_channel)
+                            alert_chan = self.client.get_channel(MILITARY_CHANNEL_ID)
                             if alert_chan:
                                 congrats_msg = f"🎉 Congratulations on a successful snipe of **{claim_name}** owned by **{old['owner']}**!"
                                 await alert_chan.send(congrats_msg)
                         elif DEBUG_HQ_CONGRATS:
-                            print(
-                                "[HQ Congrats Suppressed] "
+                            log(INFO,
+                                f"HQ Congrats Suppressed: "
                                 f"hq={terr} "
                                 f"snipe_guild={new['owner']} "
                                 f"claim_holder_guild={claim_holder_guild} "
                                 f"externals_total={total_externals} "
                                 f"externals_owned={owned_externals} "
                                 f"conns_reduced={conns_reduced} "
-                                f"mega_claim_suppressed={mega_suppressed}"
+                                f"mega_claim_suppressed={mega_suppressed}",
+                                context="territory_tracker"
                             )
 
                 # Determine gain vs loss
@@ -983,7 +985,7 @@ class TerritoryTracker(commands.Cog):
 
         except Exception as e:
             # Log and continue; the task loop will run again next tick
-            print(f"[territory_tracker] error: {e!r}")
+            log(ERROR, f"error: {e!r}", context="territory_tracker")
 
     @commands.Cog.listener()
     async def on_ready(self):

@@ -13,7 +13,7 @@ from discord.commands import slash_command
 from Helpers.classes import PlaceTemplate, Page, Guild
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import isInCurrDay, expand_image, addLine, generate_rank_badge, format_number
-from Helpers.variables import rank_map, te, guilds
+from Helpers.variables import rank_map, ALL_GUILD_IDS
 import json
 import math
 
@@ -48,7 +48,7 @@ class Contribution(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays contribution of members', guild_ids=[te, guilds[1]])
+    @slash_command(description='Displays contribution of members', guild_ids=ALL_GUILD_IDS)
     async def contribution(self, message,
                        dayss: discord.Option(int, name="days", min_value=1, max_value=30, default=7)):
         await message.defer()

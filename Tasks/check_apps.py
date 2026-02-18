@@ -4,10 +4,11 @@ import datetime
 import discord
 from discord.ext import tasks, commands
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
-from Helpers.variables import application_manager_role_id, guilds, closed_category_name
+from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME
 
 
 class CheckApps(commands.Cog):
@@ -52,7 +53,7 @@ class CheckApps(commands.Cog):
                     continue
 
                 hours = int(elapsed // 3600)
-                await thread.send(f"{application_manager_role_id} {hours} hours passed since app creation.")
+                await thread.send(f"{APP_MANAGER_ROLE_MENTION} {hours} hours passed since app creation.")
 
                 db = DB()
                 db.connect()
@@ -64,7 +65,7 @@ class CheckApps(commands.Cog):
                 db.close()
 
             except Exception as e:
-                print(f"Error in CheckApps for row {(channel_id, created_at, thread_id)}: {e}")
+                log(ERROR, f"Error for row {(channel_id, created_at, thread_id)}: {e}", context="check_apps")
 
     @check_apps.before_loop
     async def before_check_apps(self):
@@ -98,7 +99,7 @@ class CheckApps(commands.Cog):
                     channel_id, thread_id, ign, applicant_discord_id
                 )
             except Exception as e:
-                print(f"[check_guild_leave] Error for channel {channel_id}: {e}")
+                log(ERROR, f"Error for channel {channel_id}: {e}", context="check_apps")
 
     async def _check_single_pending_leave(self, channel_id, thread_id, ign, applicant_discord_id):
         """Check if a single pending-leave applicant has left their guild."""
@@ -162,12 +163,12 @@ class CheckApps(commands.Cog):
                 if getattr(thread, "archived", False):
                     await thread.edit(archived=False)
                 await thread.send(
-                    f"{application_manager_role_id} **{ign}** has left their guild! "
+                    f"{APP_MANAGER_ROLE_MENTION} **{ign}** has left their guild! "
                     f"They can now be invited.\n"
                     f"Run `/invite` in the ticket channel or this thread to send them the invite message."
                 )
 
-        print(f"[check_guild_leave] {ign} has left their guild. Notified exec thread.")
+        log(INFO, f"{ign} has left their guild. Notified exec thread.", context="check_apps")
 
     @check_guild_leave.before_loop
     async def before_check_guild_leave(self):
@@ -199,7 +200,7 @@ class CheckApps(commands.Cog):
             try:
                 await self._check_web_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
             except Exception as e:
-                print(f"[check_web_guild_leave] Error for app {app_id}: {e}")
+                log(ERROR, f"Error for app {app_id}: {e}", context="check_apps")
 
     async def _check_web_pending_leave(self, app_id, channel_id, thread_id, ign, discord_id):
         """Check if a website applicant with pending guild leave has left their guild."""
@@ -259,12 +260,12 @@ class CheckApps(commands.Cog):
                 if getattr(thread, "archived", False):
                     await thread.edit(archived=False)
                 await thread.send(
-                    f"{application_manager_role_id} **{ign}** has left their guild! "
+                    f"{APP_MANAGER_ROLE_MENTION} **{ign}** has left their guild! "
                     f"They can now be invited.\n"
                     f"Run `/app invited` in the ticket channel or this thread to send them the invite message."
                 )
 
-        print(f"[check_web_guild_leave] {ign} has left their guild. Notified exec thread.")
+        log(INFO, f"{ign} has left their guild. Notified exec thread.", context="check_apps")
 
     @check_web_guild_leave.before_loop
     async def before_check_web_guild_leave(self):
@@ -275,11 +276,11 @@ class CheckApps(commands.Cog):
     @tasks.loop(minutes=5)
     async def auto_close_web_apps(self):
         """Auto-close denied web apps after 24h and accepted web apps when user has roles."""
-        guild = self.client.get_guild(guilds[0])
+        guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
             return
 
-        closed_cat = discord.utils.get(guild.categories, name=closed_category_name)
+        closed_cat = discord.utils.get(guild.categories, name=CLOSED_CATEGORY_NAME)
         if not closed_cat:
             return
 
@@ -290,7 +291,7 @@ class CheckApps(commands.Cog):
                 await self._auto_close_channel(guild, closed_cat, channel_id,
                                                "This application has been automatically closed.")
             except Exception as e:
-                print(f"[auto_close_web_apps] Error closing denied app {app_id}: {e}")
+                log(ERROR, f"Error closing denied app {app_id}: {e}", context="check_apps")
 
         # --- Accepted apps: user is linked in discord_links (joined + processed) + 1h after review ---
         accepted_guild_rows = await asyncio.to_thread(self._fetch_auto_close_accepted, "guild")
@@ -301,7 +302,7 @@ class CheckApps(commands.Cog):
                     "This application has been automatically closed — welcome to the guild! \U0001F420"
                 )
             except Exception as e:
-                print(f"[auto_close_web_apps] Error closing accepted guild app {app_id}: {e}")
+                log(ERROR, f"Error closing accepted guild app {app_id}: {e}", context="check_apps")
 
         accepted_community_rows = await asyncio.to_thread(self._fetch_auto_close_accepted, "community")
         for app_id, channel_id in accepted_community_rows:
@@ -311,7 +312,7 @@ class CheckApps(commands.Cog):
                     "This application has been automatically closed — welcome to the community! \U0001F420"
                 )
             except Exception as e:
-                print(f"[auto_close_web_apps] Error closing accepted community app {app_id}: {e}")
+                log(ERROR, f"Error closing accepted community app {app_id}: {e}", context="check_apps")
 
     async def _auto_close_channel(self, guild, closed_cat, channel_id, message):
         """Move a web app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""

@@ -4,7 +4,7 @@ from discord.commands import user_command
 
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
-from Helpers.variables import guilds, discord_ranks
+from Helpers.variables import ALL_GUILD_IDS, discord_ranks
 
 
 class ResetRoles(commands.Cog):
@@ -14,7 +14,7 @@ class ResetRoles(commands.Cog):
     @user_command(
         name='Member | Remove',
         default_member_permissions=discord.Permissions(manage_roles=True),
-        guild_ids=guilds
+        guild_ids=ALL_GUILD_IDS
     )
     async def reset_roles(self, interaction: discord.Interaction, user: discord.Member):
         # Ensure the invoker has the Manage Roles permission
@@ -96,7 +96,7 @@ class ResetRoles(commands.Cog):
             '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
             '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
             '🛠️ PROFESSIONS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
-            '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+            '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
             '🎖️MILITARY⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
             '🏆 CONTRIBUTION ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
             '🏹Spearhead', '⚠️Standby', '🗡️FFA', 'DPS', 'Tank', 'Healer', 'Orca',

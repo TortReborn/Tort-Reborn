@@ -6,6 +6,8 @@ import time
 import psycopg2
 from psycopg2 import OperationalError
 
+from Helpers.logger import log, ERROR
+
 
 class DB:
     def __init__(self):
@@ -43,10 +45,10 @@ class DB:
                 )
                 self.cursor = self.connection.cursor()
             else:
-                print("Problem logging into db")
+                log(ERROR, "Problem logging into db", context="database")
                 exit(-1)
         except OperationalError as e:
-            print(f"[DB] Connection failed: {e}")
+            log(ERROR, f"Connection failed: {e}", context="database")
             raise
 
     def close(self):
@@ -73,7 +75,7 @@ def get_current_guild_data() -> dict:
             return row[0] if isinstance(row[0], dict) else json.loads(row[0])
         return {}
     except Exception as e:
-        print(f"[get_current_guild_data] Error: {e}")
+        log(ERROR, f"Error: {e}", context="database")
         return {}
     finally:
         db.close()
@@ -122,7 +124,7 @@ def get_player_activity_baseline(uuid: str, key: str, days: int) -> tuple:
 
         return (0, True)
     except Exception as e:
-        print(f"[get_player_activity_baseline] Error for {uuid}/{key}: {e}")
+        log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
         return (0, True)
     finally:
         db.close()
@@ -176,7 +178,7 @@ def get_territory_data() -> dict:
             return row[0] if isinstance(row[0], dict) else json.loads(row[0])
         return {}
     except Exception as e:
-        print(f"[get_territory_data] Error: {e}")
+        log(ERROR, f"Error: {e}", context="database")
         return {}
     finally:
         db.close()
@@ -248,6 +250,6 @@ def save_recruitment_data(data: dict):
         """, (json.dumps(data), epoch))
         db.connection.commit()
     except Exception as e:
-        print(f"[recruitment] save failed: {e}")
+        log(ERROR, f"Save failed: {e}", context="database")
     finally:
         db.close()

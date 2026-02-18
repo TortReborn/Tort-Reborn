@@ -1,10 +1,10 @@
 import os
 import requests
-from Helpers.variables import test
+from Helpers.variables import IS_TEST_MODE
 
 
 def _get_url():
-    if test:
+    if IS_TEST_MODE:
         return os.getenv("TEST_SHEETS_SCRIPT_URL", "")
     return os.getenv("SHEETS_SCRIPT_URL", "")
 

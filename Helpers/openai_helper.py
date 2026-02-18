@@ -2,6 +2,8 @@ import os
 from openai import OpenAI
 from pydantic import BaseModel
 
+from Helpers.logger import log, INFO, ERROR
+
 _client = None
 
 
@@ -239,10 +241,10 @@ def detect_application(message_text: str) -> dict:
         max_tokens=200,
     )
     if result["error"]:
-        print(f"[detect_application] \"{preview}\" -> error: {result['error']}")
+        log(ERROR, f"\"{preview}\" -> error: {result['error']}", context="openai")
         return {"is_application": False, "app_type": "none", "confidence": 0.0, "error": result["error"]}
     data = result["data"]
-    print(f"[detect_application] \"{preview}\" -> {data.get('app_type')} (confidence: {data.get('confidence')})")
+    log(INFO, f"\"{preview}\" -> {data.get('app_type')} (confidence: {data.get('confidence')})", context="openai")
     return {
         "is_application": data.get("is_application", False),
         "app_type": data.get("app_type", "none"),
@@ -287,10 +289,10 @@ def detect_rejoin_intent(message_text: str) -> dict:
         max_tokens=200,
     )
     if result["error"]:
-        print(f"[detect_rejoin] \"{preview}\" -> error: {result['error']}")
+        log(ERROR, f"\"{preview}\" -> error: {result['error']}", context="openai")
         return {"is_application": False, "app_type": "none", "confidence": 0.0, "error": result["error"]}
     data = result["data"]
-    print(f"[detect_rejoin] \"{preview}\" -> {data.get('app_type')} (confidence: {data.get('confidence')})")
+    log(INFO, f"\"{preview}\" -> {data.get('app_type')} (confidence: {data.get('confidence')})", context="openai")
     return {
         "is_application": data.get("is_application", False),
         "app_type": data.get("app_type", "none"),
@@ -378,7 +380,7 @@ def validate_application_completeness(message_text: str) -> dict:
         max_tokens=400,
     )
     if result["error"]:
-        print(f"[validate_app] \"{preview}\" -> error: {result['error']}")
+        log(ERROR, f"\"{preview}\" -> error: {result['error']}", context="openai")
         return {"complete": False, "fields": {}, "missing_fields": [], "error": result["error"]}
     data = result["data"]
 
@@ -391,7 +393,7 @@ def validate_application_completeness(message_text: str) -> dict:
 
     present = [f for f in all_fields if data.get(f, False)]
     missing = data.get("missing_fields", [])
-    print(f"[validate_app] \"{preview}\" -> complete={is_complete}, present={len(present)}/10, missing={missing}")
+    log(INFO, f"\"{preview}\" -> complete={is_complete}, present={len(present)}/10, missing={missing}", context="openai")
 
     return {
         "complete": is_complete,

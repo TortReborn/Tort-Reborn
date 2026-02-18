@@ -18,13 +18,12 @@ from Helpers.openai_helper import (
 )
 from Helpers.sheets import add_row
 from Helpers.variables import (
-    guilds,
-    te,
-    member_app_channel,
-    application_manager_role_id,
-    invited_category_name,
-    error_channel,
-    manual_review_role_id,
+    ALL_GUILD_IDS,
+    MEMBER_APP_CHANNEL_ID,
+    APP_MANAGER_ROLE_MENTION,
+    INVITED_CATEGORY_NAME,
+    ERROR_CHANNEL_ID,
+    MANUAL_REVIEW_ROLE_ID,
     APPLICATION_FORMAT_MESSAGE,
 )
 
@@ -91,9 +90,9 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="accept",
-        description="Accept this ticket's application",
-        guild_ids=guilds + [te],
-        default_member_permissions=discord.Permissions(manage_channels=True),
+        description="HR: Accept this ticket's application",
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=discord.Permissions(manage_roles=True),
     )
     async def accept(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -225,7 +224,7 @@ class ApplicationCommands(commands.Cog):
         else:
             # Normal flow: move to Invited
             guild = self.client.get_guild(channel.guild.id) or channel.guild
-            invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
+            invited_cat = discord.utils.get(guild.categories, name=INVITED_CATEGORY_NAME)
             if invited_cat:
                 try:
                     await channel.edit(category=invited_cat)
@@ -236,7 +235,7 @@ class ApplicationCommands(commands.Cog):
                     )
             else:
                 await ctx.followup.send(
-                    f"Could not find category named \"{invited_category_name}\" in the server.",
+                    f"Could not find category named \"{INVITED_CATEGORY_NAME}\" in the server.",
                     ephemeral=True,
                 )
             await update_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
@@ -365,9 +364,9 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="deny",
-        description="Deny this ticket's application",
-        guild_ids=guilds + [te],
-        default_member_permissions=discord.Permissions(manage_channels=True),
+        description="HR: Deny this ticket's application",
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=discord.Permissions(manage_roles=True),
     )
     async def deny(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -427,9 +426,9 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="invite",
-        description="Invite an accepted applicant who has left their previous guild",
-        guild_ids=guilds + [te],
-        default_member_permissions=discord.Permissions(manage_channels=True),
+        description="HR: Invite an accepted applicant who has left their previous guild",
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=discord.Permissions(manage_roles=True),
     )
     async def invite(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -484,7 +483,7 @@ class ApplicationCommands(commands.Cog):
 
         # Move ticket to "Invited" category
         guild = self.client.get_guild(channel.guild.id) or channel.guild
-        invited_cat = discord.utils.get(guild.categories, name=invited_category_name)
+        invited_cat = discord.utils.get(guild.categories, name=INVITED_CATEGORY_NAME)
         if invited_cat:
             try:
                 await channel.edit(category=invited_cat)
@@ -495,7 +494,7 @@ class ApplicationCommands(commands.Cog):
                 )
         else:
             await ctx.followup.send(
-                f"Could not find category named \"{invited_category_name}\" in the server.",
+                f"Could not find category named \"{INVITED_CATEGORY_NAME}\" in the server.",
                 ephemeral=True,
             )
 
@@ -517,9 +516,9 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="receive",
-        description="Manually detect and process the last application message in this ticket",
-        guild_ids=guilds + [te],
-        default_member_permissions=discord.Permissions(manage_channels=True),
+        description="HR: Manually detect and process the last application message in this ticket",
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=discord.Permissions(manage_roles=True),
     )
     async def receive(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -794,13 +793,13 @@ class ApplicationCommands(commands.Cog):
                         )
                         embed.set_image(url=f"attachment://{ticket_num}-{pdata.UUID}.png")
                         await thread.send(
-                            f"{application_manager_role_id} **New {type_label} application received!**",
+                            f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
                             embed=embed,
                             file=player_info,
                         )
                 else:
                     await thread.send(
-                        f"{application_manager_role_id} **New {type_label} application received!**",
+                        f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
                         embed=embed,
                     )
 
@@ -913,7 +912,7 @@ class ApplicationCommands(commands.Cog):
 
         result = await asyncio.to_thread(parse_application, text)
         if result.get("error"):
-            err_ch = self.client.get_channel(error_channel)
+            err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
             if err_ch:
                 await err_ch.send(
                     f"## Recruiter Tracker - OpenAI Error\n"
@@ -995,7 +994,7 @@ class ApplicationCommands(commands.Cog):
                     # Recruiter not matched to a guild member (general source like "forums", etc.)
                     paid = "NP"
             except Exception as e:
-                err_ch = self.client.get_channel(error_channel)
+                err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                 if err_ch:
                     await err_ch.send(
                         f"## Recruiter Tracker - Match Error\n"
@@ -1013,7 +1012,7 @@ class ApplicationCommands(commands.Cog):
                 paid=paid, recruiter_format=recruiter_format,
             )
             if not sheet_result.get("success"):
-                err_ch = self.client.get_channel(error_channel)
+                err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                 if err_ch:
                     await err_ch.send(
                         f"## Recruiter Tracker - Sheets Error\n"
@@ -1021,10 +1020,10 @@ class ApplicationCommands(commands.Cog):
                         f"```\n{sheet_result.get('error', 'Unknown')[:500]}\n```"
                     )
         else:
-            review_ch = self.client.get_channel(member_app_channel)
+            review_ch = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
             if review_ch:
                 await review_ch.send(
-                    f"<@&{manual_review_role_id}> **Recruiter tracking needs manual review**\n"
+                    f"<@&{MANUAL_REVIEW_ROLE_ID}> **Recruiter tracking needs manual review**\n"
                     f"**Ticket:** `{channel.name}` | **Parsed IGN:** `{ign}` | "
                     f"**Parsed Recruiter:** `{recruiter}` | **Certainty:** `{certainty:.0%}`\n"
                     f"Please update the recruiter sheet manually."

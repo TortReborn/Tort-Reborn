@@ -8,8 +8,8 @@ from discord import SlashCommandGroup, option
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import guilds
-from Helpers.storage import save_background, get_background_file
+from Helpers.logger import log, ERROR
+from Helpers.variables import ALL_GUILD_IDS
 
 # Retrieve a list of all backgrounds available
 async def get_all_backgrounds(message: discord.AutocompleteContext):
@@ -44,12 +44,12 @@ class BackgroundAdmin(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    background_admin_group = SlashCommandGroup('background_admin', 'Background admin commands',
+    background_admin_group = SlashCommandGroup('background_admin', 'ADMIN: Background admin commands',
                                          default_member_permissions=discord.Permissions(administrator=True),
-                                         guild_ids=guilds)
+                                         guild_ids=ALL_GUILD_IDS)
 
     # Upload new PNG background to the database, required size 800x526
-    @background_admin_group.command(description="Upload new PNG background to the database, required size 800x526")
+    @background_admin_group.command(description="ADMIN: Upload new PNG background to the database, required size 800x526")
     async def upload(self, message, image: discord.Option(discord.Attachment, require=True),
                      public: discord.Option(bool, require=True),
                      price: discord.Option(int, min_value=0, max_value=9999, require=True),
@@ -82,7 +82,7 @@ class BackgroundAdmin(commands.Cog):
         )
         bg_id = db.cursor.fetchone()[0]
 
-        save_background(bg_id, bg)
+        bg.save(f'./images/profile_backgrounds/{bg_id}.png')
 
         db.connection.commit()
 
@@ -94,7 +94,7 @@ class BackgroundAdmin(commands.Cog):
         embed.add_field(name='Public', value=str(public))
         embed.add_field(name='Price', value=str(price))
 
-        bg_file = get_background_file(bg_id)
+        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
         embed.set_image(url=f"attachment://{bg_id}.png")
 
         try:
@@ -108,12 +108,12 @@ class BackgroundAdmin(commands.Cog):
             log_db.connection.commit()
             log_db.close()
         except Exception as e:
-            print(f"[background_admin] audit_log write failed: {e}")
+            log(ERROR, f"audit_log write failed: {e}", context="background_admin")
 
         await message.respond(embed=embed, file=bg_file)
 
     # Forcefully unlock background for discord user, ignoring price and public lock
-    @background_admin_group.command(description="Forcefully unlock background for discord user, ignoring price and public lock")
+    @background_admin_group.command(description="ADMIN: Forcefully unlock background for discord user, ignoring price and public lock")
     @option("background", description="Pick a background to unlock", autocomplete=get_backgrounds)
     async def unlock(self, message, user: discord.Option(discord.Member, require=True), background: str):
         await message.defer(ephemeral=True)
@@ -137,7 +137,7 @@ class BackgroundAdmin(commands.Cog):
             embed = discord.Embed(title=':unlock: Background unlocked!',
                                   description=f':frame_photo: **{bg_name}** was unlocked for <@{user.id}>.',
                                   color=0x34eb40)
-            bg_file = get_background_file(bg_id)
+            bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
             embed.set_thumbnail(url=f"attachment://{bg_id}.png")
             await message.respond(embed=embed, file=bg_file)
             return
@@ -167,19 +167,19 @@ class BackgroundAdmin(commands.Cog):
             )
             db.connection.commit()
         except Exception as e:
-            print(f"[background_admin] audit_log write failed: {e}")
+            log(ERROR, f"audit_log write failed: {e}", context="background_admin")
 
         embed = discord.Embed(title=':unlock: Background unlocked!',
                               description=f':frame_photo: **{bg_name}** was unlocked for <@{user.id}>.',
                               color=0x34eb40)
-        bg_file = get_background_file(bg_id)
+        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
         embed.set_thumbnail(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)
         db.close()
 
     # Forcefully set background for discord user whether they own the background or not
-    @background_admin_group.command(description="Forcefully set background for discord user whether they own the background or not")
+    @background_admin_group.command(description="ADMIN: Forcefully set background for discord user whether they own the background or not")
     @option("background", description="Pick a background to unlock", autocomplete=get_all_backgrounds)
     async def set(self, message, user: discord.Option(discord.Member, require=True),
                         background: str):
@@ -204,7 +204,7 @@ class BackgroundAdmin(commands.Cog):
             embed = discord.Embed(title=':white_check_mark: Background set!',
                                   description=f':frame_photo: **{bg_name}** was set as active background for <@{user.id}>.',
                                   color=0x34eb40)
-            bg_file = get_background_file(bg_id)
+            bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
             embed.set_thumbnail(url=f"attachment://{bg_id}.png")
             await message.respond(embed=embed, file=bg_file)
             return
@@ -223,19 +223,19 @@ class BackgroundAdmin(commands.Cog):
             )
             db.connection.commit()
         except Exception as e:
-            print(f"[background_admin] audit_log write failed: {e}")
+            log(ERROR, f"audit_log write failed: {e}", context="background_admin")
 
         embed = discord.Embed(title=':white_check_mark: Background set!',
                               description=f':frame_photo: **{bg_name}** was set as active background for <@{user.id}>.',
                               color=0x34eb40)
-        bg_file = get_background_file(bg_id)
+        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
         embed.set_thumbnail(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)
         db.close()
 
     # Forcefully set a user's profile card gradient
-    @background_admin_group.command(description="Forcefully set gradient for discord user whether they own the gradient or not")
+    @background_admin_group.command(description="ADMIN: Forcefully set gradient for discord user whether they own the gradient or not")
     async def gradient(self, message, user: discord.Option(discord.Member, require=True),
                        top_color: discord.Option(str, min_length=6, max_length=7, require=True),
                        bottom_color: discord.Option(str, min_length=6, max_length=7, require=True)

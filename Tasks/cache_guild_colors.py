@@ -4,6 +4,7 @@ import aiohttp
 
 from discord.ext import tasks, commands
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 
 
@@ -24,7 +25,7 @@ class CacheGuildColors(commands.Cog):
             async with aiohttp.ClientSession() as session:
                 async with session.get('https://athena.wynntils.com/cache/get/guildList') as resp:
                     if resp.status != 200:
-                        print(f"[cache_guild_colors] Failed to fetch from Wynntils API: {resp.status}")
+                        log(ERROR, f"Failed to fetch from Wynntils API: {resp.status}", context="cache_guild_colors")
                         return
                     guilds = await resp.json()
 
@@ -50,10 +51,10 @@ class CacheGuildColors(commands.Cog):
             db.connection.commit()
             db.close()
 
-            print(f"[cache_guild_colors] Updated cache with {len(guilds)} guilds")
+            log(INFO, f"Updated cache with {len(guilds)} guilds", context="cache_guild_colors")
 
         except Exception as e:
-            print(f"[cache_guild_colors] Error: {e}")
+            log(ERROR, f"Error: {e}", context="cache_guild_colors")
 
     @cache_guild_colors.before_loop
     async def before_cache(self):

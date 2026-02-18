@@ -2,115 +2,203 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-test = os.getenv("TEST_MODE").lower() in ('true', '1', 't')
 
-unknown_channel_redirect = 1367285315236008036
-error_channel = 1367285315236008036
+# =============================================================================
+# Environment Detection
+# =============================================================================
 
-if test:
-    RATES_THREAD_ID = 1462137243194888212
-    guilds = [1369134564450107412, 1364751619018850405]
-    te = 1364751619018850405
-    welcome_channel = 1369134566509514897
-    announcement_channel = 1411438316087148634
-    faq_channel = 1369134566295732334
-    guildbank_channel = unknown_channel_redirect
-    log_channel = unknown_channel_redirect
-    attention_channel = unknown_channel_redirect
-    eco_learning_channel = unknown_channel_redirect
-    rank_up_channel = unknown_channel_redirect
-    promotion_channel = unknown_channel_redirect
-    raid_collecting_channel = 1370900136267616339
-    raid_log_channel = 1370124586036887652
-    member_app_channel = 1367283441850122330
-    meeting_announcement_channel = 1470222786646507676
-    executive_role_id = 1364751911999373483
-    military_channel = 1369134566979403789
-    territory_tracker_channel = 1369134566979403791
-    global_terr_tracker_channel = 1457380818845434068
-    spearhead_role_id = 1369134565335236645
-    application_manager_role_id = "<@&1371274399637835837>"
-    manual_review_role_id = 1371274399637835837
-    shell_emoji_id = "<:shells:1371292212729479207>"
-    aspect_emoji_id = "<:aspect_warrior:1371292093074640936>"
-    notg_emoji_id = "<:notg:1371906671747666052>"
-    tcc_emoji_id = "<:tcc:1371906703099953242>"
-    tna_emoji_id = "<:tna:1371906714949124247>"
-    nol_emoji_id = "<:nol:1371906726940639272>"
-    VANITY_ROLE_IDS = {
-        "wars": {
-            "t3": 1411440289159057561,  # Great White Shark (>=120 wars in 14d)
-            "t2": 1411440397581811823,  # Orca             (>=80)
-            "t1": 1411441013372751912,  # Mako Shark       (>=40)
-        },
-        "raids": {
-            "t3": 1411440340556054630,  # Megalodon     (>=80 raids in 14d)
-            "t2": 1411440801476771911,  # Mosasaurus    (>=50)
-            "t1": 1411440932364222464,  # Liopleurodon  (>=30)
-        },
-    }
-    app_category_name = "Guild Applications"
-    invited_category_name = "Invited"
-    closed_category_name = "Closed Applications"
-    applications_archive_channel_name = "applications-archive"
-else:
-    RATES_THREAD_ID = 1279379192626282579
-    guilds = [729147655875199017, 1364751619018850405]
-    te = 784795827808763904
-    welcome_channel = 748900470575071293
-    guildbank_channel = 1213515243041595442
-    log_channel = 936679740385931414
-    announcement_channel = 729162124223447040
-    faq_channel = 1386413126697877626
-    # Below seem unused or old, unsure
-    attention_channel = None
-    eco_learning_channel = None
-    rank_up_channel = None
-    promotion_channel = 1033401698695262379
-    raid_collecting_channel = 1280196125340602478
-    raid_log_channel = 1290713041285152788
-    member_app_channel = 889162191150931978
-    meeting_announcement_channel = 868488553062092850
-    executive_role_id = 1192976663185719467
-    military_channel = 729162690760671244
-    territory_tracker_channel = 729162480000958564
-    global_terr_tracker_channel = 1454634575442743437
-    spearhead_role_id = 857589881689210950
-    application_manager_role_id = "<@&870767928704921651>"
-    manual_review_role_id = 1469587471326249063
-    shell_emoji_id = "<:shells:1126608994526560306>"
-    aspect_emoji_id = "<:aspect_warrior:1371292000963395655>"
-    notg_emoji_id = "<:notg:1316539942524031017>"
-    tcc_emoji_id = "<:tcc:1316539938917060658>"
-    tna_emoji_id = "<:tna:1316539936438222850>"
-    nol_emoji_id = "<:nol:1316539940418621530>"
-    VANITY_ROLE_IDS = {
-        "wars": {
-            "t3": 1401236653472743668,  # Great White Shark (>=120 wars in 14d)
-            "t2": 1401236428368642243,  # Orca             (>=80)
-            "t1": 1401226770069590089,  # Mako Shark       (>=40)
-        },
-        "raids": {
-            "t3": 1401281458164990022,  # Megalodon     (>=80 raids in 14d)
-            "t2": 1401281504671305850,  # Mosasaurus    (>=50)
-            "t1": 1401281543699431566,  # Liopleurodon  (>=30)
-        },
-    }
-    app_category_name = "Guild Applications"
-    invited_category_name = "Invited"
-    closed_category_name = "Closed Applications"
-    applications_archive_channel_name = "applications-archive"
+IS_TEST_MODE = os.getenv("TEST_MODE", "").lower() in ("true", "1", "t")
 
-WEBSITE_URL = "http://localhost:3000" if test else "https://the-aquarium.com"
+# =============================================================================
+# Environment-Specific Config
+# =============================================================================
 
-TICKET_TOOL_BOT_ID = 557628352828014614
+_ENV_CONFIG = {
+    "test": {
+        # Guild IDs
+        "TAQ_GUILD_ID": 1369134564450107412,
+        "EXEC_GUILD_ID": 1364751619018850405,
+        # Channel IDs
+        "WELCOME_CHANNEL_ID": 1369134566509514897,
+        "ANNOUNCEMENT_CHANNEL_ID": 1411438316087148634,
+        "FAQ_CHANNEL_ID": 1369134566295732334,
+        "GUILD_BANK_CHANNEL_ID": 1367285315236008036,
+        "BOT_LOG_CHANNEL_ID": 1473531947178528859,
+        "ATTENTION_CHANNEL_ID": 1367285315236008036,
+        "ECO_LEARNING_CHANNEL_ID": 1367285315236008036,
+        "RANK_UP_CHANNEL_ID": 1367285315236008036,
+        "PROMOTION_CHANNEL_ID": 1367285315236008036,
+        "RAID_COLLECTING_CHANNEL_ID": 1370900136267616339,
+        "RAID_LOG_CHANNEL_ID": 1370124586036887652,
+        "MEMBER_APP_CHANNEL_ID": 1367283441850122330,
+        "MEETING_ANNOUNCEMENT_CHANNEL_ID": 1470222786646507676,
+        "MILITARY_CHANNEL_ID": 1369134566979403789,
+        "TERRITORY_TRACKER_CHANNEL_ID": 1369134566979403791,
+        "GLOBAL_TERR_TRACKER_CHANNEL_ID": 1457380818845434068,
+        "ERROR_CHANNEL_ID": 1367285315236008036,
+        # Role IDs
+        "EXECUTIVE_ROLE_ID": 1364751911999373483,
+        "SPEARHEAD_ROLE_ID": 1369134565335236645,
+        "APP_MANAGER_ROLE_ID": 1371274399637835837,
+        "MANUAL_REVIEW_ROLE_ID": 1371274399637835837,
+        # Emoji strings (formatted Discord emoji, NOT raw IDs)
+        "SHELL_EMOJI": "<:shells:1371292212729479207>",
+        "ASPECT_EMOJI": "<:aspect_warrior:1371292093074640936>",
+        "NOTG_EMOJI": "<:notg:1371906671747666052>",
+        "TCC_EMOJI": "<:tcc:1371906703099953242>",
+        "TNA_EMOJI": "<:tna:1371906714949124247>",
+        "NOL_EMOJI": "<:nol:1371906726940639272>",
+        # Thread / Misc
+        "RATES_THREAD_ID": 1462137243194888212,
+        # Vanity roles
+        "VANITY_ROLE_IDS": {
+            "wars": {
+                "t3": 1411440289159057561,  # Great White Shark (>=120 wars in 14d)
+                "t2": 1411440397581811823,  # Orca             (>=80)
+                "t1": 1411441013372751912,  # Mako Shark       (>=40)
+            },
+            "raids": {
+                "t3": 1411440340556054630,  # Megalodon     (>=80 raids in 14d)
+                "t2": 1411440801476771911,  # Mosasaurus    (>=50)
+                "t1": 1411440932364222464,  # Liopleurodon  (>=30)
+            },
+        },
+    },
+    "prod": {
+        # Guild IDs
+        "TAQ_GUILD_ID": 729147655875199017,
+        "EXEC_GUILD_ID": 784795827808763904,
+        # Channel IDs
+        "WELCOME_CHANNEL_ID": 748900470575071293,
+        "ANNOUNCEMENT_CHANNEL_ID": 729162124223447040,
+        "FAQ_CHANNEL_ID": 1386413126697877626,
+        "GUILD_BANK_CHANNEL_ID": 1213515243041595442,
+        "BOT_LOG_CHANNEL_ID": 1473526161131704331,
+        "ATTENTION_CHANNEL_ID": None,
+        "ECO_LEARNING_CHANNEL_ID": None,
+        "RANK_UP_CHANNEL_ID": None,
+        "PROMOTION_CHANNEL_ID": 1033401698695262379,
+        "RAID_COLLECTING_CHANNEL_ID": 1280196125340602478,
+        "RAID_LOG_CHANNEL_ID": 1290713041285152788,
+        "MEMBER_APP_CHANNEL_ID": 889162191150931978,
+        "MEETING_ANNOUNCEMENT_CHANNEL_ID": 868488553062092850,
+        "MILITARY_CHANNEL_ID": 729162690760671244,
+        "TERRITORY_TRACKER_CHANNEL_ID": 729162480000958564,
+        "GLOBAL_TERR_TRACKER_CHANNEL_ID": 1454634575442743437,
+        "ERROR_CHANNEL_ID": 1367285315236008036,
+        # Role IDs
+        "EXECUTIVE_ROLE_ID": 1192976663185719467,
+        "SPEARHEAD_ROLE_ID": 857589881689210950,
+        "APP_MANAGER_ROLE_ID": 870767928704921651,
+        "MANUAL_REVIEW_ROLE_ID": 1469587471326249063,
+        # Emoji strings (formatted Discord emoji, NOT raw IDs)
+        "SHELL_EMOJI": "<:shells:1126608994526560306>",
+        "ASPECT_EMOJI": "<:aspect_warrior:1371292000963395655>",
+        "NOTG_EMOJI": "<:notg:1316539942524031017>",
+        "TCC_EMOJI": "<:tcc:1316539938917060658>",
+        "TNA_EMOJI": "<:tna:1316539936438222850>",
+        "NOL_EMOJI": "<:nol:1316539940418621530>",
+        # Thread / Misc
+        "RATES_THREAD_ID": 1279379192626282579,
+        # Vanity roles
+        "VANITY_ROLE_IDS": {
+            "wars": {
+                "t3": 1401236653472743668,  # Great White Shark (>=120 wars in 14d)
+                "t2": 1401236428368642243,  # Orca             (>=80)
+                "t1": 1401226770069590089,  # Mako Shark       (>=40)
+            },
+            "raids": {
+                "t3": 1401281458164990022,  # Megalodon     (>=80 raids in 14d)
+                "t2": 1401281504671305850,  # Mosasaurus    (>=50)
+                "t1": 1401281543699431566,  # Liopleurodon  (>=30)
+            },
+        },
+    },
+}
+
+_cfg = _ENV_CONFIG["test" if IS_TEST_MODE else "prod"]
+
+# =============================================================================
+# Guild IDs
+# =============================================================================
+
+TAQ_GUILD_ID = _cfg["TAQ_GUILD_ID"]
+EXEC_GUILD_ID = _cfg["EXEC_GUILD_ID"]
+DEV_GUILD_ID = 1364751619018850405  # always the same — used for error logs
+
+# ---- Server Buckets (DEV always included for testing) ----
+TAQ_GUILD_IDS = list(set([TAQ_GUILD_ID, DEV_GUILD_ID]))
+EXEC_GUILD_IDS = list(set([EXEC_GUILD_ID, DEV_GUILD_ID]))
+ALL_GUILD_IDS = list(set([TAQ_GUILD_ID, EXEC_GUILD_ID, DEV_GUILD_ID]))
+
+# =============================================================================
+# Channel IDs
+# =============================================================================
+
+WELCOME_CHANNEL_ID = _cfg["WELCOME_CHANNEL_ID"]
+ANNOUNCEMENT_CHANNEL_ID = _cfg["ANNOUNCEMENT_CHANNEL_ID"]
+FAQ_CHANNEL_ID = _cfg["FAQ_CHANNEL_ID"]
+GUILD_BANK_CHANNEL_ID = _cfg["GUILD_BANK_CHANNEL_ID"]
+BOT_LOG_CHANNEL_ID = _cfg["BOT_LOG_CHANNEL_ID"]
+ATTENTION_CHANNEL_ID = _cfg["ATTENTION_CHANNEL_ID"]
+ECO_LEARNING_CHANNEL_ID = _cfg["ECO_LEARNING_CHANNEL_ID"]
+RANK_UP_CHANNEL_ID = _cfg["RANK_UP_CHANNEL_ID"]
+PROMOTION_CHANNEL_ID = _cfg["PROMOTION_CHANNEL_ID"]
+RAID_COLLECTING_CHANNEL_ID = _cfg["RAID_COLLECTING_CHANNEL_ID"]
+RAID_LOG_CHANNEL_ID = _cfg["RAID_LOG_CHANNEL_ID"]
+MEMBER_APP_CHANNEL_ID = _cfg["MEMBER_APP_CHANNEL_ID"]
+MEETING_ANNOUNCEMENT_CHANNEL_ID = _cfg["MEETING_ANNOUNCEMENT_CHANNEL_ID"]
+MILITARY_CHANNEL_ID = _cfg["MILITARY_CHANNEL_ID"]
+TERRITORY_TRACKER_CHANNEL_ID = _cfg["TERRITORY_TRACKER_CHANNEL_ID"]
+GLOBAL_TERR_TRACKER_CHANNEL_ID = _cfg["GLOBAL_TERR_TRACKER_CHANNEL_ID"]
+ERROR_CHANNEL_ID = _cfg["ERROR_CHANNEL_ID"]
+RATES_THREAD_ID = _cfg["RATES_THREAD_ID"]
+
+# =============================================================================
+# Role IDs
+# =============================================================================
+
+EXECUTIVE_ROLE_ID = _cfg["EXECUTIVE_ROLE_ID"]
+SPEARHEAD_ROLE_ID = _cfg["SPEARHEAD_ROLE_ID"]
+APP_MANAGER_ROLE_ID = _cfg["APP_MANAGER_ROLE_ID"]
+APP_MANAGER_ROLE_MENTION = f"<@&{APP_MANAGER_ROLE_ID}>"
+MANUAL_REVIEW_ROLE_ID = _cfg["MANUAL_REVIEW_ROLE_ID"]
 RATES_PING_ROLE_ID = 1050233131183112255
-LEGACY_WEBHOOK_URL = "https://discord.com/api/webhooks/1135511106085994526/FvH7NuTcK9NyTwRDbwDcaDkekoedk2Gg-HL0cgiqVNUrjBNP22n7IfVahMXPmiBCX5ql"
+VANITY_ROLE_IDS = _cfg["VANITY_ROLE_IDS"]
+
+# =============================================================================
+# Emoji Strings (formatted Discord emoji, NOT raw IDs)
+# =============================================================================
+
+SHELL_EMOJI = _cfg["SHELL_EMOJI"]
+ASPECT_EMOJI = _cfg["ASPECT_EMOJI"]
+NOTG_EMOJI = _cfg["NOTG_EMOJI"]
+TCC_EMOJI = _cfg["TCC_EMOJI"]
+TNA_EMOJI = _cfg["TNA_EMOJI"]
+NOL_EMOJI = _cfg["NOL_EMOJI"]
+
+# =============================================================================
+# Category / Channel Names (same across environments)
+# =============================================================================
+
+APP_CATEGORY_NAME = "Guild Applications"
+INVITED_CATEGORY_NAME = "Invited"
+CLOSED_CATEGORY_NAME = "Closed Applications"
+APP_ARCHIVE_CHANNEL_NAME = "applications-archive"
+
+# =============================================================================
+# Misc Constants
+# =============================================================================
+
+WEBSITE_URL = "http://localhost:3000" if IS_TEST_MODE else "https://the-aquarium.com"
+TICKET_TOOL_BOT_ID = 557628352828014614
+LEGACY_WEBHOOK_URL = os.getenv("LEGACY_WEBHOOK_URL", "")
 LEGACY_MESSAGE_ID = 1135537781574205520
+LOG_CHANNEL_ID = BOT_LOG_CHANNEL_ID
 
-golden_tort = [644071980160647178, 419845975000219648, 282914836084686848]
-
-banned_words = []
+# =============================================================================
+# Game Data
+# =============================================================================
 
 rank_map = {'recruit': '', 'recruiter': '*', 'captain': '**', 'strategist': '***', 'chief': '****', 'owner': '*****'}
 class_map = {'archer': '<:bow:966079566189842482>', 'hunter': '<:bow2:966079565791363162>',
@@ -400,7 +488,7 @@ claims = {
             "Silent Road",
             "Abandoned Mines"
         ],
-    },  
+    },
     "Desert": {
         "hq": "Almuj",
         "connections": [
