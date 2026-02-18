@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import aiohttp
@@ -9,6 +8,14 @@ from io import BytesIO
 from PIL import Image
 
 from Helpers.shell_exchange_generator import generate_images
+from Helpers.database import (
+    get_shell_exchange_config,
+    save_shell_exchange_config,
+    get_shell_exchange_ings,
+    save_shell_exchange_ings,
+    get_shell_exchange_mats,
+    save_shell_exchange_mats,
+)
 from Helpers.variables import (
     ALL_GUILD_IDS,
     LEGACY_MESSAGE_ID,
@@ -17,10 +24,6 @@ from Helpers.variables import (
     RATES_THREAD_ID,
     IS_TEST_MODE,
 )
-
-CONFIG_FILE = "shell_exchange_config.json"
-INGS_FILE = "images/shell_exchange/ings.json"
-MATS_FILE = "images/shell_exchange/materials.json"
 
 class ShellExchange(commands.Cog):
     # Create command groups
@@ -37,34 +40,22 @@ class ShellExchange(commands.Cog):
         self.client = client
 
     def load_config(self):
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "r") as f:
-                return json.load(f)
-        return {}
+        return get_shell_exchange_config()
 
     def save_config(self, config):
-        with open(CONFIG_FILE, "w") as f:
-            json.dump(config, f, indent=2)
+        save_shell_exchange_config(config)
 
     def load_ings_config(self):
-        if os.path.exists(INGS_FILE):
-            with open(INGS_FILE, "r") as f:
-                return json.load(f)
-        return {}
+        return get_shell_exchange_ings()
 
     def save_ings_config(self, config):
-        with open(INGS_FILE, "w") as f:
-            json.dump(config, f, indent=2)
+        save_shell_exchange_ings(config)
 
     def load_mats_config(self):
-        if os.path.exists(MATS_FILE):
-            with open(MATS_FILE, "r") as f:
-                return json.load(f)
-        return {}
+        return get_shell_exchange_mats()
 
     def save_mats_config(self, config):
-        with open(MATS_FILE, "w") as f:
-            json.dump(config, f, indent=2)
+        save_shell_exchange_mats(config)
 
     def _format_rate_name(self, name):
         cleaned = name.replace("_", " ").strip()
@@ -321,7 +312,9 @@ class ShellExchange(commands.Cog):
             return
 
         output_mode = config.get("output_mode", "both")
-        images = generate_images(output_mode, config)
+        ings_data = self.load_ings_config()
+        mats_data = self.load_mats_config()
+        images = generate_images(output_mode, config, ings_data=ings_data, mats_data=mats_data)
 
         if not images:
             await ctx.followup.send("No images generated.", ephemeral=True)
