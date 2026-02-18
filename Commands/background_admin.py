@@ -68,7 +68,7 @@ class BackgroundAdmin(commands.Cog):
 
         if bg.size != (800, 526):
             embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
-                                  description=f'Image must have a size of 800x526.\nYou can use this image [Cropping Tool](https://lunarity.space/background_crop/)',
+                                  description=f'Image must have a size of 800x526.\nYou can use this [Resize Tool](https://www.iloveimg.com/resize-image)',
                                   color=0xe33232)
             await message.respond(embed=embed)
             return
