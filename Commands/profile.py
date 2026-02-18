@@ -14,7 +14,6 @@ import json
 from Helpers.classes import PlayerStats
 from Helpers.functions import pretty_date, generate_rank_badge, generate_banner, getData, format_number, addLine, vertical_gradient, round_corners, generate_badge
 from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors
-from Helpers.storage import get_background
 
 
 class Profile(commands.Cog):
@@ -71,11 +70,11 @@ class Profile(commands.Cog):
 
         # Background
         if is_christmas:
-            background = get_background("christmas_background")
+            background = Image.open("images/profile_backgrounds/christmas_background.png")
         elif is_new_years:
-            background = get_background("new_years_background")
+            background = Image.open("images/profile_backgrounds/new_years_background.png")
         else:
-            background = get_background(player.background)
+            background = Image.open(f"images/profile_backgrounds/{player.background}.png")
         background = round_corners(background, radius=20)
         card.paste(background, (50, 110), background)
 
