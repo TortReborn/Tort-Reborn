@@ -23,7 +23,7 @@ class Restart(commands.Cog):
         crash = {"type": 'Restart', "value": str(message.user) + ' ran the restart command', "timestamp": int(time.time())}
         set_last_online(crash)
         await message.respond('Restarting...', ephemeral=True)
-        os.execv(sys.executable, ['python'] + sys.argv)
+        sys.exit(0)
 
     @commands.Cog.listener()
     async def on_ready(self):
