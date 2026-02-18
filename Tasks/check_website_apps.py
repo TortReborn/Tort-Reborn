@@ -5,6 +5,7 @@ from io import BytesIO
 import discord
 from discord.ext import tasks, commands
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB, get_blacklist
 from Helpers.functions import generate_applicant_info
@@ -94,7 +95,7 @@ class CheckWebsiteApps(commands.Cog):
             try:
                 await self._process_application(row)
             except Exception as e:
-                print(f"[check_website_apps] Error processing app {row[0]}: {e}")
+                log(ERROR, f"Error processing app {row[0]}: {e}", context="check_website_apps")
 
     @staticmethod
     def _fetch_pending_apps():
@@ -137,13 +138,13 @@ class CheckWebsiteApps(commands.Cog):
         # Resolve the guild
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
-            print(f"[check_website_apps] Could not find guild {TAQ_GUILD_ID}")
+            log(ERROR, f"Could not find guild {TAQ_GUILD_ID}", context="check_website_apps")
             return
 
         # Find the applications category
         category = discord.utils.get(guild.categories, name=APP_CATEGORY_NAME)
         if not category:
-            print(f"[check_website_apps] Could not find category '{APP_CATEGORY_NAME}'")
+            log(ERROR, f"Could not find category '{APP_CATEGORY_NAME}'", context="check_website_apps")
             return
 
         # Resolve the applicant as a guild member
@@ -192,7 +193,7 @@ class CheckWebsiteApps(commands.Cog):
         # Post poll embed in exec channel
         exec_chan = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
         if not exec_chan:
-            print(f"[check_website_apps] Exec channel {MEMBER_APP_CHANNEL_ID} not found")
+            log(ERROR, f"Exec channel {MEMBER_APP_CHANNEL_ID} not found", context="check_website_apps")
             await asyncio.to_thread(self._update_application, app_id, channel.id, None, None)
             return
 
@@ -232,7 +233,7 @@ class CheckWebsiteApps(commands.Cog):
                             )
                             break
             except Exception as e:
-                print(f"[check_website_apps] Stats image error for {ign}: {e}")
+                log(ERROR, f"Stats image error for {ign}: {e}", context="check_website_apps")
 
         # Send poll message with ping
         if player_info_file:

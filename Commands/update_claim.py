@@ -6,6 +6,7 @@ from discord import default_permissions, guild_only
 from discord.ext import commands
 from discord.commands import slash_command
 
+from Helpers.logger import log, ERROR
 from Helpers.variables import ALL_GUILD_IDS
 
 
@@ -39,14 +40,14 @@ class UpdateClaim(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Updates the guild claim in the territory tracker', guild_ids=ALL_GUILD_IDS)
+    @slash_command(description='ADMIN: Updates the guild claim in the territory tracker', guild_ids=ALL_GUILD_IDS)
     @default_permissions(administrator=True)
     async def update_claim(self, message, hq: discord.Option(str, name='hq', required=True, description='Location of the guild headquarters'), link: discord.Option(str, name='long_link', required=True, description='The long link from map maker')):
         await message.defer()
         try:
             await update(link, hq)
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="update_claim")
             embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
                                   description=f'Could not update claim.\nPlease check your spelling and map maker link or try again later.',
                                   color=0xe33232)

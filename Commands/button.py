@@ -50,7 +50,7 @@ class Button(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description="Button setup", default_member_permissions=discord.Permissions(administrator=True), guild_ids=ALL_GUILD_IDS)
+    @slash_command(description="ADMIN: Button setup", default_member_permissions=discord.Permissions(administrator=True), guild_ids=ALL_GUILD_IDS)
     async def button(self, message, channel: discord.Option(discord.TextChannel)):
         await message.defer(ephemeral=True)
         embedList = []

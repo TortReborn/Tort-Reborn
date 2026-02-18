@@ -13,6 +13,7 @@ import json
 
 from Helpers.classes import PlayerStats
 from Helpers.functions import pretty_date, generate_rank_badge, generate_banner, getData, format_number, addLine, vertical_gradient, round_corners, generate_badge
+from Helpers.logger import log, ERROR
 from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors, ALL_GUILD_IDS
 
 
@@ -89,7 +90,7 @@ class Profile(commands.Cog):
             response = requests.get(url, headers=headers)
             skin = Image.open(BytesIO(response.content))
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="profile")
             skin = Image.open('images/profile/x-steve500.png')
         skin.thumbnail((480, 480))
         card.paste(skin, (200, 156), skin)
@@ -228,7 +229,7 @@ class Profile(commands.Cog):
                 else:
                     card_entries['Quests'] = str(player.quests)
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="profile")
 
         entry_keys = list(card_entries.keys())
 

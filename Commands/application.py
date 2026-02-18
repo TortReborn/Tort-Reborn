@@ -90,7 +90,7 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="accept",
-        description="Accept this ticket's application",
+        description="HR: Accept this ticket's application",
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
@@ -364,7 +364,7 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="deny",
-        description="Deny this ticket's application",
+        description="HR: Deny this ticket's application",
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
@@ -426,7 +426,7 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="invite",
-        description="Invite an accepted applicant who has left their previous guild",
+        description="HR: Invite an accepted applicant who has left their previous guild",
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
@@ -516,7 +516,7 @@ class ApplicationCommands(commands.Cog):
 
     @discord.slash_command(
         name="receive",
-        description="Manually detect and process the last application message in this ticket",
+        description="HR: Manually detect and process the last application message in this ticket",
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )

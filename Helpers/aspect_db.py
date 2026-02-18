@@ -11,6 +11,7 @@ import json
 
 from Helpers.database import DB
 from Helpers.classes import Guild
+from Helpers.logger import log, ERROR
 
 
 WEEKLY_THRESHOLD = 5  # hours of playtime required
@@ -58,7 +59,7 @@ def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
             return max(0.0, float(recent) - float(older))
         return 0.0
     except Exception as e:
-        print(f"[aspect_db] Error getting weekly playtime for {uuid}: {e}")
+        log(ERROR, f"Error getting weekly playtime for {uuid}: {e}", context="aspect_db")
         return 0.0
 
 
@@ -70,7 +71,7 @@ def get_weekly_playtime(uuid: str) -> float:
         db.connect()
         return get_weekly_playtime_from_db(db, uuid)
     except Exception as e:
-        print(f"[aspect_db] Error in get_weekly_playtime: {e}")
+        log(ERROR, f"Error in get_weekly_playtime: {e}", context="aspect_db")
         return 0.0
     finally:
         try:

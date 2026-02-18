@@ -14,7 +14,7 @@ class WavePromote(commands.Cog):
 
     @discord.slash_command(
         name='promo_wave',
-        description='Promote multiple members by one rank each (up to 25)',
+        description='HR: Promote multiple members by one rank each (up to 25)',
         guild_ids=TAQ_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )

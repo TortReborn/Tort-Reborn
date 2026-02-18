@@ -26,12 +26,12 @@ class ShellExchange(commands.Cog):
     # Create command groups
     shell_exchange_group = discord.SlashCommandGroup(
         "shell_exchange",
-        "Shell exchange commands",
+        "ADMIN: Shell exchange commands",
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(administrator=True),
     )
-    edit_group = shell_exchange_group.create_subgroup("edit", "Edit shell exchange items")
-    view_group = shell_exchange_group.create_subgroup("view", "View shell exchange items")
+    edit_group = shell_exchange_group.create_subgroup("edit", "ADMIN: Edit shell exchange items")
+    view_group = shell_exchange_group.create_subgroup("view", "ADMIN: View shell exchange items")
 
     def __init__(self, client):
         self.client = client
@@ -261,7 +261,7 @@ class ShellExchange(commands.Cog):
                 unique_names.append(name)
         return [name for name in unique_names if value in name.lower()][:25]  # Discord limit
 
-    @shell_exchange_group.command(name="config", description='Configure shell exchange settings')
+    @shell_exchange_group.command(name="config", description='ADMIN: Configure shell exchange settings')
     async def shell_exchange_config(self, ctx: discord.ApplicationContext, 
                                     setting: discord.Option(str, choices=[
                                         "output_mode", "highlight_mode", "cols_ings", "cols_mats"
@@ -305,7 +305,7 @@ class ShellExchange(commands.Cog):
             self.save_config(config)
             await ctx.respond(f"Material columns set to {cols}", ephemeral=True)
 
-    @shell_exchange_group.command(name="generate", description='Generate and post/update shell exchange')
+    @shell_exchange_group.command(name="generate", description='ADMIN: Generate and post/update shell exchange')
     async def shell_exchange_generate(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=True)
         config = self.load_config()
@@ -405,21 +405,21 @@ class ShellExchange(commands.Cog):
         self.save_config(config)
         await ctx.followup.send("Posted shell exchange", ephemeral=True)
 
-    @shell_exchange_group.command(name="legacy", description="Toggle legacy webhook updates")
+    @shell_exchange_group.command(name="legacy", description="ADMIN: Toggle legacy webhook updates")
     async def shell_exchange_legacy(self, ctx: discord.ApplicationContext, enabled: discord.Option(bool, required=True)):
         config = self.load_config()
         config["legacy_mode"] = enabled
         self.save_config(config)
         await ctx.respond(f"Legacy mode set to {enabled}.", ephemeral=True)
 
-    @shell_exchange_group.command(name="set_channel", description='Set the channel for shell exchange posts')
+    @shell_exchange_group.command(name="set_channel", description='ADMIN: Set the channel for shell exchange posts')
     async def shell_exchange_set_channel(self, ctx: discord.ApplicationContext, channel: discord.Option(discord.TextChannel, required=True)):
         config = self.load_config()
         config["channel_id"] = channel.id
         self.save_config(config)
         await ctx.respond(f"Shell exchange channel set to {channel.mention}", ephemeral=True)
 
-    @edit_group.command(name="ingredient", description="Edit ingredient values")
+    @edit_group.command(name="ingredient", description="ADMIN: Edit ingredient values")
     async def edit_ingredient(self, ctx: discord.ApplicationContext, 
                               name: discord.Option(str, required=True, description="Ingredient name", autocomplete=autocomplete_ingredient_names),
                               shells: discord.Option(int, min_value=0, required=True),
@@ -443,7 +443,7 @@ class ShellExchange(commands.Cog):
         self.save_ings_config(ings_config)
         await ctx.respond(f"Updated ingredient '{name}': shells={shells}, per={per}, highlight={highlight}, toggled={toggled}", ephemeral=True)
 
-    @edit_group.command(name="material", description="Edit material values")
+    @edit_group.command(name="material", description="ADMIN: Edit material values")
     async def edit_material(self, ctx: discord.ApplicationContext, 
                             name: discord.Option(str, required=True, description="Material name", autocomplete=autocomplete_material_names),
                             tier: discord.Option(int, choices=[1,2,3], required=True),
@@ -471,7 +471,7 @@ class ShellExchange(commands.Cog):
         self.save_mats_config(mats_config)
         await ctx.respond(f"Updated material '{name}' tier {tier}: shells={shells}, per={per}, highlight={highlight}, toggled={toggled}", ephemeral=True)
 
-    @shell_exchange_group.command(name="list", description='List available items')
+    @shell_exchange_group.command(name="list", description='ADMIN: List available items')
     async def shell_exchange_list(self, ctx: discord.ApplicationContext, 
                                   type: discord.Option(str, choices=["ingredients", "materials"], required=True)):
         if type == "ingredients":
@@ -489,7 +489,7 @@ class ShellExchange(commands.Cog):
         embed = discord.Embed(title=title, description="\n".join(f"• {name}" for name in sorted(names)))
         await ctx.respond(embed=embed, ephemeral=True)
 
-    @view_group.command(name="ingredient", description="View ingredient values")
+    @view_group.command(name="ingredient", description="ADMIN: View ingredient values")
     async def view_ingredient(self, ctx: discord.ApplicationContext, name: discord.Option(str, required=True, autocomplete=autocomplete_ingredient_names)):
         ings_config = self.load_ings_config()
         name_stripped = name.strip()
@@ -509,7 +509,7 @@ class ShellExchange(commands.Cog):
         embed.add_field(name="Toggled", value=data.get("toggled", True), inline=True)
         await ctx.respond(embed=embed, ephemeral=True)
 
-    @view_group.command(name="material", description="View material values")
+    @view_group.command(name="material", description="ADMIN: View material values")
     async def view_material(self, ctx: discord.ApplicationContext, name: discord.Option(str, required=True, autocomplete=autocomplete_material_names), tier: discord.Option(int, choices=[1,2,3], required=True)):
         mats_config = self.load_mats_config()
         name_stripped = name.strip()

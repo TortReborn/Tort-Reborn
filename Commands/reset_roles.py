@@ -12,7 +12,7 @@ class ResetRolesCommand(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(guild_ids=ALL_GUILD_IDS)
+    @slash_command(guild_ids=ALL_GUILD_IDS, description="HR: Reset a user's roles")
     @default_permissions(manage_roles=True)
     async def reset_roles(self, message, user: discord.Member):
         if message.interaction.user.guild_permissions.manage_roles:

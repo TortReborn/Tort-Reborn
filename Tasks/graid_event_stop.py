@@ -1,6 +1,7 @@
 # Commands/graid_event_stop.py
 from discord.ext import commands, tasks
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 
 def _db():
@@ -39,9 +40,9 @@ class GraidAutoStop(commands.Cog):
             if rows:
                 db.connection.commit()
                 for eid, title, ts in rows:
-                    print(f"[graid_autostop] auto-stopped id={eid} title={title!r} at end_ts={ts.isoformat()}")
+                    log(INFO, f"auto-stopped id={eid} title={title!r} at end_ts={ts.isoformat()}", context="graid_autostop")
         except Exception as e:
-            print(f"[graid_autostop] error: {e!r}")
+            log(ERROR, f"error: {e!r}", context="graid_autostop")
         finally:
             db.close()
 

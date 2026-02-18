@@ -8,6 +8,7 @@ from discord.ui import View
 from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.database import DB
+from Helpers.logger import log, ERROR
 from Helpers.variables import TAQ_GUILD_ID, MEMBER_APP_CHANNEL_ID
 
 
@@ -62,7 +63,7 @@ class OnGuildChannelCreate(commands.Cog):
 
         exec_chan = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
         if not exec_chan:
-            print(f"🚨 Exec channel {MEMBER_APP_CHANNEL_ID} not found")
+            log(ERROR, f"Exec channel {MEMBER_APP_CHANNEL_ID} not found", context="on_guild_channel_create")
             return
 
         ticket_num = channel.name.replace("ticket-", "")

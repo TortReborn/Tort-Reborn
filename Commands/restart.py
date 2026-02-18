@@ -15,6 +15,7 @@ class Restart(commands.Cog):
         self.client = client
 
     @slash_command(
+        description="ADMIN: Restart the bot",
         guild_ids=EXEC_GUILD_IDS,
         default_member_permissions=discord.Permissions(administrator=True)
     )
