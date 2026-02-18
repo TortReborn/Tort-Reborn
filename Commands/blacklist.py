@@ -23,7 +23,7 @@ class Blacklist(commands.Cog):
     blacklist_group = SlashCommandGroup('blacklist', 'Blacklist related commands',
                                         guild_ids=EXEC_GUILD_IDS)
 
-    @blacklist_group.command()
+    @blacklist_group.command(description='Add a player to the blacklist by IGN or UUID')
     async def add(self, message,
                   ign: discord.Option(str, name='player', required=True,
                                       description='In-game name or UUID of the player')):
@@ -63,7 +63,7 @@ class Blacklist(commands.Cog):
 
         await message.respond(f':no_entry: Blacklisted `{UUID[0]}` (*{UUID[1]}*)')
 
-    @blacklist_group.command()
+    @blacklist_group.command(description='Remove a player from the blacklist')
     @option("player", description="In-game name or UUID of the player", autocomplete=getBlacklistedPlayers)
     async def remove(self, message,
                      player):
@@ -94,7 +94,7 @@ class Blacklist(commands.Cog):
         await message.respond(
             f':white_check_mark: Removed `{removed_player["ign"]}` (*{removed_player["UUID"]}*) from the blacklist.')
 
-    @blacklist_group.command()
+    @blacklist_group.command(description='Check if a player is on the blacklist')
     async def check(self, message, ign: discord.Option(str, name='player', required=True,
                                       description='In-game name or UUID of the player')):
         blacklist_list = get_blacklist()
@@ -125,22 +125,22 @@ class Blacklist(commands.Cog):
         await message.respond(
             f':white_check_mark: `{UUID[0]}` (*{UUID[1]}*) is not blacklisted.')
 
-    @blacklist_group.command()
+    @blacklist_group.command(description='View all blacklisted players')
     async def list(self, message):
         blacklist_list = get_blacklist()
 
         book = []
         blacklist_list.sort(key=lambda x: x['ign'], reverse=False)
-        page_num = int(math.ceil(len(blacklist_list) / 30))
+        page_num = int(math.ceil(len(blacklist_list) / 20))
         page_num = 1 if page_num == 0 else page_num
         for page in range(page_num):
-            page_blacklist = blacklist_list[(30 * page):30 + (30 * page)]
-            all_data = '```ansi\n[1;37m Player Name        UUID' \
-                       '\n╘═════════════════╪═════════════════════════════════════╛\n'
+            page_blacklist = blacklist_list[(20 * page):20 + (20 * page)]
+            all_data = '```\n'
             for player in page_blacklist:
-                all_data = all_data + '[0;0m {:16s} │ {:36s} \n'.format(player['ign'], player['UUID'])
+                all_data += f'{player["ign"]}\n'
+                all_data += f'  {player["UUID"]}\n'
             all_data += '```'
-            embed = discord.Embed(title='Blacklisted players',
+            embed = discord.Embed(title=f'Blacklisted players ({len(blacklist_list)})',
                                   description=all_data)
             book.append(embed)
         final_book = pages.Paginator(pages=book)

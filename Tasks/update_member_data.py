@@ -349,7 +349,7 @@ class UpdateMemberData(commands.Cog):
     @tasks.loop(minutes=3)
     async def update_member_data(self):
         now = datetime.datetime.now(timezone.utc)
-        log(INFO, "STARTING LOOP", context="update_member_data")
+        log(INFO, f"STARTING LOOP — {now.strftime('%Y-%m-%d %H:%M:%S')} UTC", context="update_member_data")
 
         # fetch guild over HTTP off the event loop
         guild = await asyncio.to_thread(Guild, "The Aquarium")
@@ -599,7 +599,8 @@ class UpdateMemberData(commands.Cog):
             contrib_map, rank_map, pf_map, online_map
         )
         
-        log(INFO, "ENDING LOOP", context="update_member_data")
+        end = datetime.datetime.now(timezone.utc)
+        log(INFO, f"ENDING LOOP — {end.strftime('%Y-%m-%d %H:%M:%S')} UTC", context="update_member_data")
 
     async def _auto_register_joined_member(self, uuid: str, ign: str):
         """Check if a joined member has a pending accepted application and auto-register them."""
