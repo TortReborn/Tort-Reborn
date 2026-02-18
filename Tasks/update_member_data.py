@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import re
 import sys
@@ -11,6 +12,7 @@ from collections import deque
 from discord.ext import tasks, commands
 from discord.commands import slash_command
 from discord import default_permissions
+from PIL import Image, ImageDraw, ImageFont
 
 # ensure prints flush immediately
 if hasattr(sys.stdout, "reconfigure"):
@@ -21,7 +23,7 @@ else:
 
 from Helpers.classes import Guild, DB, BasicPlayerStats
 from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
-from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank
+from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
 from Helpers.variables import (
     raid_log_channel,
     log_channel,
@@ -275,11 +277,6 @@ class UpdateMemberData(commands.Cog):
         except Exception:
             traceback.print_exc()
 
-    def _make_progress_bar(self, percent: int, length: int = 20) -> str:
-        filled = int(length * percent / 100)
-        bar = "█" * filled + "─" * (length - filled)
-        return f"[{bar}]"
-
     async def _announce_raid(self, raid, group, guild, participant_names=None):
         print(f"Announcing raid {raid}: {group}", flush=True)
         if participant_names:
@@ -289,35 +286,63 @@ class UpdateMemberData(commands.Cog):
             names = [participants[uid]["name"] for uid in group]
         bolded = [f"**{discord.utils.escape_markdown(n)}**" for n in names]
         names_str = ", ".join(bolded[:-1]) + ", and " + bolded[-1] if len(bolded) > 1 else bolded[0]
+
         if raid:
             emoji = RAID_EMOJIS.get(raid, "")
             title = f"{emoji} {raid} Completed!"
         else:
             title = f"{aspect_emoji_id} Guild Raid Completed!"
-        now = datetime.datetime.now(timezone.utc)
+
         channel = self.client.get_channel(RAID_ANNOUNCE_CHANNEL_ID)
         if channel:
             embed = discord.Embed(
                 title=title,
                 description=names_str,
-                timestamp=now,
                 color=0x00FF00
             )
+
+            # Generate image-based progress bar
             guild_level = getattr(guild, "level", None)
             guild_xp = getattr(guild, "xpPercent", None)
             if guild_level is not None and guild_xp is not None:
-                embed.add_field(
-                    name=f"{guild.name} — Level {guild_level}",
-                    value=self._make_progress_bar(guild_xp) + f" ({guild_xp}%)",
-                    inline=False
-                )
+                progress_img = self._render_guild_progress(guild_level, guild_xp)
             else:
-                embed.add_field(name="Progress", value=self._make_progress_bar(100), inline=False)
-            embed.set_footer(text="Guild Raid Tracker")
-            await channel.send(embed=embed)
-        
+                progress_img = self._render_guild_progress(0, 100)
+
+            buf = io.BytesIO()
+            progress_img.save(buf, format='PNG')
+            buf.seek(0)
+            file = discord.File(buf, filename="raid_progress.png")
+            embed.set_image(url="attachment://raid_progress.png")
+
+            await channel.send(embed=embed, file=file)
+
         await asyncio.to_thread(_upsert_raid_group_sync, list(group))
         await asyncio.to_thread(_graid_increment_group_sync, list(group), raid)
+
+    def _render_guild_progress(self, level, xp_percent):
+        """Render a styled guild level progress bar image."""
+        width = 400
+        img = Image.new('RGBA', (width, 32), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        # Centered text: gray "LV. {level} - " + cyan "THE AQUARIUM" + gray " - {xp}% XP"
+        font = ImageFont.truetype('images/profile/5x5.ttf', 20)
+        text = f"&7LV. {level} - &bTHE AQUARIUM &7- {xp_percent}% XP"
+
+        # Measure width on a temp draw to center
+        temp = Image.new('RGBA', (1, 1))
+        text_width = addLine(text, ImageDraw.Draw(temp), font, 0, 0, drop_x=0, drop_y=0)
+        x_start = (width - text_width) // 2
+
+        addLine(text, draw, font, x_start, 0, drop_x=1, drop_y=1)
+
+        # Light blue bar with rounded ends
+        bar = create_progress_bar(width, xp_percent, color='#5599dd', scale=1)
+        bar = round_corners(bar, radius=5)
+        img.paste(bar, (0, 22), bar)
+
+        return img
 
     @tasks.loop(minutes=3)
     async def update_member_data(self):
