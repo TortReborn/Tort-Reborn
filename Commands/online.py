@@ -22,9 +22,8 @@ class Online(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-        # Cache directory for banners
-        self.cache_dir = os.path.join(os.getcwd(), 'cache', 'banners')
-        os.makedirs(self.cache_dir, exist_ok=True)
+        # Static banner for The Aquarium
+        self.taq_banner_path = os.path.join(os.getcwd(), 'images', 'banner2', 'the_aquarium.png')
 
         # Fonts (2x sizes)
         self.font_game_18 = ImageFont.truetype('images/profile/game.ttf', 36)
@@ -120,15 +119,12 @@ class Online(commands.Cog):
             pass
 
         # ---------- HEADER ----------
-        safe_name = ''.join(c for c in guild_data.name if c.isalnum() or c in (' ', '_')).rstrip()
-        cache_path = os.path.join(self.cache_dir, f"{safe_name}.png")
-        if os.path.exists(cache_path):
-            banner = Image.open(cache_path).convert('RGBA')
+        if guild_data.name.lower() in ('the aquarium', 'taq'):
+            banner = Image.open(self.taq_banner_path).convert('RGBA')
         else:
             banner = generate_banner(guild_data.name, 4, style='2')
             if banner.mode != 'RGBA':
                 banner = banner.convert('RGBA')
-            banner.save(cache_path)
 
         # banner at (20,20), size (160x312)
         banner = banner.resize((160, 312), Image.Resampling.NEAREST)
