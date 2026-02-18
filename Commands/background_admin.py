@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from Helpers.database import DB
 from Helpers.variables import guilds
+from Helpers.storage import save_background, get_background_file
 
 # Retrieve a list of all backgrounds available
 async def get_all_backgrounds(message: discord.AutocompleteContext):
@@ -81,7 +82,7 @@ class BackgroundAdmin(commands.Cog):
         )
         bg_id = db.cursor.fetchone()[0]
 
-        bg.save(f'./images/profile_backgrounds/{bg_id}.png')
+        save_background(bg_id, bg)
 
         db.connection.commit()
 
@@ -93,7 +94,7 @@ class BackgroundAdmin(commands.Cog):
         embed.add_field(name='Public', value=str(public))
         embed.add_field(name='Price', value=str(price))
 
-        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
+        bg_file = get_background_file(bg_id)
         embed.set_image(url=f"attachment://{bg_id}.png")
 
         try:
@@ -136,7 +137,7 @@ class BackgroundAdmin(commands.Cog):
             embed = discord.Embed(title=':unlock: Background unlocked!',
                                   description=f':frame_photo: **{bg_name}** was unlocked for <@{user.id}>.',
                                   color=0x34eb40)
-            bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
+            bg_file = get_background_file(bg_id)
             embed.set_thumbnail(url=f"attachment://{bg_id}.png")
             await message.respond(embed=embed, file=bg_file)
             return
@@ -171,7 +172,7 @@ class BackgroundAdmin(commands.Cog):
         embed = discord.Embed(title=':unlock: Background unlocked!',
                               description=f':frame_photo: **{bg_name}** was unlocked for <@{user.id}>.',
                               color=0x34eb40)
-        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
+        bg_file = get_background_file(bg_id)
         embed.set_thumbnail(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)
@@ -203,7 +204,7 @@ class BackgroundAdmin(commands.Cog):
             embed = discord.Embed(title=':white_check_mark: Background set!',
                                   description=f':frame_photo: **{bg_name}** was set as active background for <@{user.id}>.',
                                   color=0x34eb40)
-            bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
+            bg_file = get_background_file(bg_id)
             embed.set_thumbnail(url=f"attachment://{bg_id}.png")
             await message.respond(embed=embed, file=bg_file)
             return
@@ -227,7 +228,7 @@ class BackgroundAdmin(commands.Cog):
         embed = discord.Embed(title=':white_check_mark: Background set!',
                               description=f':frame_photo: **{bg_name}** was set as active background for <@{user.id}>.',
                               color=0x34eb40)
-        bg_file = discord.File(f'./images/profile_backgrounds/{bg_id}.png', filename=f"{bg_id}.png")
+        bg_file = get_background_file(bg_id)
         embed.set_thumbnail(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)

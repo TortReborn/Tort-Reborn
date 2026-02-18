@@ -27,6 +27,7 @@ from Helpers.variables import (
     guilds,
     wynn_ranks,
 )
+from Helpers.storage import get_background
 
 # Tunable elo weights
 ELO_WEIGHTS = {
@@ -251,15 +252,7 @@ class Rank(commands.Cog):
         outline = round_corners(outline)
         card.paste(outline, (41, 100), outline)
 
-        bg_dir = "images/profile_backgrounds"
-        bg_path = f"{bg_dir}/{bg_index}.png"
-        try:
-            bg_img = Image.open(bg_path).convert('RGBA')
-        except FileNotFoundError:
-            try:
-                bg_img = Image.open(f"{bg_dir}/1.png").convert('RGBA')
-            except Exception:
-                bg_img = Image.new('RGBA', (818, 545), (0, 0, 0, 100))
+        bg_img = get_background(bg_index)
         bg_img = round_corners(bg_img, radius=20)
         card.paste(bg_img, (50, 110), bg_img)
 
