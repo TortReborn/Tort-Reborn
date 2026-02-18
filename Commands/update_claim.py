@@ -6,7 +6,7 @@ from discord import default_permissions, guild_only
 from discord.ext import commands
 from discord.commands import slash_command
 
-from Helpers.variables import te, guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 
 async def update(long_link, hq):
@@ -39,7 +39,7 @@ class UpdateClaim(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Updates the guild claim in the territory tracker', guild_ids=[guilds[0],te,guilds[1]])
+    @slash_command(description='Updates the guild claim in the territory tracker', guild_ids=ALL_GUILD_IDS)
     @default_permissions(administrator=True)
     async def update_claim(self, message, hq: discord.Option(str, name='hq', required=True, description='Location of the guild headquarters'), link: discord.Option(str, name='long_link', required=True, description='The long link from map maker')):
         await message.defer()

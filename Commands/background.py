@@ -9,7 +9,7 @@ import json
 
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 
 async def get_all_backgrounds(message: discord.AutocompleteContext):
@@ -29,7 +29,7 @@ class Background(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    background_group = SlashCommandGroup('background', 'Background commands', guild_ids=guilds)
+    background_group = SlashCommandGroup('background', 'Background commands', guild_ids=ALL_GUILD_IDS)
 
     @background_group.command(description="List all available backgrounds")
     async def list(self, message, owned_only: discord.Option(bool, default=False)):

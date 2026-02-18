@@ -13,7 +13,7 @@ from discord.ext import commands, pages
 from Helpers.classes import PlaceTemplate, Page
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, expand_image, generate_rank_badge
-from Helpers.variables import rank_map, discord_ranks
+from Helpers.variables import rank_map, discord_ranks, ALL_GUILD_IDS
 
 # ============================
 # Core leaderboard generator
@@ -312,7 +312,7 @@ class Leaderboard(commands.Cog):
     def __init__(self, client: discord.Client):
         self.client = client
 
-    leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands')
+    leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands', guild_ids=ALL_GUILD_IDS)
 
     # ---- XP ----
     @leaderboard_group.command(description='Display the XP leaderboard')

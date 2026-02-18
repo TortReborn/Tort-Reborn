@@ -10,11 +10,12 @@ from PIL import Image
 
 from Helpers.shell_exchange_generator import generate_images
 from Helpers.variables import (
+    ALL_GUILD_IDS,
     LEGACY_MESSAGE_ID,
     LEGACY_WEBHOOK_URL,
     RATES_PING_ROLE_ID,
     RATES_THREAD_ID,
-    test,
+    IS_TEST_MODE,
 )
 
 CONFIG_FILE = "shell_exchange_config.json"
@@ -26,6 +27,7 @@ class ShellExchange(commands.Cog):
     shell_exchange_group = discord.SlashCommandGroup(
         "shell_exchange",
         "Shell exchange commands",
+        guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(administrator=True),
     )
     edit_group = shell_exchange_group.create_subgroup("edit", "Edit shell exchange items")

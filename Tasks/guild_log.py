@@ -9,7 +9,7 @@ from discord.ext import tasks, commands
 from Helpers.classes import Guild
 from Helpers.database import DB
 from Helpers.functions import savePlayers, date_diff, getPlayerDatav3
-from Helpers.variables import test, error_channel
+from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID
 
 
 class GuildLog(commands.Cog):
@@ -18,7 +18,7 @@ class GuildLog(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def guild_log(self):
-        if test:
+        if IS_TEST_MODE:
             guild_log = 'lunarity.json'
             new_data = Guild('Lunarity').all_members
             channel = self.client.get_channel(1367285315236008036)
@@ -114,7 +114,7 @@ class GuildLog(commands.Cog):
                     else:
                         # Send diagnostic if we couldn't find them at all
                         alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
-                        err_ch = self.client.get_channel(error_channel)
+                        err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                         if err_ch:
                             await err_ch.send(
                                 f"## Recruiter Tracker - Leave: IGN Not Found\n"
@@ -124,7 +124,7 @@ class GuildLog(commands.Cog):
                                 f"Player left guild but was not found on the recruiter sheet."
                             )
                 except Exception as e:
-                    err_ch = self.client.get_channel(error_channel)
+                    err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                     if err_ch:
                         await err_ch.send(
                             f"## Recruiter Tracker - Leave Update Error\n"
@@ -148,7 +148,7 @@ class GuildLog(commands.Cog):
                 db.close()
                 discord_id = f' (<@{rows[0][0]}>) ' if len(rows) != 0 else ''
                 if len(rows) != 0:
-                    if test:
+                    if IS_TEST_MODE:
                         guild_general = self.client.get_channel(1367285315236008036)
                     else:
                         guild_general = self.client.get_channel(748900470575071293)

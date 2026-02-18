@@ -14,7 +14,7 @@ from Helpers.openai_helper import (
     detect_application, detect_rejoin_intent, extract_ign,
     validate_application_completeness, validate_exmember_completeness,
 )
-from Helpers.variables import application_manager_role_id, APPLICATION_FORMAT_MESSAGE
+from Helpers.variables import APP_MANAGER_ROLE_MENTION, APPLICATION_FORMAT_MESSAGE
 
 
 class OnMessage(commands.Cog):
@@ -373,13 +373,13 @@ class OnMessage(commands.Cog):
                         )
                         embed.set_image(url=f"attachment://{ticket_num}-{pdata.UUID}.png")
                         await thread.send(
-                            f"{application_manager_role_id} **New {type_label} application received!**",
+                            f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
                             embed=embed,
                             file=player_info,
                         )
                 else:
                     await thread.send(
-                        f"{application_manager_role_id} **New {type_label} application received!**",
+                        f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
                         embed=embed,
                     )
 

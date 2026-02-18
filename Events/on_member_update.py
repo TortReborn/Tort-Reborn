@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import error_channel
+from Helpers.variables import ERROR_CHANNEL_ID
 
 
 def _db_lookup_uuid(discord_id: int):
@@ -82,7 +82,7 @@ class OnMemberUpdate(commands.Cog):
                     await asyncio.to_thread(update_paid, ign, "N")
 
         except Exception as e:
-            err_ch = self.client.get_channel(error_channel)
+            err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
             if err_ch:
                 await err_ch.send(
                     f"## Recruiter Tracker - Role Promo Fallback Error\n"

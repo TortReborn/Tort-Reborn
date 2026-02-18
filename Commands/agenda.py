@@ -7,7 +7,7 @@ from discord.commands import SlashCommandGroup
 
 from Helpers.database import DB
 from Helpers.openai_helper import query as openai_query
-from Helpers.variables import error_channel, meeting_announcement_channel, executive_role_id
+from Helpers.variables import ERROR_CHANNEL_ID, MEETING_ANNOUNCEMENT_CHANNEL_ID, EXECUTIVE_ROLE_ID, EXEC_GUILD_IDS
 
 # =============================================================================
 # Constants
@@ -374,7 +374,7 @@ class AgendaPreviewView(discord.ui.View):
 # =============================================================================
 
 class Agenda(commands.Cog):
-    agenda = SlashCommandGroup(name="agenda", description="Meeting agenda commands")
+    agenda = SlashCommandGroup(name="agenda", description="Meeting agenda commands", guild_ids=EXEC_GUILD_IDS)
     bau = agenda.create_subgroup(name="bau", description="Business-as-usual topics")
     req = agenda.create_subgroup(name="req", description="Requested topics")
 
@@ -446,8 +446,8 @@ class Agenda(commands.Cog):
         topic: discord.Option(str, description="Topic name", max_length=100),
         description: discord.Option(str, description="Optional description", max_length=500, required=False, default=None),
     ):
-        # Runtime role check for executive_role_id
-        role = ctx.guild.get_role(executive_role_id)
+        # Runtime role check for EXECUTIVE_ROLE_ID
+        role = ctx.guild.get_role(EXECUTIVE_ROLE_ID)
         if role not in ctx.author.roles:
             return await ctx.respond("You need the Executive role to request topics.", ephemeral=True)
 
@@ -585,7 +585,7 @@ class Agenda(commands.Cog):
 
             if preview_view.action == "post":
                 # Post to announcement channel
-                channel = self.client.get_channel(meeting_announcement_channel)
+                channel = self.client.get_channel(MEETING_ANNOUNCEMENT_CHANNEL_ID)
                 if channel is None:
                     return await ctx.edit(content="Announcement channel not found.", embed=None, view=None)
                 await channel.send(full_message)
@@ -642,13 +642,13 @@ class Agenda(commands.Cog):
                 max_tokens=1500,
             )
             if result["error"]:
-                ch = self.client.get_channel(error_channel)
+                ch = self.client.get_channel(ERROR_CHANNEL_ID)
                 if ch:
                     await ch.send(f"## Agenda generation error\n```\n{result['error']}\n```")
                 return None
             return result["content"]
         except Exception as e:
-            ch = self.client.get_channel(error_channel)
+            ch = self.client.get_channel(ERROR_CHANNEL_ID)
             if ch:
                 await ch.send(f"## Agenda generation exception\n```\n{e}\n```")
             return None

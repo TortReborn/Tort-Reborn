@@ -3,7 +3,7 @@ from discord import SlashCommandGroup, ApplicationContext
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 
 class Toggle(commands.Cog):
@@ -12,7 +12,7 @@ class Toggle(commands.Cog):
 
     toggle_group = SlashCommandGroup(
         'toggle', 'Toggle various bot settings',
-        guild_ids=guilds,
+        guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
 

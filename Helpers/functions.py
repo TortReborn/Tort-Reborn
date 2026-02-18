@@ -11,7 +11,7 @@ import certifi
 import requests
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
-from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows, test
+from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows, IS_TEST_MODE
 
 
 def isInCurrDay(data, uuid):
@@ -144,7 +144,7 @@ def getGuildMembers(guild):
 
 
 def savePlayers(data):
-    if test:
+    if IS_TEST_MODE:
         guild_log = 'lunarity.json'
     else:
         guild_log = 'theaquarium.json'

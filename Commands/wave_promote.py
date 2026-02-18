@@ -5,7 +5,7 @@ from discord import ApplicationContext
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import guilds, discord_ranks, discord_rank_roles, error_channel
+from Helpers.variables import TAQ_GUILD_IDS, discord_ranks, discord_rank_roles, ERROR_CHANNEL_ID
 
 
 class WavePromote(commands.Cog):
@@ -15,7 +15,7 @@ class WavePromote(commands.Cog):
     @discord.slash_command(
         name='promo_wave',
         description='Promote multiple members by one rank each (up to 25)',
-        guild_ids=[guilds[0]],
+        guild_ids=TAQ_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
     async def promo_wave(
@@ -187,7 +187,7 @@ class WavePromote(commands.Cog):
                                 if sheet_row["data"].get("paid") == "NYP":
                                     await asyncio.to_thread(update_paid, name_result, "N")
                 except Exception as e:
-                    err_ch = self.client.get_channel(error_channel)
+                    err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
                     if err_ch:
                         await err_ch.send(
                             f"## Recruiter Tracker - Wave Promo Update Error\n"

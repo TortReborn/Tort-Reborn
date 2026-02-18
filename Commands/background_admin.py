@@ -8,7 +8,7 @@ from discord import SlashCommandGroup, option
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import guilds
+from Helpers.variables import ALL_GUILD_IDS
 
 # Retrieve a list of all backgrounds available
 async def get_all_backgrounds(message: discord.AutocompleteContext):
@@ -45,7 +45,7 @@ class BackgroundAdmin(commands.Cog):
 
     background_admin_group = SlashCommandGroup('background_admin', 'Background admin commands',
                                          default_member_permissions=discord.Permissions(administrator=True),
-                                         guild_ids=guilds)
+                                         guild_ids=ALL_GUILD_IDS)
 
     # Upload new PNG background to the database, required size 800x526
     @background_admin_group.command(description="Upload new PNG background to the database, required size 800x526")

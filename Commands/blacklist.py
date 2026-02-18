@@ -8,7 +8,7 @@ from discord.ext import pages
 
 from Helpers.database import get_blacklist, save_blacklist
 from Helpers.functions import getPlayerUUID, getNameFromUUID
-from Helpers.variables import te
+from Helpers.variables import EXEC_GUILD_IDS
 
 
 async def getBlacklistedPlayers(message: discord.AutocompleteContext):
@@ -21,7 +21,7 @@ class Blacklist(commands.Cog):
         self.client = client
 
     blacklist_group = SlashCommandGroup('blacklist', 'Blacklist related commands',
-                                        guild_ids=[te])
+                                        guild_ids=EXEC_GUILD_IDS)
 
     @blacklist_group.command()
     async def add(self, message,

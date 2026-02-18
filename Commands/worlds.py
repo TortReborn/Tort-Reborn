@@ -8,12 +8,14 @@ import time
 import datetime
 import math
 
+from Helpers.variables import ALL_GUILD_IDS
+
 
 class Worlds(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Shows worlds information')
+    @slash_command(description='Shows worlds information', guild_ids=ALL_GUILD_IDS)
     async def worlds(self, message,
                      order_by: discord.Option(str, choices=['Player count', 'World age'],
                                               require=True),

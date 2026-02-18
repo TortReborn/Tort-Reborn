@@ -7,14 +7,14 @@ from discord.commands import slash_command
 import discord
 
 from Helpers.functions import generate_rank_badge, addLine
-from Helpers.variables import guilds
+from Helpers.variables import EXEC_GUILD_IDS
 
 
 class RenderText(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(guild_ids=[guilds[1]])
+    @slash_command(guild_ids=EXEC_GUILD_IDS)
     async def render_text(self, message, text: discord.Option(str, require=True)):
 
         img = Image.new('RGBA', (1000, 20), (255, 0, 0, 0))

@@ -22,7 +22,7 @@ from Helpers.functions import (
 )
 from Helpers.classes import PlayerStats
 from Helpers.database import DB
-from Helpers.variables import discord_ranks, minecraft_banner_colors, guilds, wynn_ranks
+from Helpers.variables import discord_ranks, minecraft_banner_colors, ALL_GUILD_IDS, wynn_ranks
 
 # ---------------------------------------------------------------------------
 # Raids Command
@@ -56,7 +56,7 @@ class Raids(commands.Cog):
     @slash_command(
         name="raids",
         description="Show raid rankings and counts for a player",
-        guild_ids=guilds,
+        guild_ids=ALL_GUILD_IDS,
     )
     async def raids(self,
                     ctx: discord.ApplicationContext,

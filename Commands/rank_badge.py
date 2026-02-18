@@ -6,14 +6,14 @@ from discord.commands import slash_command
 import discord
 
 from Helpers.functions import generate_rank_badge
-from Helpers.variables import guilds
+from Helpers.variables import EXEC_GUILD_IDS
 
 
 class RankBadge(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(guild_ids=[guilds[1]])
+    @slash_command(guild_ids=EXEC_GUILD_IDS)
     async def rank_badge(self, message, text: discord.Option(str, require=True),
                          colour: discord.Option(str, require=True),
                          scale: discord.Option(int, require=False, default=4, min_value=1, max_value=6)):

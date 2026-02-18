@@ -25,29 +25,30 @@ from Helpers.classes import Guild, DB, BasicPlayerStats
 from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
 from Helpers.variables import (
-    raid_log_channel,
-    log_channel,
-    notg_emoji_id,
-    tcc_emoji_id,
-    tna_emoji_id,
-    nol_emoji_id,
-    aspect_emoji_id,
-    guilds,
-    welcome_channel,
+    RAID_LOG_CHANNEL_ID,
+    BOT_LOG_CHANNEL_ID,
+    NOTG_EMOJI,
+    TCC_EMOJI,
+    TNA_EMOJI,
+    NOL_EMOJI,
+    ASPECT_EMOJI,
+    ALL_GUILD_IDS,
+    TAQ_GUILD_ID,
+    WELCOME_CHANNEL_ID,
     discord_ranks,
 )
 
-RAID_ANNOUNCE_CHANNEL_ID = raid_log_channel
-LOG_CHANNEL = log_channel
+RAID_ANNOUNCE_CHANNEL_ID = RAID_LOG_CHANNEL_ID
+LOG_CHANNEL = BOT_LOG_CHANNEL_ID
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 100  # max calls per minute
 
 RAID_EMOJIS = {
-    "Nest of the Grootslangs": notg_emoji_id,
-    "The Canyon Colossus": tcc_emoji_id,
-    "The Nameless Anomaly": tna_emoji_id,
-    "Orphion's Nexus of Light": nol_emoji_id
+    "Nest of the Grootslangs": NOTG_EMOJI,
+    "The Canyon Colossus": TCC_EMOJI,
+    "The Nameless Anomaly": TNA_EMOJI,
+    "Orphion's Nexus of Light": NOL_EMOJI
 }
 
 # --- thread-safe DB + snapshot helpers ---
@@ -291,7 +292,7 @@ class UpdateMemberData(commands.Cog):
             emoji = RAID_EMOJIS.get(raid, "")
             title = f"{emoji} {raid} Completed!"
         else:
-            title = f"{aspect_emoji_id} Guild Raid Completed!"
+            title = f"{ASPECT_EMOJI} Guild Raid Completed!"
 
         channel = self.client.get_channel(RAID_ANNOUNCE_CHANNEL_ID)
         if channel:
@@ -624,7 +625,7 @@ class UpdateMemberData(commands.Cog):
 
         discord_id, app_channel_id = row
 
-        discord_guild = self.client.get_guild(guilds[0])
+        discord_guild = self.client.get_guild(TAQ_GUILD_ID)
         if not discord_guild:
             return
 
@@ -706,7 +707,7 @@ class UpdateMemberData(commands.Cog):
             await update_web_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
 
         # Send welcome embed
-        welcome_ch = self.client.get_channel(welcome_channel)
+        welcome_ch = self.client.get_channel(WELCOME_CHANNEL_ID)
         if welcome_ch:
             welcome_embed = discord.Embed(
                 description=f":ocean: Dive right in, {member.mention}! The water's fine.",
@@ -873,7 +874,7 @@ class UpdateMemberData(commands.Cog):
         else:
             print("Daily activity snapshot failed", flush=True)
 
-    @slash_command(name="force_snapshot", description="Force retry the daily activity snapshot (admin only)", guild_ids=guilds)
+    @slash_command(name="force_snapshot", description="Force retry the daily activity snapshot (admin only)", guild_ids=ALL_GUILD_IDS)
     @default_permissions(administrator=True)
     async def force_snapshot(self, ctx: discord.ApplicationContext):
         """

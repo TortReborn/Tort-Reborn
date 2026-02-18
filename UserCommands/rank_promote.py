@@ -5,7 +5,7 @@ from discord.commands import user_command
 from Helpers.classes import LinkAccount, NewMember
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import guilds, discord_ranks, discord_rank_roles, error_channel
+from Helpers.variables import ALL_GUILD_IDS, discord_ranks, discord_rank_roles, ERROR_CHANNEL_ID
 
 
 class RankPromote(commands.Cog):
@@ -15,7 +15,7 @@ class RankPromote(commands.Cog):
     @user_command(
         name='Rank | Promote',
         default_member_permissions=discord.Permissions(manage_roles=True),
-        guild_ids=guilds
+        guild_ids=ALL_GUILD_IDS
     )
     async def promote_member(self, interaction: discord.Interaction, user: discord.Member):
         # Ensure the invoker has the Manage Roles permission
@@ -165,7 +165,7 @@ class RankPromote(commands.Cog):
                         if sheet_row["data"].get("paid") == "NYP":
                             await asyncio.to_thread(update_paid, ign, "N")
         except Exception as e:
-            err_ch = self.client.get_channel(error_channel)
+            err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
             if err_ch:
                 await err_ch.send(
                     f"## Recruiter Tracker - Promo Update Error\n"

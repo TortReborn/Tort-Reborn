@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.commands import slash_command, Option
+from Helpers.variables import ALL_GUILD_IDS
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timezone
 from io import BytesIO
@@ -173,7 +174,8 @@ class Map(commands.Cog):
         self.client = client
 
     @slash_command(
-        description="Displays the full territory map, or a zoomed-in version for a specific guild prefix."
+        description="Displays the full territory map, or a zoomed-in version for a specific guild prefix.",
+        guild_ids=ALL_GUILD_IDS
     )
     async def map(self, ctx: discord.ApplicationContext, guild: Option(str, "Guild prefix to zoom in on", required=False)):
         """Slash command to show territory map."""

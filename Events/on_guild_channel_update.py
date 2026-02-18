@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from Helpers.database import DB
 from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
-from Helpers.variables import closed_category_name
+from Helpers.variables import CLOSED_CATEGORY_NAME
 
 
 class OnGuildChannelUpdate(commands.Cog):
@@ -18,8 +18,8 @@ class OnGuildChannelUpdate(commands.Cog):
         before_cat = getattr(before, 'category', None)
         after_cat = getattr(after, 'category', None)
         moved_to_closed = (
-            after_cat and after_cat.name == closed_category_name
-            and (not before_cat or before_cat.name != closed_category_name)
+            after_cat and after_cat.name == CLOSED_CATEGORY_NAME
+            and (not before_cat or before_cat.name != CLOSED_CATEGORY_NAME)
         )
 
         if not name_changed and not moved_to_closed:

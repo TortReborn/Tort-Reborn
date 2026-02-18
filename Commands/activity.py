@@ -14,9 +14,9 @@ from PIL import Image, ImageFont, ImageDraw
 from Helpers.classes import PlaceTemplate, Page, Guild
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge
-from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, guilds, te
+from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, EXEC_GUILD_IDS
 
-all_guilds = guilds + [te]
+all_guilds = EXEC_GUILD_IDS
 
 def _load_json(path: str, default):
     """

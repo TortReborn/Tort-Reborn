@@ -5,7 +5,7 @@ from discord.commands import SlashCommandGroup
 from datetime import datetime, timedelta, timezone
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from Helpers.variables import mythics
+from Helpers.variables import mythics, ALL_GUILD_IDS
 from Helpers.functions import wrap_text, get_multiline_text_size
 from Helpers.database import DB
 import time
@@ -16,7 +16,8 @@ import json
 class LootPool(commands.Cog):
     lootpool = SlashCommandGroup(
         name="lootpool",
-        description="Commands to fetch weekly lootpool data"
+        description="Commands to fetch weekly lootpool data",
+        guild_ids=ALL_GUILD_IDS
     )
 
     def __init__(self, client):

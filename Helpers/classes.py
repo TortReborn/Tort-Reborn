@@ -12,9 +12,9 @@ from Helpers.database import DB, get_current_guild_data, get_player_activity_bas
 from Helpers.functions import getPlayerUUID, getPlayerDatav3, urlify, determine_starting_rank
 from discord.ext.pages import Page as _Page
 
-from Helpers.variables import wynn_ranks, welcome_channel, discord_ranks
+from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID, discord_ranks
 
-WELCOME_CHANNEL = welcome_channel
+WELCOME_CHANNEL = WELCOME_CHANNEL_ID
 
 class Guild:
 

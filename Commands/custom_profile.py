@@ -10,14 +10,14 @@ import json
 
 from Helpers.classes import PlayerStats
 from Helpers.functions import pretty_date
-from Helpers.variables import discord_ranks, guilds
+from Helpers.variables import discord_ranks, EXEC_GUILD_IDS
 
 
 class Custom_Profile(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays a guild profile of guild member', guild_ids=[guilds[1]])
+    @slash_command(description='Displays a guild profile of guild member', guild_ids=EXEC_GUILD_IDS)
     async def custom_profile(self, message, player: discord.Option(str, require=True), guild_rank: discord.Option(str,
                                                                                                                   choices=[
                                                                                                                       'RECRUIT',

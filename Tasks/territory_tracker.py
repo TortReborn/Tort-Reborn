@@ -11,10 +11,10 @@ from discord.ext import tasks, commands
 
 from Helpers.database import DB
 from Helpers.variables import (
-    spearhead_role_id,
-    territory_tracker_channel,
-    global_terr_tracker_channel,
-    military_channel,
+    SPEARHEAD_ROLE_ID,
+    TERRITORY_TRACKER_CHANNEL_ID,
+    GLOBAL_TERR_TRACKER_CHANNEL_ID,
+    MILITARY_CHANNEL_ID,
     claims,
 )
 
@@ -691,11 +691,11 @@ class TerritoryTracker(commands.Cog):
             if not self.client.is_ready():
                 return
 
-            channel = self.client.get_channel(territory_tracker_channel)
+            channel = self.client.get_channel(TERRITORY_TRACKER_CHANNEL_ID)
             if channel is None:
                 return
 
-            global_channel = self.client.get_channel(global_terr_tracker_channel)
+            global_channel = self.client.get_channel(GLOBAL_TERR_TRACKER_CHANNEL_ID)
 
             old_data = await asyncio.to_thread(_read_territories_sync)
 
@@ -785,7 +785,7 @@ class TerritoryTracker(commands.Cog):
                                     should_ping_spearhead = True
 
                         # Alert
-                        alert_chan = self.client.get_channel(military_channel)
+                        alert_chan = self.client.get_channel(MILITARY_CHANNEL_ID)
 
                         # Check if attack pings are enabled via toggle
                         if should_ping_spearhead and alert_chan:
@@ -809,13 +809,13 @@ class TerritoryTracker(commands.Cog):
                             attacker = new_data.get(lost_terr, {}).get("guild", {}).get("name", "Unknown")
                             attacker_prefix = new_data.get(lost_terr, {}).get("guild", {}).get("prefix", "???")
                             if should_ping_spearhead:
-                                mention = f"<@&{spearhead_role_id}>"
+                                mention = f"<@&{SPEARHEAD_ROLE_ID}>"
                                 msg = f"{mention} **Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
                             else:
                                 msg = f"**Attack on {claim_name}!** {terr_type.capitalize()} **{lost_terr}** taken by **{attacker} [{attacker_prefix}]**"
                         else:
                             if should_ping_spearhead:
-                                mention = f"<@&{spearhead_role_id}>"
+                                mention = f"<@&{SPEARHEAD_ROLE_ID}>"
                                 msg = f"{mention} **Attack on {claim_name}!** A {terr_type} was taken."
                             else:
                                 msg = f"**Attack on {claim_name}!** A {terr_type} was taken."
@@ -881,7 +881,7 @@ class TerritoryTracker(commands.Cog):
 
                         if not mega_suppressed and difficulty_valid:
                             # Send congratulations message to military channel (no ping)
-                            alert_chan = self.client.get_channel(military_channel)
+                            alert_chan = self.client.get_channel(MILITARY_CHANNEL_ID)
                             if alert_chan:
                                 congrats_msg = f"🎉 Congratulations on a successful snipe of **{claim_name}** owned by **{old['owner']}**!"
                                 await alert_chan.send(congrats_msg)

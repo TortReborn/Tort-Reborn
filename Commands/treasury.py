@@ -5,13 +5,14 @@ import datetime
 import math
 
 from Helpers.database import get_territory_data
+from Helpers.variables import ALL_GUILD_IDS
 
 
 class Treasury(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Display all territories ordered by time held')
+    @slash_command(description='Display all territories ordered by time held', guild_ids=ALL_GUILD_IDS)
     async def treasury(self, ctx: discord.ApplicationContext):
         await ctx.defer()
 

@@ -5,7 +5,7 @@ from discord import option, default_permissions, slash_command
 from discord.ext import commands
 from discord.ui import View
 
-from Helpers.variables import test, log_channel, guildbank_channel, guilds
+from Helpers.variables import BOT_LOG_CHANNEL_ID, GUILD_BANK_CHANNEL_ID, ALL_GUILD_IDS
 
 
 async def get_mythics(message: discord.AutocompleteContext):
@@ -27,7 +27,7 @@ class itemViewTaken(View):
     @discord.ui.button(label='Deposit', custom_id='deposit-button', style=discord.ButtonStyle.red)
     async def return_item(self, button, ctx: discord.ApplicationContext):
         await ctx.response.defer(ephemeral=True)
-        self.log_channel = log_channel
+        self.BOT_LOG_CHANNEL_ID = BOT_LOG_CHANNEL_ID
         with open('guild_bank.json', 'r') as f:
             mythics = json.load(f)
             f.close()
@@ -37,7 +37,7 @@ class itemViewTaken(View):
         with open('guild_bank.json', 'w') as f:
             json.dump(mythics, f, indent=4)
             f.close()
-        await ctx.guild.get_channel(log_channel).send(
+        await ctx.guild.get_channel(BOT_LOG_CHANNEL_ID).send(
             f":green_square: <@{ctx.user.id}> deposited **{embed.title}** to Guild Bank",
             allowed_mentions=discord.AllowedMentions(users=False))
 
@@ -45,10 +45,10 @@ class itemViewTaken(View):
 class Withdraw(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.gbank_channel = guildbank_channel
-        self.log_channel = log_channel
+        self.gbank_channel = GUILD_BANK_CHANNEL_ID
+        self.BOT_LOG_CHANNEL_ID = BOT_LOG_CHANNEL_ID
 
-    @slash_command(description="Withdraw item from guild bank", guild_ids=[guilds[0], guilds[1]])
+    @slash_command(description="Withdraw item from guild bank", guild_ids=ALL_GUILD_IDS)
     @default_permissions(manage_roles=True)
     @option("item", description="Pick item to withdraw", autocomplete=get_mythics)
     async def withdraw(self, message, item: str):
@@ -78,7 +78,7 @@ class Withdraw(commands.Cog):
             await message.guild.get_channel(self.gbank_channel).send(embed=embed, file=icon, view=itemViewTaken())
         else:
             await message.guild.get_channel(self.gbank_channel).send(embed=embed, view=itemViewTaken())
-        await message.guild.get_channel(self.log_channel).send(
+        await message.guild.get_channel(self.BOT_LOG_CHANNEL_ID).send(
             f":red_square: <@{message.author.id}> withdrew **{item}** from Guild Bank",
             allowed_mentions=discord.AllowedMentions(users=False))
         await message.respond(f'{item} withdrawn.', ephemeral=True, delete_after=5)

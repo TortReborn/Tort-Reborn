@@ -11,7 +11,7 @@ from discord.ext import commands, pages
 from Helpers.classes import PlaceTemplate, Page, Guild
 from Helpers.database import DB
 from Helpers.functions import getGuildMembers, getPlayerUUID, addLine, expand_image, generate_rank_badge
-from Helpers.variables import rank_map
+from Helpers.variables import rank_map, ALL_GUILD_IDS
 
 
 def darken_color(color, iterations):
@@ -41,7 +41,7 @@ class Shell(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    shell_group = SlashCommandGroup('shell', 'Shells related commands')
+    shell_group = SlashCommandGroup('shell', 'Shells related commands', guild_ids=ALL_GUILD_IDS)
 
     @shell_group.command(description='Displays the top shell balances')
     async def baltop(self, message: ApplicationContext):

@@ -19,11 +19,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
-from Helpers.variables import te
+from Helpers.variables import EXEC_GUILD_IDS
 from Helpers import aspect_db
 
 
-GUILD_ID = te
 AVATAR_CACHE_FILE = "cache/avatar_index.json"
 AVATAR_CACHE_DIR = "cache/avatars"
 MAX_COLUMNS = 4
@@ -35,7 +34,7 @@ LINE_SPACING = 8
 
 
 class AspectDistribution(commands.Cog):
-    aspects = SlashCommandGroup("aspects", "Manage aspect distribution", guild_ids=[GUILD_ID])
+    aspects = SlashCommandGroup("aspects", "Manage aspect distribution", guild_ids=EXEC_GUILD_IDS)
     blacklist = aspects.create_subgroup("blacklist", "Manage aspect distribution blacklist")
 
     def __init__(self, client):
