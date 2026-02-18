@@ -59,7 +59,7 @@ class EcoLearningSetup(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description="Set up the eco learning channel", default_member_permissions=discord.Permissions(administrator=True), guild_ids=ALL_GUILD_IDS)
+    @slash_command(description="ADMIN: Set up the eco learning channel", default_member_permissions=discord.Permissions(administrator=True), guild_ids=ALL_GUILD_IDS)
     async def eco_learning_setup(self, message, json_data: discord.Option(str, description='JSON data from Discohook website'), button: discord.Option(bool, default=True, description='Include the ping button')):
         await message.defer(ephemeral=True)
         embed_data = json.loads(json_data)

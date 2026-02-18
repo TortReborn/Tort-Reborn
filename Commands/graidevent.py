@@ -85,7 +85,7 @@ class GraidEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(name="graid_event_start", guild_ids=ALL_GUILD_IDS, description="Start a new GRAID event")
+    @slash_command(name="graid_event_start", guild_ids=ALL_GUILD_IDS, description="HR: Start a new GRAID event")
     @default_permissions(manage_roles=True)
     async def graid_start(
         self, ctx: discord.ApplicationContext,
@@ -129,7 +129,7 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @slash_command(name="graid_event_stop", guild_ids=ALL_GUILD_IDS, description="Stop the current GRAID event")
+    @slash_command(name="graid_event_stop", guild_ids=ALL_GUILD_IDS, description="HR: Stop the current GRAID event")
     @default_permissions(manage_roles=True)
     async def graid_stop(self, ctx: discord.ApplicationContext):
         db = _db()
@@ -159,7 +159,7 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @slash_command(name="graid_event_info", guild_ids=ALL_GUILD_IDS, description="Show the active GRAID event")
+    @slash_command(name="graid_event_info", guild_ids=ALL_GUILD_IDS, description="HR: Show the active GRAID event")
     @default_permissions(manage_roles=True)
     async def graid_info(self, ctx: discord.ApplicationContext):
         db = _db()
@@ -195,7 +195,7 @@ class GraidEvent(commands.Cog):
         return titles  # list[str] (max 25 shown by Discord)
 
     # Then change your command signature:
-    @slash_command(name="graid_event_set", description="Activate an existing GRAID (by title)")
+    @slash_command(name="graid_event_set", description="HR: Activate an existing GRAID (by title)")
     @default_permissions(manage_roles=True)
     async def graid_set(
         self,

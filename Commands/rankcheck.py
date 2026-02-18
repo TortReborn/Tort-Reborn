@@ -41,7 +41,7 @@ class RankCheck(commands.Cog):
         self._sem = asyncio.Semaphore(5)
 
     @slash_command(
-        description='Check for game/discord rank & nickname consistency',
+        description='ADMIN: Check for game/discord rank & nickname consistency',
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(administrator=True),
         dm_permission=False

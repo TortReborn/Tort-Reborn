@@ -11,6 +11,7 @@ from discord.ext import commands, pages
 from Helpers.classes import PlaceTemplate, Page, Guild
 from Helpers.database import DB
 from Helpers.functions import getGuildMembers, getPlayerUUID, addLine, expand_image, generate_rank_badge
+from Helpers.logger import log, INFO
 from Helpers.variables import rank_map, ALL_GUILD_IDS
 
 
@@ -32,7 +33,7 @@ def darken_color(color, iterations):
 
         updated_color = f"#{red:02x}{green:02x}{blue:02x}"
 
-        print("Darkened color:", updated_color)
+        log(INFO, f"Darkened color: {updated_color}", context="shell")
 
     return updated_color
 

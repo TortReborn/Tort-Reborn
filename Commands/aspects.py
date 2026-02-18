@@ -20,6 +20,7 @@ from PIL import Image, ImageDraw, ImageFont
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
 from Helpers.variables import EXEC_GUILD_IDS
+from Helpers.logger import log, WARN, ERROR
 from Helpers import aspect_db
 
 
@@ -93,20 +94,20 @@ class AspectDistribution(commands.Cog):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers) as resp:
                     if resp.status != 200:
-                        print(f"Warning: Visage returned status {resp.status} for UUID {uuid}")
+                        log(WARN, f"Visage returned status {resp.status} for UUID {uuid}", context="aspects")
                         return None
                     
                     data = await resp.read()
                     
                     if data.startswith(b'<!DOCTYPE') or data.startswith(b'<html'):
-                        print(f"Warning: Visage returned HTML error page for UUID {uuid}")
+                        log(WARN, f"Visage returned HTML error page for UUID {uuid}", context="aspects")
                         return None
                     
                     is_png = data[:8] == b'\x89PNG\r\n\x1a\n'
                     is_jpeg = data[:3] == b'\xff\xd8\xff'
                     
                     if not (is_png or is_jpeg):
-                        print(f"Warning: Invalid image data received for UUID {uuid}")
+                        log(WARN, f"Invalid image data received for UUID {uuid}", context="aspects")
                         return None
 
             fn = f"{uuid}.png"
@@ -116,7 +117,7 @@ class AspectDistribution(commands.Cog):
             self.save_json(AVATAR_CACHE_FILE, cache)
             return data
         except Exception as e:
-            print(f"Warning: Failed to fetch avatar for UUID {uuid}: {e}")
+            log(WARN, f"Failed to fetch avatar for UUID {uuid}: {e}", context="aspects")
             return None
 
     def make_distribution_image(self, avatar_bytes_list, names_list):

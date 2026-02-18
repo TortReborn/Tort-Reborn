@@ -14,7 +14,7 @@ class Recruitment(commands.Cog):
 
     @slash_command(
         guild_ids=EXEC_GUILD_IDS,
-        description='Get a list of guildless players for recruitment',
+        description='ADMIN: Get a list of guildless players for recruitment',
         default_member_permissions=discord.Permissions(administrator=True)
     )
     async def recruitment(

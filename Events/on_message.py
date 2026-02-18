@@ -14,6 +14,7 @@ from Helpers.openai_helper import (
     detect_application, detect_rejoin_intent, extract_ign,
     validate_application_completeness, validate_exmember_completeness,
 )
+from Helpers.logger import log, ERROR
 from Helpers.variables import APP_MANAGER_ROLE_MENTION, APPLICATION_FORMAT_MESSAGE
 
 
@@ -122,7 +123,7 @@ class OnMessage(commands.Cog):
             # Lenient rejoin intent detection
             detection = await asyncio.to_thread(detect_rejoin_intent, message.content)
             if detection.get("error"):
-                print(f"[on_message] Rejoin detection error for {message.channel.name}: {detection['error']}")
+                log(ERROR, f"Rejoin detection error for {message.channel.name}: {detection['error']}", context="on_message")
                 return
             if not detection["is_application"] or detection["confidence"] < 0.4:
                 return
@@ -152,7 +153,7 @@ class OnMessage(commands.Cog):
         detection = await asyncio.to_thread(detect_application, message.content)
 
         if detection.get("error"):
-            print(f"[on_message] AI detection error for {message.channel.name}: {detection['error']}")
+            log(ERROR, f"AI detection error for {message.channel.name}: {detection['error']}", context="on_message")
             return
 
         if not detection["is_application"] or detection["confidence"] < 0.7:
@@ -219,7 +220,7 @@ class OnMessage(commands.Cog):
         validation = await asyncio.to_thread(validator, message.content)
 
         if validation.get("error"):
-            print(f"[on_message] Revalidation error for {message.channel.name}: {validation['error']}")
+            log(ERROR, f"Revalidation error for {message.channel.name}: {validation['error']}", context="on_message")
             return
 
         # Try to extract IGN from the new message if we don't have one

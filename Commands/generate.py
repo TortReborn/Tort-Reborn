@@ -1,15 +1,98 @@
-import discord
-from discord.ext import commands
-from discord.commands import slash_command
-from discord.ui import View, button
-from discord import Permissions
+import base64
+import hashlib
+import hmac
+import json
+import os
+import time
 from pathlib import Path
 from textwrap import dedent
 
-from Helpers.database import DB
-from Helpers.variables import TAQ_GUILD_IDS, RAID_COLLECTING_CHANNEL_ID, SHELL_EMOJI, ASPECT_EMOJI
+import discord
+from discord.ext import commands
+from discord.commands import SlashCommandGroup
+from discord.ui import View, button
+from discord import Permissions
 
-CHANNEL_ID = RAID_COLLECTING_CHANNEL_ID
+from Helpers.database import DB
+from Helpers.variables import (
+    ALL_GUILD_IDS,
+    WEBSITE_URL,
+    RAID_COLLECTING_CHANNEL_ID,
+    SHELL_EMOJI,
+    ASPECT_EMOJI,
+)
+
+APPLICATION_TOKEN_SECRET = os.getenv("APPLICATION_TOKEN_SECRET", "")
+
+
+# ---- Application button helpers ----
+
+def _generate_token(user: discord.User | discord.Member, app_type: str) -> str:
+    """Generate a signed token carrying the user's Discord identity."""
+    payload = json.dumps({
+        "discord_id": str(user.id),
+        "discord_username": user.name,
+        "discord_avatar": user.avatar.key if user.avatar else "",
+        "type": app_type,
+        "exp": int(time.time()) + 1800,  # 30 minutes
+    })
+    payload_b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+    sig = hmac.new(
+        APPLICATION_TOKEN_SECRET.encode(),
+        payload_b64.encode(),
+        hashlib.sha256,
+    ).digest()
+    sig_b64 = base64.urlsafe_b64encode(sig).decode().rstrip("=")
+    return f"{payload_b64}.{sig_b64}"
+
+
+class ApplicationButtonView(discord.ui.View):
+    """Persistent view with two application buttons."""
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="Guild Member Application",
+        style=discord.ButtonStyle.primary,
+        custom_id="apply_guild",
+        emoji="\U0001F420",
+    )
+    async def guild_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self._handle_button(interaction, "guild")
+
+    @discord.ui.button(
+        label="Community Member Application",
+        style=discord.ButtonStyle.success,
+        custom_id="apply_community",
+        emoji="\U0001FABC",
+    )
+    async def community_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self._handle_button(interaction, "community")
+
+    async def _handle_button(self, interaction: discord.Interaction, app_type: str):
+        await interaction.response.defer(ephemeral=True)
+
+        token = _generate_token(interaction.user, app_type)
+        url = f"{WEBSITE_URL}/apply/{app_type}?token={token}"
+
+        type_label = "Guild Member" if app_type == "guild" else "Community Member"
+
+        embed = discord.Embed(
+            title=f"{type_label} Application",
+            description=(
+                f"Click the link below to fill out your application on our website.\n\n"
+                f"**[Open Application Form]({url})**\n\n"
+                f"This link expires in **30 minutes** and is unique to your Discord account."
+            ),
+            color=0x5865F2,
+        )
+        embed.set_footer(text="Do not share this link with anyone else.")
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+# ---- Raid collecting views ----
 
 class ClaimView(View):
     def __init__(self):
@@ -28,7 +111,7 @@ class ClaimView(View):
         if not row:
             db.close()
             return await interaction.followup.send(
-                "❌ You don’t have a linked game account. Please use `/link` first.",
+                "❌ You don't have a linked game account. Please use `/link` first.",
                 ephemeral=True
             )
 
@@ -55,6 +138,7 @@ class ClaimView(View):
             ephemeral=True
         )
 
+
 class ConvertView(View):
     def __init__(self, uuid: str, count: int):
         super().__init__(timeout=None)
@@ -79,7 +163,6 @@ class ConvertView(View):
             db.close()
             await interaction.followup.send("❌ You cannot claim raids twice.", ephemeral=True)
             return
-
 
         # Get IGN from discord_links
         db.cursor.execute(
@@ -112,7 +195,6 @@ class ConvertView(View):
 
         db = DB(); db.connect()
 
-        # Get current raid count from database
         db.cursor.execute("""
             SELECT uncollected_raids, uncollected_aspects
             FROM uncollected_raids
@@ -127,7 +209,6 @@ class ConvertView(View):
         total_raids = row[0]
         current_aspects = row[1]
 
-        # Calculate conversion amounts
         aspect_count = total_raids // 2
         if aspect_count == 0:
             db.close()
@@ -139,7 +220,6 @@ class ConvertView(View):
         remainder_raids = total_raids % 2
         raids_spent = aspect_count * 2
 
-        # Update with race condition check
         db.cursor.execute("""
             UPDATE uncollected_raids
                SET uncollected_raids   = %s,
@@ -167,21 +247,70 @@ class ConvertView(View):
         )
 
 
-class RaidCollecting(commands.Cog):
+# ---- Cog ----
+
+class Generate(commands.Cog):
+    generate = SlashCommandGroup(
+        "generate", "ADMIN: Generate persistent messages/panels",
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=Permissions(administrator=True),
+    )
+
     def __init__(self, client):
         self.client = client
 
-    @slash_command(
-        guild_ids=TAQ_GUILD_IDS,
-        description="Post the Raid Collecting panel into the designated channel.",
-        default_member_permissions=Permissions(administrator=True),
-        dm_permission=False
-    )
-    async def postraidcollecting(self, ctx: discord.ApplicationContext):
-        """Posts the Raid Collecting banner, embed + button."""
+    @generate.command(name="app_header", description="ADMIN: Post or update the application header with buttons")
+    async def app_header(
+        self,
+        ctx: discord.ApplicationContext,
+        level_requirement: discord.Option(int, "Minimum level requirement (e.g. 60, 80)", required=True),
+        activity_requirement: discord.Option(str, "Weekly activity requirement (e.g. '4 hours a week')", required=True),
+    ):
         await ctx.defer(ephemeral=True)
 
-        channel = self.client.get_channel(CHANNEL_ID)
+        embed = discord.Embed(
+            title="The Aquarium \u2014 Applications",
+            description=(
+                "Welcome! Choose an application type below to get started.\n\n"
+                "**Guild Member**\n"
+                "Join The Aquarium as an in-game guild member.\n"
+                f"- Level **{level_requirement}+**\n"
+                f"- **{activity_requirement}** weekly activity\n\n"
+                "**Community Member**\n"
+                "Become part of our community without joining the in-game guild. "
+                "Hang out, chat, and participate in events!"
+            ),
+            color=0x2B82D4,
+        )
+        embed.set_footer(text="Click a button below to begin your application.")
+
+        view = ApplicationButtonView()
+
+        existing_msg = None
+        async for msg in ctx.channel.history(limit=50):
+            if msg.author.id == self.client.user.id and msg.components:
+                for row in msg.components:
+                    for child in row.children:
+                        if getattr(child, "custom_id", None) in ("apply_guild", "apply_community"):
+                            existing_msg = msg
+                            break
+                    if existing_msg:
+                        break
+            if existing_msg:
+                break
+
+        if existing_msg:
+            await existing_msg.edit(embed=embed, view=view)
+            await ctx.followup.send("Application header updated!", ephemeral=True)
+        else:
+            await ctx.channel.send(embed=embed, view=view)
+            await ctx.followup.send("Application header posted!", ephemeral=True)
+
+    @generate.command(name="raid_collecting", description="ADMIN: Post the Raid Collecting panel")
+    async def raid_collecting(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        channel = self.client.get_channel(RAID_COLLECTING_CHANNEL_ID)
         if not channel:
             return await ctx.followup.send(
                 "❌ Could not find the raid-collecting channel.",
@@ -223,8 +352,9 @@ class RaidCollecting(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        self.client.add_view(ApplicationButtonView())
         self.client.add_view(ClaimView())
-        pass
+
 
 def setup(client):
-    client.add_cog(RaidCollecting(client))
+    client.add_cog(Generate(client))

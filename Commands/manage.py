@@ -13,6 +13,7 @@ import requests
 from Helpers.classes import LinkAccount, PlayerStats, PlayerShells
 from Helpers.database import DB
 from Helpers.functions import addLine, split_sentence, expand_image, getPlayerUUID
+from Helpers.logger import log, ERROR
 from Helpers.variables import ALL_GUILD_IDS, discord_ranks, discord_rank_roles
 
 
@@ -85,13 +86,13 @@ class Manage(commands.Cog):
         self.client = client
 
     manage_group = SlashCommandGroup(
-        'manage', 'Guild management commands',
+        'manage', 'HR: Guild management commands',
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
 
 
-    @manage_group.command(name='rank', description='Assign or update a user’s guild rank')
+    @manage_group.command(name='rank', description='HR: Assign or update a user\'s guild rank')
     async def rank(
         self,
         ctx: ApplicationContext,
@@ -184,7 +185,7 @@ class Manage(commands.Cog):
             await ctx.interaction.response.send_modal(modal)
         db.close()
 
-    @manage_group.command(name='shells', description='Add or remove shells from a user')
+    @manage_group.command(name='shells', description='HR: Add or remove shells from a user')
     async def shells(
         self,
         ctx: ApplicationContext,
@@ -264,7 +265,7 @@ class Manage(commands.Cog):
                 )
                 db.connection.commit()
             except Exception as e:
-                print(f"[manage shells] audit_log write failed: {e}")
+                log(ERROR, f"audit_log write failed: {e}", context="manage")
 
             img = ImageOps.expand(img, border=(2,2), fill='#100010e2')
             draw = ImageDraw.Draw(img)
@@ -284,7 +285,7 @@ class Manage(commands.Cog):
             await ctx.interaction.response.send_modal(modal)
         db.close()
 
-    @manage_group.command(name='link', description='Link a user to an IGN')
+    @manage_group.command(name='link', description='HR: Link a user to an IGN')
     async def link(
         self,
         ctx: ApplicationContext,

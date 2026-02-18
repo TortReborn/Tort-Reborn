@@ -12,6 +12,7 @@ import requests
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
 from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows, IS_TEST_MODE
+from Helpers.logger import log, WARN, ERROR
 
 
 def isInCurrDay(data, uuid):
@@ -693,7 +694,7 @@ def getOnlinePlayers():
             if 'players' in data and isinstance(data['players'], dict):
                 return data['players']
     except Exception as e:
-        print(f"V3 endpoint failed: {e}")
+        log(WARN, f"V3 endpoint failed: {e}", context="api")
 
     # Fallback to legacy endpoint (using a different timeout for the fallback)
     legacy_url = "https://api.wynncraft.com/public_api.php?action=onlinePlayers"
@@ -709,7 +710,7 @@ def getOnlinePlayers():
                         players_dict[player] = server_name
             return players_dict
     except Exception as e:
-        print(f"Legacy endpoint also failed: {e}")
+        log(WARN, f"Legacy endpoint also failed: {e}", context="api")
 
     # Return empty dict if both fail
     return {}
@@ -741,7 +742,7 @@ def getOnlinePlayersUUID():
             # Lower-case the UUID keys so later look-ups are case-insensitive
             return {uuid.lower(): server for uuid, server in players.items()}
     except Exception as e:
-        print(f"UUID endpoint failed: {e}")
+        log(WARN, f"UUID endpoint failed: {e}", context="api")
 
     # Fall back to the username endpoint and convert to uuid map is not
     # possible without additional look-ups, so just return empty dict – the
@@ -792,7 +793,7 @@ def getUsernameFromUUID(uuid: str) -> str | None:
                 _uuid_name_cache[uuid_nodash] = name
                 return name
     except Exception as e:
-        print(f"Mojang lookup failed for {uuid}: {e}")
+        log(ERROR, f"Mojang lookup failed for {uuid}: {e}", context="api")
 
     return None
 

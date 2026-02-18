@@ -10,6 +10,7 @@ from discord.ext import commands, tasks
 from discord.commands import slash_command
 from discord import default_permissions
 
+from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers.database import DB, get_current_guild_data
 from Helpers.variables import ALL_GUILD_IDS, TAQ_GUILD_ID, ANNOUNCEMENT_CHANNEL_ID, FAQ_CHANNEL_ID, VANITY_ROLE_IDS
 
@@ -64,7 +65,7 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> Opti
             return 0
         return int(row[0])
     except Exception as e:
-        print(f"[vanity_roles] Error getting baseline for {uuid}/{key}: {e}")
+        log(ERROR, f"Error getting baseline for {uuid}/{key}: {e}", context="vanity_roles")
         return None
 
 
@@ -141,9 +142,9 @@ class VanityRoles(commands.Cog):
         # Prevent duplicate task starts
         if not self.biweekly_roles.is_running():
             self.biweekly_roles.start()
-            print("🟨 [vanity_roles] Task loop started")
+            log(INFO, "Task loop started", context="vanity_roles")
         else:
-            print("🟨 [vanity_roles] WARNING: Task loop already running, skipping duplicate start")
+            log(WARN, "Task loop already running, skipping duplicate start", context="vanity_roles")
         
 
     def cog_unload(self):
@@ -173,13 +174,13 @@ class VanityRoles(commands.Cog):
         me = guild.me
         ok = True
         if not me.guild_permissions.manage_roles:
-            print("[vanity_roles] PRECHECK: Missing 'Manage Roles' permission.")
+            log(ERROR, "PRECHECK: Missing 'Manage Roles' permission.", context="vanity_roles")
             ok = False
         # Bot top role must be above every vanity role
         for sec in resolved_roles.values():
             for role in sec.values():
                 if role >= me.top_role:
-                    print(f"[vanity_roles] PRECHECK: Bot's top role must be above '{role.name}' ({role.id}).")
+                    log(ERROR, f"PRECHECK: Bot's top role must be above '{role.name}' ({role.id}).", context="vanity_roles")
                     ok = False
         return ok
 
@@ -205,10 +206,10 @@ class VanityRoles(commands.Cog):
                     resolved[section][tier] = role
 
         if missing:
-            print("[vanity_roles] ERROR: The following vanity roles were not found by ID:")
+            log(ERROR, "The following vanity roles were not found by ID:", context="vanity_roles")
             for section, tier, role_id in missing:
-                print(f"  - {section} {tier}: {role_id}")
-            print("[vanity_roles] Aborting. Check VANITY_ROLE_IDS in variables.py.")
+                log(ERROR, f"  - {section} {tier}: {role_id}", context="vanity_roles")
+            log(ERROR, "Aborting. Check VANITY_ROLE_IDS in variables.py.", context="vanity_roles")
             raise RuntimeError("Missing vanity roles by ID")
 
         return resolved
@@ -227,8 +228,8 @@ class VanityRoles(commands.Cog):
                 if changes % 25 == 0:
                     await asyncio.sleep(1.0)
             except Exception as e:
-                print(f"[vanity_roles] strip: remove_roles failed for {member.id}: {e}")
-        print(f"[vanity_roles] strip: removed vanity roles from ~{changes} members")
+                log(ERROR, f"strip: remove_roles failed for {member.id}: {e}", context="vanity_roles")
+        log(INFO, f"strip: removed vanity roles from ~{changes} members", context="vanity_roles")
         return changes
 
     async def _assign_roles_to_winners(self, guild: discord.Guild, winners_ids: Dict[str, Dict[str, List[int]]],
@@ -239,7 +240,7 @@ class VanityRoles(commands.Cog):
         bucket_role = discord.utils.get(guild.roles, name=BUCKET_ROLE_NAME)
 
         if bucket_role is None:
-            print(f"[vanity_roles] WARNING: Contribution bucket role not found: '{BUCKET_ROLE_NAME}'")
+            log(WARN, f"Contribution bucket role not found: '{BUCKET_ROLE_NAME}'", context="vanity_roles")
 
         grants = 0
         for section in ("wars", "raids"):
@@ -269,8 +270,8 @@ class VanityRoles(commands.Cog):
                         if grants % 25 == 0:
                             await asyncio.sleep(1.0)
                     except Exception as e:
-                        print(f"[vanity_roles] assign: add_roles failed for {member.id}: {e}")
-        print(f"[vanity_roles] assign: granted roles to ~{grants} members")
+                        log(ERROR, f"assign: add_roles failed for {member.id}: {e}", context="vanity_roles")
+        log(INFO, f"assign: granted roles to ~{grants} members", context="vanity_roles")
         return grants
 
     # -----------------------------
@@ -281,16 +282,16 @@ class VanityRoles(commands.Cog):
             self._running = asyncio.Lock()
 
         if self._running.locked():
-            print("[vanity_roles] Run skipped: job already in progress")
+            log(WARN, "Run skipped: job already in progress", context="vanity_roles")
             return
 
         async with self._running:
             guild = self.client.get_guild(TAQ_GUILD_ID)
             if guild is None:
-                print("[vanity_roles] Guild not found; check Helpers.variables.TAQ_GUILD_ID.")
+                log(ERROR, "Guild not found; check Helpers.variables.TAQ_GUILD_ID.", context="vanity_roles")
                 return
 
-            print(f"[vanity_roles] Running for guild: {guild.name} ({guild.id})")
+            log(INFO, f"Running for guild: {guild.name} ({guild.id})", context="vanity_roles")
 
             # 1) Resolve roles by ID
             try:
@@ -300,7 +301,7 @@ class VanityRoles(commands.Cog):
             
             # 2) Permissions / hierarchy check against resolved roles
             if not await self._precheck_permissions(guild, resolved):
-                print("[vanity_roles] Aborting: fix permissions / role order.")
+                log(ERROR, "Aborting: fix permissions / role order.", context="vanity_roles")
                 return
 
             # 3) FULL RESET: remove all vanity roles from everyone
@@ -339,7 +340,7 @@ class VanityRoles(commands.Cog):
 
             # 6) Announce (pass resolved so we can @role by object)
             await self._send_announcement_embed(guild, winners_ids, resolved)
-            print(f"[vanity_roles] Completed bi-weekly pass at {datetime.now(timezone.utc)}")
+            log(INFO, "Completed bi-weekly pass", context="vanity_roles")
 
     # -----------------------------
     # Announcement embed helper
@@ -349,7 +350,7 @@ class VanityRoles(commands.Cog):
                                     resolved: Dict[str, Dict[str, discord.Role]]):
         channel = self.client.get_channel(ANNOUNCEMENT_CHANNEL_ID) or guild.system_channel
         if channel is None:
-            print("[vanity_roles] Announcement channel not found.")
+            log(ERROR, "Announcement channel not found.", context="vanity_roles")
             return
 
         title = "🎉 Vanity Roles Awarded"
@@ -415,7 +416,7 @@ class VanityRoles(commands.Cog):
             try:
                 await channel.send(embed=empty)
             except Exception as e:
-                print(f"[vanity_roles] Failed to send empty announcement: {e}")
+                log(ERROR, f"Failed to send empty announcement: {e}", context="vanity_roles")
             return
 
         try:
@@ -424,7 +425,7 @@ class VanityRoles(commands.Cog):
                 allowed_mentions=discord.AllowedMentions(roles=True, users=True, everyone=False),
             )
         except Exception as e:
-            print(f"[vanity_roles] Failed to send announcement: {e}")
+            log(ERROR, f"Failed to send announcement: {e}", context="vanity_roles")
 
     # -----------------------------
     # Slash command: preview/run

@@ -30,7 +30,7 @@ class WebAppCommands(commands.Cog):
         self.client = client
 
     app_group = SlashCommandGroup(
-        'app', 'Website application management commands',
+        'app', 'HR: Website application management commands',
         guild_ids=ALL_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
@@ -127,7 +127,7 @@ class WebAppCommands(commands.Cog):
 
     # --- /app accept ---
 
-    @app_group.command(name='accept', description='Accept this website application')
+    @app_group.command(name='accept', description='HR: Accept this website application')
     async def accept(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 
@@ -303,7 +303,7 @@ class WebAppCommands(commands.Cog):
 
     # --- /app deny ---
 
-    @app_group.command(name='deny', description='Deny this website application')
+    @app_group.command(name='deny', description='HR: Deny this website application')
     async def deny(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 
@@ -347,7 +347,7 @@ class WebAppCommands(commands.Cog):
 
     # --- /app invited ---
 
-    @app_group.command(name='invited', description='Invite an accepted applicant who has left their guild')
+    @app_group.command(name='invited', description='HR: Invite an accepted applicant who has left their guild')
     async def invited(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 
@@ -415,7 +415,7 @@ class WebAppCommands(commands.Cog):
 
     # --- /app close ---
 
-    @app_group.command(name='close', description='Close this application ticket')
+    @app_group.command(name='close', description='HR: Close this application ticket')
     async def close(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 
@@ -450,7 +450,7 @@ class WebAppCommands(commands.Cog):
 
     # --- /app transcribe ---
 
-    @app_group.command(name='transcribe', description='Transcribe this application to the archive channel')
+    @app_group.command(name='transcribe', description='HR: Transcribe this application to the archive channel')
     async def transcribe(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 

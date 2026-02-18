@@ -13,7 +13,7 @@ class NewMember(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(guild_ids=ALL_GUILD_IDS)
+    @slash_command(guild_ids=ALL_GUILD_IDS, description="HR: Register a new guild member")
     @default_permissions(manage_roles=True)
     async def new_member(self, message, user: discord.Member, ign):
         if message.interaction.user.guild_permissions.manage_roles:

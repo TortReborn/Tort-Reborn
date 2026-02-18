@@ -11,6 +11,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from Helpers.logger import log, INFO, ERROR
 from Helpers.variables import ALL_GUILD_IDS
 
 
@@ -68,7 +69,7 @@ class Build(commands.Cog):
             values = result.get("values", [])
 
             if not values:
-                print("No data found.")
+                log(INFO, "No data found.", context="build")
                 return
 
             for row in values:
@@ -88,7 +89,7 @@ class Build(commands.Cog):
             await message.respond(embed=embed)
 
         except HttpError as err:
-            print(err)
+            log(ERROR, f"{err}", context="build")
             embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
                                   description=f'There was an error connection to builds spreadsheet.',
                                   color=0xe33232)

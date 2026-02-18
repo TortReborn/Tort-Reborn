@@ -13,11 +13,13 @@ from discord import Embed
 from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
 from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID
-from Commands.generate_app_header import ApplicationButtonView
+from Helpers.logger import log, SYSTEM, SUCCESS, ERROR
+from Helpers import logger
+from Commands.generate import ApplicationButtonView
 
 
 
-# Only show INFO+ from root, suppress discord.py’s DEBUG/INFO noise
+# Only show INFO+ from root, suppress discord.py's DEBUG/INFO noise
 logging.basicConfig(
     level=logging.INFO,
     format='[%(levelname)s] %(message)s'
@@ -28,13 +30,13 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 # get bot token
 load_dotenv()
 if os.getenv("TEST_MODE", "").lower() == "true":
-    print("Starting in TEST mode...")
+    log(SYSTEM, "Starting in TEST mode...")
     token = os.getenv("TEST_TOKEN")
 elif os.getenv("TEST_MODE", "").lower() == "false":
-    print("Starting in PRODUCTION mode...")
+    log(SYSTEM, "Starting in PRODUCTION mode...")
     token = os.getenv("TOKEN")
 else:
-    print("Error: Could not get TOKEN. Please check your .env file.")
+    log(ERROR, "Could not get TOKEN. Please check your .env file.")
     sys.exit(-1)
 
 # Discord intents
@@ -45,6 +47,7 @@ intents.members = True
 intents.message_content = True
 
 client = discord.Bot(intents=intents)
+logger.init(client)
 
 
 def on_crash(exc_type, value, tb):
@@ -66,15 +69,17 @@ async def on_ready():
         client.add_view(ApplicationButtonView())
         await client.sync_commands()
         client.synced = True
-        print("✅ Slash commands synced.")
+        log(SUCCESS, "Slash commands synced.")
+
+    logger.start()
 
     guild = Guild('The Aquarium')
     await client.change_presence(
         activity=discord.CustomActivity(name=f'{guild.online} members online')
     )
-    print(f'🟪 We have logged in as {client.user}')
+    log(SYSTEM, f'Logged in as {client.user}')
     for g in client.guilds:
-        print(f'🟪 Connected to guild: {g.name}')
+        log(SYSTEM, f'Connected to guild: {g.name}')
 
     if not IS_TEST_MODE:
         now = int(time.time())
@@ -168,7 +173,7 @@ extensions = [
     # 'Commands.update_claim',
     # 'Commands.suggest_promotion',
     # 'Commands.ranking_up_setup',
-    'Commands.raid_collecting',
+    'Commands.generate',
     'Commands.lootpool',
     'Commands.aspects',
     'Commands.map',
@@ -178,7 +183,6 @@ extensions = [
     'Commands.top_wars',
     'Commands.agenda',
     'Commands.wave_promote',
-    'Commands.generate_app_header',
     'Commands.app_commands',
 
     # Dev Commands
@@ -218,9 +222,10 @@ extensions = [
 for ext in extensions:
     try:
         client.load_extension(ext)
-        print(f"✅ Loaded extension {ext}")
+        log(SUCCESS, f"Loaded extension {ext}")
     except Exception:
-        print(f"❌ Failed to load extension {ext}", file=sys.stderr)
+        error_msg = f"Failed to load extension {ext}\n```\n{traceback.format_exc()}\n```"
+        log(ERROR, error_msg)
         traceback.print_exc()
 
 
@@ -231,6 +236,6 @@ if __name__ == '__main__':
     try:
         client.run(token)
     except Exception:
-        print("Fatal error while running client:", file=sys.stderr)
+        log(ERROR, "Fatal error while running client")
         traceback.print_exc()
         sys.exit(1)

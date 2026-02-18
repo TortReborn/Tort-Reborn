@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from discord.ext import tasks, commands
 import aiohttp
 
+from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers.database import save_recruitment_data
 
 
@@ -69,7 +70,7 @@ class RecruitmentChecker(commands.Cog):
                 # Fetch online players
                 async with session.get('https://api.wynncraft.com/v3/player') as resp:
                     if resp.status != 200:
-                        print(f"[RecruitmentChecker] Failed to fetch online players: {resp.status}")
+                        log(ERROR, f"Failed to fetch online players: {resp.status}", context="recruitment")
                         return
                     online_data = await resp.json()
 
@@ -80,13 +81,13 @@ class RecruitmentChecker(commands.Cog):
                 player_list = list(players.items())
                 random.shuffle(player_list)
 
-                print(f"🟩 [RecruitmentChecker] Found {total_players} online players")
+                log(INFO, f"Found {total_players} online players", context="recruitment")
 
                 for player_name, server_name in player_list:
                     # Check if we've hit the cutoff time (9:45)
                     elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
                     if elapsed >= self.CUTOFF_TIME:
-                        print(f"[RecruitmentChecker] Reached time cutoff ({self.CUTOFF_TIME}s), ending scan early")
+                        log(INFO, f"Reached time cutoff ({self.CUTOFF_TIME}s), ending scan early", context="recruitment")
                         break
 
                     total_scanned += 1
@@ -104,12 +105,12 @@ class RecruitmentChecker(commands.Cog):
                                 reset_time = int(response.headers.get('ratelimit-reset', 60))
 
                                 if remaining <= 2:
-                                    print(f"[RecruitmentChecker] Rate limit low, waiting {reset_time}s")
+                                    log(WARN, f"Rate limit low, waiting {reset_time}s", context="recruitment")
                                     await asyncio.sleep(reset_time + 1)
 
                                 if response.status == 429:
                                     reset_time = int(response.headers.get('ratelimit-reset', 60))
-                                    print(f"[RecruitmentChecker] Rate limited, waiting {reset_time}s")
+                                    log(WARN, f"Rate limited, waiting {reset_time}s", context="recruitment")
                                     await asyncio.sleep(reset_time + 1)
                                     retries += 1
                                     continue
@@ -146,7 +147,7 @@ class RecruitmentChecker(commands.Cog):
                             if retries < max_retries:
                                 await asyncio.sleep(5 * retries)
                             else:
-                                print(f"[RecruitmentChecker] Failed to fetch {player_name}: {e}")
+                                log(ERROR, f"Failed to fetch {player_name}: {e}", context="recruitment")
                                 break
 
                     # Rate limit delay after each player (not before)
@@ -167,11 +168,11 @@ class RecruitmentChecker(commands.Cog):
 
             save_recruitment_data(result)
 
-            print(f"[RecruitmentChecker] Scan complete. Found {len(candidates)} guildless candidates "
-                  f"out of {total_scanned}/{total_players} players in {duration:.1f}s")
+            log(INFO, f"Scan complete. Found {len(candidates)} guildless candidates "
+                  f"out of {total_scanned}/{total_players} players in {duration:.1f}s", context="recruitment")
 
         except Exception as e:
-            print(f"[RecruitmentChecker] Error during scan: {e}")
+            log(ERROR, f"Error during scan: {e}", context="recruitment")
 
     @recruitment_loop.before_loop
     async def before_recruitment_loop(self):

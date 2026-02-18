@@ -254,7 +254,7 @@ class TopWars(commands.Cog):
         self.client = client
 
     @slash_command(
-        description="Display and reward top warrers for the week",
+        description="ADMIN: Display and reward top warrers for the week",
         default_member_permissions=discord.Permissions(administrator=True),
         guild_ids=ALL_GUILD_IDS
     )

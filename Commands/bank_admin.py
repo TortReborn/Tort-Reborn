@@ -52,11 +52,11 @@ class BankLog(commands.Cog):
         self.gbank_channel = GUILD_BANK_CHANNEL_ID
         self.log_channel = BOT_LOG_CHANNEL_ID
 
-    bank_log_group = SlashCommandGroup('bank_admin', 'Bank log admin commands',
+    bank_log_group = SlashCommandGroup('bank_admin', 'ADMIN: Bank log admin commands',
                                        default_member_permissions=discord.Permissions(administrator=True),
                                        guild_ids=ALL_GUILD_IDS)
 
-    @bank_log_group.command(description="Register new item to guild bank")
+    @bank_log_group.command(description="ADMIN: Register new item to guild bank")
     async def register(self, message, item: discord.Option(str, require=True),
                        icon: discord.Option(discord.Attachment, default=None, require=False)):
         await message.defer(ephemeral=True)
@@ -90,7 +90,7 @@ class BankLog(commands.Cog):
             allowed_mentions=discord.AllowedMentions(users=False))
         await message.respond(embed=embed, delete_after=5)
 
-    @bank_log_group.command(description="Remove item from guild bank database")
+    @bank_log_group.command(description="ADMIN: Remove item from guild bank database")
     @option("item", description="Pick item to remove", autocomplete=get_mythics)
     async def delete(self, message, item: str):
         await message.defer(ephemeral=True)
@@ -123,7 +123,7 @@ class BankLog(commands.Cog):
             json.dump(mythics, f, indent=4)
             f.close()
 
-    @bank_log_group.command(description="Withdraw item from guild bank for someone else")
+    @bank_log_group.command(description="ADMIN: Withdraw item from guild bank for someone else")
     @option("item", description="Pick item to remove", autocomplete=get_mythics)
     async def withdraw(self, message, item: str, user: discord.Member):
         await message.defer(ephemeral=True)

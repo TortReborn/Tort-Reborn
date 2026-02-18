@@ -12,6 +12,7 @@ from discord.ui import Select, View
 from Helpers.classes import PlayerStats
 from Helpers.functions import getPlayerData, fix_progressbar, getPlayerUUID, generate_rank_badge, create_progress_bar
 from Helpers.variables import class_map, ALL_GUILD_IDS
+from Helpers.logger import log, ERROR
 from StringProgressBar import progressBar
 import re
 import math
@@ -73,7 +74,7 @@ class Progress(commands.Cog):
                 response = requests.get(url, headers=headers)
                 skin = Image.open(BytesIO(response.content))
             except Exception as e:
-                print(e)
+                log(ERROR, f"{e}", context="progress")
                 skin = Image.open('images/profile/x-steve500.png')
             bg.paste(skin, (150, 26), skin)
 

@@ -48,7 +48,7 @@ class Withdraw(commands.Cog):
         self.gbank_channel = GUILD_BANK_CHANNEL_ID
         self.BOT_LOG_CHANNEL_ID = BOT_LOG_CHANNEL_ID
 
-    @slash_command(description="Withdraw item from guild bank", guild_ids=ALL_GUILD_IDS)
+    @slash_command(description="HR: Withdraw item from guild bank", guild_ids=ALL_GUILD_IDS)
     @default_permissions(manage_roles=True)
     @option("item", description="Pick item to withdraw", autocomplete=get_mythics)
     async def withdraw(self, message, item: str):

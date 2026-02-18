@@ -13,6 +13,7 @@ from discord.ui import View, Modal, InputText
 
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import getPlayerUUID
+from Helpers.logger import log, ERROR
 from Helpers.variables import IS_TEST_MODE, EXEC_GUILD_IDS, PROMOTION_CHANNEL_ID
 
 
@@ -99,7 +100,7 @@ class SuggestPromotion(commands.Cog):
             response = requests.get(url, headers=headers)
             skin = Image.open(BytesIO(response.content))
         except Exception as e:
-            print(e)
+            log(ERROR, f"{e}", context="suggest_promotion")
             skin = Image.open('images/profile/x-steve500.png')
 
         u_timenow = time.mktime(datetime.datetime.now().timetuple())
