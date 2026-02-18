@@ -5,6 +5,7 @@ Aspect distribution commands - now using database storage.
 
 import io
 import os
+import json
 import asyncio
 import datetime
 from datetime import timezone, timedelta
@@ -20,10 +21,11 @@ from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
 from Helpers.variables import te
 from Helpers import aspect_db
-from Helpers.storage import get_cached_avatar, save_cached_avatar
 
 
 GUILD_ID = te
+AVATAR_CACHE_FILE = "cache/avatar_index.json"
+AVATAR_CACHE_DIR = "cache/avatars"
 MAX_COLUMNS = 4
 ROWS_PER_COLUMN = 10
 CELL_WIDTH = 205
@@ -38,6 +40,22 @@ class AspectDistribution(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        os.makedirs(AVATAR_CACHE_DIR, exist_ok=True)
+        
+        if not os.path.exists(AVATAR_CACHE_FILE):
+            with open(AVATAR_CACHE_FILE, "w") as f:
+                json.dump({}, f)
+
+    def load_json(self, path, default):
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except Exception:
+            return default
+
+    def save_json(self, path, data):
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
 
     def create_default_avatar(self, uuid: str) -> bytes:
         """Create a simple default avatar with a question mark."""
@@ -64,10 +82,11 @@ class AspectDistribution(commands.Cog):
         return buf.read()
 
     async def get_avatar(self, uuid: str) -> bytes:
-        # Check R2 cache first
-        cached = get_cached_avatar(uuid)
-        if cached:
-            return cached
+        cache = self.load_json(AVATAR_CACHE_FILE, {})
+        if uuid in cache:
+            path = os.path.join(AVATAR_CACHE_DIR, cache[uuid])
+            if os.path.exists(path):
+                return open(path, 'rb').read()
 
         url = f"https://vzge.me/face/64/{uuid}"
         headers = {'User-Agent': os.getenv("visage_UA", "")}
@@ -77,22 +96,25 @@ class AspectDistribution(commands.Cog):
                     if resp.status != 200:
                         print(f"Warning: Visage returned status {resp.status} for UUID {uuid}")
                         return None
-
+                    
                     data = await resp.read()
-
+                    
                     if data.startswith(b'<!DOCTYPE') or data.startswith(b'<html'):
                         print(f"Warning: Visage returned HTML error page for UUID {uuid}")
                         return None
-
+                    
                     is_png = data[:8] == b'\x89PNG\r\n\x1a\n'
                     is_jpeg = data[:3] == b'\xff\xd8\xff'
-
+                    
                     if not (is_png or is_jpeg):
                         print(f"Warning: Invalid image data received for UUID {uuid}")
                         return None
 
-            # Cache in R2
-            save_cached_avatar(uuid, data)
+            fn = f"{uuid}.png"
+            with open(os.path.join(AVATAR_CACHE_DIR, fn), 'wb') as f:
+                f.write(data)
+            cache[uuid] = fn
+            self.save_json(AVATAR_CACHE_FILE, cache)
             return data
         except Exception as e:
             print(f"Warning: Failed to fetch avatar for UUID {uuid}: {e}")

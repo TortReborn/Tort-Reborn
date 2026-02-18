@@ -12,7 +12,6 @@ from discord.ui import Select, View
 from Helpers.classes import PlayerStats
 from Helpers.functions import getPlayerData, fix_progressbar, getPlayerUUID, generate_rank_badge, create_progress_bar
 from Helpers.variables import class_map
-from Helpers.storage import get_background, get_background_file
 from StringProgressBar import progressBar
 import re
 import math
@@ -61,7 +60,7 @@ class Progress(commands.Cog):
         async def callback(interaction):
             selected = int(select.values[0])
             bg = Image.open('images/profile/bg_progress.png')
-            background = get_background(playerdata.background)
+            background = Image.open(f"images/profile_backgrounds/{playerdata.background}.png")
             bg.paste(background, (0, 0), background)
             draw = ImageDraw.Draw(bg)
 
@@ -214,7 +213,7 @@ class Progress(commands.Cog):
                     embed = discord.Embed(title=':tada: New background unlocked!',
                                           description=f'<@{playerdata.discord}> unlocked the **Completitionist** background!',
                                           color=0x34eb40)
-                    bg_file = get_background_file(7)
+                    bg_file = discord.File(f'./images/profile_backgrounds/7.png', filename=f"7.png")
                     embed.set_thumbnail(url=f"attachment://7.png")
 
                     unlock = playerdata.unlock_background('Completitionist')
