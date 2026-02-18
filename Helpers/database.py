@@ -253,3 +253,111 @@ def save_recruitment_data(data: dict):
         log(ERROR, f"Save failed: {e}", context="database")
     finally:
         db.close()
+
+
+def get_shell_exchange_config() -> dict:
+    """Load shell exchange display config from cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'shellExchangeConfig'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    except Exception as e:
+        log(ERROR, f"Error: {e}", context="database")
+        return {}
+    finally:
+        db.close()
+
+
+def save_shell_exchange_config(data: dict):
+    """Save shell exchange display config to cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at)
+            VALUES ('shellExchangeConfig', %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                data = EXCLUDED.data, created_at = NOW()
+        """, (json.dumps(data), epoch))
+        db.connection.commit()
+    except Exception as e:
+        log(ERROR, f"Save failed: {e}", context="database")
+    finally:
+        db.close()
+
+
+def get_shell_exchange_ings() -> dict:
+    """Load shell exchange ingredient data from cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'shellExchangeIngs'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    except Exception as e:
+        log(ERROR, f"Error: {e}", context="database")
+        return {}
+    finally:
+        db.close()
+
+
+def save_shell_exchange_ings(data: dict):
+    """Save shell exchange ingredient data to cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at)
+            VALUES ('shellExchangeIngs', %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                data = EXCLUDED.data, created_at = NOW()
+        """, (json.dumps(data), epoch))
+        db.connection.commit()
+    except Exception as e:
+        log(ERROR, f"Save failed: {e}", context="database")
+    finally:
+        db.close()
+
+
+def get_shell_exchange_mats() -> dict:
+    """Load shell exchange material data from cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'shellExchangeMats'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    except Exception as e:
+        log(ERROR, f"Error: {e}", context="database")
+        return {}
+    finally:
+        db.close()
+
+
+def save_shell_exchange_mats(data: dict):
+    """Save shell exchange material data to cache_entries."""
+    db = DB()
+    db.connect()
+    try:
+        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        db.cursor.execute("""
+            INSERT INTO cache_entries (cache_key, data, expires_at)
+            VALUES ('shellExchangeMats', %s, %s)
+            ON CONFLICT (cache_key) DO UPDATE SET
+                data = EXCLUDED.data, created_at = NOW()
+        """, (json.dumps(data), epoch))
+        db.connection.commit()
+    except Exception as e:
+        log(ERROR, f"Save failed: {e}", context="database")
+    finally:
+        db.close()

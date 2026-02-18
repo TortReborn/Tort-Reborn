@@ -209,7 +209,6 @@ extensions = [
     'Events.on_member_update',
 
     # Tasks
-    'Tasks.guild_log',
     'Tasks.update_member_data',
     'Tasks.check_apps',
     'Tasks.territory_tracker',

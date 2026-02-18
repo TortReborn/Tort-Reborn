@@ -144,16 +144,6 @@ def getGuildMembers(guild):
         return []
 
 
-def savePlayers(data):
-    if IS_TEST_MODE:
-        guild_log = 'lunarity.json'
-    else:
-        guild_log = 'theaquarium.json'
-
-    with open(guild_log, 'w') as f:
-        f.write(json.dumps(data))
-        f.close()
-
 
 def dropShadow(image):
     new_image = Image.new("RGBA", (350, 350), (0, 0, 0, 0))

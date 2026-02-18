@@ -1,6 +1,5 @@
 import os
 import math
-import json
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # runtime config defaults
@@ -36,12 +35,6 @@ RES = os.path.join(BASE, "images", "shell_exchange", "resources")
 INGS_DIR = os.path.join(BASE, "images", "shell_exchange", "Ings")
 MATS_DIR = os.path.join(BASE, "images", "shell_exchange", "Mats")
 
-INGS_CFG = os.path.join(BASE, "images", "shell_exchange", "ings.json")
-MATS_CFG = os.path.join(BASE, "images", "shell_exchange", "materials.json")
-
-OUT_INGS = os.path.join(BASE, "images", "shell_exchange", "ingredient_shell_panel.png")
-OUT_MATS = os.path.join(BASE, "images", "shell_exchange", "materials_shell_panel.png")
-
 FONT_FILE = os.path.join(BASE, "images", "profile", "game.ttf")
 STAR_FONT_FILE = os.path.join(RES, "Inter-VariableFont_opsz,wght.ttf")
 SHELL_ICON_FILE = os.path.join(RES, "shell.png")
@@ -58,12 +51,6 @@ SHELL_SIZE = 16
 RIGHT_PAD = 6
 
 # helpers
-
-def load_json(path):
-    if not os.path.exists(path):
-        return {}
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
 
 def display_name(fn):
     return os.path.splitext(fn)[0].replace("_", " ")
@@ -196,8 +183,8 @@ def build_entry(name, icon, iw, ih, tier, cfg):
         "highlight": bool(cfg.get("highlight", False)),
     }
 
-def load_entries(folder, cfg_path, material):
-    cfg = load_json(cfg_path)
+def load_entries(folder, cfg_data, material):
+    cfg = cfg_data
     entries = []
 
     for fn in sorted(os.listdir(folder)):
@@ -223,16 +210,15 @@ def load_entries(folder, cfg_path, material):
 
 # Render
 
-def render_panel(material_mode=False):
+def render_panel(material_mode=False, ings_data=None, mats_data=None):
     folder = MATS_DIR if material_mode else INGS_DIR
-    cfg = MATS_CFG if material_mode else INGS_CFG
-    out = OUT_MATS if material_mode else OUT_INGS
+    cfg_data = mats_data if material_mode else ings_data
 
     font = load_font(FONT_FILE, FONT_SIZE)
     star_font = load_font(STAR_FONT_FILE, 14)
     shell_icon = load_icon(SHELL_ICON_FILE, SHELL_SIZE)
 
-    entries = load_entries(folder, cfg, material_mode)
+    entries = load_entries(folder, cfg_data or {}, material_mode)
     if not entries:
         return None
 
@@ -296,18 +282,18 @@ def render_panel(material_mode=False):
 
     return img
 
-def generate_images(output_mode, config):
+def generate_images(output_mode, config, ings_data=None, mats_data=None):
     apply_config(config)
     images = {}
     if output_mode in ("ingredients", "both"):
         global GRID_COLUMNS
         GRID_COLUMNS = config.get("cols_ings", 4)
-        img = render_panel(material_mode=False)
+        img = render_panel(material_mode=False, ings_data=ings_data, mats_data=mats_data)
         if img:
             images["ingredients"] = img
     if output_mode in ("materials", "both"):
         GRID_COLUMNS = config.get("cols_mats", 4)
-        img = render_panel(material_mode=True)
+        img = render_panel(material_mode=True, ings_data=ings_data, mats_data=mats_data)
         if img:
             images["materials"] = img
     return images
