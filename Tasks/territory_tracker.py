@@ -575,6 +575,89 @@ def save_territory_snapshot(territory_data: dict):
                 pass
 
 
+def save_territory_exchanges(owner_changes: dict):
+    """
+    Persist individual territory ownership changes to territory_exchanges table.
+
+    owner_changes: dict mapping territory_name -> {
+        'old': {'owner': str, 'prefix': str, 'acquired': str},
+        'new': {'owner': str, 'prefix': str, 'acquired': str},
+    }
+    """
+    if not owner_changes:
+        return
+
+    try:
+        db = DB()
+        db.connect()
+
+        # Ensure table + indexes exist (matches website schema)
+        db.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS territory_exchanges (
+                exchange_time TIMESTAMPTZ NOT NULL,
+                territory     VARCHAR(100) NOT NULL,
+                attacker_name VARCHAR(100) NOT NULL,
+                defender_name VARCHAR(100) NOT NULL
+            )
+        """)
+        db.cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_te_territory_time
+            ON territory_exchanges (territory, exchange_time DESC)
+        """)
+        db.cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_te_time
+            ON territory_exchanges (exchange_time)
+        """)
+
+        # Ensure guild_prefixes table exists
+        db.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS guild_prefixes (
+                guild_name   VARCHAR(100) PRIMARY KEY,
+                guild_prefix VARCHAR(10) NOT NULL
+            )
+        """)
+
+        guilds_seen = {}  # name -> prefix
+
+        for terr, change in owner_changes.items():
+            new_info = change['new']
+            old_info = change['old']
+
+            # Use the Wynncraft API's acquired timestamp for the new owner
+            exchange_time = new_info['acquired']
+
+            db.cursor.execute("""
+                INSERT INTO territory_exchanges
+                    (exchange_time, territory, attacker_name, defender_name)
+                VALUES (%s, %s, %s, %s)
+            """, (exchange_time, terr, new_info['owner'], old_info['owner']))
+
+            if new_info['owner'] != 'None':
+                guilds_seen[new_info['owner']] = new_info['prefix']
+            if old_info['owner'] != 'None':
+                guilds_seen[old_info['owner']] = old_info['prefix']
+
+        # Upsert guild prefixes
+        for guild_name, guild_prefix in guilds_seen.items():
+            db.cursor.execute("""
+                INSERT INTO guild_prefixes (guild_name, guild_prefix)
+                VALUES (%s, %s)
+                ON CONFLICT (guild_name) DO UPDATE
+                SET guild_prefix = EXCLUDED.guild_prefix
+            """, (guild_name, guild_prefix))
+
+        db.connection.commit()
+        db.close()
+        log(INFO, f"Saved {len(owner_changes)} territory exchanges", context="territory_tracker")
+    except Exception as e:
+        log(ERROR, f"Failed to save territory exchanges: {e}", context="territory_tracker")
+        if 'db' in locals():
+            try:
+                db.close()
+            except:
+                pass
+
+
 # ---------- Time helper (unchanged) ----------
 
 def timeHeld(date_time_old, date_time_new):
@@ -849,6 +932,10 @@ class TerritoryTracker(commands.Cog):
                     all_owner_changes[terr] = change_data
                     if 'The Aquarium' in (old_owner, new_owner):
                         owner_changes[terr] = change_data
+
+            # Persist exchanges to territory_exchanges table
+            if all_owner_changes:
+                await asyncio.to_thread(save_territory_exchanges, all_owner_changes)
 
             # Check for HQ captures and send congratulations
             hq_territories = get_all_hq_territories()
