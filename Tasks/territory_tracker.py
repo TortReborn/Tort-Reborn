@@ -648,7 +648,6 @@ def save_territory_exchanges(owner_changes: dict):
 
         db.connection.commit()
         db.close()
-        log(INFO, f"Saved {len(owner_changes)} territory exchanges", context="territory_tracker")
     except Exception as e:
         log(ERROR, f"Failed to save territory exchanges: {e}", context="territory_tracker")
         if 'db' in locals():
