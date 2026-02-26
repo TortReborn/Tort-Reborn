@@ -11,7 +11,7 @@ from discord import SlashCommandGroup
 from discord.ext import commands, pages
 
 from Helpers.classes import PlaceTemplate, Page
-from Helpers.database import DB, get_current_guild_data
+from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline_with_db
 from Helpers.functions import addLine, expand_image, generate_rank_badge
 from Helpers.logger import log, ERROR
 from Helpers.variables import rank_map, discord_ranks, ALL_GUILD_IDS
@@ -99,64 +99,10 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         def find_baseline_value_from_db(uuid: str, key: str, window_days: int) -> tuple[int, bool]:
             """
             Get baseline value from player_activity database table.
-            Uses index-based lookup (window_days-th most recent snapshot) to match
-            the original JSON-based behavior.
+            Uses calendar-date-based lookup with corrupted-data handling.
             Returns (baseline_value, warn_flag).
             """
-            if window_days <= 0:
-                return 0, False
-
-            try:
-                # Get the window_days-th most recent snapshot date (0-indexed)
-                # This matches the original JSON index-based lookup
-                db.cursor.execute("""
-                    SELECT DISTINCT snapshot_date FROM player_activity
-                    ORDER BY snapshot_date DESC
-                    OFFSET %s LIMIT 1
-                """, (window_days,))
-                date_row = db.cursor.fetchone()
-
-                if not date_row:
-                    # Not enough snapshots - use oldest available
-                    db.cursor.execute("""
-                        SELECT DISTINCT snapshot_date FROM player_activity
-                        ORDER BY snapshot_date ASC
-                        LIMIT 1
-                    """)
-                    date_row = db.cursor.fetchone()
-                    if not date_row:
-                        current_val, _ = get_current_value(uuid, key)
-                        return current_val, True
-
-                target_date = date_row[0]
-
-                db.cursor.execute(f"""
-                    SELECT {key} FROM player_activity
-                    WHERE uuid = %s AND snapshot_date = %s
-                """, (uuid, target_date))
-                row = db.cursor.fetchone()
-
-                if row and row[0] is not None:
-                    return int(row[0]), False
-
-                # Player not found at target date - try walking toward present
-                db.cursor.execute(f"""
-                    SELECT {key}, snapshot_date FROM player_activity
-                    WHERE uuid = %s AND snapshot_date > %s
-                    ORDER BY snapshot_date ASC
-                    LIMIT 1
-                """, (uuid, target_date))
-                fallback = db.cursor.fetchone()
-                if fallback and fallback[0] is not None:
-                    return int(fallback[0]), True  # warn flag since we used fallback
-
-                # Never found - use current value (delta = 0)
-                current_val, _ = get_current_value(uuid, key)
-                return current_val, True
-            except Exception as e:
-                log(ERROR, f"Error getting baseline for {uuid}/{key}: {e}", context="leaderboard")
-                current_val, _ = get_current_value(uuid, key)
-                return current_val, True
+            return get_player_activity_baseline_with_db(db, uuid, key, window_days)
 
         # ---------------------------
         # Build leaderboard rows using CURRENT membership

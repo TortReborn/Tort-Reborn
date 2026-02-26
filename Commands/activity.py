@@ -12,7 +12,7 @@ from discord.commands import slash_command, Option
 from PIL import Image, ImageFont, ImageDraw
 
 from Helpers.classes import PlaceTemplate, Page, Guild
-from Helpers.database import DB, get_current_guild_data
+from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline_with_db
 from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge
 from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, EXEC_GUILD_IDS
 
@@ -31,29 +31,10 @@ def _load_json(path: str, default):
 
 
 def _get_baseline_playtime_from_db(db: DB, uuid: str, days: int) -> float:
-    """Get baseline playtime from player_activity table using index-based lookup."""
-    try:
-        # Get the days-th most recent snapshot date (0-indexed)
-        db.cursor.execute("""
-            SELECT DISTINCT snapshot_date FROM player_activity
-            ORDER BY snapshot_date DESC
-            OFFSET %s LIMIT 1
-        """, (days,))
-        date_row = db.cursor.fetchone()
-        if not date_row:
-            return 0.0
-        target_date = date_row[0]
-
-        db.cursor.execute("""
-            SELECT playtime FROM player_activity
-            WHERE uuid = %s AND snapshot_date = %s
-        """, (uuid, target_date))
-        row = db.cursor.fetchone()
-        if row and row[0] is not None:
-            return float(row[0])
-        return 0.0
-    except Exception:
-        return 0.0
+    """Get baseline playtime from player_activity table.
+    Uses the unified calendar-date-based lookup with corrupted-data handling."""
+    value, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', days)
+    return float(value)
 
 
 def _load_discord_ranks():

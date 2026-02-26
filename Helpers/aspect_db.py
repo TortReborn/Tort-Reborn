@@ -9,7 +9,7 @@ from datetime import timezone, timedelta
 from typing import List, Optional, Tuple
 import json
 
-from Helpers.database import DB
+from Helpers.database import DB, get_player_activity_baseline_with_db
 from Helpers.classes import Guild
 from Helpers.logger import log, ERROR
 from Helpers.variables import IS_TEST_MODE
@@ -19,7 +19,8 @@ WEEKLY_THRESHOLD = 0 if IS_TEST_MODE else 5  # hours of playtime required
 
 
 def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
-    """Get player's playtime in the last 7 days from player_activity table."""
+    """Get player's playtime in the last 7 days from player_activity table.
+    Uses the unified calendar-date-based baseline lookup."""
     try:
         # Get most recent playtime
         db.cursor.execute("""
@@ -34,31 +35,10 @@ def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
             return 0.0
         recent = recent_row[0] or 0
 
-        # Get playtime from ~7 days ago
-        db.cursor.execute("""
-            SELECT playtime FROM player_activity
-            WHERE uuid = %s
-            ORDER BY snapshot_date DESC
-            OFFSET 7
-            LIMIT 1
-        """, (uuid,))
-        older_row = db.cursor.fetchone()
+        # Get baseline from 7 calendar days ago using unified function
+        baseline, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', 7)
 
-        if not older_row:
-            # If no data 7 days ago, try to get earliest available
-            db.cursor.execute("""
-                SELECT playtime FROM player_activity
-                WHERE uuid = %s
-                ORDER BY snapshot_date ASC
-                LIMIT 1
-            """, (uuid,))
-            older_row = db.cursor.fetchone()
-
-        older = older_row[0] if older_row else 0
-
-        if recent and older:
-            return max(0.0, float(recent) - float(older))
-        return 0.0
+        return max(0.0, float(recent) - float(baseline))
     except Exception as e:
         log(ERROR, f"Error getting weekly playtime for {uuid}: {e}", context="aspect_db")
         return 0.0
