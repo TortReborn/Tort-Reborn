@@ -819,11 +819,31 @@ class UpdateMemberData(commands.Cog):
             db_rows_written = 0
             for member in snap['members']:
                 uuid = member.get('uuid')
-                playtime = member.get('playtime') or 0
-                contributed = member.get('contributed') or 0
-                wars = member.get('wars') or 0
+                playtime = member.get('playtime')
+                contributed = member.get('contributed')
+                wars = member.get('wars')
                 raids = member.get('raids') or 0
                 shells = member.get('shells') or 0
+
+                # Carry forward previous snapshot values for private/failed API responses
+                # to avoid writing 0 which corrupts baseline calculations
+                if uuid and (playtime is None or wars is None or contributed is None):
+                    db.cursor.execute("""
+                        SELECT playtime, contributed, wars FROM player_activity
+                        WHERE uuid = %s ORDER BY snapshot_date DESC LIMIT 1
+                    """, (uuid,))
+                    prev = db.cursor.fetchone()
+                    if prev:
+                        if playtime is None:
+                            playtime = prev[0]
+                        if contributed is None:
+                            contributed = prev[1]
+                        if wars is None:
+                            wars = prev[2]
+
+                playtime = playtime or 0
+                contributed = contributed or 0
+                wars = wars or 0
                 if uuid:
                     db.cursor.execute("""
                         INSERT INTO player_activity (uuid, playtime, contributed, wars, raids, shells, snapshot_date)

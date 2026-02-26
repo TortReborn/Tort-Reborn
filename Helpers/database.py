@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 import json
 import os
 import time
@@ -82,52 +83,102 @@ def get_current_guild_data() -> dict:
 
 
 def get_player_activity_baseline(uuid: str, key: str, days: int) -> tuple:
-    """Get baseline value from player_activity table.
+    """Get baseline value for a player from N calendar days ago.
+
+    Uses date-based lookup (not OFFSET) for accuracy even with missing snapshot days.
+    Handles corrupted 0-value entries from private profiles / API failures by walking
+    forward to find the first non-zero value when zeros are followed by real data.
+
     Returns (value, warn_flag) tuple.
-    Replaces: player_activity.json lookups
     """
     db = DB()
     db.connect()
     try:
-        # Get the days-th most recent snapshot date
-        db.cursor.execute("""
-            SELECT DISTINCT snapshot_date FROM player_activity
-            ORDER BY snapshot_date DESC
-            OFFSET %s LIMIT 1
-        """, (days,))
-        date_row = db.cursor.fetchone()
-
-        if not date_row:
-            return (0, True)  # No snapshots available
-
-        target_date = date_row[0]
-
-        db.cursor.execute(f"""
-            SELECT {key} FROM player_activity
-            WHERE uuid = %s AND snapshot_date = %s
-        """, (uuid, target_date))
-        row = db.cursor.fetchone()
-
-        if row and row[0] is not None:
-            return (int(row[0]), False)
-
-        # Player not found - try walking toward present
-        db.cursor.execute(f"""
-            SELECT {key} FROM player_activity
-            WHERE uuid = %s AND snapshot_date > %s
-            ORDER BY snapshot_date ASC LIMIT 1
-        """, (uuid, target_date))
-        fallback = db.cursor.fetchone()
-
-        if fallback and fallback[0] is not None:
-            return (int(fallback[0]), True)  # warn flag
-
-        return (0, True)
+        return _get_baseline_from_db(db, uuid, key, days)
     except Exception as e:
         log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
         return (0, True)
     finally:
         db.close()
+
+
+def get_player_activity_baseline_with_db(db: DB, uuid: str, key: str, days: int) -> tuple:
+    """Same as get_player_activity_baseline but uses an existing DB connection."""
+    try:
+        return _get_baseline_from_db(db, uuid, key, days)
+    except Exception as e:
+        log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
+        return (0, True)
+
+
+def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
+    """Core baseline lookup logic.
+
+    Algorithm:
+    1. Find the player's snapshot closest to (but not after) N calendar days ago.
+    2. If the value is 0 but later non-zero snapshots exist, walk forward to the
+       first non-zero value (handles corrupted data from private profiles).
+    3. If no snapshot exists at or before the target date (new player), use their
+       earliest available snapshot as baseline.
+    4. If no snapshots exist at all, return (0, True).
+    """
+    # Whitelist of allowed column names to prevent SQL injection
+    ALLOWED_KEYS = {"playtime", "contributed", "wars", "raids", "shells"}
+    if key not in ALLOWED_KEYS:
+        return (0, True)
+
+    if days <= 0:
+        return (0, False)
+
+    target_date = datetime.date.today() - timedelta(days=days)
+
+    # 1. Find the player's snapshot closest to (but not after) N days ago
+    db.cursor.execute(f"""
+        SELECT {key}, snapshot_date FROM player_activity
+        WHERE uuid = %s AND snapshot_date <= %s
+        ORDER BY snapshot_date DESC LIMIT 1
+    """, (uuid, target_date))
+    row = db.cursor.fetchone()
+
+    if row and row[0] is not None:
+        value = row[0]
+        # 2. If the value is 0, check for corrupted data:
+        #    walk forward to find first non-zero value after this date
+        if value == 0:
+            db.cursor.execute(f"""
+                SELECT {key}, snapshot_date FROM player_activity
+                WHERE uuid = %s AND snapshot_date > %s AND {key} > 0
+                ORDER BY snapshot_date ASC LIMIT 1
+            """, (uuid, row[1]))
+            nonzero = db.cursor.fetchone()
+            if nonzero:
+                return (int(nonzero[0]), True)
+        return (int(value), False)
+
+    # 3. No snapshot at or before target date (new player):
+    #    use their earliest available snapshot
+    db.cursor.execute(f"""
+        SELECT {key}, snapshot_date FROM player_activity
+        WHERE uuid = %s
+        ORDER BY snapshot_date ASC LIMIT 1
+    """, (uuid,))
+    earliest = db.cursor.fetchone()
+    if earliest and earliest[0] is not None:
+        value = earliest[0]
+        # Same 0-value check for earliest snapshot
+        if value == 0:
+            db.cursor.execute(f"""
+                SELECT {key} FROM player_activity
+                WHERE uuid = %s AND {key} > 0
+                ORDER BY snapshot_date ASC LIMIT 1
+            """, (uuid,))
+            nonzero = db.cursor.fetchone()
+            if nonzero:
+                return (int(nonzero[0]), True)
+        return (int(value), True)
+
+    # 4. No snapshots at all
+    return (0, True)
 
 
 def get_last_online() -> dict:
