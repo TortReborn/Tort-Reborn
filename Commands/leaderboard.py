@@ -125,6 +125,10 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                     # In case of data resets or rollbacks, never show negatives
                     contributed = 0
                     warn_flag = True
+                # New members with no usable baseline (baseline=0, warn=True)
+                # would show their total as delta - cap to 0 instead
+                if warn_flag and base_val == 0 and contributed == curr_val and curr_val > 0:
+                    contributed = 0
                 is_private = is_null  # Mark as private if current value is null
             else:
                 # For non-cumulative keys, just use current value

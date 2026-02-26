@@ -138,11 +138,11 @@ class Activity(commands.Cog):
             for row_idx, player in enumerate(entries, start=1):
                 canvas, draw = expand_image(canvas, border=(0, 0, 0, 36), fill=(0, 0, 0, 0))
 
-                # Use red background for private profiles (when relevant metric is null)
+                # Use red background for private profiles or kick-suitable members
                 if player.get('playtime_is_private', False):
                     tmpl = bg_templates['warn']
                 elif order_by == 'Kick Suitability':
-                    tmpl = bg_templates['warn'] if player['score'] >= -1 else bg_templates['other']
+                    tmpl = bg_templates['warn'] if player.get('below_threshold', False) else bg_templates['other']
                 else:
                     rank_idx = row_idx if page_idx == 0 and row_idx <= 3 else None
                     tmpl = bg_templates['first' if rank_idx == 1 else 'second' if rank_idx == 2 else 'third' if rank_idx == 3 else 'other']
@@ -182,9 +182,12 @@ class Activity(commands.Cog):
 
                 inact_x = play_x + INACT_OFFSET
                 canvas.paste(icon_map['Inactivity'], (inact_x + PLAY_OFFSET, base_y + 11), icon_map['Inactivity'])
-                days_inactive = max(0, player.get('last_join', 0))
-                days_text = str(days_inactive) + ' day' + ('s' if days_inactive != 1 else '')
-                days_text = days_text[:9]
+                if player.get('last_join_is_private', False):
+                    days_text = '?'
+                else:
+                    days_inactive = max(0, player.get('last_join', 0))
+                    days_text = str(days_inactive) + ' day' + ('s' if days_inactive != 1 else '')
+                    days_text = days_text[:9]
                 addLine(f'&f{days_text}', draw, game_font, inact_x + 36, text_y)
                 canvas.paste(tmpl.divider, (inact_x, base_y), tmpl.divider)
 
@@ -288,19 +291,37 @@ class Activity(commands.Cog):
                 except Exception:
                     member_for = 0
 
+                # New members (joined within 1 day) have no reliable baseline
+                if member_for < 2:
+                    real_pt = 0
+
                 discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
                 raw_stars = RANK_STARS_MAP.get((discord_rank or '').lower(), '')
                 star_count = raw_stars if isinstance(raw_stars, int) else (raw_stars.count('*') if isinstance(raw_stars, str) else 0)
 
-                adjusted_age_bonus = (member_for / 5) ** 0.8
-                rank_penalty = max(0, 5 - star_count) * 1.5
+                # Detect if lastJoin is private/unavailable
+                last_join_is_private = member.get('lastJoin') is None
 
-                score = (
-                    (days_since * 2.0)
-                    - (real_pt * 4.0)
-                    - adjusted_age_bonus
-                    + rank_penalty
-                )
+                # --- Kick Suitability Score ---
+                # Higher score = more suitable to kick.
+                # Primary factor: weekly playtime vs 5hr requirement.
+                # Secondary: rank (lower = more expendable), tenure (newer = less established).
+                # Note: playtime is available even for private profiles (lastJoin may be
+                # null but playtime comes from the guild API), so all players are scored.
+                WEEKLY_REQUIREMENT = 5.0
+                below_threshold = real_pt < WEEKLY_REQUIREMENT
+
+                # Playtime deficit is the dominant factor
+                # Below req: positive (0 to 5), above req: negative
+                playtime_score = (WEEKLY_REQUIREMENT - real_pt) * 20
+
+                # Lower rank = slightly more kickable (0 to 10)
+                rank_adj = max(0, 5 - star_count) * 2
+
+                # Newer members = slightly more kickable (0 to 5, capped at ~90 days)
+                tenure_adj = max(0, 5 - (member_for / 18))
+
+                score = playtime_score + rank_adj + tenure_adj
 
                 if order_by != 'Kick Suitability' or member_for >= 7:
                     playerdata.append({
@@ -308,8 +329,10 @@ class Activity(commands.Cog):
                         'name': member.get('name', 'Unknown'),
                         'playtime': real_pt,
                         'last_join': days_since,
+                        'last_join_is_private': last_join_is_private,
                         'member_for': member_for,
                         'score': score,
+                        'below_threshold': below_threshold,
                         'game_rank': joined.get('rank', member.get('rank')),
                         'discord_rank': discord_rank,
                         'playtime_is_private': playtime_is_private,
@@ -319,9 +342,13 @@ class Activity(commands.Cog):
 
         sort_keys = {'Playtime': 'playtime', 'Inactivity': 'last_join', 'Kick Suitability': 'score'}
 
-        # For Playtime sorting, put private profiles at the bottom
         if order_by == 'Playtime':
+            # Private profiles at bottom, then by playtime descending
             playerdata.sort(key=lambda x: (x['playtime_is_private'], -x[sort_keys[order_by]]))
+        elif order_by == 'Kick Suitability':
+            # Below-threshold first, then above-threshold, then private at bottom
+            # Within each group, sort by score descending (higher = more kickable)
+            playerdata.sort(key=lambda x: -x['score'])
         else:
             playerdata.sort(key=lambda x: x[sort_keys[order_by]], reverse=True)
         paginator = self._make_activity_pages(playerdata, order_by, days)
