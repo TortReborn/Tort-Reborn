@@ -18,6 +18,7 @@ Discord bot for **The Aquarium [TAq]** Wynncraft guild. Built with [py-cord](htt
 | **Google Sheets** (Apps Script) | Recruitment tracking spreadsheet | `SHEETS_SCRIPT_URL` |
 | **Discord Webhooks** | Posting application embeds and shell exchange updates | `LEGACY_WEBHOOK_URL` |
 | **Flask + Waitress** | Web server receiving guild website application form submissions | Runs alongside the bot |
+| **Railway** | Cloud hosting — runs the bot as a worker service | Shared variables (see below) |
 
 All secrets live in `.env` — copy `.env.example` and fill in values (ask a contributor).
 
@@ -82,3 +83,26 @@ python main.py
 ```
 
 Set `TEST_MODE=true` in `.env` to use test database/tokens during development.
+
+---
+
+## Railway Deployment
+
+The bot runs on [Railway](https://railway.app/) as a **worker** service (no public port needed).
+
+### Setting up environment variables
+
+Railway uses **shared variable groups** to manage secrets. Variables defined in a shared group are **not** automatically available to services — you must link them.
+
+1. Go to your Railway project dashboard
+2. Click **Variables** in the top nav (project-level) or create a shared variable group
+3. Add all required env vars (`TOKEN`, `TEST_MODE`, `DB_HOST`, etc.)
+4. Go to your **worker** service → **Variables** tab
+5. Click **Add Variable Reference** (or **Insert Reference**) and select the shared variable group
+6. The variables will now appear in the service's Variables tab — confirm they show without warning icons
+
+### Notes
+
+- The Python version is pinned in `.python-version` (currently 3.12). Do not use Python 3.13 — `py-cord` depends on `audioop` which was removed in 3.13.
+- `TEST_MODE` defaults to production if unset. Set `TEST_MODE=true` only for test deployments.
+- Railway auto-deploys from the branch connected in your service settings. Push to that branch to trigger a deploy.
