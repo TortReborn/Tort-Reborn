@@ -75,7 +75,7 @@ class WebAppCommands(commands.Cog):
 
         if not row:
             await ctx.followup.send(
-                "No website application record found. Use this in a `web-` channel or its exec thread.",
+                "No website application record found. Use this in an application channel or its exec thread.",
                 ephemeral=True,
             )
             return None
@@ -218,7 +218,7 @@ class WebAppCommands(commands.Cog):
                         ephemeral=True,
                     )
             try:
-                await channel.edit(name=f"web-invited-{username}")
+                await channel.edit(name=f"inv-{username}")
             except discord.Forbidden:
                 pass
             await update_web_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
@@ -283,7 +283,7 @@ class WebAppCommands(commands.Cog):
         # Rename channel
         username = app["discord_username"]
         try:
-            await channel.edit(name=f"web-c-accepted-{username}")
+            await channel.edit(name=f"c-accepted-{username}")
         except discord.Forbidden:
             pass
 
@@ -328,7 +328,7 @@ class WebAppCommands(commands.Cog):
 
         # Rename channel
         username = app["discord_username"]
-        new_name = f"web-denied-{username}" if app["application_type"] == "guild" else f"web-c-denied-{username}"
+        new_name = f"denied-{username}" if app["application_type"] == "guild" else f"c-denied-{username}"
         try:
             await channel.edit(name=new_name)
         except discord.Forbidden:
@@ -401,7 +401,7 @@ class WebAppCommands(commands.Cog):
         # Rename channel
         username = app["discord_username"]
         try:
-            await channel.edit(name=f"web-invited-{username}")
+            await channel.edit(name=f"inv-{username}")
         except discord.Forbidden:
             pass
 
