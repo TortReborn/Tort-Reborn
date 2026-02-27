@@ -167,6 +167,17 @@ class CheckWebsiteApps(commands.Cog):
                 view_channel=True, send_messages=True, read_message_history=True
             )
 
+        # Give moderator and sr moderator roles access
+        for role_name in (
+            '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+            '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+        ):
+            role = discord.utils.get(guild.roles, name=role_name)
+            if role:
+                overwrites[role] = discord.PermissionOverwrite(
+                    view_channel=True, send_messages=True, read_message_history=True
+                )
+
         channel_name = f"web-{discord_username}"
         channel = await guild.create_text_channel(
             name=channel_name,
