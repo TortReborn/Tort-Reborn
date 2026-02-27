@@ -72,9 +72,9 @@ class OnGuildChannelUpdate(commands.Cog):
                     app_type, status, username = web_row
 
                     if status == "accepted":
-                        new_name = f"web-accepted-{username}" if app_type == "guild" else f"web-c-accepted-{username}"
+                        new_name = f"accepted-{username}" if app_type == "guild" else f"c-accepted-{username}"
                     elif status == "denied":
-                        new_name = f"web-denied-{username}" if app_type == "guild" else f"web-c-denied-{username}"
+                        new_name = f"denied-{username}" if app_type == "guild" else f"c-denied-{username}"
                     else:
                         new_name = None
 

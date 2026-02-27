@@ -21,26 +21,26 @@ from Helpers.variables import (
 # ---------------------------------------------------------------------------
 
 GUILD_QUESTION_LABELS = {
-    "ign": "IGN",
+    "ign": "What is your IGN?",
     "timezone": "Timezone (in relation to GMT)",
     "stats_link": "Link to stats page",
-    "age": "Age",
+    "age": "Age (optional)",
     "playtime": "Estimated playtime per day",
-    "guild_experience": "Previous guild experience",
-    "warring": "Warring interest/experience",
+    "guild_experience": "Do you have any previous guild experience (name of the guild, rank, reason for leaving)?",
+    "warring": "Are you interested in warring? If so, do you already have experience?",
     "know_about_taq": "What do you know about TAq?",
     "gain_from_taq": "What would you like to gain from joining TAq?",
     "contribute": "What would you contribute to TAq?",
-    "anything_else": "Anything else",
-    "reference": "How did you learn about TAq",
+    "anything_else": "Anything else you would like to tell us?",
+    "reference": "How did you learn about TAq/reference for application? If recruited via party finder, include the recruiter's IGN.",
 }
 
 COMMUNITY_QUESTION_LABELS = {
-    "ign": "IGN",
-    "guild": "Current guild",
-    "why_community": "Why community member?",
-    "contribute": "What would you contribute?",
-    "anything_else": "Anything else",
+    "ign": "What is your IGN?",
+    "guild": "What guild are you in?",
+    "why_community": "Why do you want to become a community member of TAq?",
+    "contribute": "What would you contribute to the community?",
+    "anything_else": "Is there anything else you want to say?",
 }
 
 # Order in which questions should appear (for consistent formatting)
@@ -55,7 +55,7 @@ COMMUNITY_QUESTION_ORDER = [
 
 
 def _format_answers(answers: dict, app_type: str) -> str:
-    """Format JSONB answers into a readable string."""
+    """Format JSONB answers into a readable string with bold questions and answers on new lines."""
     if app_type == "guild":
         labels = GUILD_QUESTION_LABELS
         order = GUILD_QUESTION_ORDER
@@ -63,21 +63,21 @@ def _format_answers(answers: dict, app_type: str) -> str:
         labels = COMMUNITY_QUESTION_LABELS
         order = COMMUNITY_QUESTION_ORDER
 
-    lines = []
+    blocks = []
     for key in order:
         value = answers.get(key, "")
         if not value:
             continue
         label = labels.get(key, key)
-        lines.append(f"**{label}:** {value}")
+        blocks.append(f"**{label}**\n{value}")
 
     # Include any extra keys not in the predefined order
     for key, value in answers.items():
         if key not in order and value:
             label = labels.get(key, key)
-            lines.append(f"**{label}:** {value}")
+            blocks.append(f"**{label}**\n{value}")
 
-    return "\n".join(lines)
+    return "\n\n".join(blocks)
 
 
 class CheckWebsiteApps(commands.Cog):
@@ -178,7 +178,7 @@ class CheckWebsiteApps(commands.Cog):
                     view_channel=True, send_messages=True, read_message_history=True
                 )
 
-        channel_name = f"web-{discord_username}"
+        channel_name = f"rec-{discord_username}"
         channel = await guild.create_text_channel(
             name=channel_name,
             category=category,
@@ -194,12 +194,12 @@ class CheckWebsiteApps(commands.Cog):
             f"Your **{type_label}** application has been received and is being reviewed. "
             f"We aim to get back to you within 12 hours.\n\n"
         )
-        combined = f"{intro}>>> {formatted}"
+        combined = f"{intro}{formatted}"
         if len(combined) <= 2000:
             await channel.send(combined)
         else:
             await channel.send(intro)
-            await channel.send(f">>> {formatted}")
+            await channel.send(formatted)
 
         # Post poll embed in exec channel
         exec_chan = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
@@ -209,7 +209,7 @@ class CheckWebsiteApps(commands.Cog):
             return
 
         poll_embed = discord.Embed(
-            title=f"Application web-{discord_username}",
+            title=f"Application app-{discord_username}",
             description="A new website application has been submitted\u2014please vote below:",
             colour=0x3ED63E,
         )
@@ -229,10 +229,10 @@ class CheckWebsiteApps(commands.Cog):
                     buf = BytesIO()
                     img.save(buf, format="PNG")
                     buf.seek(0)
-                    filename = f"web-{discord_username}-{pdata.UUID}.png"
+                    filename = f"rec-{discord_username}-{pdata.UUID}.png"
                     player_info_file = discord.File(buf, filename=filename)
                     poll_embed.set_image(url=f"attachment://{filename}")
-                    poll_embed.title = f"Application web-{discord_username} ({pdata.username})"
+                    poll_embed.title = f"Application app-{discord_username} ({pdata.username})"
 
                     # Check blacklist
                     blacklist = get_blacklist()
@@ -261,13 +261,13 @@ class CheckWebsiteApps(commands.Cog):
 
         # Create discussion thread and add reactions
         thread = await poll_msg.create_thread(
-            name=f"web-{discord_username}", auto_archive_duration=1440
+            name=f"app-{discord_username}", auto_archive_duration=1440
         )
         for emoji in ("\U0001F44D", "\U0001F937", "\U0001F44E"):
             await poll_msg.add_reaction(emoji)
 
         # Post the application content in the thread
-        await thread.send(f"**Application from {mention} ({discord_username}):**\n>>> {formatted}")
+        await thread.send(f"**Application from {mention} ({discord_username}):**\n\n{formatted}")
 
         # Update applications table with channel_id, thread_id, poll_message_id
         await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id)
