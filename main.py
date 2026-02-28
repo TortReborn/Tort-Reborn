@@ -160,7 +160,7 @@ extensions = [
     'Commands.reset_roles',
     'Commands.raids',
     'Commands.manage',
-    'Commands.application',
+    'Commands.old_app_commands',
     'Commands.toggle',
     'Commands.blacklist',
     'Commands.shell',

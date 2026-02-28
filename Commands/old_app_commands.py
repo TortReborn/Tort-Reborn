@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 
 import discord
-from discord import ApplicationContext
+from discord import SlashCommandGroup, ApplicationContext
 from discord.ext import commands
 
 from Helpers.classes import BasicPlayerStats
@@ -31,6 +31,12 @@ from Helpers.variables import (
 class ApplicationCommands(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
+
+    old_app_group = SlashCommandGroup(
+        'old-app', '[DEPRECATED] Old ticket-based application commands (use /app instead)',
+        guild_ids=ALL_GUILD_IDS,
+        default_member_permissions=discord.Permissions(manage_roles=True),
+    )
 
     async def _lookup_app(self, ctx, allow_decided=False) -> tuple | None:
         """Look up an application record from a ticket channel or exec thread.
@@ -88,11 +94,9 @@ class ApplicationCommands(commands.Cog):
 
         return ticket_channel, (applicant_discord_id, thread_id, app_type, existing_decision, stored_ign)
 
-    @discord.slash_command(
-        name="accept",
-        description="HR: Accept this ticket's application",
-        guild_ids=ALL_GUILD_IDS,
-        default_member_permissions=discord.Permissions(manage_roles=True),
+    @old_app_group.command(
+        name='accept',
+        description='[DEPRECATED] Accept a ticket-based application (old system)',
     )
     async def accept(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -362,11 +366,9 @@ class ApplicationCommands(commands.Cog):
                 ephemeral=True,
             )
 
-    @discord.slash_command(
-        name="deny",
-        description="HR: Deny this ticket's application",
-        guild_ids=ALL_GUILD_IDS,
-        default_member_permissions=discord.Permissions(manage_roles=True),
+    @old_app_group.command(
+        name='deny',
+        description='[DEPRECATED] Deny a ticket-based application (old system)',
     )
     async def deny(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -424,11 +426,9 @@ class ApplicationCommands(commands.Cog):
             ephemeral=True,
         )
 
-    @discord.slash_command(
-        name="invite",
-        description="HR: Invite an accepted applicant who has left their previous guild",
-        guild_ids=ALL_GUILD_IDS,
-        default_member_permissions=discord.Permissions(manage_roles=True),
+    @old_app_group.command(
+        name='invite',
+        description='[DEPRECATED] Invite an accepted ticket applicant who left their guild (old system)',
     )
     async def invite(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
@@ -514,11 +514,9 @@ class ApplicationCommands(commands.Cog):
             ephemeral=True,
         )
 
-    @discord.slash_command(
-        name="receive",
-        description="HR: Manually detect and process the last application message in this ticket",
-        guild_ids=ALL_GUILD_IDS,
-        default_member_permissions=discord.Permissions(manage_roles=True),
+    @old_app_group.command(
+        name='receive',
+        description='[DEPRECATED] Manually detect/process a ticket application message (old system)',
     )
     async def receive(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
