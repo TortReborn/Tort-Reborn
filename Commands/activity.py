@@ -18,6 +18,27 @@ from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, EXEC_GU
 
 all_guilds = EXEC_GUILD_IDS
 
+# Rank order for kick suitability sorting (lower index = lower rank = kicked first)
+KICK_RANK_ORDER = {
+    'starfish': 0,
+    'recruit': 0,
+    'manatee': 1,
+    'recruiter': 1,
+    'piranha': 2,
+    'barracuda': 3,
+    'captain': 2,        # fallback for game rank
+    'angler': 4,
+    'hammerhead': 5,
+    'sailfish': 6,
+    'strategist': 4,     # fallback for game rank
+    'dolphin': 7,
+    'trial-narwhal': 8,
+    'narwhal': 9,
+    'chief': 7,          # fallback for game rank
+    'hydra': 10,
+    'owner': 10,
+}
+
 def _load_json(path: str, default):
     """
     Safely load JSON from the given file path.
@@ -302,55 +323,43 @@ class Activity(commands.Cog):
                 # Detect if lastJoin is private/unavailable
                 last_join_is_private = member.get('lastJoin') is None
 
-                # --- Kick Suitability Score ---
-                # Higher score = more suitable to kick.
-                # Primary factor: weekly playtime vs 5hr requirement.
-                # Secondary: rank (lower = more expendable), tenure (newer = less established).
-                # Note: playtime is available even for private profiles (lastJoin may be
-                # null but playtime comes from the guild API), so all players are scored.
                 WEEKLY_REQUIREMENT = 5.0
                 below_threshold = real_pt < WEEKLY_REQUIREMENT
 
-                # Playtime deficit is the dominant factor
-                # Below req: positive (0 to 5), above req: negative
-                playtime_score = (WEEKLY_REQUIREMENT - real_pt) * 20
-
-                # Lower rank = slightly more kickable (0 to 10)
-                rank_adj = max(0, 5 - star_count) * 2
-
-                # Newer members = slightly more kickable (0 to 5, capped at ~90 days)
-                tenure_adj = max(0, 5 - (member_for / 18))
-
-                score = playtime_score + rank_adj + tenure_adj
-
-                if order_by != 'Kick Suitability' or member_for >= 7:
-                    playerdata.append({
-                        'uuid': uuid,
-                        'name': member.get('name', 'Unknown'),
-                        'playtime': real_pt,
-                        'last_join': days_since,
-                        'last_join_is_private': last_join_is_private,
-                        'member_for': member_for,
-                        'score': score,
-                        'below_threshold': below_threshold,
-                        'game_rank': joined.get('rank', member.get('rank')),
-                        'discord_rank': discord_rank,
-                        'playtime_is_private': playtime_is_private,
-                    })
+                playerdata.append({
+                    'uuid': uuid,
+                    'name': member.get('name', 'Unknown'),
+                    'playtime': real_pt,
+                    'last_join': days_since,
+                    'last_join_is_private': last_join_is_private,
+                    'member_for': member_for,
+                    'below_threshold': below_threshold,
+                    'game_rank': joined.get('rank', member.get('rank')),
+                    'discord_rank': discord_rank,
+                    'playtime_is_private': playtime_is_private,
+                })
         finally:
             db.close()
 
-        sort_keys = {'Playtime': 'playtime', 'Inactivity': 'last_join', 'Kick Suitability': 'score'}
-
         if order_by == 'Playtime':
             # Private profiles at bottom, then by playtime descending
-            playerdata.sort(key=lambda x: (x['playtime_is_private'], -x[sort_keys[order_by]]))
+            playerdata.sort(key=lambda x: (x['playtime_is_private'], -x['playtime']))
         elif order_by == 'Kick Suitability':
-            # Below-threshold first, then above-threshold, then private at bottom
-            # Within each group, sort by score descending (higher = more kickable)
-            playerdata.sort(key=lambda x: -x['score'])
+            # Tiered sort:
+            # 1. Members in guild <=7 days go to the very bottom
+            # 2. Lower ranks first (Starfish before Manatee before ... before Narwhal)
+            # 3. Lower playtime first (less active = more kickable)
+            # 4. Longer inactive first (more inactive = more kickable)
+            # 5. Newer members first (shorter tenure = more kickable)
+            playerdata.sort(key=lambda x: (
+                x['member_for'] <= 7,                                           # True (1) = bottom
+                KICK_RANK_ORDER.get((x['discord_rank'] or '').lower(), 99),     # lower rank = lower number = first
+                x['playtime'],                                                   # lower playtime first
+                -x['last_join'],                                                 # longer inactive first (negate so higher days_since sorts first)
+                x['member_for'],                                                 # newer members first
+            ))
         else:
-            playerdata.sort(key=lambda x: x[sort_keys[order_by]], reverse=True)
+            playerdata.sort(key=lambda x: x['last_join'], reverse=True)
         paginator = self._make_activity_pages(playerdata, order_by, days)
         await paginator.respond(ctx.interaction, ephemeral=False)
 
