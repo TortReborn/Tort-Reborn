@@ -155,6 +155,7 @@ class WebAppCommands(commands.Cog):
         # Check if player is currently in a guild
         uuid = None
         in_guild = False
+        in_taq = False
         current_guild_name = None
 
         if ign:
@@ -169,9 +170,42 @@ class WebAppCommands(commands.Cog):
                         current_guild_name = guild_info.get("name")
                         if current_guild_name:
                             in_guild = True
+                            if current_guild_name == "The Aquarium":
+                                in_taq = True
 
         # Send message based on guild status
-        if in_guild:
+        link_id = applicant.id if applicant else int(app["discord_id"])
+        username = app["discord_username"]
+
+        if in_taq:
+            # Player is already in TAq — accept and register immediately
+            await channel.send(
+                f"Hey {mention},\n\n"
+                f"Congratulations, your application to join **The Aquarium** has been "
+                f"**accepted**! {party_emoji}\n\n"
+                f"You're already in the guild — your Discord roles are being set up now.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
+
+            # Link and mark as linked immediately
+            if ign and uuid:
+                await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
+
+            # Trigger auto-registration directly
+            from Tasks.update_member_data import UpdateMemberData
+            cog = self.client.get_cog("UpdateMemberData")
+            if cog and uuid:
+                try:
+                    await cog._auto_register_joined_member(uuid, ign)
+                except Exception as e:
+                    from Helpers.logger import log, ERROR as LOG_ERROR
+                    log(LOG_ERROR, f"Immediate registration failed for {ign}: {e}", context="app_commands")
+
+            await update_web_poll_embed(self.client, channel.id, ":orange_circle: Registered", 0xFFE019)
+            feedback = f"Application accepted. IGN: `{ign}`. Player was already in TAq — registered immediately."
+
+        elif in_guild:
             await channel.send(
                 f"Hey {mention},\n\n"
                 f"Congratulations, your application to join **The Aquarium** has been "
@@ -181,6 +215,15 @@ class WebAppCommands(commands.Cog):
                 f"Let us know when you've left!\n\n"
                 f"Best Regards,\n"
                 f"The Aquarium Applications Team"
+            )
+
+            if ign and uuid:
+                await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
+
+            await update_web_poll_embed(self.client, channel.id, ":yellow_circle: Accepted - Pending Leave", 0xFFE019)
+            feedback = (
+                f"Application accepted. IGN: `{ign}`. "
+                f"Player is currently in **{current_guild_name}**. Monitoring for guild leave."
             )
         else:
             await channel.send(
@@ -193,20 +236,9 @@ class WebAppCommands(commands.Cog):
                 f"The Aquarium Applications Team"
             )
 
-        # Auto-link in discord_links
-        link_id = applicant.id if applicant else int(app["discord_id"])
-        if ign and uuid:
-            await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
+            if ign and uuid:
+                await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
 
-        # Update poll embed and channel based on guild status
-        username = app["discord_username"]
-        if in_guild:
-            await update_web_poll_embed(self.client, channel.id, ":yellow_circle: Accepted - Pending Leave", 0xFFE019)
-            feedback = (
-                f"Application accepted. IGN: `{ign}`. "
-                f"Player is currently in **{current_guild_name}**. Monitoring for guild leave."
-            )
-        else:
             guild = self.client.get_guild(channel.guild.id) or channel.guild
             invited_cat = discord.utils.get(guild.categories, name=INVITED_CATEGORY_NAME)
             if invited_cat:
@@ -224,9 +256,9 @@ class WebAppCommands(commands.Cog):
             await update_web_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
             feedback = f"Application accepted. IGN: `{ign}`. User will be auto-registered when they join."
 
-        # Update DB
+        # Update DB (guild_leave_pending only if in another guild, not TAq)
         await asyncio.to_thread(
-            self._db_accept, app_id, now, in_guild
+            self._db_accept, app_id, now, in_guild and not in_taq
         )
 
         # Update exec thread
