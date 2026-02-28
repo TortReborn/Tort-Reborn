@@ -382,8 +382,6 @@ class UpdateMemberData(commands.Cog):
         # 3: Member join/leave
         prev_map = self.previous_members
         curr_map = {m['uuid']: {'name': m['name'], 'rank': m.get('rank')} for m in guild.all_members}
-        # Build a join-date lookup from the API response
-        join_dates = {m['uuid']: m.get('joined') for m in guild.all_members}
         joined, left = set(curr_map) - set(prev_map), set(prev_map) - set(curr_map)
         if (joined or left) and not (self.cold_start and not self.member_list_exists):
             ch = self.client.get_channel(LOG_CHANNEL)
@@ -404,20 +402,8 @@ class UpdateMemberData(commands.Cog):
                 add_chunked(ej, 'Joined', [curr_map[u]['name'] for u in joined])
                 if ch:
                     await ch.send(embed=ej)
-                # Detailed per-member guild log messages
                 if guild_log_ch:
-                    for uuid in joined:
-                        try:
-                            discord_id = await asyncio.to_thread(self._db_get_discord_id, uuid)
-                            mention = f" (<@{discord_id}>) " if discord_id else " "
-                            name_safe = curr_map[uuid]['name'].replace('_', '\\_')
-                            ts = int(now.timestamp())
-                            await guild_log_ch.send(
-                                f"\U0001f7e9 <t:{ts}:d> <t:{ts}:t> | **{name_safe}**{mention}"
-                                f"joined the guild! | {curr_map[uuid]['rank'].upper()}"
-                            )
-                        except Exception as e:
-                            log(ERROR, f"Guild log join msg for {uuid}: {e}", context="guild_log")
+                    await guild_log_ch.send(embed=ej)
                 # Auto-register members who have pending accepted applications
                 for uuid in joined:
                     try:
@@ -429,59 +415,39 @@ class UpdateMemberData(commands.Cog):
                 add_chunked(el, 'Left', [prev_map[u]['name'] for u in left])
                 if ch:
                     await ch.send(embed=el)
-                # Detailed per-member guild log messages + recruiter sheet tracking
                 if guild_log_ch:
-                    for uuid in left:
-                        try:
-                            discord_id = await asyncio.to_thread(self._db_get_discord_id, uuid)
-                            mention = f" (<@{discord_id}>) " if discord_id else " "
-                            name_safe = prev_map[uuid]['name'].replace('_', '\\_')
-                            ts = int(now.timestamp())
-                            # Calculate time in guild
-                            joined_str = join_dates.get(uuid) or prev_map[uuid].get('joined')
-                            days_in_guild = ""
-                            if joined_str:
-                                try:
-                                    joined_dt = datetime.datetime.fromisoformat(joined_str.replace('Z', '+00:00'))
-                                    days_in_guild = f" | member for **{(now - joined_dt).days} days**"
-                                except Exception:
-                                    pass
-                            await guild_log_ch.send(
-                                f"\U0001f7e5 <t:{ts}:d> <t:{ts}:t> | **{name_safe}**{mention}"
-                                f"has left the guild! | {prev_map[uuid]['rank'].upper()}{days_in_guild}"
-                            )
-                        except Exception as e:
-                            log(ERROR, f"Guild log leave msg for {uuid}: {e}", context="guild_log")
-                        # Update recruiter tracking sheet
-                        try:
-                            from Helpers.sheets import find_by_ign, update_type, update_paid
-                            ign = prev_map[uuid]['name']
-                            sheet_row = await asyncio.to_thread(find_by_ign, ign)
-                            sheet_ign = ign
-                            if not (sheet_row.get("success") and sheet_row.get("data")):
-                                alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
-                                if alt_ign and alt_ign.lower() != ign.lower():
-                                    sheet_row = await asyncio.to_thread(find_by_ign, alt_ign)
-                                    if sheet_row.get("success") and sheet_row.get("data"):
-                                        sheet_ign = alt_ign
-                            if sheet_row.get("success") and sheet_row.get("data"):
-                                await asyncio.to_thread(update_type, sheet_ign, "Left")
-                                paid = sheet_row["data"].get("paid", "")
-                                if paid in ("NYP", "NP"):
-                                    await asyncio.to_thread(update_paid, sheet_ign, "LG")
-                            else:
-                                alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
-                                err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
-                                if err_ch:
-                                    await err_ch.send(
-                                        f"## Recruiter Tracker - Leave: IGN Not Found\n"
-                                        f"**API Name:** `{ign}` | "
-                                        f"**DB Name:** `{alt_ign or 'N/A'}` | "
-                                        f"**UUID:** `{uuid}`\n"
-                                        f"Player left guild but was not found on the recruiter sheet."
-                                    )
-                        except Exception as e:
-                            log(ERROR, f"Recruiter sheet leave update for {uuid}: {e}", context="guild_log")
+                    await guild_log_ch.send(embed=el)
+                # Update recruiter tracking sheet for each member who left
+                for uuid in left:
+                    try:
+                        from Helpers.sheets import find_by_ign, update_type, update_paid
+                        ign = prev_map[uuid]['name']
+                        sheet_row = await asyncio.to_thread(find_by_ign, ign)
+                        sheet_ign = ign
+                        if not (sheet_row.get("success") and sheet_row.get("data")):
+                            alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
+                            if alt_ign and alt_ign.lower() != ign.lower():
+                                sheet_row = await asyncio.to_thread(find_by_ign, alt_ign)
+                                if sheet_row.get("success") and sheet_row.get("data"):
+                                    sheet_ign = alt_ign
+                        if sheet_row.get("success") and sheet_row.get("data"):
+                            await asyncio.to_thread(update_type, sheet_ign, "Left")
+                            paid = sheet_row["data"].get("paid", "")
+                            if paid in ("NYP", "NP"):
+                                await asyncio.to_thread(update_paid, sheet_ign, "LG")
+                        else:
+                            alt_ign = await asyncio.to_thread(self._db_get_ign_by_uuid, uuid)
+                            err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
+                            if err_ch:
+                                await err_ch.send(
+                                    f"## Recruiter Tracker - Leave: IGN Not Found\n"
+                                    f"**API Name:** `{ign}` | "
+                                    f"**DB Name:** `{alt_ign or 'N/A'}` | "
+                                    f"**UUID:** `{uuid}`\n"
+                                    f"Player left guild but was not found on the recruiter sheet."
+                                )
+                    except Exception as e:
+                        log(ERROR, f"Recruiter sheet leave update for {uuid}: {e}", context="guild_log")
         self.previous_members = curr_map
         self._save_to_cache("memberList", curr_map)
 
@@ -490,26 +456,14 @@ class UpdateMemberData(commands.Cog):
                         for u in curr_map if u in prev_map and prev_map[u].get('rank')!=curr_map[u]['rank']]
         if role_changes and not (self.cold_start and not self.member_list_exists):
             ch = self.client.get_channel(LOG_CHANNEL)
+            guild_log_ch = self.client.get_channel(GUILD_LOG)
             er = discord.Embed(title='Guild Rank Changes', timestamp=now, color=0x0000FF)
             for _,name,old,new in role_changes:
                 er.add_field(name=discord.utils.escape_markdown(name),value=f"{old} → {new}",inline=False)
             if ch:
                 await ch.send(embed=er)
-            # Detailed per-member guild log messages
-            guild_log_ch = self.client.get_channel(GUILD_LOG)
             if guild_log_ch:
-                for uid, name, old, new in role_changes:
-                    try:
-                        discord_id = await asyncio.to_thread(self._db_get_discord_id, uid)
-                        mention = f" (<@{discord_id}>) " if discord_id else " "
-                        name_safe = name.replace('_', '\\_')
-                        ts = int(now.timestamp())
-                        await guild_log_ch.send(
-                            f"\U0001f7e6 <t:{ts}:d> <t:{ts}:t> | **{name_safe}**{mention}| "
-                            f"{old.upper()} \u27a1 {new.upper()}"
-                        )
-                    except Exception as e:
-                        log(ERROR, f"Guild log rank change msg for {uid}: {e}", context="guild_log")
+                await guild_log_ch.send(embed=er)
 
         # 5: Update presence
         await self.client.change_presence(activity=discord.CustomActivity(name=f"{guild.online} members online"))
