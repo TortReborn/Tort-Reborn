@@ -299,7 +299,7 @@ class CheckApps(commands.Cog):
             try:
                 await self._auto_close_channel(
                     guild, closed_cat, channel_id,
-                    "This application has been automatically closed — welcome to the guild! \U0001F420"
+                    "This application has been automatically closed."
                 )
             except Exception as e:
                 log(ERROR, f"Error closing accepted guild app {app_id}: {e}", context="check_apps")
@@ -309,7 +309,7 @@ class CheckApps(commands.Cog):
             try:
                 await self._auto_close_channel(
                     guild, closed_cat, channel_id,
-                    "This application has been automatically closed — welcome to the community! \U0001F420"
+                    "This application has been automatically closed."
                 )
             except Exception as e:
                 log(ERROR, f"Error closing accepted community app {app_id}: {e}", context="check_apps")
