@@ -395,6 +395,27 @@ def get_shell_exchange_mats() -> dict:
         db.close()
 
 
+def get_next_app_number() -> int:
+    """Atomically increment and return the next application number.
+
+    Requires a bot_settings table:
+        CREATE TABLE IF NOT EXISTS bot_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        INSERT INTO bot_settings (key, value) VALUES ('app_counter', '3725') ON CONFLICT DO NOTHING;
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            "UPDATE bot_settings SET value = (value::int + 1)::text "
+            "WHERE key = 'app_counter' RETURNING value::int"
+        )
+        row = db.cursor.fetchone()
+        db.connection.commit()
+        return row[0]
+    finally:
+        db.close()
+
+
 def save_shell_exchange_mats(data: dict):
     """Save shell exchange material data to cache_entries."""
     db = DB()

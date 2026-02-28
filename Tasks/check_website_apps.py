@@ -7,7 +7,7 @@ from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.classes import BasicPlayerStats
-from Helpers.database import DB, get_blacklist
+from Helpers.database import DB, get_blacklist, get_next_app_number
 from Helpers.functions import generate_applicant_info
 from Helpers.variables import (
     TAQ_GUILD_ID,
@@ -150,8 +150,12 @@ class CheckWebsiteApps(commands.Cog):
 
         type_label = "Guild Member" if app_type == "guild" else "Community Member"
 
-        # Extract IGN from answers
+        # Extract IGN from answers and get next app number
         ign = answers.get("ign", "").strip() or None
+        app_number = await asyncio.to_thread(get_next_app_number)
+        name_part = ign or discord_username
+        prefix = "c-" if app_type == "community" else ""
+        channel_label = f"{prefix}{app_number}-{name_part}"
 
         # Resolve the guild
         guild = self.client.get_guild(TAQ_GUILD_ID)
@@ -196,9 +200,8 @@ class CheckWebsiteApps(commands.Cog):
                     view_channel=True, send_messages=True, read_message_history=True
                 )
 
-        channel_name = f"rec-{discord_username}"
         channel = await guild.create_text_channel(
-            name=channel_name,
+            name=channel_label,
             category=category,
             overwrites=overwrites,
         )
@@ -227,7 +230,7 @@ class CheckWebsiteApps(commands.Cog):
             return
 
         poll_embed = discord.Embed(
-            title=f"Application app-{discord_username}",
+            title=f"Application {channel_label}",
             description="A new website application has been submitted\u2014please vote below:",
             colour=0x3ED63E,
         )
@@ -247,10 +250,10 @@ class CheckWebsiteApps(commands.Cog):
                     buf = BytesIO()
                     img.save(buf, format="PNG")
                     buf.seek(0)
-                    filename = f"rec-{discord_username}-{pdata.UUID}.png"
+                    filename = f"{channel_label}-{pdata.UUID}.png"
                     player_info_file = discord.File(buf, filename=filename)
                     poll_embed.set_image(url=f"attachment://{filename}")
-                    poll_embed.title = f"Application app-{discord_username} ({pdata.username})"
+                    poll_embed.title = f"Application {channel_label} ({pdata.username})"
 
                     # Check blacklist
                     blacklist = get_blacklist()
@@ -279,7 +282,7 @@ class CheckWebsiteApps(commands.Cog):
 
         # Create discussion thread and add reactions
         thread = await poll_msg.create_thread(
-            name=f"app-{discord_username}", auto_archive_duration=1440
+            name=channel_label, auto_archive_duration=1440
         )
         for emoji in ("\U0001F44D", "\U0001F937", "\U0001F44E"):
             await poll_msg.add_reaction(emoji)
