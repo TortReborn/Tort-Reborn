@@ -249,10 +249,6 @@ class WebAppCommands(commands.Cog):
                         "Could not move ticket to Invited category (missing permissions).",
                         ephemeral=True,
                     )
-            try:
-                await channel.edit(name=f"inv-{username}")
-            except discord.Forbidden:
-                pass
             await update_web_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)
             feedback = f"Application accepted. IGN: `{ign}`. User will be auto-registered when they join."
 
@@ -312,13 +308,6 @@ class WebAppCommands(commands.Cog):
         else:
             role_status = "**Role skipped** (member not found)."
 
-        # Rename channel
-        username = app["discord_username"]
-        try:
-            await channel.edit(name=f"c-accepted-{username}")
-        except discord.Forbidden:
-            pass
-
         # Update poll embed
         await update_web_poll_embed(self.client, channel.id, ":orange_circle: Accepted", 0xFFE019)
 
@@ -357,14 +346,6 @@ class WebAppCommands(commands.Cog):
             f"Best Regards,\n"
             f"The Aquarium Applications Team"
         )
-
-        # Rename channel
-        username = app["discord_username"]
-        new_name = f"denied-{username}" if app["application_type"] == "guild" else f"c-denied-{username}"
-        try:
-            await channel.edit(name=new_name)
-        except discord.Forbidden:
-            pass
 
         # Update poll embed
         await update_web_poll_embed(self.client, channel.id, ":orange_circle: Denied", 0xFFE019)
@@ -429,13 +410,6 @@ class WebAppCommands(commands.Cog):
                     "Could not move ticket to Invited category (missing permissions).",
                     ephemeral=True,
                 )
-
-        # Rename channel
-        username = app["discord_username"]
-        try:
-            await channel.edit(name=f"inv-{username}")
-        except discord.Forbidden:
-            pass
 
         # Update poll embed
         await update_web_poll_embed(self.client, channel.id, ":green_circle: Invited", 0x3ED63E)

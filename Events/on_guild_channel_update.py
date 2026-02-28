@@ -62,19 +62,22 @@ class OnGuildChannelUpdate(commands.Cog):
                 # Check website applications table
                 db = DB(); db.connect()
                 db.cursor.execute(
-                    "SELECT application_type, status, discord_username FROM applications WHERE channel_id = %s",
+                    "SELECT application_type, status FROM applications WHERE channel_id = %s",
                     (after.id,)
                 )
                 web_row = db.cursor.fetchone()
                 db.close()
 
                 if web_row:
-                    app_type, status, username = web_row
+                    app_type, status = web_row
+                    # Channel name already contains the number+ign (e.g. "3726-Notch" or "c-3726-Steve")
+                    # Strip the "c-" prefix if present so we can rebuild consistently
+                    base_name = after.name[2:] if after.name.startswith("c-") else after.name
 
                     if status == "accepted":
-                        new_name = f"accepted-{username}" if app_type == "guild" else f"c-accepted-{username}"
+                        new_name = f"accepted-{base_name}" if app_type == "guild" else f"c-accepted-{base_name}"
                     elif status == "denied":
-                        new_name = f"denied-{username}" if app_type == "guild" else f"c-denied-{username}"
+                        new_name = f"denied-{base_name}" if app_type == "guild" else f"c-denied-{base_name}"
                     else:
                         new_name = None
 
