@@ -55,7 +55,7 @@ async def update_poll_embed(client, channel_id: int, new_status: str, colour: in
             break
 
     await asyncio.to_thread(_update_db_status, channel_id, new_status)
-    await poll_msg.edit(embed=embed)
+    await poll_msg.edit(embed=embed, attachments=poll_msg.attachments)
 
 
 async def update_web_poll_embed(client, channel_id: int, new_status: str, colour: int):
@@ -109,4 +109,4 @@ async def update_web_poll_embed(client, channel_id: int, new_status: str, colour
             break
 
     await asyncio.to_thread(_update_db_status, channel_id, new_status)
-    await poll_msg.edit(embed=embed)
+    await poll_msg.edit(embed=embed, attachments=poll_msg.attachments)
