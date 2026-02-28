@@ -347,12 +347,14 @@ class Activity(commands.Cog):
         elif order_by == 'Kick Suitability':
             # Tiered sort:
             # 1. Members in guild <=7 days go to the very bottom
-            # 2. Lower ranks first (Starfish before Manatee before ... before Narwhal)
-            # 3. Lower playtime first (less active = more kickable)
-            # 4. Longer inactive first (more inactive = more kickable)
-            # 5. Newer members first (shorter tenure = more kickable)
+            # 2. Below threshold (red) members first, above threshold (blue) after
+            # 3. Lower ranks first (Starfish before Manatee before ... before Narwhal)
+            # 4. Lower playtime first (less active = more kickable)
+            # 5. Longer inactive first (more inactive = more kickable)
+            # 6. Newer members first (shorter tenure = more kickable)
             playerdata.sort(key=lambda x: (
                 x['member_for'] <= 7,                                           # True (1) = bottom
+                not x['below_threshold'],                                       # False (0) = red on top, True (1) = blue after
                 KICK_RANK_ORDER.get((x['discord_rank'] or '').lower(), 99),     # lower rank = lower number = first
                 x['playtime'],                                                   # lower playtime first
                 -x['last_join'],                                                 # longer inactive first (negate so higher days_since sorts first)

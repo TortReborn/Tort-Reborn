@@ -80,6 +80,24 @@ def _format_answers(answers: dict, app_type: str) -> str:
     return "\n\n".join(blocks)
 
 
+async def _send_chunked(channel, text: str, limit: int = 2000):
+    """Send *text* to *channel*, splitting on paragraph boundaries if needed."""
+    while text:
+        if len(text) <= limit:
+            await channel.send(text)
+            break
+        # Try to split at a double-newline (paragraph break)
+        cut = text.rfind("\n\n", 0, limit)
+        if cut <= 0:
+            # Fall back to single newline
+            cut = text.rfind("\n", 0, limit)
+        if cut <= 0:
+            # Last resort: hard cut at limit
+            cut = limit
+        await channel.send(text[:cut])
+        text = text[cut:].lstrip("\n")
+
+
 class CheckWebsiteApps(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -199,7 +217,7 @@ class CheckWebsiteApps(commands.Cog):
             await channel.send(combined)
         else:
             await channel.send(intro)
-            await channel.send(formatted)
+            await _send_chunked(channel, formatted)
 
         # Post poll embed in exec channel
         exec_chan = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
@@ -267,7 +285,13 @@ class CheckWebsiteApps(commands.Cog):
             await poll_msg.add_reaction(emoji)
 
         # Post the application content in the thread
-        await thread.send(f"**Application from {mention} ({discord_username}):**\n\n{formatted}")
+        thread_header = f"**Application from {mention} ({discord_username}):**\n\n"
+        thread_combined = f"{thread_header}{formatted}"
+        if len(thread_combined) <= 2000:
+            await thread.send(thread_combined)
+        else:
+            await thread.send(thread_header)
+            await _send_chunked(thread, formatted)
 
         # Update applications table with channel_id, thread_id, poll_message_id
         await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id)
