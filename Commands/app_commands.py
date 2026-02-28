@@ -464,6 +464,14 @@ class WebAppCommands(commands.Cog):
             await ctx.followup.send("This application is already closed.", ephemeral=True)
             return
 
+        # Revoke applicant's access to the channel
+        applicant = await self._resolve_member(channel, int(app["discord_id"]))
+        if applicant:
+            try:
+                await channel.set_permissions(applicant, overwrite=None)
+            except discord.Forbidden:
+                pass
+
         # Send close message
         await channel.send("This application has been closed.")
 
