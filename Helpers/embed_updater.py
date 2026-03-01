@@ -61,15 +61,15 @@ async def update_poll_embed(client, channel_id: int, new_status: str, colour: in
 async def update_web_poll_embed(client, channel_id: int, new_status: str, colour: int):
     """Edit the poll embed for a website application (applications table)."""
 
-    def _fetch_poll_id(cid):
+    def _fetch_poll_data(cid):
         db = DB()
         try:
             db.connect()
             db.cursor.execute(
-                "SELECT poll_message_id FROM applications WHERE channel_id = %s", (cid,)
+                "SELECT id, poll_message_id FROM applications WHERE channel_id = %s", (cid,)
             )
             row = db.cursor.fetchone()
-            return row[0] if row else None
+            return (row[0], row[1]) if row else (None, None)
         finally:
             db.close()
 
@@ -84,7 +84,26 @@ async def update_web_poll_embed(client, channel_id: int, new_status: str, colour
         finally:
             db.close()
 
-    poll_message_id = await asyncio.to_thread(_fetch_poll_id, channel_id)
+    def _get_vote_counts(app_id):
+        db = DB()
+        try:
+            db.connect()
+            db.cursor.execute(
+                """SELECT
+                    COUNT(*) FILTER (WHERE vote = 'accept'),
+                    COUNT(*) FILTER (WHERE vote = 'deny'),
+                    COUNT(*) FILTER (WHERE vote = 'abstain')
+                FROM application_votes WHERE application_id = %s""",
+                (app_id,)
+            )
+            row = db.cursor.fetchone()
+            if row:
+                return {"accept": row[0], "deny": row[1], "abstain": row[2]}
+            return {"accept": 0, "deny": 0, "abstain": 0}
+        finally:
+            db.close()
+
+    app_id, poll_message_id = await asyncio.to_thread(_fetch_poll_data, channel_id)
     if not poll_message_id:
         return
 
@@ -107,6 +126,21 @@ async def update_web_poll_embed(client, channel_id: int, new_status: str, colour
         if field.name == "Status":
             embed.set_field_at(i, name="Status", value=new_status, inline=True)
             break
+
+    # Update vote counts in embed
+    if app_id:
+        counts = await asyncio.to_thread(_get_vote_counts, app_id)
+        total = counts["accept"] + counts["deny"] + counts["abstain"]
+        if total > 0:
+            vote_text = f"Accept: {counts['accept']} | Deny: {counts['deny']} | Abstain: {counts['abstain']}"
+            found_votes = False
+            for i, field in enumerate(embed.fields):
+                if field.name == "Votes":
+                    embed.set_field_at(i, name="Votes", value=vote_text, inline=False)
+                    found_votes = True
+                    break
+            if not found_votes:
+                embed.add_field(name="Votes", value=vote_text, inline=False)
 
     await asyncio.to_thread(_update_db_status, channel_id, new_status)
     await poll_msg.edit(embed=embed, attachments=poll_msg.attachments)

@@ -69,7 +69,7 @@ class OnGuildChannelCreate(commands.Cog):
         ticket_num = channel.name.replace("ticket-", "")
         poll_embed = Embed(
             title=f"Application {ticket_num}",
-            description="A new application has been opened—please vote below:",
+            description="",
             colour=0x3ed63e,
         )
         poll_embed.add_field(name="Channel", value=f"<#{channel.id}>", inline=True)

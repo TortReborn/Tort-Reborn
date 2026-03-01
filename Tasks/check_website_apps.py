@@ -15,6 +15,7 @@ from Helpers.variables import (
     APP_MANAGER_ROLE_MENTION,
     APP_CATEGORY_NAME,
 )
+from Helpers.views import ApplicationVoteView, ThreadVoteView
 
 # ---------------------------------------------------------------------------
 # Question ID → Label mappings (must match website question IDs)
@@ -231,14 +232,12 @@ class CheckWebsiteApps(commands.Cog):
 
         poll_embed = discord.Embed(
             title=f"Application {channel_label}",
-            description="A new website application has been submitted\u2014please vote below:",
+            description="",
             colour=0x3ED63E,
         )
         poll_embed.add_field(name="Channel", value=f"<#{channel.id}>", inline=True)
         poll_embed.add_field(name="Type", value=type_label, inline=True)
         poll_embed.add_field(name="Status", value=":green_circle: Received", inline=True)
-        if ign:
-            poll_embed.add_field(name="IGN", value=ign, inline=True)
 
         # Generate player stats image if IGN is available
         player_info_file = None
@@ -267,25 +266,26 @@ class CheckWebsiteApps(commands.Cog):
             except Exception as e:
                 log(ERROR, f"Stats image error for {ign}: {e}", context="check_website_apps")
 
-        # Send poll message with ping
+        # Send poll message with ping and vote buttons
+        vote_view = ApplicationVoteView()
         if player_info_file:
             poll_msg = await exec_chan.send(
                 f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
                 embed=poll_embed,
                 file=player_info_file,
+                view=vote_view,
             )
         else:
             poll_msg = await exec_chan.send(
                 f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
                 embed=poll_embed,
+                view=vote_view,
             )
 
-        # Create discussion thread and add reactions
+        # Create discussion thread
         thread = await poll_msg.create_thread(
             name=channel_label, auto_archive_duration=1440
         )
-        for emoji in ("\U0001F44D", "\U0001F937", "\U0001F44E"):
-            await poll_msg.add_reaction(emoji)
 
         # Post the application content in the thread
         thread_header = f"**Application from {mention} ({discord_username}):**\n\n"
@@ -295,6 +295,9 @@ class CheckWebsiteApps(commands.Cog):
         else:
             await thread.send(thread_header)
             await _send_chunked(thread, formatted)
+
+        # Send vote buttons in the thread
+        await thread.send("**Vote on this application:**", view=ThreadVoteView())
 
         # Update applications table with channel_id, thread_id, poll_message_id
         await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id)
