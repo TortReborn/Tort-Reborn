@@ -101,16 +101,14 @@ def build_kick_list_embed(rows: list[tuple]) -> discord.Embed:
         return embed
 
     # Group by tier
-    tiers: dict[int, list[tuple]] = {}
+    tiers: dict[int, list[str]] = {}
     for uuid, ign, tier, added_by, created_at in rows:
-        tiers.setdefault(tier, []).append((ign, added_by))
+        tiers.setdefault(tier, []).append(ign)
 
     for tier_num in sorted(tiers.keys()):
         label = TIER_LABELS.get(tier_num, f"Tier {tier_num}")
-        lines = []
-        for ign, added_by in tiers[tier_num]:
-            lines.append(f"`{ign}` — added by **{added_by}**")
-        embed.add_field(name=label, value="\n".join(lines), inline=False)
+        value = "\n".join(f"`{ign}`" for ign in tiers[tier_num])
+        embed.add_field(name=label, value=value, inline=False)
 
     return embed
 
