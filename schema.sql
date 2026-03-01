@@ -331,3 +331,112 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_type ON audit_log(log_type);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+
+-- =============================================================================
+-- Website Application System
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS applications (
+  id                SERIAL       PRIMARY KEY,
+  application_type  VARCHAR(20)  NOT NULL CHECK (application_type IN ('guild', 'community')),
+  discord_id        VARCHAR(30)  NOT NULL,
+  discord_username  VARCHAR(50)  NOT NULL,
+  discord_avatar    VARCHAR(255),
+  status            VARCHAR(20)  DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'denied')),
+  answers           JSONB        NOT NULL,
+  submitted_at      TIMESTAMPTZ  DEFAULT NOW(),
+  reviewed_at       TIMESTAMPTZ,
+  reviewed_by       VARCHAR(50),
+  channel_id        BIGINT,
+  thread_id         BIGINT,
+  poll_message_id   BIGINT,
+  guild_leave_pending BOOLEAN    DEFAULT FALSE,
+  poll_status       TEXT         DEFAULT ':green_circle: Received'
+);
+
+CREATE TABLE IF NOT EXISTS application_votes (
+  id               SERIAL      PRIMARY KEY,
+  application_id   INT         NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  voter_discord_id VARCHAR(30) NOT NULL,
+  voter_username   VARCHAR(50) NOT NULL,
+  vote             VARCHAR(10) NOT NULL CHECK (vote IN ('accept', 'deny', 'abstain')),
+  source           VARCHAR(10) NOT NULL CHECK (source IN ('website', 'discord')),
+  voted_at         TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (application_id, voter_discord_id)
+);
+
+-- =============================================================================
+-- Blacklist
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS blacklist (
+  uuid       VARCHAR(36)   PRIMARY KEY,
+  ign        VARCHAR(16)   NOT NULL,
+  reason     VARCHAR(1000),
+  created_at TIMESTAMPTZ   DEFAULT NOW()
+);
+
+-- =============================================================================
+-- Kick List
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS kick_list (
+  uuid       VARCHAR(36)  PRIMARY KEY,
+  ign        VARCHAR(64)  NOT NULL,
+  tier       INT          NOT NULL CHECK (tier IN (1, 2, 3)),
+  added_by   VARCHAR(50)  NOT NULL,
+  created_at TIMESTAMPTZ  DEFAULT NOW()
+);
+
+-- =============================================================================
+-- Bot Settings (key-value store for persistent config)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS bot_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- =============================================================================
+-- Promotion Queue
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS promotion_queue (
+  id                   SERIAL       PRIMARY KEY,
+  uuid                 UUID         NOT NULL,
+  ign                  VARCHAR(64)  NOT NULL,
+  current_rank         VARCHAR(32)  NOT NULL,
+  new_rank             VARCHAR(32),
+  action_type          VARCHAR(10)  NOT NULL CHECK (action_type IN ('promote', 'demote', 'remove')),
+  queued_by_discord_id BIGINT       NOT NULL,
+  queued_by_ign        VARCHAR(64)  NOT NULL,
+  created_at           TIMESTAMPTZ  DEFAULT NOW(),
+  status               VARCHAR(20)  NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+  completed_at         TIMESTAMPTZ,
+  error_message        TEXT
+);
+
+-- =============================================================================
+-- Guild Colors & Prefixes (territory map)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS guild_generated_colors (
+  guild_name VARCHAR(100) PRIMARY KEY,
+  color      VARCHAR(7)   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS guild_prefixes (
+  guild_name   VARCHAR(100) PRIMARY KEY,
+  guild_prefix VARCHAR(10)  NOT NULL
+);
+
+-- =============================================================================
+-- Territory Exchanges
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS territory_exchanges (
+  exchange_time TIMESTAMPTZ  NOT NULL,
+  territory     VARCHAR(100) NOT NULL,
+  attacker_name VARCHAR(100) NOT NULL,
+  defender_name VARCHAR(100) NOT NULL
+);
