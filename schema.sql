@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS graid_events (
   low_rank_reward    INT         NOT NULL,
   high_rank_reward   INT         NOT NULL,
   min_completions    INT         NOT NULL,
+  bonus_threshold    INT,
+  bonus_amount       INT,
   created_by_discord BIGINT,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()

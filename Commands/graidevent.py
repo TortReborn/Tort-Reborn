@@ -6,8 +6,8 @@ import time
 from typing import Optional, List, Tuple
 
 import discord
-from discord.commands import slash_command, AutocompleteContext
-from discord import default_permissions, Option
+from discord.commands import SlashCommandGroup, AutocompleteContext
+from discord import Option
 from discord.ext import commands
 
 from Helpers.database import DB
@@ -45,13 +45,14 @@ def _db():
     db = DB(); db.connect(); return db
 
 def _get_active_event(cur):
-    cur.execute("SELECT id, title, start_ts, end_ts, low_rank_reward, high_rank_reward, min_completions "
+    cur.execute("SELECT id, title, start_ts, end_ts, low_rank_reward, high_rank_reward, min_completions, bonus_threshold, bonus_amount "
                 "FROM graid_events WHERE active = TRUE LIMIT 1")
     row = cur.fetchone()
     if not row: return None
     return {
         "id": row[0], "title": row[1], "start_ts": row[2], "end_ts": row[3],
-        "low": row[4], "high": row[5], "minc": row[6]
+        "low": row[4], "high": row[5], "minc": row[6],
+        "bonus_threshold": row[7], "bonus_amount": row[8]
     }
 
 def _top5_for_event(cur, event_id: int, min_completions: int) -> List[Tuple[str, int]]:
@@ -85,15 +86,18 @@ class GraidEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(name="graid_event_start", guild_ids=ALL_GUILD_IDS, description="HR: Start a new GRAID event")
-    @default_permissions(manage_roles=True)
+    graid_event = SlashCommandGroup("graid-event", "HR: GRAID event commands", guild_ids=ALL_GUILD_IDS, default_member_permissions=discord.Permissions(manage_roles=True))
+
+    @graid_event.command(name="start", description="Start a new GRAID event")
     async def graid_start(
         self, ctx: discord.ApplicationContext,
         title: str,
         end_date_iso: str,              # e.g., "2025-09-30T23:59:59Z" or "2025-09-30"
         low_rank_reward: int,
         high_rank_reward: int,
-        min_completions: int
+        min_completions: int,
+        bonus_threshold: Optional[int] = None,
+        bonus_amount: Optional[int] = None
     ):
         db = _db()
         try:
@@ -113,24 +117,25 @@ class GraidEvent(commands.Cog):
                 await ctx.respond("❌ end_date must be ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ).", ephemeral=True); return
 
             cur.execute(
-                "INSERT INTO graid_events (title, start_ts, end_ts, active, low_rank_reward, high_rank_reward, min_completions, created_by_discord) "
-                "VALUES (%s, NOW(), %s, TRUE, %s, %s, %s, %s) RETURNING id",
-                (title, end_ts, low_rank_reward, high_rank_reward, min_completions, ctx.user.id)
+                "INSERT INTO graid_events (title, start_ts, end_ts, active, low_rank_reward, high_rank_reward, min_completions, bonus_threshold, bonus_amount, created_by_discord) "
+                "VALUES (%s, NOW(), %s, TRUE, %s, %s, %s, %s, %s, %s) RETURNING id",
+                (title, end_ts, low_rank_reward, high_rank_reward, min_completions, bonus_threshold, bonus_amount, ctx.user.id)
             )
             event_id = cur.fetchone()[0]
             db.connection.commit()
+            bonus_line = f"Bonus: {bonus_threshold}+ raids → +{bonus_amount} LE\n" if bonus_threshold and bonus_amount else ""
             await ctx.respond(
                 f"✅ **GRAID started**: **{title}**\n"
                 f"Start: now • End: {end_ts.isoformat()}\n"
                 f"Rewards: low={low_rank_reward}, high={high_rank_reward}\n"
                 f"Min completions: {min_completions}\n"
+                f"{bonus_line}"
                 f"(id={event_id})", ephemeral=True
             )
         finally:
             db.close()
 
-    @slash_command(name="graid_event_stop", guild_ids=ALL_GUILD_IDS, description="HR: Stop the current GRAID event")
-    @default_permissions(manage_roles=True)
+    @graid_event.command(name="stop", description="Stop the current GRAID event")
     async def graid_stop(self, ctx: discord.ApplicationContext):
         db = _db()
         try:
@@ -152,15 +157,15 @@ class GraidEvent(commands.Cog):
                 description=desc,
                 color=discord.Color.blurple()
             )
-            embed.add_field(name="Settings",
-                            value=f"Min completions: **{ev['minc']}**\nRewards: low={ev['low']}, high={ev['high']}",
-                            inline=False)
+            settings = f"Min completions: **{ev['minc']}**\nRewards: low={ev['low']}, high={ev['high']}"
+            if ev.get("bonus_threshold") and ev.get("bonus_amount"):
+                settings += f"\nBonus: {ev['bonus_threshold']}+ raids → +{ev['bonus_amount']} LE"
+            embed.add_field(name="Settings", value=settings, inline=False)
             await ctx.respond(embed=embed, ephemeral=True)
         finally:
             db.close()
 
-    @slash_command(name="graid_event_info", guild_ids=ALL_GUILD_IDS, description="HR: Show the active GRAID event")
-    @default_permissions(manage_roles=True)
+    @graid_event.command(name="info", description="Show the active GRAID event")
     async def graid_info(self, ctx: discord.ApplicationContext):
         db = _db()
         try:
@@ -177,7 +182,10 @@ class GraidEvent(commands.Cog):
                 color=discord.Color.green()
             )
             embed.add_field(name="Window", value=f"Start: {ev['start_ts'].isoformat()}\nEnd: {ev['end_ts'].isoformat() if ev['end_ts'] else '—'}", inline=False)
-            embed.add_field(name="Rules", value=f"Min completions: **{ev['minc']}**\nRewards: low={ev['low']}, high={ev['high']}", inline=False)
+            rules = f"Min completions: **{ev['minc']}**\nRewards: low={ev['low']}, high={ev['high']}"
+            if ev.get("bonus_threshold") and ev.get("bonus_amount"):
+                rules += f"\nBonus: {ev['bonus_threshold']}+ raids → +{ev['bonus_amount']} LE"
+            embed.add_field(name="Rules", value=rules, inline=False)
             await ctx.respond(embed=embed, ephemeral=True)
         finally:
             db.close()
@@ -194,9 +202,7 @@ class GraidEvent(commands.Cog):
             _EVENT_CACHE["items"], _EVENT_CACHE["ts"] = titles, now
         return titles  # list[str] (max 25 shown by Discord)
 
-    # Then change your command signature:
-    @slash_command(name="graid_event_set", description="HR: Activate an existing GRAID (by title)")
-    @default_permissions(manage_roles=True)
+    @graid_event.command(name="set", description="Activate an existing GRAID (by title)")
     async def graid_set(
         self,
         ctx: discord.ApplicationContext,
