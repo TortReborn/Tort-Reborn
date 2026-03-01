@@ -120,8 +120,10 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
         db.close()
 
 
-def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
+def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map, guild_members):
     snap = {'time': int(time.time()), 'members': []}
+    # Build joined_map from guild API data (has the joined date)
+    joined_map = {m['uuid']: m.get('joined') for m in guild_members}
     uuids = list(pf_map.keys())
     if not uuids:
         # Save empty snapshot to database cache
@@ -189,7 +191,8 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map):
             'wars':        pf.get('globalData', {}).get('wars'),
             'shells':      entry['shells'],
             'raids':       entry['raids'],
-            'lastJoin':    last_join
+            'lastJoin':    last_join,
+            'joined':      joined_map.get(uuid),
         })
 
     # Create cache version with online status
@@ -642,7 +645,7 @@ class UpdateMemberData(commands.Cog):
         online_map = {m['uuid']: m.get('online', False) for m in guild.all_members}
         await asyncio.to_thread(
             _write_current_snapshot_sync,
-            contrib_map, rank_map, pf_map, online_map
+            contrib_map, rank_map, pf_map, online_map, guild.all_members
         )
         
         end = datetime.datetime.now(timezone.utc)
