@@ -29,14 +29,24 @@ class OnMessageEdit(commands.Cog):
         message_id = payload.message_id
 
         # Check if this channel has an incomplete application with this message ID
-        db = DB(); db.connect()
-        db.cursor.execute(
-            """SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id
-               FROM new_app WHERE channel = %s""",
-            (channel_id,)
-        )
-        row = db.cursor.fetchone()
-        db.close()
+        # NOTE: new_app table lacks the columns this logic needs (applicant_discord_id,
+        # app_type, app_complete, app_message_id). Disabled until old ticket system is
+        # cleaned up or migrated.
+        try:
+            db = DB(); db.connect()
+            db.cursor.execute(
+                """SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id
+                   FROM new_app WHERE channel = %s""",
+                (channel_id,)
+            )
+            row = db.cursor.fetchone()
+            db.close()
+        except Exception:
+            try:
+                db.close()
+            except Exception:
+                pass
+            return
 
         if not row:
             return
@@ -116,13 +126,19 @@ class OnMessageEdit(commands.Cog):
         if not validation["complete"]:
             # Still incomplete — update IGN if we found one
             if mc_name:
-                db = DB(); db.connect()
-                db.cursor.execute(
-                    "UPDATE new_app SET ign = %s WHERE channel = %s",
-                    (mc_name, channel_id)
-                )
-                db.connection.commit()
-                db.close()
+                try:
+                    db = DB(); db.connect()
+                    db.cursor.execute(
+                        "UPDATE new_app SET ign = %s WHERE channel = %s",
+                        (mc_name, channel_id)
+                    )
+                    db.connection.commit()
+                    db.close()
+                except Exception:
+                    try:
+                        db.close()
+                    except Exception:
+                        pass
             return
 
         # Application is now complete! Fetch the full message and forward.

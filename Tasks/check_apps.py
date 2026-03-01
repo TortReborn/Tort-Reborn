@@ -80,10 +80,10 @@ class CheckApps(commands.Cog):
         db.connect()
         db.cursor.execute(
             """
-            SELECT channel, thread_id, ign, applicant_discord_id
-              FROM new_app
-             WHERE decision = 'accepted'
-               AND app_type = 'guild_member'
+            SELECT channel_id, thread_id, answers->>'ign' AS ign, discord_id
+              FROM applications
+             WHERE status = 'accepted'
+               AND application_type = 'guild'
                AND guild_leave_pending = TRUE
             """
         )
@@ -144,7 +144,7 @@ class CheckApps(commands.Cog):
         db = DB()
         db.connect()
         db.cursor.execute(
-            "UPDATE new_app SET guild_leave_pending = FALSE WHERE channel = %s",
+            "UPDATE applications SET guild_leave_pending = FALSE WHERE channel_id = %s",
             (channel_id,)
         )
         db.connection.commit()

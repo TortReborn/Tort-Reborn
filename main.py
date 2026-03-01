@@ -16,6 +16,7 @@ from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID
 from Helpers.logger import log, SYSTEM, SUCCESS, ERROR
 from Helpers import logger
 from Commands.generate import ApplicationButtonView
+from Helpers.views import ApplicationVoteView, ThreadVoteView
 
 
 
@@ -67,6 +68,8 @@ sys.excepthook = on_crash
 async def on_ready():
     if not getattr(client, 'synced', False):
         client.add_view(ApplicationButtonView())
+        client.add_view(ApplicationVoteView())
+        client.add_view(ThreadVoteView())
         await client.sync_commands()
         client.synced = True
         log(SUCCESS, "Slash commands synced.")
@@ -206,6 +209,7 @@ extensions = [
     'Tasks.recruitment_checker',
     'Tasks.cache_guild_colors',
     'Tasks.check_website_apps',
+    'Tasks.sync_vote_counts',
 ]
 
 for ext in extensions:
