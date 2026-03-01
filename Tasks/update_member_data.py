@@ -122,42 +122,34 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
 
 def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map, guild_members):
     snap = {'time': int(time.time()), 'members': []}
-    # Build joined_map from guild API data (has the joined date)
-    joined_map = {m['uuid']: m.get('joined') for m in guild_members}
-    uuids = list(pf_map.keys())
-    if not uuids:
-        # Save empty snapshot to database cache
-        try:
-            db = _db_connect_with_retry()
 
-            # Set expiration to epoch time (January 1, 1970)
-            epoch_time = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
-
-            db.cursor.execute("""
-                INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
-                VALUES (%s, %s, %s, 1)
-                ON CONFLICT (cache_key)
-                DO UPDATE SET
-                    data = EXCLUDED.data,
-                    created_at = NOW(),
-                    expires_at = EXCLUDED.expires_at,
-                    fetch_count = cache_entries.fetch_count + 1,
-                    last_error = NULL,
-                    error_count = 0
-            """, ('guildData', json.dumps(snap), epoch_time))
-
-            db.connection.commit()
-            db.close()
-
-        except Exception as e:
-            log(ERROR, f"Failed to save empty snapshot to cache: {e}", context="update_member_data")
-            try:
-                if 'db' in locals():
-                    db.close()
-            except:
-                pass
+    if not guild_members:
+        log(ERROR, "No guild members from API — skipping cache write to avoid data loss", context="update_member_data")
         return
 
+    # Load previous cache to carry forward stats for members whose individual fetch failed
+    prev_members_by_uuid = {}
+    try:
+        db = _db_connect_with_retry()
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'guildData'")
+        row = db.cursor.fetchone()
+        db.close()
+        if row and row[0]:
+            prev_data = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+            for m in prev_data.get('members', []):
+                if m.get('uuid'):
+                    prev_members_by_uuid[m['uuid']] = m
+    except Exception as e:
+        log(ERROR, f"Failed to load previous cache for carry-forward: {e}", context="update_member_data")
+        try:
+            if 'db' in locals():
+                db.close()
+        except:
+            pass
+
+    # Fetch shells/raids stats for all guild members (not just pf_map)
+    all_uuids = [m['uuid'] for m in guild_members if m.get('uuid')]
+    stats_by_uuid = {}
     db = _db_connect_with_retry()
     try:
         sql = """
@@ -170,29 +162,46 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map, guil
         LEFT JOIN uncollected_raids ur ON dl.uuid = ur.uuid
         WHERE dl.uuid = ANY(%s::uuid[]);
         """
-        db.cursor.execute(sql, (uuids,))
+        db.cursor.execute(sql, (all_uuids,))
         rows = db.cursor.fetchall()
         stats_by_uuid = {row[0]: {'shells': row[1], 'raids': row[2]} for row in rows}
     finally:
         db.close()
 
-    for uuid, pf in pf_map.items():
-        if not isinstance(pf, dict):
+    # Iterate over ALL guild members from the guild API (authoritative member list)
+    for gm in guild_members:
+        uuid = gm.get('uuid')
+        if not uuid:
             continue
-        username  = pf.get('username') or pf.get('name')
-        last_join = pf.get('lastJoin', "2020-03-22T11:11:17.810000Z")
-        entry     = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
+
+        pf = pf_map.get(uuid)        # individual player stats (may be None if fetch failed)
+        prev = prev_members_by_uuid.get(uuid, {})  # previous cache entry for carry-forward
+        entry = stats_by_uuid.get(uuid, {'shells': 0, 'raids': 0})
+
+        if pf and isinstance(pf, dict):
+            # Fresh data available — use it
+            username  = pf.get('username') or pf.get('name') or gm.get('name')
+            last_join = pf.get('lastJoin', prev.get('lastJoin', "2020-03-22T11:11:17.810000Z"))
+            playtime  = pf.get('playtime')
+            wars      = pf.get('globalData', {}).get('wars')
+        else:
+            # Fetch failed — carry forward previous values, fall back to guild API data
+            username  = gm.get('name') or prev.get('name')
+            last_join = prev.get('lastJoin', "2020-03-22T11:11:17.810000Z")
+            playtime  = prev.get('playtime')
+            wars      = prev.get('wars')
+
         snap['members'].append({
             'name':        username,
             'uuid':        uuid,
-            'rank':        rank_map.get(uuid),
-            'playtime':    pf.get('playtime'),
-            'contributed': contrib_map.get(uuid),
-            'wars':        pf.get('globalData', {}).get('wars'),
+            'rank':        rank_map.get(uuid) or gm.get('rank'),
+            'playtime':    playtime,
+            'contributed': contrib_map.get(uuid) or gm.get('contributed'),
+            'wars':        wars,
             'shells':      entry['shells'],
             'raids':       entry['raids'],
             'lastJoin':    last_join,
-            'joined':      joined_map.get(uuid),
+            'joined':      gm.get('joined'),
         })
 
     # Create cache version with online status
@@ -201,6 +210,11 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map, guil
         cache_member = dict(member)
         cache_member['online'] = online_map.get(member['uuid'], False)
         cache_snap['members'].append(cache_member)
+
+    fetched = len(pf_map)
+    total = len(guild_members)
+    if fetched < total:
+        log(INFO, f"Cache write: {fetched}/{total} members had fresh data, {total - fetched} carried forward", context="update_member_data")
 
     # Save to database cache
     try:
@@ -225,10 +239,9 @@ def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map, guil
 
         db.connection.commit()
         db.close()
-        
+
     except Exception as e:
         log(ERROR, f"Failed to save to cache: {e}", context="update_member_data")
-        # Don't let database errors prevent the file save from working
         try:
             if 'db' in locals():
                 db.close()
