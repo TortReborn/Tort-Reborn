@@ -288,7 +288,8 @@ class CheckWebsiteApps(commands.Cog):
         )
 
         # Post the application content in the thread
-        thread_header = f"**Application from {mention} ({discord_username}):**\n\n"
+        stats_line = f"<https://wynncraft.com/stats/player/{ign}>\n" if ign else ""
+        thread_header = f"**Application from {mention} ({discord_username}):**\n{stats_line}\n"
         thread_combined = f"{thread_header}{formatted}"
         if len(thread_combined) <= 2000:
             await thread.send(thread_combined)
