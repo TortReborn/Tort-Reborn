@@ -58,6 +58,15 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     db.connect()
 
     try:
+        # Check data availability — if requested days exceed our earliest snapshot, fall back to all-time
+        if days > 0:
+            db.cursor.execute("SELECT MIN(snapshot_date) FROM player_activity")
+            row = db.cursor.fetchone()
+            if row and row[0]:
+                available_days = (date.today() - row[0]).days
+                if days > available_days:
+                    days = -1  # fall back to all-time
+
         db.cursor.execute("SELECT uuid, rank FROM discord_links")
         uuid_to_discord_rank: Dict[str, str] = {row[0]: row[1] for row in db.cursor.fetchall()}
 
@@ -255,8 +264,16 @@ PERIOD_TO_DAYS = {
     '7 Days': 7,
     '14 Days': 14,
     '30 Days': 30,
-    'Custom': 7  # default fallback
 }
+
+
+def _resolve_days(period: str | None, custom_days: int | None) -> int:
+    """Resolve the number of days from period choice and/or custom days input.
+    custom_days overrides period when provided.
+    """
+    if custom_days is not None:
+        return custom_days if custom_days > 0 else -1
+    return PERIOD_TO_DAYS.get(period, 7)
 
 
 class Leaderboard(commands.Cog):
@@ -267,11 +284,13 @@ class Leaderboard(commands.Cog):
 
     # ---- XP ----
     @leaderboard_group.command(description='Display the XP leaderboard')
-    async def xp(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
+    async def xp(self, message: discord.ApplicationContext,
+                 period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()), required=False, default='7 Days'),
+                 days: discord.Option(int, description='Custom number of days (overrides period preset)', required=False, default=None, min_value=1)):
         await message.defer()
         try:
-            days = PERIOD_TO_DAYS.get(period, 7)
-            book = create_leaderboard('contributed', 'images/profile/xp.png', 'images/profile/guxp_title.png', days=days)
+            resolved_days = _resolve_days(period, days)
+            book = create_leaderboard('contributed', 'images/profile/xp.png', 'images/profile/guxp_title.png', days=resolved_days)
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the XP leaderboard.", ephemeral=True)
@@ -279,11 +298,13 @@ class Leaderboard(commands.Cog):
 
     # ---- Wars ----
     @leaderboard_group.command(description='Display the Wars leaderboard')
-    async def wars(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
+    async def wars(self, message: discord.ApplicationContext,
+                   period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()), required=False, default='7 Days'),
+                   days: discord.Option(int, description='Custom number of days (overrides period preset)', required=False, default=None, min_value=1)):
         await message.defer()
         try:
-            days = PERIOD_TO_DAYS.get(period, 7)
-            book = create_leaderboard('wars', 'images/profile/wars.png', 'images/profile/wars_title.png', days=days)
+            resolved_days = _resolve_days(period, days)
+            book = create_leaderboard('wars', 'images/profile/wars.png', 'images/profile/wars_title.png', days=resolved_days)
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the wars leaderboard.", ephemeral=True)
@@ -291,11 +312,13 @@ class Leaderboard(commands.Cog):
 
     # ---- Playtime ----
     @leaderboard_group.command(description='Display the Playtime leaderboard')
-    async def playtime(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
+    async def playtime(self, message: discord.ApplicationContext,
+                       period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()), required=False, default='7 Days'),
+                       days: discord.Option(int, description='Custom number of days (overrides period preset)', required=False, default=None, min_value=1)):
         await message.defer()
         try:
-            days = PERIOD_TO_DAYS.get(period, 7)
-            book = create_leaderboard('playtime', 'images/profile/playtime.png', 'images/profile/playtime_title.png', days=days)
+            resolved_days = _resolve_days(period, days)
+            book = create_leaderboard('playtime', 'images/profile/playtime.png', 'images/profile/playtime_title.png', days=resolved_days)
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the playtime leaderboard.", ephemeral=True)
@@ -303,11 +326,13 @@ class Leaderboard(commands.Cog):
 
     # ---- Shells (now time-gated like others) ----
     @leaderboard_group.command(description='Display the Shells leaderboard')
-    async def shells(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
+    async def shells(self, message: discord.ApplicationContext,
+                     period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()), required=False, default='7 Days'),
+                     days: discord.Option(int, description='Custom number of days (overrides period preset)', required=False, default=None, min_value=1)):
         await message.defer()
         try:
-            days = PERIOD_TO_DAYS.get(period, 7)
-            book = create_leaderboard('shells', 'images/profile/shells.png', 'images/profile/shell_leaderboard.png', days=days)
+            resolved_days = _resolve_days(period, days)
+            book = create_leaderboard('shells', 'images/profile/shells.png', 'images/profile/shell_leaderboard.png', days=resolved_days)
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the shells leaderboard.", ephemeral=True)
@@ -315,12 +340,14 @@ class Leaderboard(commands.Cog):
 
     # ---- NEW: Raids ----
     @leaderboard_group.command(description='Display the Raids leaderboard')
-    async def raids(self, message: discord.ApplicationContext, period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()))):
+    async def raids(self, message: discord.ApplicationContext,
+                    period: discord.Option(str, choices=list(PERIOD_TO_DAYS.keys()), required=False, default='7 Days'),
+                    days: discord.Option(int, description='Custom number of days (overrides period preset)', required=False, default=None, min_value=1)):
         """Leaderboard for raid clears (value stored under 'raids' in player_activity table)."""
         await message.defer()
         try:
-            days = PERIOD_TO_DAYS.get(period, 7)
-            book = create_leaderboard('raids', 'images/profile/raid_icon.png', 'images/profile/raids_title.png', days=days)
+            resolved_days = _resolve_days(period, days)
+            book = create_leaderboard('raids', 'images/profile/raid_icon.png', 'images/profile/raids_title.png', days=resolved_days)
             await book.respond(message.interaction)
         except Exception as e:
             await message.respond("Something went wrong generating the raids leaderboard.", ephemeral=True)
