@@ -236,37 +236,42 @@ def get_territory_data() -> dict:
 
 
 def get_blacklist() -> list:
-    """Load blacklist from cache_entries."""
+    """Load blacklist from the blacklist table."""
     db = DB()
     db.connect()
     try:
-        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'blacklist'")
-        row = db.cursor.fetchone()
-        if row and row[0]:
-            data = row[0] if isinstance(row[0], list) else json.loads(row[0])
-            return data
-        return []
+        db.cursor.execute("SELECT uuid, ign, reason FROM blacklist ORDER BY ign")
+        return [{'UUID': row[0], 'ign': row[1], 'reason': row[2]} for row in db.cursor.fetchall()]
     except Exception:
         return []
     finally:
         db.close()
 
 
-def save_blacklist(data: list):
-    """Save blacklist to cache_entries."""
+def add_blacklist_entry(uuid: str, ign: str, reason: str = None):
+    """Add or update a player on the blacklist."""
     db = DB()
     db.connect()
     try:
-        epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
-        db.cursor.execute("""
-            INSERT INTO cache_entries (cache_key, data, expires_at)
-            VALUES ('blacklist', %s, %s)
-            ON CONFLICT (cache_key) DO UPDATE SET
-                data = EXCLUDED.data, created_at = NOW()
-        """, (json.dumps(data), epoch))
+        db.cursor.execute(
+            "INSERT INTO blacklist (uuid, ign, reason) VALUES (%s, %s, %s) "
+            "ON CONFLICT (uuid) DO UPDATE SET ign = EXCLUDED.ign, reason = EXCLUDED.reason",
+            (uuid, ign, reason),
+        )
         db.connection.commit()
-    except Exception:
-        pass
+    finally:
+        db.close()
+
+
+def remove_blacklist_entry(uuid: str) -> bool:
+    """Remove a player from the blacklist. Returns True if removed."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("DELETE FROM blacklist WHERE uuid = %s", (uuid,))
+        removed = db.cursor.rowcount > 0
+        db.connection.commit()
+        return removed
     finally:
         db.close()
 
