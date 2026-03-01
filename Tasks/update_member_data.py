@@ -477,7 +477,8 @@ class UpdateMemberData(commands.Cog):
                     self.request_times.popleft()
                 if len(self.request_times)>=RATE_LIMIT:
                     wait=(self.request_times[0]+timedelta(minutes=1)-datetime.datetime.now(timezone.utc)).total_seconds()
-                    log(INFO, f"Rate limit reached, sleeping {wait:.1f}s", context="update_member_data")
+                    if wait > 5:
+                        log(INFO, f"Rate limit reached, sleeping {wait:.1f}s", context="update_member_data")
                     await asyncio.sleep(wait)
                 self.request_times.append(datetime.datetime.now(timezone.utc))
                 res=await asyncio.to_thread(getPlayerDatav3,m['uuid'])
