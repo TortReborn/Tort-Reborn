@@ -479,14 +479,14 @@ class NewMember(Modal):
 
         if len(rows) != 0:
             db.cursor.execute(
-                'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s WHERE discord_id = %s',
+                'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s, linked = TRUE WHERE discord_id = %s',
                 (starting_rank, self.children[0].value, pdata.wars, pdata.UUID, self.user.id)
             )
             db.connection.commit()
         else:
             db.cursor.execute(
                 'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join) VALUES (%s, %s, %s, %s, %s, %s)',
-                (self.user.id, pdata.username, pdata.UUID, False, starting_rank, pdata.wars)
+                (self.user.id, pdata.username, pdata.UUID, True, starting_rank, pdata.wars)
             )
             db.connection.commit()
         db.close()

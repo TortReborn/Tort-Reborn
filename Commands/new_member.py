@@ -79,12 +79,12 @@ class NewMember(commands.Cog):
 
             if len(rows) != 0:
                 db.cursor.execute(
-                    'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s WHERE discord_id = %s',
+                    'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s, linked = TRUE WHERE discord_id = %s',
                     (starting_rank, ign, pdata.wars, pdata.UUID, user.id))
                 db.connection.commit()
             else:
                 db.cursor.execute(
-                    'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join) VALUES (%s, %s, %s, False, %s, %s)',
+                    'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join) VALUES (%s, %s, %s, True, %s, %s)',
                     (user.id, pdata.username, pdata.UUID, starting_rank, pdata.wars))
                 db.connection.commit()
             db.close()
