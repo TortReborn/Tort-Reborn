@@ -179,6 +179,7 @@ extensions = [
     'Commands.agenda',
     'Commands.wave_promote',
     'Commands.app_commands',
+    'Commands.kick_list',
 
     # Dev Commands
     'Commands.render_text',
@@ -210,6 +211,7 @@ extensions = [
     'Tasks.cache_guild_colors',
     'Tasks.check_website_apps',
     'Tasks.sync_vote_counts',
+    'Tasks.kick_list_tracker',
 ]
 
 for ext in extensions:
