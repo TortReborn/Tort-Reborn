@@ -722,6 +722,8 @@ class ApplicationCommands(commands.Cog):
                             f':no_entry: Player present on blacklist!\n'
                             f'**Name:** {pdata.username}\n**UUID:** {pdata.UUID}'
                         )
+                        if player.get('reason'):
+                            blacklist_warning += f'\n**Reason:** {player["reason"]}'
 
         # Update DB with the detected type, IGN, and mark complete
         db = DB(); db.connect()

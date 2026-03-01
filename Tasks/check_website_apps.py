@@ -258,10 +258,13 @@ class CheckWebsiteApps(commands.Cog):
                     blacklist = get_blacklist()
                     for player in blacklist:
                         if pdata.UUID == player["UUID"]:
-                            poll_embed.description = (
+                            desc = (
                                 f":no_entry: Player present on blacklist!\n"
                                 f"**Name:** {pdata.username}\n**UUID:** {pdata.UUID}"
                             )
+                            if player.get("reason"):
+                                desc += f"\n**Reason:** {player['reason']}"
+                            poll_embed.description = desc
                             break
             except Exception as e:
                 log(ERROR, f"Stats image error for {ign}: {e}", context="check_website_apps")
