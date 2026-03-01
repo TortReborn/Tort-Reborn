@@ -29,12 +29,12 @@ class ShellExchange(commands.Cog):
     # Create command groups
     shell_exchange_group = discord.SlashCommandGroup(
         "shell_exchange",
-        "ADMIN: Shell exchange commands",
+        "Shell exchange commands",
         guild_ids=ALL_GUILD_IDS,
-        default_member_permissions=discord.Permissions(administrator=True),
+        default_member_permissions=discord.Permissions(manage_roles=True),
     )
-    edit_group = shell_exchange_group.create_subgroup("edit", "ADMIN: Edit shell exchange items")
-    view_group = shell_exchange_group.create_subgroup("view", "ADMIN: View shell exchange items")
+    edit_group = shell_exchange_group.create_subgroup("edit", "Edit shell exchange items")
+    view_group = shell_exchange_group.create_subgroup("view", "View shell exchange items")
 
     def __init__(self, client):
         self.client = client
