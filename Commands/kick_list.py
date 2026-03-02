@@ -42,7 +42,15 @@ class KickList(commands.Cog):
             return
 
         username, uuid = result
-        added_by = ctx.author.display_name
+
+        def _get_actor_ign(discord_id):
+            db = DB(); db.connect()
+            db.cursor.execute("SELECT ign FROM discord_links WHERE discord_id = %s", (discord_id,))
+            row = db.cursor.fetchone()
+            db.close()
+            return row[0] if row else None
+
+        added_by = await asyncio.to_thread(_get_actor_ign, ctx.author.id) or ctx.author.display_name
 
         await asyncio.to_thread(_add_to_kick_list_sync, uuid, username, tier, added_by)
         priority = {1: "High", 2: "Medium", 3: "Low"}[tier]
