@@ -61,7 +61,7 @@ class SyncVoteCounts(commands.Cog):
                     else:
                         continue  # No votes to display
 
-                await poll_msg.edit(embed=embed, view=ApplicationVoteView())
+                await poll_msg.edit(embed=embed, view=ApplicationVoteView(), attachments=poll_msg.attachments)
 
             except Exception as e:
                 log(ERROR, f"Error syncing votes for app {app_id}: {e}", context="sync_vote_counts")
