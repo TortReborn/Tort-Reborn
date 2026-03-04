@@ -286,35 +286,35 @@ class CheckApps(commands.Cog):
 
         # --- Denied apps: 24 hours after review ---
         denied_rows = await asyncio.to_thread(self._fetch_auto_close_denied)
-        for app_id, channel_id in denied_rows:
+        for app_id, channel_id, discord_id in denied_rows:
             try:
-                await self._auto_close_channel(guild, closed_cat, channel_id,
+                await self._auto_close_channel(guild, closed_cat, channel_id, discord_id,
                                                "This application has been automatically closed.")
             except Exception as e:
                 log(ERROR, f"Error closing denied app {app_id}: {e}", context="check_apps")
 
         # --- Accepted apps: user is linked in discord_links (joined + processed) + 1h after review ---
         accepted_guild_rows = await asyncio.to_thread(self._fetch_auto_close_accepted, "guild")
-        for app_id, channel_id in accepted_guild_rows:
+        for app_id, channel_id, discord_id in accepted_guild_rows:
             try:
                 await self._auto_close_channel(
-                    guild, closed_cat, channel_id,
+                    guild, closed_cat, channel_id, discord_id,
                     "This application has been automatically closed."
                 )
             except Exception as e:
                 log(ERROR, f"Error closing accepted guild app {app_id}: {e}", context="check_apps")
 
         accepted_community_rows = await asyncio.to_thread(self._fetch_auto_close_accepted, "community")
-        for app_id, channel_id in accepted_community_rows:
+        for app_id, channel_id, discord_id in accepted_community_rows:
             try:
                 await self._auto_close_channel(
-                    guild, closed_cat, channel_id,
+                    guild, closed_cat, channel_id, discord_id,
                     "This application has been automatically closed."
                 )
             except Exception as e:
                 log(ERROR, f"Error closing accepted community app {app_id}: {e}", context="check_apps")
 
-    async def _auto_close_channel(self, guild, closed_cat, channel_id, message):
+    async def _auto_close_channel(self, guild, closed_cat, channel_id, discord_id, message):
         """Move a web app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
         channel = self.client.get_channel(channel_id)
         if not channel:
@@ -327,6 +327,20 @@ class CheckApps(commands.Cog):
         if getattr(channel, "category", None) == closed_cat:
             return
 
+        # Revoke applicant's access to the channel
+        if discord_id:
+            member = guild.get_member(int(discord_id))
+            if member is None:
+                try:
+                    member = await guild.fetch_member(int(discord_id))
+                except Exception:
+                    member = None
+            if member:
+                try:
+                    await channel.set_permissions(member, overwrite=None)
+                except discord.Forbidden:
+                    pass
+
         await channel.send(message)
         await channel.edit(category=closed_cat)
 
@@ -337,7 +351,7 @@ class CheckApps(commands.Cog):
         db.connect()
         try:
             db.cursor.execute(
-                """SELECT id, channel_id FROM applications
+                """SELECT id, channel_id, discord_id FROM applications
                    WHERE status = 'denied'
                      AND poll_status != ':red_circle: Closed'
                      AND reviewed_at IS NOT NULL
@@ -355,7 +369,7 @@ class CheckApps(commands.Cog):
         db.connect()
         try:
             db.cursor.execute(
-                """SELECT a.id, a.channel_id FROM applications a
+                """SELECT a.id, a.channel_id, a.discord_id FROM applications a
                    JOIN discord_links dl ON dl.discord_id = CAST(a.discord_id AS BIGINT)
                    WHERE a.status = 'accepted'
                      AND a.application_type = %s
