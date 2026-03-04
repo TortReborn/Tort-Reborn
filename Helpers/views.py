@@ -147,7 +147,7 @@ async def _update_embed_votes(interaction: discord.Interaction, counts: dict):
         embed.add_field(name="Votes", value=vote_text, inline=False)
 
     try:
-        await msg.edit(embed=embed, view=ApplicationVoteView())
+        await msg.edit(embed=embed, view=ApplicationVoteView(), attachments=msg.attachments)
     except Exception as e:
         log(ERROR, f"Failed to update poll embed: {e}", context="views")
 
@@ -171,7 +171,7 @@ async def _update_poll_embed_by_msg(poll_msg: discord.Message, counts: dict):
         embed.add_field(name="Votes", value=vote_text, inline=False)
 
     try:
-        await poll_msg.edit(embed=embed, view=ApplicationVoteView())
+        await poll_msg.edit(embed=embed, view=ApplicationVoteView(), attachments=poll_msg.attachments)
     except Exception as e:
         log(ERROR, f"Failed to update poll embed: {e}", context="views")
 
