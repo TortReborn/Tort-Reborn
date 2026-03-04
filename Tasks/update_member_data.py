@@ -674,7 +674,7 @@ class UpdateMemberData(commands.Cog):
                 db.cursor.execute(
                     """SELECT dl.discord_id, dl.app_channel
                        FROM discord_links dl
-                       WHERE REPLACE(dl.uuid, '-', '') = REPLACE(%s, '-', '')
+                       WHERE REPLACE(dl.uuid::text, '-', '') = REPLACE(%s, '-', '')
                          AND dl.linked = FALSE
                          AND dl.app_channel IS NOT NULL""",
                     (uuid_str,)
