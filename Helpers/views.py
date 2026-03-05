@@ -4,6 +4,7 @@ import discord
 
 from Helpers.database import DB
 from Helpers.logger import log, ERROR, INFO
+from Helpers.poll_edit import safe_edit_poll
 from Helpers.variables import MEMBER_APP_CHANNEL_ID
 
 
@@ -126,54 +127,26 @@ def _format_vote_field(counts: dict) -> str:
     return f"Accept: {counts['accept']} | Deny: {counts['deny']} | Abstain: {counts['abstain']}"
 
 
-async def _update_embed_votes(interaction: discord.Interaction, counts: dict):
-    """Update the poll embed with current vote counts."""
-    msg = interaction.message
-    if not msg or not msg.embeds:
-        return
-
-    embed = msg.embeds[0].copy()
+async def _update_embed_votes(channel: discord.TextChannel, message_id: int, counts: dict):
+    """Update the poll embed with current vote counts using safe editing."""
     vote_text = _format_vote_field(counts)
 
-    # Find and update or add the Votes field
-    found = False
-    for i, field in enumerate(embed.fields):
-        if field.name == "Votes":
-            embed.set_field_at(i, name="Votes", value=vote_text, inline=False)
-            found = True
-            break
+    def _modify(embed: discord.Embed):
+        found = False
+        for i, field in enumerate(embed.fields):
+            if field.name == "Votes":
+                embed.set_field_at(i, name="Votes", value=vote_text, inline=False)
+                found = True
+                break
+        if not found:
+            embed.add_field(name="Votes", value=vote_text, inline=False)
 
-    if not found:
-        embed.add_field(name="Votes", value=vote_text, inline=False)
-
-    try:
-        await msg.edit(embed=embed, view=ApplicationVoteView(), attachments=msg.attachments)
-    except Exception as e:
-        log(ERROR, f"Failed to update poll embed: {e}", context="views")
+    await safe_edit_poll(channel, message_id, modify_embed=_modify)
 
 
 async def _update_poll_embed_by_msg(poll_msg: discord.Message, counts: dict):
     """Update the poll embed on a fetched message with current vote counts."""
-    if not poll_msg.embeds:
-        return
-
-    embed = poll_msg.embeds[0].copy()
-    vote_text = _format_vote_field(counts)
-
-    found = False
-    for i, field in enumerate(embed.fields):
-        if field.name == "Votes":
-            embed.set_field_at(i, name="Votes", value=vote_text, inline=False)
-            found = True
-            break
-
-    if not found:
-        embed.add_field(name="Votes", value=vote_text, inline=False)
-
-    try:
-        await poll_msg.edit(embed=embed, view=ApplicationVoteView(), attachments=poll_msg.attachments)
-    except Exception as e:
-        log(ERROR, f"Failed to update poll embed: {e}", context="views")
+    await _update_embed_votes(poll_msg.channel, poll_msg.id, counts)
 
 
 class ApplicationVoteView(discord.ui.View):
@@ -230,7 +203,7 @@ class ApplicationVoteView(discord.ui.View):
             # Remove the vote (toggle off)
             await asyncio.to_thread(_delete_vote, app_id, voter_id)
             counts = await asyncio.to_thread(_get_vote_counts, app_id)
-            await _update_embed_votes(interaction, counts)
+            await _update_embed_votes(interaction.channel, interaction.message.id, counts)
             await interaction.followup.send(
                 f"Your **{vote}** vote has been removed.", ephemeral=True
             )
@@ -238,7 +211,7 @@ class ApplicationVoteView(discord.ui.View):
             # Upsert the vote
             await asyncio.to_thread(_upsert_vote, app_id, voter_id, voter_name, vote)
             counts = await asyncio.to_thread(_get_vote_counts, app_id)
-            await _update_embed_votes(interaction, counts)
+            await _update_embed_votes(interaction.channel, interaction.message.id, counts)
             action = "changed to" if current_vote else "recorded as"
             await interaction.followup.send(
                 f"Your vote has been {action} **{vote}**.", ephemeral=True
@@ -324,7 +297,6 @@ class ThreadVoteView(discord.ui.View):
             return
 
         try:
-            poll_msg = await exec_chan.fetch_message(poll_msg_id)
-            await _update_poll_embed_by_msg(poll_msg, counts)
+            await _update_embed_votes(exec_chan, poll_msg_id, counts)
         except Exception as e:
             log(ERROR, f"Failed to sync poll embed from thread: {e}", context="views")

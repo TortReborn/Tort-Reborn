@@ -1,6 +1,7 @@
 import asyncio
 
 from Helpers.database import DB
+from Helpers.poll_edit import safe_edit_poll
 from Helpers.variables import MEMBER_APP_CHANNEL_ID
 
 
@@ -38,24 +39,15 @@ async def update_poll_embed(client, channel_id: int, new_status: str, colour: in
     if not exec_chan:
         return
 
-    try:
-        poll_msg = await exec_chan.fetch_message(poll_message_id)
-    except Exception:
-        return
-
-    if not poll_msg.embeds:
-        return
-
-    embed = poll_msg.embeds[0].copy()
-    embed.colour = colour
-
-    for i, field in enumerate(embed.fields):
-        if field.name == "Status":
-            embed.set_field_at(i, name="Status", value=new_status, inline=True)
-            break
+    def _modify(embed):
+        embed.colour = colour
+        for i, field in enumerate(embed.fields):
+            if field.name == "Status":
+                embed.set_field_at(i, name="Status", value=new_status, inline=True)
+                break
 
     await asyncio.to_thread(_update_db_status, channel_id, new_status)
-    await poll_msg.edit(embed=embed, attachments=poll_msg.attachments)
+    await safe_edit_poll(exec_chan, poll_message_id, modify_embed=_modify, include_view=False)
 
 
 async def update_web_poll_embed(client, channel_id: int, new_status: str, colour: int):
@@ -111,36 +103,30 @@ async def update_web_poll_embed(client, channel_id: int, new_status: str, colour
     if not exec_chan:
         return
 
-    try:
-        poll_msg = await exec_chan.fetch_message(poll_message_id)
-    except Exception:
-        return
-
-    if not poll_msg.embeds:
-        return
-
-    embed = poll_msg.embeds[0].copy()
-    embed.colour = colour
-
-    for i, field in enumerate(embed.fields):
-        if field.name == "Status":
-            embed.set_field_at(i, name="Status", value=new_status, inline=True)
-            break
-
-    # Update vote counts in embed
+    # Pre-fetch vote counts outside the lock to minimize lock hold time
+    counts = None
     if app_id:
         counts = await asyncio.to_thread(_get_vote_counts, app_id)
-        total = counts["accept"] + counts["deny"] + counts["abstain"]
-        if total > 0:
-            vote_text = f"Accept: {counts['accept']} | Deny: {counts['deny']} | Abstain: {counts['abstain']}"
-            found_votes = False
-            for i, field in enumerate(embed.fields):
-                if field.name == "Votes":
-                    embed.set_field_at(i, name="Votes", value=vote_text, inline=False)
-                    found_votes = True
-                    break
-            if not found_votes:
-                embed.add_field(name="Votes", value=vote_text, inline=False)
+
+    def _modify(embed):
+        embed.colour = colour
+        for i, field in enumerate(embed.fields):
+            if field.name == "Status":
+                embed.set_field_at(i, name="Status", value=new_status, inline=True)
+                break
+
+        if counts:
+            total = counts["accept"] + counts["deny"] + counts["abstain"]
+            if total > 0:
+                vote_text = f"Accept: {counts['accept']} | Deny: {counts['deny']} | Abstain: {counts['abstain']}"
+                found_votes = False
+                for i, field in enumerate(embed.fields):
+                    if field.name == "Votes":
+                        embed.set_field_at(i, name="Votes", value=vote_text, inline=False)
+                        found_votes = True
+                        break
+                if not found_votes:
+                    embed.add_field(name="Votes", value=vote_text, inline=False)
 
     await asyncio.to_thread(_update_db_status, channel_id, new_status)
-    await poll_msg.edit(embed=embed, attachments=poll_msg.attachments)
+    await safe_edit_poll(exec_chan, poll_message_id, modify_embed=_modify, include_view=False)
