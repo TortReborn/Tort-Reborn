@@ -63,9 +63,9 @@ def _strict_schema(model: type[BaseModel]) -> dict:
 def query(
     instructions: str,
     input_text: str,
-    model: str = "gpt-4.1-nano",
+    model: str = "gpt-5-nano",
     json_schema: type[BaseModel] | None = None,
-    temperature: float = 0.0,
+    temperature: float | None = None,
     max_tokens: int = 500,
 ) -> dict:
     client = _get_client()
@@ -74,9 +74,10 @@ def query(
             "model": model,
             "instructions": instructions,
             "input": input_text,
-            "temperature": temperature,
             "max_output_tokens": max_tokens,
         }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
         if json_schema is not None:
             kwargs["text"] = {
                 "format": {
@@ -98,7 +99,73 @@ def query(
 
 
 
+class RecruiterSource(BaseModel):
+    recruiter: str
+    certainty: float
+
+
 _PARSE_INSTRUCTIONS = """\
+You are extracting the recruiter or referral source from a Wynncraft guild application \
+for The Aquarium [TAq].
+
+The input is the applicant's answer to the question: "How did you learn about TAq / \
+reference for application? If recruited via party finder, include the recruiter's IGN."
+
+Extract the recruiter or source:
+- If the applicant was referred by a specific player, return that player's in-game name \
+(strip surrounding text like "my friend X told me" → just return "X").
+- If multiple players are mentioned, return them comma-separated (e.g. "Player1, Player2").
+- If the source is a general channel or platform, normalize it:
+  - "wynncraft discord", "wynn discord", "the wynncraft discord server" → "wynncord"
+  - "server list", "guild list" → "server list"
+  - "forums", "wynncraft forums" → "forums"
+  - "party finder", "found in party" → "party finder"
+  - Other general sources (e.g. "Google", "YouTube", "Reddit") → return as-is in lowercase.
+- If the answer is empty or you cannot determine a source, return an empty string \
+with certainty 0.0.
+
+Set certainty (0.0-1.0) based on how confident you are in the extraction."""
+
+
+class RecruiterMatch(BaseModel):
+    matched_name: str
+    confidence: float
+
+
+_RECRUITER_MATCH_INSTRUCTIONS = """\
+You are matching a recruiter name from a guild application to the correct member in \
+the guild member list. The recruiter name may be misspelled, abbreviated, or a partial match.
+
+Given the recruiter input and a list of guild member names, find the best match.
+
+Rules:
+- If a name clearly matches (exact, case-insensitive, or obvious typo), return it with \
+high confidence (0.9-1.0).
+- If a name partially matches but is ambiguous, return the best guess with lower confidence.
+- If no reasonable match exists, return an empty string with confidence 0.0.
+- Only return one name, even if multiple partial matches exist — pick the best one."""
+
+
+def parse_recruiter_source(reference_text: str) -> dict:
+    """Extract and normalize recruiter/source from the reference field."""
+    result = query(
+        instructions=_PARSE_INSTRUCTIONS,
+        input_text=reference_text,
+        json_schema=RecruiterSource,
+        model="gpt-5-nano",
+        max_tokens=200,
+    )
+    if result["error"]:
+        return {"recruiter": "", "certainty": 0.0, "error": result["error"]}
+    data = result["data"]
+    return {
+        "recruiter": data.get("recruiter", ""),
+        "certainty": data.get("certainty", 0.0),
+        "error": None,
+    }
+
+
+_LEGACY_PARSE_INSTRUCTIONS = """\
 You are parsing a Wynncraft guild application for The Aquarium [TAq].
 
 Extract the following from the application text:
@@ -128,32 +195,13 @@ Look for language like "I was in the guild before", "returning member", "rejoin"
 Set to true if any such language is present, false otherwise."""
 
 
-class RecruiterMatch(BaseModel):
-    matched_name: str
-    confidence: float
-
-
-_RECRUITER_MATCH_INSTRUCTIONS = """\
-You are matching a recruiter name from a guild application to the correct member in \
-the guild member list. The recruiter name may be misspelled, abbreviated, or a partial match.
-
-Given the recruiter input and a list of guild member names, find the best match.
-
-Rules:
-- If a name clearly matches (exact, case-insensitive, or obvious typo), return it with \
-high confidence (0.9-1.0).
-- If a name partially matches but is ambiguous, return the best guess with lower confidence.
-- If no reasonable match exists, return an empty string with confidence 0.0.
-- Only return one name, even if multiple partial matches exist — pick the best one."""
-
-
 def parse_application(message_text: str) -> dict:
+    """Legacy: parse a full application message for IGN, recruiter, etc."""
     result = query(
-        instructions=_PARSE_INSTRUCTIONS,
+        instructions=_LEGACY_PARSE_INSTRUCTIONS,
         input_text=message_text,
         json_schema=ApplicationParse,
-        model="gpt-4.1-nano",
-        temperature=0.0,
+        model="gpt-5-nano",
         max_tokens=200,
     )
     if result["error"]:
@@ -176,8 +224,7 @@ def match_recruiter_name(recruiter_input: str, member_names: list[str]) -> dict:
         instructions=_RECRUITER_MATCH_INSTRUCTIONS,
         input_text=input_text,
         json_schema=RecruiterMatch,
-        model="gpt-4.1-nano",
-        temperature=0.0,
+        model="gpt-5-nano",
         max_tokens=100,
     )
     if result["error"]:
@@ -236,8 +283,7 @@ def detect_application(message_text: str) -> dict:
         instructions=_DETECT_INSTRUCTIONS,
         input_text=message_text,
         json_schema=ApplicationDetection,
-        model="gpt-4.1-nano",
-        temperature=0.0,
+        model="gpt-5-nano",
         max_tokens=200,
     )
     if result["error"]:
@@ -284,8 +330,7 @@ def detect_rejoin_intent(message_text: str) -> dict:
         instructions=_REJOIN_DETECT_INSTRUCTIONS,
         input_text=message_text,
         json_schema=RejoinDetection,
-        model="gpt-4.1-nano",
-        temperature=0.0,
+        model="gpt-5-nano",
         max_tokens=200,
     )
     if result["error"]:
@@ -316,8 +361,7 @@ def extract_ign(application_text: str) -> dict:
         instructions=_IGN_INSTRUCTIONS,
         input_text=application_text,
         json_schema=IGNExtraction,
-        model="gpt-4.1-nano",
-        temperature=0.0,
+        model="gpt-5-nano",
         max_tokens=100,
     )
     if result["error"]:
@@ -375,8 +419,7 @@ def validate_application_completeness(message_text: str) -> dict:
         instructions=_VALIDATE_INSTRUCTIONS,
         input_text=message_text,
         json_schema=ApplicationCompleteness,
-        model="gpt-4.1-mini",
-        temperature=0.0,
+        model="gpt-5-nano",
         max_tokens=400,
     )
     if result["error"]:
