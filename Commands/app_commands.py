@@ -11,7 +11,7 @@ from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3
-from Helpers.openai_helper import parse_application, match_recruiter_name
+from Helpers.openai_helper import parse_recruiter_source, match_recruiter_name
 from Helpers.sheets import add_row
 from Helpers.variables import (
     ALL_GUILD_IDS,
@@ -261,7 +261,8 @@ class WebAppCommands(commands.Cog):
         await self._update_exec_thread(app["thread_id"], "accepted", "Guild Member", ign)
 
         # Recruiter tracking
-        await self._process_recruiter_tracking(channel, ign, int(app["discord_id"]), app["id"])
+        reference = (app["answers"].get("reference") or "").strip()
+        await self._process_recruiter_tracking(channel, ign, int(app["discord_id"]), app["id"], reference=reference)
 
         await ctx.followup.send(feedback, ephemeral=True)
 
@@ -645,37 +646,28 @@ class WebAppCommands(commands.Cog):
 
     # --- Recruiter tracking ---
 
-    async def _process_recruiter_tracking(self, channel, ign, applicant_discord_id=None, app_id=None):
+    async def _process_recruiter_tracking(self, channel, ign, applicant_discord_id=None, app_id=None, reference=None):
         num = str(app_id) if app_id else channel.name
 
-        text = ""
-        async for msg in channel.history(limit=50, oldest_first=True):
-            if msg.embeds:
-                for embed in msg.embeds:
-                    for field in embed.fields:
-                        text += f"{field.name}: {field.value}\n"
-                    if embed.description:
-                        text += f"{embed.description}\n"
-            elif not msg.author.bot:
-                text += f"{msg.content}\n"
-
-        if not text.strip():
-            return
-
-        result = await asyncio.to_thread(parse_application, text)
-        if result.get("error"):
-            err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
-            if err_ch:
-                await err_ch.send(
-                    f"## Recruiter Tracker - OpenAI Error\n"
-                    f"**Ticket:** `{channel.name}`\n"
-                    f"```\n{result['error'][:500]}\n```"
-                )
-            return
-
-        recruiter = result.get("recruiter", "")
-        certainty = result.get("certainty", 0.0)
-        is_old_member = result.get("is_old_member", False)
+        # Parse the reference field with AI to normalize recruiter/source
+        reference_text = (reference or "").strip()
+        if not reference_text:
+            recruiter = ""
+            certainty = 0.0
+        else:
+            result = await asyncio.to_thread(parse_recruiter_source, reference_text)
+            if result.get("error"):
+                err_ch = self.client.get_channel(ERROR_CHANNEL_ID)
+                if err_ch:
+                    await err_ch.send(
+                        f"## Recruiter Tracker - OpenAI Error\n"
+                        f"**Ticket:** `{channel.name}`\n"
+                        f"```\n{result['error'][:500]}\n```"
+                    )
+                return
+            recruiter = result.get("recruiter", "")
+            certainty = result.get("certainty", 0.0)
+        is_old_member = False
 
         recruiter_format = None
         paid = "NYP"

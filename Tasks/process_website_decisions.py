@@ -106,7 +106,7 @@ class ProcessWebsiteDecisions(commands.Cog):
         if status == "accepted":
             if app_type == "guild":
                 await self._accept_guild(app_id, channel, applicant, discord_id,
-                                         discord_username, ign, thread_id, invite_image)
+                                         discord_username, ign, thread_id, invite_image, answers)
             else:
                 await self._accept_community(app_id, channel, applicant, discord_id,
                                              discord_username, ign, thread_id)
@@ -119,7 +119,7 @@ class ProcessWebsiteDecisions(commands.Cog):
     # ------------------------------------------------------------------
 
     async def _accept_guild(self, app_id, channel, applicant, discord_id,
-                            discord_username, ign, thread_id, invite_image):
+                            discord_username, ign, thread_id, invite_image, answers=None):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
         partytort = discord.utils.get(channel.guild.emojis, name="partytort")
         party_emoji = str(partytort) if partytort else "\U0001F389"
@@ -206,10 +206,11 @@ class ProcessWebsiteDecisions(commands.Cog):
         await self._update_exec_thread(thread_id, "accepted", "Guild Member", ign)
 
         # Recruiter tracking (delegate to AppCommands cog if available)
-        app_cog = self.client.get_cog("AppCommands")
+        reference = (answers.get("reference") or "").strip() if isinstance(answers, dict) else ""
+        app_cog = self.client.get_cog("WebAppCommands")
         if app_cog and hasattr(app_cog, "_process_recruiter_tracking"):
             try:
-                await app_cog._process_recruiter_tracking(channel, ign, int(discord_id), app_id)
+                await app_cog._process_recruiter_tracking(channel, ign, int(discord_id), app_id, reference=reference)
             except Exception as e:
                 log(ERROR, f"Recruiter tracking failed for app {app_id}: {e}",
                     context="process_website_decisions")
