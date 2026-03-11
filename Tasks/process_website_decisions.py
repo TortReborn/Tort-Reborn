@@ -112,7 +112,7 @@ class ProcessWebsiteDecisions(commands.Cog):
                                              discord_username, ign, thread_id)
         elif status == "denied":
             await self._deny(app_id, app_type, channel, applicant, discord_id,
-                             discord_username, thread_id)
+                             discord_username, ign, thread_id)
 
     # ------------------------------------------------------------------
     # Accept — Guild
@@ -193,7 +193,7 @@ class ProcessWebsiteDecisions(commands.Cog):
                 except discord.Forbidden:
                     pass
             try:
-                await channel.edit(name=f"web-invited-{discord_username}")
+                await channel.edit(name=f"accepted-{app_id}-{ign}")
             except discord.Forbidden:
                 pass
             await update_web_poll_embed(self.client, channel.id,
@@ -263,7 +263,7 @@ class ProcessWebsiteDecisions(commands.Cog):
 
         # Rename channel
         try:
-            await channel.edit(name=f"web-c-accepted-{discord_username}")
+            await channel.edit(name=f"c-accepted-{app_id}-{ign}")
         except discord.Forbidden:
             pass
 
@@ -282,7 +282,7 @@ class ProcessWebsiteDecisions(commands.Cog):
     # ------------------------------------------------------------------
 
     async def _deny(self, app_id, app_type, channel, applicant, discord_id,
-                    discord_username, thread_id):
+                    discord_username, ign, thread_id):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
 
         await channel.send(
@@ -295,8 +295,8 @@ class ProcessWebsiteDecisions(commands.Cog):
         )
 
         # Rename channel
-        new_name = (f"web-denied-{discord_username}" if app_type == "guild"
-                    else f"web-c-denied-{discord_username}")
+        new_name = (f"denied-{app_id}-{ign}" if app_type == "guild"
+                    else f"c-denied-{app_id}-{ign}")
         try:
             await channel.edit(name=new_name)
         except discord.Forbidden:
