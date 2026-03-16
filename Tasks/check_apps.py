@@ -1,12 +1,10 @@
 import asyncio
-import datetime
 
 import discord
 from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
-from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
 from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME
 
@@ -15,170 +13,11 @@ class CheckApps(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @tasks.loop(minutes=1)
-    async def check_apps(self):
-        # --- 8-hour reminder for open applications ---
-        db = DB()
-        db.connect()
-        db.cursor.execute(
-            """
-            SELECT channel, created_at, thread_id
-              FROM new_app
-             WHERE status   = ':green_circle: Opened'
-               AND reminder = FALSE
-               AND posted   = TRUE
-            """
-        )
-        rows = db.cursor.fetchall()
-        db.close()
-
-        now_utc = datetime.datetime.now(datetime.timezone.utc)
-
-        for channel_id, created_at, thread_id in rows:
-            if thread_id is None:
-                continue
-
-            try:
-                elapsed = (now_utc - created_at).total_seconds()
-
-                if elapsed < 8 * 3600:
-                    continue
-
-                app_channel = self.client.get_channel(channel_id)
-                if not app_channel or app_channel.category.name != "Guild Applications":
-                    continue
-
-                thread = self.client.get_channel(thread_id)
-                if not thread:
-                    continue
-
-                hours = int(elapsed // 3600)
-                await thread.send(f"{APP_MANAGER_ROLE_MENTION} {hours} hours passed since app creation.")
-
-                db = DB()
-                db.connect()
-                db.cursor.execute(
-                    "UPDATE new_app SET reminder = TRUE WHERE channel = %s",
-                    (channel_id,)
-                )
-                db.connection.commit()
-                db.close()
-
-            except Exception as e:
-                log(ERROR, f"Error for row {(channel_id, created_at, thread_id)}: {e}", context="check_apps")
-
-    @check_apps.before_loop
-    async def before_check_apps(self):
-        await self.client.wait_until_ready()
-
     # --- Guild leave monitoring for accepted applicants ---
 
     @tasks.loop(minutes=3)
     async def check_guild_leave(self):
-        """Monitor accepted guild member applications where the player needs to leave their current guild."""
-        db = DB()
-        db.connect()
-        db.cursor.execute(
-            """
-            SELECT channel_id, thread_id, answers->>'ign' AS ign, discord_id
-              FROM applications
-             WHERE status = 'accepted'
-               AND application_type = 'guild'
-               AND guild_leave_pending = TRUE
-            """
-        )
-        rows = db.cursor.fetchall()
-        db.close()
-
-        if not rows:
-            return
-
-        for channel_id, thread_id, ign, applicant_discord_id in rows:
-            try:
-                await self._check_single_pending_leave(
-                    channel_id, thread_id, ign, applicant_discord_id
-                )
-            except Exception as e:
-                log(ERROR, f"Error for channel {channel_id}: {e}", context="check_apps")
-
-    async def _check_single_pending_leave(self, channel_id, thread_id, ign, applicant_discord_id):
-        """Check if a single pending-leave applicant has left their guild."""
-        if not ign:
-            return
-
-        # Get UUID: try discord_links first, then Mojang lookup
-        uuid = None
-        if applicant_discord_id:
-            db = DB()
-            db.connect()
-            db.cursor.execute(
-                "SELECT uuid FROM discord_links WHERE discord_id = %s",
-                (applicant_discord_id,)
-            )
-            link_row = db.cursor.fetchone()
-            db.close()
-            if link_row and link_row[0]:
-                uuid = str(link_row[0])
-
-        if not uuid:
-            uuid_data = await asyncio.to_thread(getPlayerUUID, ign)
-            uuid = uuid_data[1] if uuid_data else None
-
-        if not uuid:
-            return
-
-        # Check current guild status
-        player_data = await asyncio.to_thread(getPlayerDatav3, uuid)
-        if not isinstance(player_data, dict):
-            return  # API error, skip this cycle
-
-        guild_info = player_data.get("guild")
-        still_in_guild = bool(guild_info and isinstance(guild_info, dict) and guild_info.get("name"))
-
-        if still_in_guild:
-            return  # Player is still in a guild, check again next cycle
-
-        # --- Player has left their guild! ---
-
-        # 1. Update database
-        db = DB()
-        db.connect()
-        db.cursor.execute(
-            "UPDATE applications SET guild_leave_pending = FALSE WHERE channel_id = %s",
-            (channel_id,)
-        )
-        db.connection.commit()
-        db.close()
-
-        # 2. Post notification in exec thread
-        if thread_id:
-            thread = self.client.get_channel(thread_id)
-            if thread is None:
-                try:
-                    thread = await self.client.fetch_channel(thread_id)
-                except Exception:
-                    thread = None
-
-            if thread:
-                if getattr(thread, "archived", False):
-                    await thread.edit(archived=False)
-                await thread.send(
-                    f"{APP_MANAGER_ROLE_MENTION} **{ign}** has left their guild! "
-                    f"They can now be invited.\n"
-                    f"Run `/invite` in the ticket channel or this thread to send them the invite message."
-                )
-
-        log(INFO, f"{ign} has left their guild. Notified exec thread.", context="check_apps")
-
-    @check_guild_leave.before_loop
-    async def before_check_guild_leave(self):
-        await self.client.wait_until_ready()
-
-    # --- Guild leave monitoring for WEBSITE applications ---
-
-    @tasks.loop(minutes=3)
-    async def check_web_guild_leave(self):
-        """Monitor accepted website guild applications where the player needs to leave their current guild."""
+        """Monitor accepted guild applications where the player needs to leave their current guild."""
         db = DB()
         db.connect()
         db.cursor.execute(
@@ -198,16 +37,16 @@ class CheckApps(commands.Cog):
 
         for app_id, channel_id, thread_id, discord_id, ign in rows:
             try:
-                await self._check_web_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
+                await self._check_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
             except Exception as e:
                 log(ERROR, f"Error for app {app_id}: {e}", context="check_apps")
 
-    async def _check_web_pending_leave(self, app_id, channel_id, thread_id, ign, discord_id):
-        """Check if a website applicant with pending guild leave has left their guild."""
+    async def _check_pending_leave(self, app_id, channel_id, thread_id, ign, discord_id):
+        """Check if an applicant with pending guild leave has left their guild."""
         if not ign:
             return
 
-        # Get UUID
+        # Get UUID: try discord_links first, then Mojang lookup
         uuid = None
         if discord_id:
             db = DB()
@@ -267,15 +106,15 @@ class CheckApps(commands.Cog):
 
         log(INFO, f"{ign} has left their guild. Notified exec thread.", context="check_apps")
 
-    @check_web_guild_leave.before_loop
-    async def before_check_web_guild_leave(self):
+    @check_guild_leave.before_loop
+    async def before_check_guild_leave(self):
         await self.client.wait_until_ready()
 
-    # --- Auto-close for website applications ---
+    # --- Auto-close for applications ---
 
     @tasks.loop(minutes=5)
     async def auto_close_web_apps(self):
-        """Auto-close denied web apps after 24h and accepted web apps when user has roles."""
+        """Auto-close denied apps after 24h and accepted apps when user has roles."""
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
             return
@@ -315,7 +154,7 @@ class CheckApps(commands.Cog):
                 log(ERROR, f"Error closing accepted community app {app_id}: {e}", context="check_apps")
 
     async def _auto_close_channel(self, guild, closed_cat, channel_id, discord_id, message):
-        """Move a web app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
+        """Move an app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
         channel = self.client.get_channel(channel_id)
         if not channel:
             try:
@@ -346,7 +185,7 @@ class CheckApps(commands.Cog):
 
     @staticmethod
     def _fetch_auto_close_denied():
-        """Fetch denied web apps older than 24 hours that aren't closed yet."""
+        """Fetch denied apps older than 24 hours that aren't closed yet."""
         db = DB()
         db.connect()
         try:
@@ -364,7 +203,7 @@ class CheckApps(commands.Cog):
 
     @staticmethod
     def _fetch_auto_close_accepted(app_type):
-        """Fetch accepted web apps where the user is linked (joined + processed) and 1h+ since review."""
+        """Fetch accepted apps where the user is linked (joined + processed) and 1h+ since review."""
         db = DB()
         db.connect()
         try:
@@ -390,12 +229,8 @@ class CheckApps(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if not self.check_apps.is_running():
-            self.check_apps.start()
         if not self.check_guild_leave.is_running():
             self.check_guild_leave.start()
-        if not self.check_web_guild_leave.is_running():
-            self.check_web_guild_leave.start()
         if not self.auto_close_web_apps.is_running():
             self.auto_close_web_apps.start()
 

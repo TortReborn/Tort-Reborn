@@ -23,7 +23,7 @@ else:
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.classes import Guild, DB, BasicPlayerStats
-from Helpers.embed_updater import update_poll_embed, update_web_poll_embed
+from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
 from Helpers.variables import (
     RAID_LOG_CHANNEL_ID,
@@ -749,12 +749,6 @@ class UpdateMemberData(commands.Cog):
                 )
                 # Clear guild_leave_pending if this user had a pending-leave application
                 db.cursor.execute(
-                    """UPDATE new_app SET guild_leave_pending = FALSE
-                       WHERE applicant_discord_id = %s AND guild_leave_pending = TRUE""",
-                    (did,)
-                )
-                # Also clear for website applications
-                db.cursor.execute(
                     """UPDATE applications SET guild_leave_pending = FALSE
                        WHERE discord_id = %s::TEXT AND guild_leave_pending = TRUE""",
                     (did,)
@@ -765,9 +759,8 @@ class UpdateMemberData(commands.Cog):
 
         await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, wars_on_join, starting_rank)
 
-        # Update poll embed (try legacy new_app first, then website applications)
+        # Update poll embed
         if app_channel_id:
-            await update_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
             await update_web_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
 
         # Send welcome embed

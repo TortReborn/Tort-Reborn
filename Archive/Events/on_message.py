@@ -54,7 +54,7 @@ class OnMessage(commands.Cog):
         db = DB()
         db.connect()
         db.cursor.execute(
-            "SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id FROM new_app WHERE channel = %s",
+            "SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id, ticket FROM new_app WHERE channel = %s",
             (message.channel.id,)
         )
         row = db.cursor.fetchone()
@@ -63,7 +63,7 @@ class OnMessage(commands.Cog):
         if not row:
             return
 
-        stored_discord_id, app_type, thread_id, app_complete, app_message_id = row
+        stored_discord_id, app_type, thread_id, app_complete, app_message_id, ticket_name = row
 
         # If we don't have the applicant_discord_id yet, try to parse from Ticket Tool message
         if stored_discord_id is None:
@@ -315,10 +315,10 @@ class OnMessage(commands.Cog):
         db.connection.commit()
         db.close()
 
-        # Update poll embed to "Received" and rename channel
+        # Update poll embed to "Received" and rename channel using original ticket name from DB
         await update_poll_embed(self.client, message.channel.id, ":green_circle: Received", 0x3ED63E)
-        num_match = re.search(r'(\d+)', message.channel.name)
-        ticket_num = num_match.group(1) if num_match else message.channel.name.split("-", 1)[-1]
+        num_match = re.search(r'(\d+)', ticket_name)
+        ticket_num = num_match.group(1) if num_match else ticket_name
         try:
             await message.channel.edit(name=f"received-{ticket_num}")
         except Exception:
