@@ -9,8 +9,10 @@ import discord
 import requests
 from discord.ext import commands
 from discord.commands import SlashCommandGroup
+from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.database import DB
+from Helpers.functions import addLine, vertical_gradient, round_corners
 from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID
 
 # Display names shown in bot messages
@@ -58,6 +60,137 @@ HQ_MAX_CONNS = {
 ROLE_CHOICES  = ['Tank', 'Healer', 'DPS', 'Solo']
 HQ_CHOICES    = list(HQ_LOCATIONS.keys())
 _ROLE_ORDER   = ['Healer', 'Tank', 'DPS', 'Solo']
+
+
+def _generate_snipe_card(
+    ign, total_snipes, rank_total, rank_diff, pb_row,
+    dry_snipes, zero_conn_count, most_in_day,
+    unique_hqs, unique_guilds, first_snipe, latest_snipe,
+    top_guilds, hq_rows, teammate_rows,
+) -> Image.Image:
+    W, H = 1300, 600
+
+    # Outer edge gradient + rounded corners
+    card = vertical_gradient(W, H, '#3474eb')
+    card = round_corners(card, radius=20)
+
+    # Inner dark gradient
+    inner = vertical_gradient(W - 40, H - 40, '#0e1e3f', '#05101f')
+    card.paste(inner, (20, 20), inner)
+    draw = ImageDraw.Draw(card)
+
+    f_title = ImageFont.truetype('images/profile/5x5.ttf',  30)
+    f_label = ImageFont.truetype('images/profile/5x5.ttf',  22)
+    f_name  = ImageFont.truetype('images/profile/game.ttf', 50)
+    f_pb    = ImageFont.truetype('images/profile/game.ttf', 35)
+    f_value = ImageFont.truetype('images/profile/game.ttf', 32)
+    f_small = ImageFont.truetype('images/profile/game.ttf', 26)
+
+    ACCENT = '#fad51e'
+    SEP    = '#3474eb'
+    LX     = 38
+    LW     = 385
+    SEP_X  = 432
+
+    # ── LEFT PANEL ──────────────────────────────────────────────────────────
+
+    draw.text((LX, 28), 'SNIPE STATS', font=f_title, fill=ACCENT)
+    addLine(ign, draw, f_name, LX, 62, drop_x=5, drop_y=5)
+
+    draw.line([(LX, 122), (LX + LW, 122)], fill=SEP, width=2)
+
+    draw.text((LX, 130), 'PERSONAL BEST', font=f_label, fill=ACCENT)
+    if pb_row:
+        hq_abbr, diff, _ = pb_row
+        addLine(f"{HQ_LOCATIONS.get(hq_abbr, hq_abbr)} \u2014 {diff}k", draw, f_pb, LX, 156, drop_x=4, drop_y=4)
+    else:
+        draw.text((LX, 156), 'No snipes yet', font=f_pb, fill='#555555')
+
+    draw.line([(LX, 204), (LX + LW, 204)], fill=SEP, width=2)
+
+    def _fmt(ts):
+        return ts.strftime('%d/%m/%y') if ts else '\u2014'
+
+    draw.text((LX, 212), 'FIRST SNIPE', font=f_label, fill=ACCENT)
+    addLine(_fmt(first_snipe), draw, f_small, LX, 236, drop_x=3, drop_y=3)
+    draw.text((LX, 272), 'LATEST SNIPE', font=f_label, fill=ACCENT)
+    addLine(_fmt(latest_snipe), draw, f_small, LX, 296, drop_x=3, drop_y=3)
+
+    draw.line([(LX, 338), (LX + LW, 338)], fill=SEP, width=2)
+
+    draw.text((LX, 346), 'TOP TEAMMATES', font=f_label, fill=ACCENT)
+    if teammate_rows:
+        for i, (tm_ign, count) in enumerate(teammate_rows[:3]):
+            s = 'snipe' if count == 1 else 'snipes'
+            addLine(f'{tm_ign} \u2014 {count} {s}', draw, f_small, LX, 372 + i * 36, drop_x=3, drop_y=3)
+    else:
+        draw.text((LX, 372), 'None yet', font=f_small, fill='#555555')
+
+    # Vertical separator
+    draw.line([(SEP_X, 22), (SEP_X, 578)], fill=SEP, width=2)
+
+    # ── RIGHT PANEL — STAT BOXES ────────────────────────────────────────────
+
+    BOX_W, BOX_H = 190, 82
+    COLS_X = [450, 650, 850, 1050]
+    ROWS_Y = [22,  112]
+
+    box_img = Image.new('RGBA', (BOX_W, BOX_H), (0, 0, 0, 0))
+    ImageDraw.Draw(box_img).rounded_rectangle(
+        ((0, 0), (BOX_W - 1, BOX_H - 1)), fill=(0, 0, 0, 55), radius=8
+    )
+
+    stat_entries = [
+        ('Total Snipes',  str(total_snipes)),
+        ('Rank (Total)',  f'#{rank_total}' if rank_total else '\u2014'),
+        ('Rank (Diff.)',  f'#{rank_diff}'  if rank_diff  else '\u2014'),
+        ('Dry Snipes',    str(dry_snipes)),
+        ('0 Conn Snipes', str(zero_conn_count)),
+        ('Best Day',      str(most_in_day)),
+        ('Unique HQs',    str(unique_hqs)),
+        ('Unique Guilds', str(unique_guilds)),
+    ]
+
+    for idx, (label, value) in enumerate(stat_entries):
+        bx = COLS_X[idx % 4]
+        by = ROWS_Y[idx // 4]
+        card.paste(box_img, (bx, by), box_img)
+        draw.text((bx + 8, by + 7), label, font=f_label, fill=ACCENT)
+        val_w = draw.textbbox((0, 0), value, font=f_value)[2]
+        addLine(value, draw, f_value, bx + BOX_W - 8 - val_w, by + 38, drop_x=3, drop_y=3)
+
+    # ── RIGHT PANEL — LISTS ─────────────────────────────────────────────────
+
+    LIST_Y  = 212
+    LIST_X  = 450
+    LIST_W  = 360
+    LIST_H  = H - 40 - LIST_Y  # 348px
+
+    list_bg = Image.new('RGBA', (LIST_W, LIST_H), (0, 0, 0, 0))
+    ImageDraw.Draw(list_bg).rounded_rectangle(
+        ((0, 0), (LIST_W - 1, LIST_H - 1)), fill=(0, 0, 0, 40), radius=8
+    )
+    card.paste(list_bg, (LIST_X, LIST_Y + 18), list_bg)
+
+    # Top 3 Guilds Sniped
+    draw.text((LIST_X + 8, LIST_Y + 26), 'TOP 3 GUILDS SNIPED', font=f_label, fill=ACCENT)
+    if top_guilds:
+        for i, (tag, count) in enumerate(top_guilds[:3]):
+            addLine(f'{tag} \u2014 {count}', draw, f_small, LIST_X + 8, LIST_Y + 52 + i * 34, drop_x=3, drop_y=3)
+    else:
+        draw.text((LIST_X + 8, LIST_Y + 52), 'None yet', font=f_small, fill='#555555')
+
+    # Most Sniped HQs (stacked below guilds)
+    SECT2_Y = LIST_Y + 162
+    draw.line([(LIST_X + 8, SECT2_Y), (LIST_X + LIST_W - 8, SECT2_Y)], fill=SEP, width=1)
+    draw.text((LIST_X + 8, SECT2_Y + 8), 'MOST SNIPED HQs', font=f_label, fill=ACCENT)
+    if hq_rows:
+        for i, (abbr, count) in enumerate(hq_rows[:3]):
+            addLine(f'{HQ_LOCATIONS.get(abbr, abbr)} \u2014 {count}', draw, f_small, LIST_X + 8, SECT2_Y + 32 + i * 34, drop_x=3, drop_y=3)
+    else:
+        draw.text((LIST_X + 8, SECT2_Y + 32), 'None yet', font=f_small, fill='#555555')
+
+    return card
 
 
 def _is_dry(hq: str, conns: int) -> bool:
@@ -167,7 +300,7 @@ class SnipeTracker(commands.Cog):
         # Ephemeral confirmation embed
         conn_display = f"{conns} (Dry)" if dry else str(conns)
         embed = discord.Embed(
-            title=":crossed_swords: Snipe Logged",
+            title="Snipe Logged",
             description=f"**{HQ_LOCATIONS[hq]}** sniped from **{guild.upper()}**",
             color=0x2ecc71
         )
@@ -368,65 +501,16 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
-        embed = discord.Embed(
-            title=f":dart: Snipe Stats — {ign}",
-            color=0x3474eb
+        card = _generate_snipe_card(
+            ign, total_snipes, rank_total, rank_diff, pb_row,
+            dry_snipes, zero_conn_count, most_in_day,
+            unique_hqs, unique_guilds, first_snipe, latest_snipe,
+            top_guilds, hq_rows, teammate_rows,
         )
-
-        # Personal best
-        if pb_row:
-            hq_abbr, diff, _ = pb_row
-            embed.add_field(
-                name="Personal Best",
-                value=f"**{HQ_LOCATIONS.get(hq_abbr, hq_abbr)}** — {diff}k",
-                inline=False
-            )
-        else:
-            embed.add_field(name="Personal Best", value="No snipes logged yet.", inline=False)
-
-        def _fmt_ts(ts) -> str:
-            return ts.strftime('%d/%m/%y') if ts else "—"
-
-        # Row: rank by total | rank by difficulty | total snipes
-        embed.add_field(name="Rank (Total)",      value=f"#{rank_total}" if rank_total else "—", inline=True)
-        embed.add_field(name="Rank (Difficulty)", value=f"#{rank_diff}"  if rank_diff  else "—", inline=True)
-        embed.add_field(name="Total Snipes",      value=str(total_snipes),                        inline=True)
-
-        # Row: dry snipes | 0-conn snipes | best day
-        embed.add_field(name="Dry Snipes",    value=str(dry_snipes),      inline=True)
-        embed.add_field(name="0 Conn Snipes", value=str(zero_conn_count), inline=True)
-        embed.add_field(name="Best Day",      value=str(most_in_day),     inline=True)
-
-        # Row: unique HQs | unique guilds | spacer
-        embed.add_field(name="Unique HQs",    value=str(unique_hqs),    inline=True)
-        embed.add_field(name="Unique Guilds", value=str(unique_guilds), inline=True)
-        embed.add_field(name="\u200b",        value="\u200b",           inline=True)
-
-        # Row: first snipe | latest snipe | spacer
-        embed.add_field(name="First Snipe",  value=_fmt_ts(first_snipe),  inline=True)
-        embed.add_field(name="Latest Snipe", value=_fmt_ts(latest_snipe), inline=True)
-        embed.add_field(name="\u200b",       value="\u200b",              inline=True)
-
-        # Two list columns side by side
-        guilds_text = "\n".join(f"**{tag}** — {count}" for tag, count in top_guilds) if top_guilds else "None yet"
-        hq_text = (
-            "\n".join(f"**{HQ_LOCATIONS.get(abbr, abbr)}** — {count}" for abbr, count in hq_rows)
-            if hq_rows else "None yet"
-        )
-        embed.add_field(name="Top 3 Guilds Sniped", value=guilds_text, inline=True)
-        embed.add_field(name="Most Sniped HQs",     value=hq_text,     inline=True)
-
-        # Top 3 teammates (full width)
-        tm_text = (
-            "\n".join(
-                f"**{tm_ign}** — {count} {'snipe' if count == 1 else 'snipes'} together"
-                for tm_ign, count in teammate_rows
-            )
-            if teammate_rows else "None yet"
-        )
-        embed.add_field(name="Top 3 Teammates", value=tm_text, inline=False)
-
-        await ctx.followup.send(embed=embed)
+        buf = BytesIO()
+        card.save(buf, format='PNG')
+        buf.seek(0)
+        await ctx.followup.send(file=discord.File(buf, filename=f'snipe_{ign}.png'))
 
 
 def setup(client):
