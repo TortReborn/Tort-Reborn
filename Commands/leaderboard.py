@@ -14,7 +14,9 @@ from Helpers.classes import PlaceTemplate, Page
 from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline_with_db
 from Helpers.functions import addLine, expand_image, generate_rank_badge
 from Helpers.logger import log, ERROR
-from Helpers.variables import rank_map, discord_ranks, ALL_GUILD_IDS
+from Helpers.variables import rank_map, discord_ranks, HOME_GUILD_IDS
+
+from Helpers.pagination import add_paginator_buttons
 
 # ============================
 # Core leaderboard generator
@@ -238,18 +240,15 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         background.paste(bg_img, (img.width // 2 - bg_img.width // 2, img.height // 2 - bg_img.height // 2))
         background.paste(img, (0, 0), img)
 
-        with BytesIO() as file:
-            background.save(file, format="PNG")
-            file.seek(0)
-            t = int(time.time())
-            leaderboard_img = discord.File(file, filename=f"leaderboard{t}_{page_index}.png")
+        buf = BytesIO()
+        background.save(buf, format="PNG")
+        buf.seek(0)
+        t = int(time.time())
+        leaderboard_img = discord.File(buf, filename=f"leaderboard{t}_{page_index}.png")
         book.append(Page(content='', files=[leaderboard_img]))
 
     paginator = pages.Paginator(pages=book)
-    paginator.add_button(pages.PaginatorButton("prev", emoji="<:left_arrow:1198703157501509682>", style=discord.ButtonStyle.red))
-    paginator.add_button(pages.PaginatorButton("next", emoji="<:right_arrow:1198703156088021112>", style=discord.ButtonStyle.green))
-    paginator.add_button(pages.PaginatorButton("first", emoji="<:first_arrows:1198703152204103760>", style=discord.ButtonStyle.blurple))
-    paginator.add_button(pages.PaginatorButton("last", emoji="<:last_arrows:1198703153726627880>", style=discord.ButtonStyle.blurple))
+    add_paginator_buttons(paginator)
 
     return paginator
 
@@ -280,7 +279,7 @@ class Leaderboard(commands.Cog):
     def __init__(self, client: discord.Client):
         self.client = client
 
-    leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands', guild_ids=ALL_GUILD_IDS)
+    leaderboard_group = SlashCommandGroup('leaderboard', 'Leaderboard commands', guild_ids=HOME_GUILD_IDS)
 
     # ---- XP ----
     @leaderboard_group.command(description='Display the XP leaderboard')

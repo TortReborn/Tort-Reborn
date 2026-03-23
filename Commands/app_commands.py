@@ -14,7 +14,7 @@ from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerD
 from Helpers.openai_helper import parse_recruiter_source, match_recruiter_name
 from Helpers.sheets import add_row
 from Helpers.variables import (
-    ALL_GUILD_IDS,
+    HOME_GUILD_IDS,
     MEMBER_APP_CHANNEL_ID,
     APP_MANAGER_ROLE_MENTION,
     INVITED_CATEGORY_NAME,
@@ -31,7 +31,7 @@ class WebAppCommands(commands.Cog):
 
     app_group = SlashCommandGroup(
         'app', 'HR: Website application management commands',
-        guild_ids=ALL_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
 

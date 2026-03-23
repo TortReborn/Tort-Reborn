@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord.ext import commands
 from discord.commands import slash_command
@@ -8,14 +10,16 @@ import time
 import datetime
 import math
 
-from Helpers.variables import ALL_GUILD_IDS
+from Helpers.rate_limiter import external_rate_limit
+from Helpers.pagination import add_paginator_buttons
 
 
 class Worlds(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Shows worlds information', guild_ids=ALL_GUILD_IDS)
+    @slash_command(description='Shows worlds information')
+    @external_rate_limit()
     async def worlds(self, message,
                      order_by: discord.Option(str, choices=['Player count', 'World age'],
                                               require=True),
@@ -23,9 +27,9 @@ class Worlds(commands.Cog):
         await message.defer()
         url = 'https://athena.wynntils.com/cache/get/serverList'
 
-        data = requests.get(url, timeout=10)
+        data = await asyncio.to_thread(requests.get, url, timeout=10)
         data.raise_for_status()
-        worlds= data.json()
+        worlds = data.json()
         
         book = []
         worlds_sp = []
@@ -59,14 +63,7 @@ class Worlds(commands.Cog):
             book.append(embed)
 
         final_book = pages.Paginator(pages=book)
-        final_book.add_button(
-            pages.PaginatorButton("prev", emoji="<:left_arrow:1198703157501509682>", style=discord.ButtonStyle.red))
-        final_book.add_button(
-            pages.PaginatorButton("next", emoji="<:right_arrow:1198703156088021112>", style=discord.ButtonStyle.green))
-        final_book.add_button(pages.PaginatorButton("first", emoji="<:first_arrows:1198703152204103760>",
-                                                    style=discord.ButtonStyle.blurple))
-        final_book.add_button(pages.PaginatorButton("last", emoji="<:last_arrows:1198703153726627880>",
-                                                    style=discord.ButtonStyle.blurple))
+        add_paginator_buttons(final_book)
         await final_book.respond(message.interaction)
 
     @commands.Cog.listener()

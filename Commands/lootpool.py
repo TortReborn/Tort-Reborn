@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 import requests
 from discord.ext import commands
@@ -5,7 +7,8 @@ from discord.commands import SlashCommandGroup
 from datetime import datetime, timedelta, timezone
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from Helpers.variables import mythics, ALL_GUILD_IDS
+from Helpers.variables import mythics
+from Helpers.rate_limiter import external_rate_limit
 from Helpers.functions import wrap_text, get_multiline_text_size
 from Helpers.database import DB
 from Helpers.logger import log, ERROR
@@ -18,7 +21,6 @@ class LootPool(commands.Cog):
     lootpool = SlashCommandGroup(
         name="lootpool",
         description="Commands to fetch weekly lootpool data",
-        guild_ids=ALL_GUILD_IDS
     )
 
     def __init__(self, client):
@@ -63,23 +65,26 @@ class LootPool(commands.Cog):
                 pass
 
     async def _init_session(self):
-        session = requests.Session()
-        try:
-            session.get("https://nori.fish/api/tokens")
-        except Exception:
-            pass
-        return session
+        def _create_session():
+            session = requests.Session()
+            try:
+                session.get("https://nori.fish/api/tokens")
+            except Exception:
+                pass
+            return session
+        return await asyncio.to_thread(_create_session)
 
     @lootpool.command(
         name="aspects",
         description="Provides weekly aspects data as an image"
     )
+    @external_rate_limit()
     async def aspects(self, ctx: discord.ApplicationContext):
         await ctx.defer()
 
         # Fetch API data
         try:
-            resp = requests.get("https://nori.fish/api/aspects")
+            resp = await asyncio.to_thread(requests.get, "https://nori.fish/api/aspects", timeout=15)
             resp.raise_for_status()
             data = resp.json()
             
@@ -195,7 +200,7 @@ class LootPool(commands.Cog):
                     ty += h + line_spacing
 
         # Try to pull a timestamp from the API (fallback to now if missing)
-        ts = data.get("Timestamp")
+        ts = data.get("Timestamp") or int(time.time())
         next_rot = ts + 604800  # one week in seconds
 
         # Prepare the image file
@@ -222,6 +227,7 @@ class LootPool(commands.Cog):
         name="lootruns",
         description="Provides weekly loot run data (Mythic Only)"
     )
+    @external_rate_limit()
     async def lootruns(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         session = await self._init_session()
@@ -231,7 +237,7 @@ class LootPool(commands.Cog):
             headers['X-CSRF-Token'] = csrf_token
 
         try:
-            resp = session.get("https://nori.fish/api/lootpool", headers=headers)
+            resp = await asyncio.to_thread(session.get, "https://nori.fish/api/lootpool", headers=headers, timeout=15)
             resp.raise_for_status()
             data = resp.json()
             
@@ -251,7 +257,7 @@ class LootPool(commands.Cog):
             title="Weekly Mythic Lootpool",
             color=0x7a187a,
         )
-        embed.add_field(name=":arrows_counterclockwise: Next rotation:", value=f'<t:{(data.get("Timestamp")) + 604800}:f>')
+        embed.add_field(name=":arrows_counterclockwise: Next rotation:", value=f'<t:{(data.get("Timestamp") or int(time.time())) + 604800}:f>')
 
         loot = data.get("Loot", {})
         region_widths = []

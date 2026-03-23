@@ -9,6 +9,7 @@ from discord.ext import pages
 from Helpers.database import get_blacklist, add_blacklist_entry, remove_blacklist_entry
 from Helpers.functions import getPlayerUUID, getNameFromUUID
 from Helpers.variables import EXEC_GUILD_IDS
+from Helpers.pagination import add_paginator_buttons
 
 
 async def getBlacklistedPlayers(message: discord.AutocompleteContext):
@@ -147,14 +148,7 @@ class Blacklist(commands.Cog):
                                   description=all_data)
             book.append(embed)
         final_book = pages.Paginator(pages=book)
-        final_book.add_button(
-            pages.PaginatorButton("prev", emoji="<:left_arrow:1198703157501509682>", style=discord.ButtonStyle.red))
-        final_book.add_button(
-            pages.PaginatorButton("next", emoji="<:right_arrow:1198703156088021112>", style=discord.ButtonStyle.green))
-        final_book.add_button(pages.PaginatorButton("first", emoji="<:first_arrows:1198703152204103760>",
-                                                    style=discord.ButtonStyle.blurple))
-        final_book.add_button(pages.PaginatorButton("last", emoji="<:last_arrows:1198703153726627880>",
-                                                    style=discord.ButtonStyle.blurple))
+        add_paginator_buttons(final_book)
         await final_book.respond(message.interaction)
 
     @commands.Cog.listener()

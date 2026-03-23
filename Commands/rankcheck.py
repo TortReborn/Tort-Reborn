@@ -8,7 +8,7 @@ import asyncio
 from Helpers.classes import Guild
 from Helpers.database import DB
 from Helpers.functions import getNameFromUUID
-from Helpers.variables import discord_ranks, ALL_GUILD_IDS
+from Helpers.variables import discord_ranks, HOME_GUILD_IDS
 
 
 class ReportPaginator(discord.ui.View):
@@ -42,7 +42,7 @@ class RankCheck(commands.Cog):
 
     @slash_command(
         description='ADMIN: Check for game/discord rank & nickname consistency',
-        guild_ids=ALL_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(administrator=True),
         dm_permission=False
     )

@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from Helpers.database import DB
 from Helpers.logger import log, ERROR
-from Helpers.variables import ALL_GUILD_IDS
+from Helpers.variables import HOME_GUILD_IDS
 from Helpers.storage import save_background, get_background_file
 
 # Retrieve a list of all backgrounds available
@@ -47,7 +47,7 @@ class BackgroundAdmin(commands.Cog):
 
     background_admin_group = SlashCommandGroup('background_admin', 'ADMIN: Background admin commands',
                                          default_member_permissions=discord.Permissions(administrator=True),
-                                         guild_ids=ALL_GUILD_IDS)
+                                         guild_ids=HOME_GUILD_IDS)
 
     # Upload new PNG background to the database, required size 800x526
     @background_admin_group.command(description="ADMIN: Upload new PNG background to the database, required size 800x526")

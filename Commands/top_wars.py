@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.commands import slash_command
 
 from Helpers.database import DB, get_current_guild_data
-from Helpers.variables import IS_TEST_MODE, ALL_GUILD_IDS, SHELL_EMOJI, ANNOUNCEMENT_CHANNEL_ID
+from Helpers.variables import IS_TEST_MODE, HOME_GUILD_IDS, SHELL_EMOJI, ANNOUNCEMENT_CHANNEL_ID
 
 # Leadership ranks that are deprioritized
 LEADERSHIP_RANKS = {'Hydra', 'Narwhal', 'Dolphin'}
@@ -256,7 +256,7 @@ class TopWars(commands.Cog):
     @slash_command(
         description="ADMIN: Display and reward top warrers for the week",
         default_member_permissions=discord.Permissions(administrator=True),
-        guild_ids=ALL_GUILD_IDS
+        guild_ids=HOME_GUILD_IDS
     )
     async def top_wars(
         self,

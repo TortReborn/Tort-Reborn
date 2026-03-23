@@ -14,9 +14,9 @@ from PIL import Image, ImageFont, ImageDraw
 from Helpers.classes import PlaceTemplate, Page, Guild
 from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline_with_db
 from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge
-from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, EXEC_GUILD_IDS
+from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, HOME_GUILD_IDS
 
-all_guilds = EXEC_GUILD_IDS
+from Helpers.pagination import add_paginator_buttons
 
 # Rank order for kick suitability sorting (lower index = lower rank = kicked first)
 KICK_RANK_ORDER = {
@@ -241,15 +241,12 @@ class Activity(commands.Cog):
             pages_list.append(Page(content='', files=[file]))
 
         paginator = pages.Paginator(pages=pages_list)
-        paginator.add_button(pages.PaginatorButton("first", emoji="<:first_arrows:1198703152204103760>", style=discord.ButtonStyle.blurple))
-        paginator.add_button(pages.PaginatorButton("prev", emoji="<:left_arrow:1198703157501509682>", style=discord.ButtonStyle.red))
-        paginator.add_button(pages.PaginatorButton("next", emoji="<:right_arrow:1198703156088021112>", style=discord.ButtonStyle.green))
-        paginator.add_button(pages.PaginatorButton("last", emoji="<:last_arrows:1198703153726627880>", style=discord.ButtonStyle.blurple))
+        add_paginator_buttons(paginator)
         return paginator
 
     @slash_command(
         description='Displays activity of members',
-        guild_ids=all_guilds
+        guild_ids=HOME_GUILD_IDS,
     )
     async def activity(
         self,
@@ -281,7 +278,7 @@ class Activity(commands.Cog):
                     continue
 
                 uuid = member.get('uuid')
-                last_join_iso = member['lastJoin']
+                last_join_iso = member.get('lastJoin')
                 if not last_join_iso:
                     # TAq creation date
                     last_join_iso = "2020-03-22T11:11:17.810000Z"

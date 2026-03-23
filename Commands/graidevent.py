@@ -11,7 +11,7 @@ from discord import Option
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import ALL_GUILD_IDS
+from Helpers.variables import HOME_GUILD_IDS
 
 # simple TTL cache to avoid hammering DB
 _EVENT_CACHE = {"items": [], "ts": 0.0}
@@ -86,7 +86,7 @@ class GraidEvent(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    graid_event = SlashCommandGroup("graid-event", "HR: GRAID event commands", guild_ids=ALL_GUILD_IDS, default_member_permissions=discord.Permissions(manage_roles=True))
+    graid_event = SlashCommandGroup("graid-event", "HR: GRAID event commands", guild_ids=HOME_GUILD_IDS, default_member_permissions=discord.Permissions(manage_roles=True))
 
     @graid_event.command(name="start", description="Start a new GRAID event")
     async def graid_start(
