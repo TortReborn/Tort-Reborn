@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import time
@@ -11,9 +12,10 @@ from discord.ext import commands
 from discord.commands import SlashCommandGroup
 from PIL import Image, ImageDraw, ImageFont
 
+from Helpers.classes import PlayerStats
 from Helpers.database import DB
-from Helpers.functions import addLine, vertical_gradient, round_corners
-from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID
+from Helpers.functions import addLine, generate_badge, vertical_gradient, round_corners
+from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 # Display names shown in bot messages
 HQ_LOCATIONS = {
@@ -67,6 +69,7 @@ def _generate_snipe_card(
     dry_snipes, zero_conn_count, most_in_day,
     unique_hqs, unique_guilds, first_snipe, latest_snipe,
     top_guilds, hq_rows, teammate_rows,
+    rank_text=None, rank_color=None,
 ) -> Image.Image:
     W, H = 1300, 600
 
@@ -97,34 +100,39 @@ def _generate_snipe_card(
     draw.text((LX, 28), 'SNIPE STATS', font=f_title, fill=ACCENT)
     addLine(ign, draw, f_name, LX, 62, drop_x=5, drop_y=5)
 
-    draw.line([(LX, 122), (LX + LW, 122)], fill=SEP, width=2)
+    # Guild rank badge below the IGN
+    if rank_text and rank_color:
+        badge = generate_badge(text=rank_text, base_color=rank_color, scale=2)
+        card.paste(badge, (LX, 120), badge)
 
-    draw.text((LX, 130), 'PERSONAL BEST', font=f_label, fill=ACCENT)
+    draw.line([(LX, 162), (LX + LW, 162)], fill=SEP, width=2)
+
+    draw.text((LX, 170), 'PERSONAL BEST', font=f_label, fill=ACCENT)
     if pb_row:
         hq_abbr, diff, _ = pb_row
-        addLine(f"{HQ_LOCATIONS.get(hq_abbr, hq_abbr)} \u2014 {diff}k", draw, f_pb, LX, 156, drop_x=4, drop_y=4)
+        addLine(f"{HQ_LOCATIONS.get(hq_abbr, hq_abbr)} \u2014 {diff}k", draw, f_pb, LX, 196, drop_x=4, drop_y=4)
     else:
-        draw.text((LX, 156), 'No snipes yet', font=f_pb, fill='#555555')
+        draw.text((LX, 196), 'No snipes yet', font=f_pb, fill='#555555')
 
-    draw.line([(LX, 204), (LX + LW, 204)], fill=SEP, width=2)
+    draw.line([(LX, 244), (LX + LW, 244)], fill=SEP, width=2)
 
     def _fmt(ts):
         return ts.strftime('%d/%m/%y') if ts else '\u2014'
 
-    draw.text((LX, 212), 'FIRST SNIPE', font=f_label, fill=ACCENT)
-    addLine(_fmt(first_snipe), draw, f_small, LX, 236, drop_x=3, drop_y=3)
-    draw.text((LX, 272), 'LATEST SNIPE', font=f_label, fill=ACCENT)
-    addLine(_fmt(latest_snipe), draw, f_small, LX, 296, drop_x=3, drop_y=3)
+    draw.text((LX, 252), 'FIRST SNIPE', font=f_label, fill=ACCENT)
+    addLine(_fmt(first_snipe), draw, f_small, LX, 276, drop_x=3, drop_y=3)
+    draw.text((LX, 312), 'LATEST SNIPE', font=f_label, fill=ACCENT)
+    addLine(_fmt(latest_snipe), draw, f_small, LX, 336, drop_x=3, drop_y=3)
 
-    draw.line([(LX, 338), (LX + LW, 338)], fill=SEP, width=2)
+    draw.line([(LX, 378), (LX + LW, 378)], fill=SEP, width=2)
 
-    draw.text((LX, 346), 'TOP TEAMMATES', font=f_label, fill=ACCENT)
+    draw.text((LX, 386), 'TOP TEAMMATES', font=f_label, fill=ACCENT)
     if teammate_rows:
         for i, (tm_ign, count) in enumerate(teammate_rows[:3]):
             s = 'snipe' if count == 1 else 'snipes'
-            addLine(f'{tm_ign} \u2014 {count} {s}', draw, f_small, LX, 372 + i * 36, drop_x=3, drop_y=3)
+            addLine(f'{tm_ign} \u2014 {count} {s}', draw, f_small, LX, 412 + i * 36, drop_x=3, drop_y=3)
     else:
-        draw.text((LX, 372), 'None yet', font=f_small, fill='#555555')
+        draw.text((LX, 412), 'None yet', font=f_small, fill='#555555')
 
     # Vertical separator
     draw.line([(SEP_X, 22), (SEP_X, 578)], fill=SEP, width=2)
@@ -504,11 +512,26 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Fetch guild rank for badge display
+        rank_text = rank_color = None
+        try:
+            player = await asyncio.to_thread(PlayerStats, ign, 1)
+            if not player.error:
+                if player.taq and player.linked and player.rank in discord_ranks:
+                    rank_text  = player.rank.upper()
+                    rank_color = discord_ranks[player.rank]['color']
+                elif player.guild_rank:
+                    rank_text  = player.guild_rank.upper()
+                    rank_color = '#a0aeb0'
+        except Exception:
+            pass
+
         card = _generate_snipe_card(
             ign, total_snipes, rank_total, rank_diff, pb_row,
             dry_snipes, zero_conn_count, most_in_day,
             unique_hqs, unique_guilds, first_snipe, latest_snipe,
             top_guilds, hq_rows, teammate_rows,
+            rank_text=rank_text, rank_color=rank_color,
         )
         buf = BytesIO()
         card.save(buf, format='PNG')
