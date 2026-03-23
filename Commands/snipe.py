@@ -223,20 +223,11 @@ class SnipeTracker(commands.Cog):
     async def log_snipe(
         self,
         ctx: discord.ApplicationContext,
-        participant1:   discord.Option(str, "Participant 1 IGN", required=True),
-        role1:          discord.Option(str, "Role for participant 1", choices=ROLE_CHOICES, required=True),
+        participants:   discord.Option(str, "Participants as 'IGN Role, IGN Role, ...' e.g. 'Steve Tank, Alex Healer'", required=True),
         hq:             discord.Option(str, "HQ location", choices=HQ_CHOICES, required=True),
         difficulty:     discord.Option(int, "Difficulty in thousands (e.g. 192 for 192k)", required=True),
         guild:          discord.Option(str, "Guild tag that owned the HQ", required=True),
         conns:          discord.Option(int, "How many connections the HQ had (0–6)", required=True, min_value=0, max_value=6),
-        participant2:   discord.Option(str, "Participant 2 IGN", required=False, default=None),
-        role2:          discord.Option(str, "Role for participant 2", choices=ROLE_CHOICES, required=False, default=None),
-        participant3:   discord.Option(str, "Participant 3 IGN", required=False, default=None),
-        role3:          discord.Option(str, "Role for participant 3", choices=ROLE_CHOICES, required=False, default=None),
-        participant4:   discord.Option(str, "Participant 4 IGN", required=False, default=None),
-        role4:          discord.Option(str, "Role for participant 4", choices=ROLE_CHOICES, required=False, default=None),
-        participant5:   discord.Option(str, "Participant 5 IGN", required=False, default=None),
-        role5:          discord.Option(str, "Role for participant 5", choices=ROLE_CHOICES, required=False, default=None),
         snipe_date:     discord.Option(int, "Unix timestamp of snipe (defaults to now)", required=False, default=None),
         log_to_channel: discord.Option(bool, "Post this snipe to the snipe log channel", required=False, default=False),
         image:          discord.Option(discord.Attachment, "Screenshot of the snipe result (required when logging to channel)", required=False, default=None),
@@ -253,19 +244,31 @@ class SnipeTracker(commands.Cog):
             await ctx.followup.send(":no_entry: You must attach a screenshot when logging to the snipe channel.", ephemeral=True)
             return
 
-        # Build and validate participant/role pairs
-        pairs = [(participant1, role1)]
-        for p, r, n in [
-            (participant2, role2, 2),
-            (participant3, role3, 3),
-            (participant4, role4, 4),
-            (participant5, role5, 5),
-        ]:
-            if p is not None and r is None:
-                await ctx.followup.send(f":no_entry: You must also provide a role for participant {n}.", ephemeral=True)
+        # Parse "IGN Role, IGN Role, ..." CSV input
+        pairs = []
+        role_choices_lower = {r.lower(): r for r in ROLE_CHOICES}
+        for i, entry in enumerate(participants.split(','), start=1):
+            parts = entry.strip().split()
+            if len(parts) < 2:
+                await ctx.followup.send(
+                    f":no_entry: Entry {i} `{entry.strip()}` is missing a role. Format: `IGN Role, IGN Role, ...`",
+                    ephemeral=True
+                )
                 return
-            if p is not None:
-                pairs.append((p, r))
+            role_raw = parts[-1]
+            ign = ' '.join(parts[:-1])
+            role = role_choices_lower.get(role_raw.lower())
+            if role is None:
+                await ctx.followup.send(
+                    f":no_entry: Unknown role `{role_raw}` for `{ign}`. Valid roles: {', '.join(ROLE_CHOICES)}.",
+                    ephemeral=True
+                )
+                return
+            pairs.append((ign, role))
+
+        if not pairs:
+            await ctx.followup.send(":no_entry: You must provide at least one participant.", ephemeral=True)
+            return
 
         ts = snipe_date if snipe_date is not None else int(time.time())
         dry = _is_dry(hq, conns)
