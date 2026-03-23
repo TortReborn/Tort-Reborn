@@ -167,6 +167,7 @@ extensions = [
     'Commands.blacklist',
     'Commands.shell',
     'Commands.shell_exchange',
+    'Commands.snipe',
     'Commands.generate',
     'Commands.lootpool',
     'Commands.aspects',

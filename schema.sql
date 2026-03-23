@@ -440,3 +440,30 @@ CREATE TABLE IF NOT EXISTS territory_exchanges (
   attacker_name VARCHAR(100) NOT NULL,
   defender_name VARCHAR(100) NOT NULL
 );
+
+-- =============================================================================
+-- Snipe Tracker
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS snipe_logs (
+  id          SERIAL      PRIMARY KEY,
+  hq          VARCHAR(20) NOT NULL,
+  difficulty  INT         NOT NULL,
+  sniped_at   TIMESTAMPTZ NOT NULL,
+  guild_tag   VARCHAR(10) NOT NULL,
+  conns       VARCHAR(5)  NOT NULL DEFAULT '0' CHECK (conns IN ('0','1','2','3','4','5','6')),
+  logged_by   BIGINT      NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS snipe_participants (
+  snipe_id    INT         NOT NULL REFERENCES snipe_logs(id) ON DELETE CASCADE,
+  ign         VARCHAR(64) NOT NULL,
+  role        VARCHAR(10) NOT NULL,
+  PRIMARY KEY (snipe_id, ign)
+);
+
+CREATE INDEX IF NOT EXISTS idx_snipe_participants_ign
+  ON snipe_participants(ign);
+
+CREATE INDEX IF NOT EXISTS idx_snipe_logs_sniped_at
+  ON snipe_logs(sniped_at DESC);
