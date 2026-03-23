@@ -6,7 +6,7 @@ from discord.ext import tasks, commands
 
 from Helpers.database import DB
 from Helpers.logger import log, ERROR, INFO
-from Helpers.variables import KICK_LIST_CHANNEL_ID
+from Helpers.variables import KICK_LIST_CHANNEL_ID, is_home_guild
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +142,7 @@ class KickListTracker(commands.Cog):
 
     @tasks.loop(minutes=2)
     async def kick_list_loop(self):
+        # Guild restriction: operates on home guild channel only (KICK_LIST_CHANNEL_ID)
         try:
             await self._update_message()
         except Exception as e:
@@ -150,6 +151,11 @@ class KickListTracker(commands.Cog):
     async def _update_message(self):
         channel = self.client.get_channel(KICK_LIST_CHANNEL_ID)
         if channel is None:
+            return
+
+        # Security guard: validate channel belongs to a home guild
+        if not channel.guild or not is_home_guild(channel.guild.id):
+            log(ERROR, f"Kick list channel {KICK_LIST_CHANNEL_ID} not in home guild - skipping", context="kick_list_tracker")
             return
 
         rows = await asyncio.to_thread(_fetch_kick_list_sync)

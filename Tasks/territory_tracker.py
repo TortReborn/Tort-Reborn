@@ -770,6 +770,8 @@ class TerritoryTracker(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def territory_tracker(self):
+        # Guild restriction: operates on home guild channels only
+        # (TERRITORY_TRACKER_CHANNEL_ID, GLOBAL_TERR_TRACKER_CHANNEL_ID, MILITARY_CHANNEL_ID)
         try:
             if not self.client.is_ready():
                 return

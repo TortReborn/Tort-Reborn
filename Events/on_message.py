@@ -15,7 +15,7 @@ from Helpers.openai_helper import (
     validate_application_completeness, validate_exmember_completeness,
 )
 from Helpers.logger import log, ERROR
-from Helpers.variables import APP_MANAGER_ROLE_MENTION, APPLICATION_FORMAT_MESSAGE
+from Helpers.variables import APP_MANAGER_ROLE_MENTION, APPLICATION_FORMAT_MESSAGE, is_home_guild
 
 
 class OnMessage(commands.Cog):
@@ -25,6 +25,10 @@ class OnMessage(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.client.user:
+            return
+
+        # Ignore messages from DMs and external (non-home) guilds
+        if not message.guild or not is_home_guild(message.guild.id):
             return
 
         # --- Special channel format enforcement (kick appeals) ---
@@ -53,12 +57,14 @@ class OnMessage(commands.Cog):
         # Look up the application record
         db = DB()
         db.connect()
-        db.cursor.execute(
-            "SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id FROM new_app WHERE channel = %s",
-            (message.channel.id,)
-        )
-        row = db.cursor.fetchone()
-        db.close()
+        try:
+            db.cursor.execute(
+                "SELECT applicant_discord_id, app_type, thread_id, app_complete, app_message_id FROM new_app WHERE channel = %s",
+                (message.channel.id,)
+            )
+            row = db.cursor.fetchone()
+        finally:
+            db.close()
 
         if not row:
             return
@@ -70,12 +76,14 @@ class OnMessage(commands.Cog):
             stored_discord_id = await self._find_ticket_opener(message.channel)
             if stored_discord_id:
                 db = DB(); db.connect()
-                db.cursor.execute(
-                    "UPDATE new_app SET applicant_discord_id = %s WHERE channel = %s",
-                    (stored_discord_id, message.channel.id)
-                )
-                db.connection.commit()
-                db.close()
+                try:
+                    db.cursor.execute(
+                        "UPDATE new_app SET applicant_discord_id = %s WHERE channel = %s",
+                        (stored_discord_id, message.channel.id)
+                    )
+                    db.connection.commit()
+                finally:
+                    db.close()
 
         # Only process messages from the ticket opener
         if message.author.id != stored_discord_id:
@@ -90,12 +98,14 @@ class OnMessage(commands.Cog):
         mc_name = ""
 
         db = DB(); db.connect()
-        db.cursor.execute(
-            "SELECT uuid FROM discord_links WHERE discord_id = %s",
-            (stored_discord_id,)
-        )
-        link_row = db.cursor.fetchone()
-        db.close()
+        try:
+            db.cursor.execute(
+                "SELECT uuid FROM discord_links WHERE discord_id = %s",
+                (stored_discord_id,)
+            )
+            link_row = db.cursor.fetchone()
+        finally:
+            db.close()
 
         if link_row and link_row[0]:
             # Known ex-member via discord_links - resolve IGN from UUID
@@ -185,12 +195,14 @@ class OnMessage(commands.Cog):
     async def _save_incomplete(self, message, detected_type, mc_name):
         """Save app_type and message ID to DB without marking as complete."""
         db = DB(); db.connect()
-        db.cursor.execute(
-            "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
-            (detected_type, mc_name or None, message.id, message.channel.id)
-        )
-        db.connection.commit()
-        db.close()
+        try:
+            db.cursor.execute(
+                "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
+                (detected_type, mc_name or None, message.id, message.channel.id)
+            )
+            db.connection.commit()
+        finally:
+            db.close()
 
     async def _notify_incomplete(self, message, missing_fields, is_ex_member):
         """Send the incomplete application notification to the ticket channel."""
@@ -234,12 +246,14 @@ class OnMessage(commands.Cog):
 
         # Update message ID and IGN
         db = DB(); db.connect()
-        db.cursor.execute(
-            "UPDATE new_app SET app_message_id = %s, ign = %s WHERE channel = %s",
-            (message.id, mc_name or None, message.channel.id)
-        )
-        db.connection.commit()
-        db.close()
+        try:
+            db.cursor.execute(
+                "UPDATE new_app SET app_message_id = %s, ign = %s WHERE channel = %s",
+                (message.id, mc_name or None, message.channel.id)
+            )
+            db.connection.commit()
+        finally:
+            db.close()
 
         if not validation["complete"]:
             # Still incomplete — don't spam the format message again
@@ -277,13 +291,15 @@ class OnMessage(commands.Cog):
         """Shared processing after an application is detected and validated as complete."""
         # Atomically mark as complete — prevents double-processing from edits + new messages
         db = DB(); db.connect()
-        db.cursor.execute(
-            "UPDATE new_app SET app_complete = TRUE WHERE channel = %s AND app_complete = FALSE RETURNING channel",
-            (message.channel.id,)
-        )
-        updated = db.cursor.fetchone()
-        db.connection.commit()
-        db.close()
+        try:
+            db.cursor.execute(
+                "UPDATE new_app SET app_complete = TRUE WHERE channel = %s AND app_complete = FALSE RETURNING channel",
+                (message.channel.id,)
+            )
+            updated = db.cursor.fetchone()
+            db.connection.commit()
+        finally:
+            db.close()
         if not updated:
             return  # Another handler already processed this
 
@@ -308,12 +324,14 @@ class OnMessage(commands.Cog):
 
         # Update DB with the detected type, IGN, and message ID
         db = DB(); db.connect()
-        db.cursor.execute(
-            "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
-            (detected_type, mc_name or None, message.id, message.channel.id)
-        )
-        db.connection.commit()
-        db.close()
+        try:
+            db.cursor.execute(
+                "UPDATE new_app SET app_type = %s, ign = %s, app_message_id = %s WHERE channel = %s",
+                (detected_type, mc_name or None, message.id, message.channel.id)
+            )
+            db.connection.commit()
+        finally:
+            db.close()
 
         # Update poll embed to "Received" and rename channel
         await update_poll_embed(self.client, message.channel.id, ":green_circle: Received", 0x3ED63E)

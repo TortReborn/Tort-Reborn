@@ -57,7 +57,8 @@ class RecruitmentChecker(commands.Cog):
 
     @tasks.loop(minutes=10)
     async def recruitment_loop(self):
-        """Background task that scans online players for guildless recruitment candidates"""
+        """Background task that scans online players for guildless recruitment candidates.
+        Guild restriction: external API only, no Discord guild interaction — saves results to DB."""
         try:
             start_time = datetime.now(timezone.utc)
             candidates = []

@@ -3,6 +3,8 @@ import emoji
 
 from discord.ext import commands
 
+from Helpers.variables import is_home_guild
+
 
 class OnRawReactionAdd(commands.Cog):
     def __init__(self, client):
@@ -10,6 +12,10 @@ class OnRawReactionAdd(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        # Ignore reactions from DMs and external (non-home) guilds
+        if not payload.guild_id or not is_home_guild(payload.guild_id):
+            return
+
         if payload.message_id == 1211723532799709216:
             emoji_text = emoji.demojize(payload.emoji.name)
             with open('data/te_onboarding.json', 'r', encoding='utf-8') as f:

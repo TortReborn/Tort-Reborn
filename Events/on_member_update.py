@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from Helpers.database import DB
-from Helpers.variables import ERROR_CHANNEL_ID
+from Helpers.variables import ERROR_CHANNEL_ID, is_home_guild
 
 
 def _db_lookup_uuid(discord_id: int):
@@ -28,6 +28,10 @@ class OnMemberUpdate(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
+        # Ignore member updates from external (non-home) guilds
+        if not is_home_guild(after.guild.id):
+            return
+
         # Only care about role changes
         if before.roles == after.roles:
             return

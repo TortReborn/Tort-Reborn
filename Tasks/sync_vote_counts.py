@@ -17,7 +17,8 @@ class SyncVoteCounts(commands.Cog):
 
     @tasks.loop(minutes=2)
     async def sync_votes(self):
-        """Poll the database for pending applications and update their Discord embeds."""
+        """Poll the database for pending applications and update their Discord embeds.
+        Guild restriction: operates on home guild channel only (MEMBER_APP_CHANNEL_ID)."""
         rows = await asyncio.to_thread(self._fetch_pending_polls)
         if not rows:
             return

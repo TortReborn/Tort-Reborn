@@ -105,7 +105,8 @@ class CheckWebsiteApps(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def check_website_apps(self):
-        """Poll the applications table for new website submissions."""
+        """Poll the applications table for new website submissions.
+        Guild restriction: creates channels in TAQ_GUILD_ID (home guild) only."""
         rows = await asyncio.to_thread(self._fetch_pending_apps)
         if not rows:
             return

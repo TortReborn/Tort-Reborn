@@ -22,6 +22,7 @@ class GraidAutoStop(commands.Cog):
         """
         Runs every minute. If there are active events with end_ts in the past,
         mark them inactive. We do the comparison in the DB (now() vs end_ts).
+        Guild restriction: DB-only operations, no Discord guild interaction.
         """
         db = _db()
         try:
