@@ -1,12 +1,10 @@
 import asyncio
-import datetime
 
 import discord
 from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
-from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
 from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME, is_home_guild
 
@@ -15,77 +13,11 @@ class CheckApps(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @tasks.loop(minutes=1)
-    async def check_apps(self):
-        # --- 8-hour reminder for open applications ---
-        db = DB()
-        db.connect()
-        db.cursor.execute(
-            """
-            SELECT channel, created_at, thread_id
-              FROM new_app
-             WHERE status   = ':green_circle: Opened'
-               AND reminder = FALSE
-               AND posted   = TRUE
-            """
-        )
-        rows = db.cursor.fetchall()
-        db.close()
-
-        now_utc = datetime.datetime.now(datetime.timezone.utc)
-
-        for channel_id, created_at, thread_id in rows:
-            if thread_id is None:
-                continue
-
-            try:
-                elapsed = (now_utc - created_at).total_seconds()
-
-                if elapsed < 8 * 3600:
-                    continue
-
-                app_channel = self.client.get_channel(channel_id)
-                if not app_channel or not app_channel.category or app_channel.category.name != "Guild Applications":
-                    continue
-
-                # Security guard: validate channel belongs to a home guild
-                if not app_channel.guild or not is_home_guild(app_channel.guild.id):
-                    log(ERROR, f"Skipping non-home guild channel {channel_id}", context="check_apps")
-                    continue
-
-                thread = self.client.get_channel(thread_id)
-                if not thread:
-                    continue
-
-                # Security guard: validate thread belongs to a home guild
-                if hasattr(thread, 'guild') and thread.guild and not is_home_guild(thread.guild.id):
-                    log(ERROR, f"Skipping non-home guild thread {thread_id}", context="check_apps")
-                    continue
-
-                hours = int(elapsed // 3600)
-                await thread.send(f"{APP_MANAGER_ROLE_MENTION} {hours} hours passed since app creation.")
-
-                db = DB()
-                db.connect()
-                db.cursor.execute(
-                    "UPDATE new_app SET reminder = TRUE WHERE channel = %s",
-                    (channel_id,)
-                )
-                db.connection.commit()
-                db.close()
-
-            except Exception as e:
-                log(ERROR, f"Error for row {(channel_id, created_at, thread_id)}: {e}", context="check_apps")
-
-    @check_apps.before_loop
-    async def before_check_apps(self):
-        await self.client.wait_until_ready()
-
     # --- Guild leave monitoring for accepted applicants ---
 
     @tasks.loop(minutes=3)
-    async def check_web_guild_leave(self):
-        """Monitor accepted website guild applications where the player needs to leave their current guild."""
+    async def check_guild_leave(self):
+        """Monitor accepted guild applications where the player needs to leave their current guild."""
         db = DB()
         db.connect()
         db.cursor.execute(
@@ -113,16 +45,16 @@ class CheckApps(commands.Cog):
                             log(ERROR, f"Skipping non-home guild thread {thread_id} for app {app_id}", context="check_apps")
                             continue
 
-                await self._check_web_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
+                await self._check_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
             except Exception as e:
                 log(ERROR, f"Error for app {app_id}: {e}", context="check_apps")
 
-    async def _check_web_pending_leave(self, app_id, channel_id, thread_id, ign, discord_id):
-        """Check if a website applicant with pending guild leave has left their guild."""
+    async def _check_pending_leave(self, app_id, channel_id, thread_id, ign, discord_id):
+        """Check if an applicant with pending guild leave has left their guild."""
         if not ign:
             return
 
-        # Get UUID
+        # Get UUID: try discord_links first, then Mojang lookup
         uuid = None
         if discord_id:
             db = DB()
@@ -182,15 +114,15 @@ class CheckApps(commands.Cog):
 
         log(INFO, f"{ign} has left their guild. Notified exec thread.", context="check_apps")
 
-    @check_web_guild_leave.before_loop
-    async def before_check_web_guild_leave(self):
+    @check_guild_leave.before_loop
+    async def before_check_guild_leave(self):
         await self.client.wait_until_ready()
 
-    # --- Auto-close for website applications ---
+    # --- Auto-close for applications ---
 
     @tasks.loop(minutes=5)
     async def auto_close_web_apps(self):
-        """Auto-close denied web apps after 24h and accepted web apps when user has roles.
+        """Auto-close denied apps after 24h and accepted apps when user has roles.
         Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)."""
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
@@ -231,7 +163,7 @@ class CheckApps(commands.Cog):
                 log(ERROR, f"Error closing accepted community app {app_id}: {e}", context="check_apps")
 
     async def _auto_close_channel(self, guild, closed_cat, channel_id, discord_id, message):
-        """Move a web app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
+        """Move an app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
         channel = self.client.get_channel(channel_id)
         if not channel:
             try:
@@ -262,7 +194,7 @@ class CheckApps(commands.Cog):
 
     @staticmethod
     def _fetch_auto_close_denied():
-        """Fetch denied web apps older than 24 hours that aren't closed yet."""
+        """Fetch denied apps older than 24 hours that aren't closed yet."""
         db = DB()
         db.connect()
         try:
@@ -280,7 +212,7 @@ class CheckApps(commands.Cog):
 
     @staticmethod
     def _fetch_auto_close_accepted(app_type):
-        """Fetch accepted web apps where the user is linked (joined + processed) and 1h+ since review."""
+        """Fetch accepted apps where the user is linked (joined + processed) and 1h+ since review."""
         db = DB()
         db.connect()
         try:
@@ -306,10 +238,8 @@ class CheckApps(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if not self.check_apps.is_running():
-            self.check_apps.start()
-        if not self.check_web_guild_leave.is_running():
-            self.check_web_guild_leave.start()
+        if not self.check_guild_leave.is_running():
+            self.check_guild_leave.start()
         if not self.auto_close_web_apps.is_running():
             self.auto_close_web_apps.start()
 

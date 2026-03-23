@@ -197,8 +197,8 @@ class BackgroundAdmin(commands.Cog):
         # Check if user exists in the database, if not insert new entry to table
         if not row:
             db.cursor.execute(
-                "INSERT INTO profile_customization(\"user\", background, owned) VALUES (%s, %s, '[]')",
-                (str(user.id), bg_id)
+                "INSERT INTO profile_customization(\"user\", background, owned) VALUES (%s, %s, %s)",
+                (str(user.id), bg_id, json.dumps([bg_id]))
             )
             db.connection.commit()
             db.close()
@@ -210,10 +210,19 @@ class BackgroundAdmin(commands.Cog):
             await message.respond(embed=embed, file=bg_file)
             return
 
-        db.cursor.execute(
-            "UPDATE profile_customization SET background = %s WHERE \"user\" = %s",
-            (bg_id, str(user.id))
-        )
+        # Add to owned if not already there
+        bgs = row[2] if row[2] else []
+        if bg_id not in bgs:
+            bgs.append(bg_id)
+            db.cursor.execute(
+                "UPDATE profile_customization SET background = %s, owned = %s WHERE \"user\" = %s",
+                (bg_id, json.dumps(bgs), str(user.id))
+            )
+        else:
+            db.cursor.execute(
+                "UPDATE profile_customization SET background = %s WHERE \"user\" = %s",
+                (bg_id, str(user.id))
+            )
         db.connection.commit()
 
         try:

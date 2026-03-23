@@ -174,7 +174,6 @@ extensions = [
     'Commands.reset_roles',
     'Commands.raids',
     'Commands.manage',
-    'Commands.old_app_commands',
     'Commands.toggle',
     'Commands.blacklist',
     'Commands.shell',
@@ -205,9 +204,6 @@ extensions = [
     'UserCommands.reset_roles',
 
     # Events
-    'Events.on_message',
-    'Events.on_message_edit',
-    'Events.on_guild_channel_create',
     'Events.on_guild_channel_update',
     'Events.on_raw_reaction_add',
     'Events.on_member_update',

@@ -5,51 +5,6 @@ from Helpers.poll_edit import safe_edit_poll
 from Helpers.variables import MEMBER_APP_CHANNEL_ID
 
 
-async def update_poll_embed(client, channel_id: int, new_status: str, colour: int):
-    """Edit the original poll embed's Status field and colour in the exec channel."""
-
-    def _fetch_poll_id(cid):
-        db = DB()
-        try:
-            db.connect()
-            db.cursor.execute(
-                "SELECT poll_message_id FROM new_app WHERE channel = %s", (cid,)
-            )
-            row = db.cursor.fetchone()
-            return row[0] if row else None
-        finally:
-            db.close()
-
-    def _update_db_status(cid, status):
-        db = DB()
-        try:
-            db.connect()
-            db.cursor.execute(
-                "UPDATE new_app SET status = %s WHERE channel = %s", (status, cid)
-            )
-            db.connection.commit()
-        finally:
-            db.close()
-
-    poll_message_id = await asyncio.to_thread(_fetch_poll_id, channel_id)
-    if not poll_message_id:
-        return
-
-    exec_chan = client.get_channel(MEMBER_APP_CHANNEL_ID)
-    if not exec_chan:
-        return
-
-    def _modify(embed):
-        embed.colour = colour
-        for i, field in enumerate(embed.fields):
-            if field.name == "Status":
-                embed.set_field_at(i, name="Status", value=new_status, inline=True)
-                break
-
-    await asyncio.to_thread(_update_db_status, channel_id, new_status)
-    await safe_edit_poll(exec_chan, poll_message_id, modify_embed=_modify, include_view=False)
-
-
 async def update_web_poll_embed(client, channel_id: int, new_status: str, colour: int):
     """Edit the poll embed for a website application (applications table)."""
 
