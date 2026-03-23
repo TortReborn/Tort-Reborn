@@ -12,8 +12,8 @@ from discord import Embed
 
 from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
-from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID
-from Helpers.logger import log, SYSTEM, SUCCESS, ERROR
+from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS
+from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO
 from Helpers import logger
 from Commands.generate import ApplicationButtonView
 from Helpers.views import ApplicationVoteView, ThreadVoteView
@@ -104,7 +104,10 @@ async def on_ready():
             colour=0x1cd641
         )
         ch = client.get_channel(ERROR_CHANNEL_ID)
-        await ch.send(embed=embed)
+        if ch:
+            await ch.send(embed=embed)
+        else:
+            log(ERROR, f'Error channel {ERROR_CHANNEL_ID} not found. Could not send startup notification.')
 
 
 @client.event
@@ -118,31 +121,39 @@ async def on_connect():
     set_last_online(last_online)
 
 
-if not IS_TEST_MODE or IS_TEST_MODE:
-    @client.event
-    async def on_application_command_error(
-        ctx: discord.ApplicationContext,
-        error: discord.DiscordException
-    ):
-        options = ''
-        traceback_string = ''
-        tb_list = traceback.format_exception(error)
-        if ctx.selected_options:
-            for opt in ctx.selected_options:
-                options += f' {opt["name"]}:{opt["value"]}'
-        traceback_string = ''.join(tb_list)[:1500]
-        if len(traceback_string) >= 1500:
-            traceback_string = "…(truncated)…\n" + traceback_string
+@client.event
+async def on_application_command_error(
+    ctx: discord.ApplicationContext,
+    error: discord.DiscordException
+):
+    # Silently ignore rate limit errors (already responded with ephemeral message)
+    from Helpers.rate_limiter import RateLimitExceeded
+    if isinstance(error, RateLimitExceeded):
+        return
 
-        ch = client.get_channel(ERROR_CHANNEL_ID)
-        await ch.send(
-            f'<@170719819715313665>\n'
-            f'## {ctx.author} in <#{ctx.channel_id}>:\n'
-            f'```\n/{ctx.command.qualified_name}{options}\n```'
-            f'## Traceback:\n'
-            f'```\n{traceback_string}\n```'
-        )
+    options = ''
+    traceback_string = ''
+    tb_list = traceback.format_exception(error)
+    if ctx.selected_options:
+        for opt in ctx.selected_options:
+            options += f' {opt["name"]}:{opt["value"]}'
+    traceback_string = ''.join(tb_list)[:1500]
+    if len(traceback_string) >= 1500:
+        traceback_string = "…(truncated)…\n" + traceback_string
+
+    guild_info = f' in **{ctx.guild.name}**' if ctx.guild else ' in DMs'
+
+    ch = client.get_channel(ERROR_CHANNEL_ID)
+    if ch is None:
+        log(ERROR, f'Error channel not found. Error in /{ctx.command.qualified_name}: {traceback_string}')
         raise error
+    await ch.send(
+        f'<@170719819715313665>\n'
+        f'## {ctx.author}{guild_info}, <#{ctx.channel_id}>:\n'
+        f'```\n/{ctx.command.qualified_name}{options}\n```'
+        f'## Traceback:\n'
+        f'```\n{traceback_string}\n```'
+    )
 
 
 # =============================================================================
@@ -200,6 +211,7 @@ extensions = [
     'Events.on_guild_channel_update',
     'Events.on_raw_reaction_add',
     'Events.on_member_update',
+    'Events.on_guild_join',
 
     # Tasks
     'Tasks.update_member_data',
@@ -224,6 +236,42 @@ for ext in extensions:
         error_msg = f"Failed to load extension {ext}\n```\n{traceback.format_exc()}\n```"
         log(ERROR, error_msg)
         traceback.print_exc()
+
+
+# =============================================================================
+# Security Audit: Validate Global Command Registration
+# =============================================================================
+def audit_global_commands():
+    """
+    Validate that only explicitly allowlisted commands are globally registered.
+    Logs warnings for any commands that are global but not in the allowlist.
+    """
+    warnings = []
+    for cmd in client.pending_application_commands:
+        # Get the command name (top-level name for groups)
+        cmd_name = cmd.name if hasattr(cmd, 'name') else str(cmd)
+
+        # Check if this command is globally registered (no guild_ids restriction)
+        guild_ids = getattr(cmd, 'guild_ids', None)
+        is_global = guild_ids is None or len(guild_ids) == 0
+
+        if is_global:
+            # Check if this is a known public command
+            if cmd_name in PUBLIC_COMMANDS:
+                continue
+            # Unknown global command - potential security issue
+            warnings.append(f"  - /{cmd_name} (global registration not in PUBLIC_COMMANDS allowlist)")
+
+    if warnings:
+        log(ERROR, f"SECURITY AUDIT: Found {len(warnings)} globally registered command(s) not in allowlist:")
+        for w in warnings:
+            log(ERROR, w)
+    else:
+        log(SUCCESS, f"Security audit passed: All {len(PUBLIC_COMMANDS)} public commands validated")
+
+
+# Run audit after extensions are loaded
+audit_global_commands()
 
 
 # =============================================================================
