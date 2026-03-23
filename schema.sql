@@ -452,8 +452,10 @@ CREATE TABLE IF NOT EXISTS snipe_logs (
   sniped_at   TIMESTAMPTZ NOT NULL,
   guild_tag   VARCHAR(10) NOT NULL,
   conns       VARCHAR(5)  NOT NULL DEFAULT '0' CHECK (conns IN ('0','1','2','3','4','5','6')),
-  logged_by   BIGINT      NOT NULL
+  logged_by   BIGINT      NOT NULL,
+  season      INT         NOT NULL DEFAULT 1
 );
+ALTER TABLE snipe_logs ADD COLUMN IF NOT EXISTS season INT NOT NULL DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS snipe_participants (
   snipe_id    INT         NOT NULL REFERENCES snipe_logs(id) ON DELETE CASCADE,
