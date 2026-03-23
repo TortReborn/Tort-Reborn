@@ -3,7 +3,7 @@ import json
 import math
 import os
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
@@ -13,16 +13,31 @@ from discord.ext import commands, pages
 from discord.commands import SlashCommandGroup, slash_command
 from PIL import Image, ImageDraw, ImageFont
 
-from Helpers.classes import Page, PlayerStats
-from Helpers.database import DB
-from Helpers.functions import addLine, generate_badge, vertical_gradient, round_corners
+from Helpers.classes import Guild, Page, PlayerStats
+from Helpers.database import DB, get_current_guild_data
+from Helpers.functions import addLine, generate_badge, get_guild_color, vertical_gradient, round_corners
 from Helpers.snipe_utils import HQ_CHOICES, display_hq, is_dry
 from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS', 'Solo']
 _ROLE_ORDER     = ['Healer', 'Tank', 'DPS', 'Solo']
 LB_SORT_CHOICES = ['Total Snipes', 'Personal Best', 'Best Streak', 'Current Streak']
-_LB_PER_PAGE    = 10
+_LB_PER_PAGE        = 10
+_LIST_PER_PAGE      = 10
+_LIST_SORT_CHOICES  = ['Newest', 'Oldest', 'Hardest', 'Easiest', 'Least Conns']
+_LIST_ORDER_SQL     = {
+    'Newest':      "sl.sniped_at DESC",
+    'Oldest':      "sl.sniped_at ASC",
+    'Hardest':     "sl.difficulty DESC, sl.sniped_at DESC",
+    'Easiest':     "sl.difficulty ASC, sl.sniped_at DESC",
+    'Least Conns': "CAST(sl.conns AS INT) ASC, sl.sniped_at DESC",
+}
+_ATHENA_GUILD_LIST_URL = 'https://athena.wynntils.com/cache/get/guildList'
+_ATHENA_GUILD_TTL      = 6 * 60 * 60
+_DEFAULT_GUILD_COLOR = '#ffffff'
+_GUILD_COLOR_CACHE   = {}
+_ATHENA_GUILD_COLORS = None
+_ATHENA_GUILD_FETCHED_AT = 0.0
 
 _SEASON_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'war_season.json')
 
@@ -188,6 +203,115 @@ def _fit_font(text: str, draw, path: str, max_size: int, max_w: int) -> ImageFon
     return ImageFont.truetype(path, 14)
 
 
+def _fit_wrap_lines(
+    text: str,
+    draw,
+    path: str,
+    max_size: int,
+    max_w: int,
+    max_lines: int,
+    min_size: int = 12,
+) -> tuple[ImageFont.FreeTypeFont, list[str]]:
+    words = text.split()
+    if not words:
+        font = ImageFont.truetype(path, max_size)
+        return font, ['\u2014']
+
+    def wrap_for_font(font):
+        lines = []
+        cur = words[0]
+        for word in words[1:]:
+            test = f'{cur} {word}'
+            if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
+                cur = test
+            else:
+                lines.append(cur)
+                cur = word
+        lines.append(cur)
+        return lines
+
+    for size in range(max_size, min_size - 1, -1):
+        font = ImageFont.truetype(path, size)
+        lines = wrap_for_font(font)
+        if len(lines) <= max_lines:
+            return font, lines
+
+    font = ImageFont.truetype(path, min_size)
+    lines = wrap_for_font(font)
+    if len(lines) <= max_lines:
+        return font, lines
+
+    clipped = lines[:max_lines]
+    last = clipped[-1]
+    while last and draw.textbbox((0, 0), f'{last}\u2026', font=font)[2] > max_w:
+        last = last[:-1].rstrip()
+    clipped[-1] = f'{last}\u2026' if last else '\u2026'
+    return font, clipped
+
+
+def _normalize_guild_tag(tag: str | None) -> str:
+    return (tag or '').strip().upper()
+
+
+def _load_athena_guild_colors_sync() -> dict[str, str]:
+    global _ATHENA_GUILD_COLORS, _ATHENA_GUILD_FETCHED_AT
+
+    now = time.time()
+    if _ATHENA_GUILD_COLORS is not None and (now - _ATHENA_GUILD_FETCHED_AT) < _ATHENA_GUILD_TTL:
+        return _ATHENA_GUILD_COLORS
+
+    try:
+        response = requests.get(_ATHENA_GUILD_LIST_URL, timeout=15)
+        response.raise_for_status()
+        payload = response.json()
+        colors = {}
+        for row in payload:
+            prefix = _normalize_guild_tag(row.get('prefix'))
+            color = (row.get('color') or '').strip()
+            if prefix and color:
+                colors[prefix] = color
+        _ATHENA_GUILD_COLORS = colors
+        _ATHENA_GUILD_FETCHED_AT = now
+    except Exception:
+        if _ATHENA_GUILD_COLORS is None:
+            _ATHENA_GUILD_COLORS = {}
+
+    return _ATHENA_GUILD_COLORS
+
+
+def _fetch_guild_color_sync(tag: str | None) -> str:
+    norm = _normalize_guild_tag(tag)
+    if not norm:
+        return _DEFAULT_GUILD_COLOR
+    cached = _GUILD_COLOR_CACHE.get(norm)
+    if cached:
+        return cached
+    athena_color = _load_athena_guild_colors_sync().get(norm)
+    if athena_color:
+        _GUILD_COLOR_CACHE[norm] = athena_color
+        return athena_color
+    try:
+        guild = Guild(norm)
+        color = get_guild_color({'banner': guild.banner})
+    except Exception:
+        color = _DEFAULT_GUILD_COLOR
+    _GUILD_COLOR_CACHE[norm] = color
+    return color
+
+
+async def _get_guild_color_map(tags) -> dict[str, str]:
+    unique = {_normalize_guild_tag(tag) for tag in tags if _normalize_guild_tag(tag)}
+    if unique:
+        await asyncio.to_thread(_load_athena_guild_colors_sync)
+    uncached = [tag for tag in unique if tag not in _GUILD_COLOR_CACHE]
+    if uncached:
+        await asyncio.gather(*(
+            asyncio.to_thread(_fetch_guild_color_sync, tag)
+            for tag in uncached
+        ))
+    return {tag: _GUILD_COLOR_CACHE.get(tag, _DEFAULT_GUILD_COLOR) for tag in unique}
+
+
 def _row_bg_img(W, ROW_H=40):
     row_bg = Image.new('RGBA', (W - 56, ROW_H - 2), (0, 0, 0, 0))
     ImageDraw.Draw(row_bg).rounded_rectangle(
@@ -204,7 +328,7 @@ def _generate_snipe_card(
     unique_hqs, unique_guilds, first_snipe, latest_snipe,
     top_guilds, hq_rows, teammate_rows,
     top_role, streak_best, streak_cur, seasons_active,
-    rank_text=None, rank_color=None,
+    rank_text=None, rank_color=None, guild_colors=None,
 ) -> Image.Image:
     W, H = 1300, 660
     card, draw = _card_base(W, H)
@@ -253,9 +377,9 @@ def _generate_snipe_card(
     draw.line([(LX, 378), (LX + LW, 378)], fill=SEP, width=2)
     draw.text((LX, 386), 'TOP TEAMMATES', font=f_label, fill=ACCENT)
     if teammate_rows:
-        for i, (tm_ign, count) in enumerate(teammate_rows[:3]):
+        for i, (tm_ign, count) in enumerate(teammate_rows[:6]):
             s = 'snipe' if count == 1 else 'snipes'
-            addLine(f'{tm_ign} \u2014 {count} {s}', draw, f_small, LX, 412 + i * 36, drop_x=3, drop_y=3)
+            addLine(f'{tm_ign} \u2014 {count} {s}', draw, f_small, LX, 412 + i * 28, drop_x=3, drop_y=3)
     else:
         draw.text((LX, 412), 'None yet', font=f_small, fill='#555555')
 
@@ -308,7 +432,9 @@ def _generate_snipe_card(
     draw.text((LIST_X + 8, LIST_Y + 26), 'TOP 3 GUILDS SNIPED', font=f_label, fill=ACCENT)
     if top_guilds:
         for i, (tag, count) in enumerate(top_guilds[:3]):
-            addLine(f'{tag} \u2014 {count}', draw, f_small, LIST_X + 8, LIST_Y + 52 + i * 34, drop_x=3, drop_y=3)
+            color = (guild_colors or {}).get(_normalize_guild_tag(tag), _DEFAULT_GUILD_COLOR)
+            x = addLine(f'&#{color[1:]}{tag}', draw, f_small, LIST_X + 8, LIST_Y + 52 + i * 34, drop_x=3, drop_y=3)
+            addLine(f' \u2014 {count}', draw, f_small, x, LIST_Y + 52 + i * 34, drop_x=3, drop_y=3)
     else:
         draw.text((LIST_X + 8, LIST_Y + 52), 'None yet', font=f_small, fill='#555555')
 
@@ -416,18 +542,18 @@ def _generate_team_card(rows: list, season_label: str) -> Image.Image:
     f_label = ImageFont.truetype('images/profile/5x5.ttf',  22)
     f_small = ImageFont.truetype('images/profile/game.ttf', 26)
 
-    draw.text((38, 28), 'SNIPE TEAM ROSTER', font=f_title, fill=ACCENT)
+    draw.text((38, 28), 'SNIPE ROSTER', font=f_title, fill=ACCENT)
     draw.text((38, 66), season_label, font=f_label, fill='#ffffff')
     draw.line([(28, 100), (W - 28, 100)], fill=SEP, width=2)
 
-    CX = [38, 118, 480, 640, 850]
-    for h, x in zip(['RANK', 'PLAYER', 'SNIPES', 'BEST DIFF.', 'ROLE'], CX):
+    CX = [38, 118, 470, 630, 820]
+    for h, x in zip(['RANK', 'PLAYER', 'SNIPES', 'BEST DIFF.', 'ROLES'], CX):
         draw.text((x, 104), h, font=f_label, fill=ACCENT)
     draw.line([(28, 126), (W - 28, 126)], fill=SEP, width=1)
 
     row_bg = _row_bg_img(W, ROW_H)
     if rows:
-        for i, (ign, total, best_diff, top_role) in enumerate(rows):
+        for i, (ign, total, best_diff, roles_text) in enumerate(rows):
             ry = 134 + i * ROW_H
             if i % 2 == 0:
                 card.paste(row_bg, (28, ry - 2), row_bg)
@@ -435,20 +561,22 @@ def _generate_team_card(rows: list, season_label: str) -> Image.Image:
             addLine(str(ign),    draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(total),  draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
             addLine(f'{best_diff}k' if best_diff else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
-            addLine(str(top_role) if top_role else '\u2014',    draw, f_small, CX[4], ry + 4, drop_x=3, drop_y=3)
+            roles_value = str(roles_text) if roles_text else '\u2014'
+            roles_font = _fit_font(roles_value, draw, 'images/profile/game.ttf', 24, W - CX[4] - 34)
+            addLine(roles_value, draw, roles_font, CX[4], ry + 6, drop_x=3, drop_y=3)
     else:
         draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
     return card
 
 
-def _generate_duo_card(rows: list, season_label: str) -> Image.Image:
+def _generate_duo_card(page_rows, season_label, page_num, total_pages, start_rank) -> Image.Image:
     ROW_H, W = 44, 1000
-    H = max(200, 120 + len(rows) * ROW_H + 40)
+    H = 130 + _LB_PER_PAGE * ROW_H + 50
     card, draw = _card_base(W, H)
 
     ACCENT, SEP = '#fad51e', '#3474eb'
     f_title = ImageFont.truetype('images/profile/5x5.ttf',  30)
-    f_label = ImageFont.truetype('images/profile/5x5.ttf',  22)
+    f_label = ImageFont.truetype('images/profile/5x5.ttf',  20)
     f_small = ImageFont.truetype('images/profile/game.ttf', 26)
 
     draw.text((38, 28), 'SNIPE DUO LEADERBOARD', font=f_title, fill=ACCENT)
@@ -461,21 +589,217 @@ def _generate_duo_card(rows: list, season_label: str) -> Image.Image:
     draw.line([(28, 126), (W - 28, 126)], fill=SEP, width=1)
 
     row_bg = _row_bg_img(W, ROW_H)
-    if rows:
-        for i, (p1, p2, shared, best_diff) in enumerate(rows):
+    if page_rows:
+        for i, (p1, p2, shared, best_diff) in enumerate(page_rows):
             ry = 134 + i * ROW_H
             if i % 2 == 0:
                 card.paste(row_bg, (28, ry - 2), row_bg)
-            draw.text((CX[0], ry + 4), f'#{i + 1}', font=f_small, fill=ACCENT)
+            draw.text((CX[0], ry + 4), f'#{start_rank + i}', font=f_small, fill=ACCENT)
             addLine(f'{p1} + {p2}', draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(shared),    draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
             addLine(f'{best_diff}k' if best_diff else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
     else:
         draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
+
+    _draw_table_footer(draw, W, H, f_label, page_num, total_pages, ACCENT)
     return card
 
 
 # ── Participant log formatter ─────────────────────────────────────────────────
+
+def _format_team_compact(pairs: list[tuple[str, str]]) -> str:
+    grouped = defaultdict(list)
+    for ign, role in pairs:
+        grouped[role].append(ign)
+
+    parts = []
+    for role in _ROLE_ORDER:
+        if role in grouped:
+            parts.append(f"{', '.join(grouped[role])} {role}")
+    return ' / '.join(parts) if parts else '\u2014'
+
+
+def _format_team_names_compact(pairs: list[tuple[str, str]]) -> str:
+    names = sorted({ign for ign, _ in pairs})
+    return ', '.join(names) if names else '\u2014'
+
+
+def _generate_overview_card(
+    ign, rank_text, rank_color,
+    most_common_team_any, team_any_count,
+    most_common_team_roles, team_role_count,
+    recent_snipes, participants_map,
+    avg_diff, top_hq, top_hq_count, total_snipes_all, guild_colors,
+) -> Image.Image:
+    W, H = 1050, 640
+    card, draw = _card_base(W, H)
+
+    ACCENT, SEP, WHITE, DIM = '#fad51e', '#3474eb', '#ffffff', '#8ea3cc'
+    f_title = ImageFont.truetype('images/profile/5x5.ttf', 30)
+    f_label = ImageFont.truetype('images/profile/5x5.ttf', 20)
+    f_name = ImageFont.truetype('images/profile/game.ttf', 46)
+    f_body = ImageFont.truetype('images/profile/game.ttf', 22)
+
+    LX, LW, SEP_X = 38, 315, 382
+
+    draw.text((LX, 28), 'SNIPE OVERVIEW', font=f_title, fill=ACCENT)
+    addLine(ign, draw, f_name, LX, 62, drop_x=5, drop_y=5)
+
+    if rank_text and rank_color:
+        badge = generate_badge(text=rank_text, base_color=rank_color, scale=2)
+        card.paste(badge, (LX, 120), badge)
+
+    team_label_y = 178
+    draw.line([(LX, team_label_y - 12), (LX + LW, team_label_y - 12)], fill=SEP, width=2)
+    draw.text((LX, team_label_y), 'MOST COMMON TEAM', font=f_label, fill=ACCENT)
+
+    team_box = Image.new('RGBA', (LW, 138), (0, 0, 0, 0))
+    ImageDraw.Draw(team_box).rounded_rectangle(
+        ((0, 0), (LW - 1, 137)), fill=(0, 0, 0, 50), radius=10
+    )
+    card.paste(team_box, (LX, 208), team_box)
+
+    draw.text((LX + 12, 220), 'General', font=f_label, fill=ACCENT)
+    draw.text((LX + 112, 220), f'x{team_any_count}', font=f_label, fill=WHITE)
+    team_any_font, team_any_lines = _fit_wrap_lines(
+        most_common_team_any, draw, 'images/profile/game.ttf', 16, LW - 24, 2, min_size=11
+    )
+    for i, line in enumerate(team_any_lines):
+        addLine(line, draw, team_any_font, LX + 12, 238 + i * 15, drop_x=2, drop_y=2)
+
+    draw.line([(LX + 12, 274), (LX + LW - 12, 274)], fill=SEP, width=1)
+    draw.text((LX + 12, 282), 'Matching Roles', font=f_label, fill=ACCENT)
+    draw.text((LX + 192, 282), f'x{team_role_count}', font=f_label, fill=WHITE)
+    team_role_font, team_role_lines = _fit_wrap_lines(
+        most_common_team_roles, draw, 'images/profile/game.ttf', 14, LW - 24, 2, min_size=10
+    )
+    for i, line in enumerate(team_role_lines):
+        addLine(line, draw, team_role_font, LX + 12, 300 + i * 14, drop_x=2, drop_y=2)
+
+    draw.line([(LX, 362), (LX + LW, 362)], fill=SEP, width=2)
+    draw.text((LX, 374), 'QUICK STATS', font=f_label, fill=ACCENT)
+
+    BOX_W, BOX_H = 150, 92
+    stat_boxes = [
+        ('Total Snipes', str(total_snipes_all)),
+        ('Avg Diff.', f'{avg_diff:.1f}k' if avg_diff is not None else '\u2014'),
+    ]
+    for idx, (label, value) in enumerate(stat_boxes):
+        bx = LX + (idx % 2) * (BOX_W + 15)
+        by = 408
+        box = Image.new('RGBA', (BOX_W, BOX_H), (0, 0, 0, 0))
+        ImageDraw.Draw(box).rounded_rectangle(
+            ((0, 0), (BOX_W - 1, BOX_H - 1)), fill=(0, 0, 0, 55), radius=8
+        )
+        card.paste(box, (bx, by), box)
+        draw.text((bx + 8, by + 8), label, font=f_label, fill=ACCENT)
+        value_font = _fit_font(value, draw, 'images/profile/game.ttf', 26, BOX_W - 16)
+        value_w = draw.textbbox((0, 0), value, font=value_font)[2]
+        addLine(value, draw, value_font, bx + BOX_W - 8 - value_w, by + 44, drop_x=3, drop_y=3)
+
+    top_box_x = LX
+    top_box_y = 516
+    top_box_w = LW
+    top_box = Image.new('RGBA', (top_box_w, BOX_H), (0, 0, 0, 0))
+    ImageDraw.Draw(top_box).rounded_rectangle(
+        ((0, 0), (top_box_w - 1, BOX_H - 1)), fill=(0, 0, 0, 55), radius=8
+    )
+    card.paste(top_box, (top_box_x, top_box_y), top_box)
+    draw.text((top_box_x + 8, top_box_y + 8), 'Top HQ', font=f_label, fill=ACCENT)
+    top_value = f'{top_hq} ({top_hq_count})' if top_hq else '\u2014'
+    top_font = _fit_font(top_value, draw, 'images/profile/game.ttf', 26, top_box_w - 16)
+    top_w = draw.textbbox((0, 0), top_value, font=top_font)[2]
+    addLine(top_value, draw, top_font, top_box_x + top_box_w - 8 - top_w, top_box_y + 44, drop_x=3, drop_y=3)
+
+    draw.line([(SEP_X, 22), (SEP_X, H - 22)], fill=SEP, width=2)
+
+    RX = SEP_X + 28
+    draw.text((RX, 28), 'RECENT SNIPES', font=f_title, fill=ACCENT)
+    draw.text((RX, 64), 'Last 5 snipes involving this player', font=f_label, fill=WHITE)
+    draw.line([(RX - 10, 96), (W - 28, 96)], fill=SEP, width=2)
+
+    row_h = 94
+    if recent_snipes:
+        row_w = W - RX - 30
+        for i, (snipe_id, sniped_at, hq, guild_tag, difficulty, conns) in enumerate(recent_snipes[:5]):
+            ry = 112 + i * row_h
+            row = Image.new('RGBA', (row_w, row_h - 8), (0, 0, 0, 0))
+            ImageDraw.Draw(row).rounded_rectangle(
+                ((0, 0), (row_w - 1, row_h - 9)), fill=(255, 255, 255, 14), radius=8
+            )
+            card.paste(row, (RX - 2, ry - 2), row)
+
+            date_text = sniped_at.strftime('%d/%m/%y') if sniped_at else '\u2014'
+            hq_text = display_hq(hq)
+            hq_font = _fit_font(hq_text, draw, 'images/profile/game.ttf', 24, 250)
+            meta_text = f'{difficulty}k  |  {conns} conns'
+            team_text = _format_team_compact(participants_map.get(snipe_id, []))
+            team_font = _fit_font(team_text, draw, 'images/profile/game.ttf', 18, row_w - 24)
+            guild_value = guild_tag or '\u2014'
+
+            draw.text((RX + 10, ry + 8), date_text, font=f_label, fill=ACCENT)
+            addLine(hq_text, draw, hq_font, RX + 120, ry + 6, drop_x=3, drop_y=3)
+            guild_color = guild_colors.get(_normalize_guild_tag(guild_tag), _DEFAULT_GUILD_COLOR)
+            addLine(f'&#{guild_color[1:]}{guild_value}', draw, f_label, RX + 10, ry + 42, drop_x=2, drop_y=2)
+            draw.text((RX + 200, ry + 42), meta_text, font=f_label, fill=WHITE)
+            draw.text((RX + 10, ry + 65), team_text, font=team_font, fill=DIM)
+    else:
+        draw.text((RX, 126), 'No recent snipes found.', font=f_body, fill='#555555')
+
+    return card
+
+
+def _generate_list_card(page_rows, participants_map, guild_colors, sort_by, season_label, page_num, total_pages, start_idx):
+    W, H = 1280, 740
+    ROW_H = 58
+    card, draw = _card_base(W, H)
+
+    ACCENT, DIM, SEP, WHITE = '#fad51e', '#8ea3cc', '#3474eb', '#ffffff'
+    f_title = ImageFont.truetype('images/profile/5x5.ttf', 28)
+    f_label = ImageFont.truetype('images/profile/5x5.ttf', 20)
+    f_small = ImageFont.truetype('images/profile/game.ttf', 24)
+
+    CX = [38, 112, 270, 515, 760, 905]
+    _draw_table_header(
+        draw, W, f_title, f_label,
+        'SNIPE LIST',
+        f'{season_label}  \u2022  Sorted by: {sort_by}',
+        ['#', 'DATE', 'HQ', 'GUILD', 'DIFF.', 'CONNS'],
+        CX, None, [None, None, None, None, None, None],
+        ACCENT, DIM, SEP, WHITE
+    )
+
+    row_bg = Image.new('RGBA', (W - 56, ROW_H - 4), (0, 0, 0, 0))
+    ImageDraw.Draw(row_bg).rounded_rectangle(
+        ((0, 0), (W - 57, ROW_H - 5)), fill=(255, 255, 255, 14), radius=6
+    )
+
+    if page_rows:
+        for i, (snipe_id, sniped_at, hq, guild_tag, difficulty, conns) in enumerate(page_rows):
+            ry = 128 + i * ROW_H
+            card.paste(row_bg, (28, ry - 2), row_bg)
+
+            date_text = sniped_at.strftime('%d/%m/%y') if sniped_at else '\u2014'
+            hq_text = display_hq(hq)
+            if draw.textbbox((0, 0), hq_text, font=f_small)[2] > 220:
+                hq_text = hq
+            participants_text = _format_team_compact(participants_map.get(snipe_id, []))
+            p_font = _fit_font(participants_text, draw, 'images/profile/game.ttf', 18, W - 140)
+
+            draw.text((CX[0], ry + 2), f'#{start_idx + i}', font=f_small, fill=ACCENT)
+            addLine(date_text, draw, f_small, CX[1], ry + 2, drop_x=3, drop_y=3)
+            addLine(hq_text, draw, f_small, CX[2], ry + 2, drop_x=3, drop_y=3)
+            guild_color = guild_colors.get(_normalize_guild_tag(guild_tag), _DEFAULT_GUILD_COLOR)
+            addLine(f'&#{guild_color[1:]}{guild_tag}', draw, f_small, CX[3], ry + 2, drop_x=3, drop_y=3)
+            addLine(f'{difficulty}k', draw, f_small, CX[4], ry + 2, drop_x=3, drop_y=3)
+            addLine(str(conns), draw, f_small, CX[5], ry + 2, drop_x=3, drop_y=3)
+            draw.text((CX[1], ry + 30), participants_text, font=p_font, fill=DIM)
+    else:
+        draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
+
+    _draw_table_footer(draw, W, H, f_label, page_num, total_pages, ACCENT)
+    return card
+
 
 def _format_participants_log(pairs: list[tuple[str, str]]) -> str:
     grouped = defaultdict(list)
@@ -746,13 +1070,15 @@ class SnipeTracker(commands.Cog):
         except Exception:
             pass
 
+        guild_colors = await _get_guild_color_map(tag for tag, _ in top_guilds)
+
         card = _generate_snipe_card(
             ign, total_snipes, rank_total, rank_diff, pb_row,
             dry_snipes, zero_conn_count, most_in_day,
             unique_hqs, unique_guilds, first_snipe, latest_snipe,
             top_guilds, hq_rows, teammate_rows,
             top_role, streak_best, streak_cur, seasons_active,
-            rank_text=rank_text, rank_color=rank_color,
+            rank_text=rank_text, rank_color=rank_color, guild_colors=guild_colors,
         )
         buf = BytesIO()
         card.save(buf, format='PNG')
@@ -835,41 +1161,69 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe team ───────────────────────────────────────────────────────────
 
-    @snipe.command(name='team', description='View the snipe team roster')
-    async def snipe_team(
+    @snipe.command(name='roster', description='View the snipe roster')
+    async def snipe_roster(
         self,
         ctx: discord.ApplicationContext,
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
+        inguild: discord.Option(bool, 'Only show players currently in TAq', required=False, default=False),
     ):
         await ctx.defer()
         sc, sp = _season_clause(season)
         sl     = _season_label(season)
-        sc2    = sc.replace('AND sl.', 'AND sl2.')
 
         db = DB()
         db.connect()
         try:
             db.cursor.execute(
-                f'SELECT sp.ign, COUNT(*) AS total, MAX(sl.difficulty) AS best_diff,'
-                f'  (SELECT role FROM snipe_participants sp2'
-                f'   JOIN snipe_logs sl2 ON sl2.id = sp2.snipe_id'
-                f'   WHERE sp2.ign = sp.ign {sc2}'
-                f'   GROUP BY role ORDER BY COUNT(*) DESC LIMIT 1) AS top_role'
+                f"SELECT sp.ign, COUNT(*) AS total, MAX(sl.difficulty) AS best_diff, "
+                f"MAX(CASE WHEN sp.role = 'Healer' THEN 1 ELSE 0 END) AS has_healer, "
+                f"MAX(CASE WHEN sp.role = 'Tank' THEN 1 ELSE 0 END) AS has_tank, "
+                f"MAX(CASE WHEN sp.role = 'DPS' THEN 1 ELSE 0 END) AS has_dps, "
+                f"MAX(CASE WHEN sp.role = 'Solo' THEN 1 ELSE 0 END) AS has_solo "
                 f' FROM snipe_participants sp'
                 f' JOIN snipe_logs sl ON sl.id = sp.snipe_id'
                 f' WHERE 1=1 {sc}'
                 f' GROUP BY sp.ign ORDER BY total DESC',
-                sp + sp
+                sp
             )
-            rows = db.cursor.fetchall()
+            raw_rows = db.cursor.fetchall()
         finally:
             db.close()
+
+        current_names = None
+        if inguild:
+            current_data = get_current_guild_data()
+            current_members = current_data.get('members', []) if isinstance(current_data, dict) else []
+            current_names = {
+                (member.get('name') or member.get('username') or '').casefold()
+                for member in current_members
+                if member.get('name') or member.get('username')
+            }
+            if not current_names:
+                await ctx.followup.send(':no_entry: Current TAq member data is unavailable right now.')
+                return
+
+        rows = []
+        for ign, total, best_diff, has_healer, has_tank, has_dps, has_solo in raw_rows:
+            if current_names is not None and ign.casefold() not in current_names:
+                continue
+            roles = []
+            if has_healer:
+                roles.append('Healer')
+            if has_tank:
+                roles.append('Tank')
+            if has_dps:
+                roles.append('DPS')
+            if has_solo:
+                roles.append('Solo')
+            rows.append((ign, total, best_diff, ', '.join(roles) if roles else '\u2014'))
 
         card = _generate_team_card(rows, sl)
         buf = BytesIO()
         card.save(buf, format='PNG')
         buf.seek(0)
-        await ctx.followup.send(file=discord.File(buf, filename='team.png'))
+        await ctx.followup.send(file=discord.File(buf, filename='roster.png'))
 
     # ── /snipe duos ───────────────────────────────────────────────────────────
 
@@ -892,20 +1246,211 @@ class SnipeTracker(commands.Cog):
                 f' JOIN snipe_participants b ON a.snipe_id = b.snipe_id AND a.ign < b.ign'
                 f' JOIN snipe_logs sl ON sl.id = a.snipe_id'
                 f' WHERE 1=1 {sc}'
-                f' GROUP BY a.ign, b.ign ORDER BY shared DESC LIMIT 10',
+                f' GROUP BY a.ign, b.ign ORDER BY shared DESC, best_diff DESC, a.ign ASC, b.ign ASC',
                 sp
             )
             rows = db.cursor.fetchall()
         finally:
             db.close()
 
-        card = _generate_duo_card(rows, sl)
+        total_pages = max(1, math.ceil(len(rows) / _LB_PER_PAGE))
+        cards = [
+            _generate_duo_card(
+                rows[i * _LB_PER_PAGE:(i + 1) * _LB_PER_PAGE],
+                sl,
+                i + 1,
+                total_pages,
+                i * _LB_PER_PAGE + 1,
+            )
+            for i in range(total_pages)
+        ]
+        await _make_paginator(_pages_from_cards(cards, 'duos')).respond(ctx.interaction)
+
+    # ── /warseason ────────────────────────────────────────────────────────────
+
+    @snipe.command(name='overview', description='View a player snipe overview')
+    async def snipe_overview(
+        self,
+        ctx: discord.ApplicationContext,
+        ign: discord.Option(str, 'IGN of the player', required=True),
+    ):
+        await ctx.defer()
+
+        role_case = (
+            "CASE sp.role "
+            "WHEN 'Healer' THEN 1 "
+            "WHEN 'Tank' THEN 2 "
+            "WHEN 'DPS' THEN 3 "
+            "WHEN 'Solo' THEN 4 "
+            "ELSE 99 END"
+        )
+
+        db = DB()
+        db.connect()
+        try:
+            db.cursor.execute(
+                'SELECT COUNT(*), AVG(sl.difficulty) '
+                'FROM snipe_logs sl '
+                'JOIN snipe_participants sp ON sp.snipe_id = sl.id '
+                'WHERE sp.ign = %s',
+                (ign,)
+            )
+            summary_row = db.cursor.fetchone()
+            total_snipes_all = summary_row[0] or 0
+            avg_diff = float(summary_row[1]) if summary_row and summary_row[1] is not None else None
+
+            db.cursor.execute(
+                'SELECT sl.hq, COUNT(*) AS n '
+                'FROM snipe_logs sl '
+                'JOIN snipe_participants sp ON sp.snipe_id = sl.id '
+                'WHERE sp.ign = %s '
+                'GROUP BY sl.hq ORDER BY n DESC, sl.hq ASC LIMIT 1',
+                (ign,)
+            )
+            top_hq_row = db.cursor.fetchone()
+            top_hq = display_hq(top_hq_row[0]) if top_hq_row else None
+            top_hq_count = top_hq_row[1] if top_hq_row else 0
+
+            db.cursor.execute(
+                'SELECT sl.id, sl.sniped_at, sl.hq, sl.guild_tag, sl.difficulty, sl.conns '
+                'FROM snipe_logs sl '
+                'JOIN snipe_participants sp ON sp.snipe_id = sl.id '
+                'WHERE sp.ign = %s '
+                'ORDER BY sl.sniped_at DESC LIMIT 5',
+                (ign,)
+            )
+            recent_snipes = db.cursor.fetchall()
+
+            db.cursor.execute(
+                f'SELECT sp.snipe_id, sp.ign, sp.role '
+                f'FROM snipe_participants sp '
+                f'WHERE sp.snipe_id IN ('
+                f'  SELECT snipe_id FROM snipe_participants WHERE ign = %s'
+                f') '
+                f'ORDER BY sp.snipe_id DESC, {role_case}, sp.ign ASC',
+                (ign,)
+            )
+            team_rows = db.cursor.fetchall()
+        finally:
+            db.close()
+
+        if total_snipes_all == 0:
+            await ctx.followup.send(f":no_entry: `{ign}` has no logged snipes.")
+            return
+
+        participants_all = defaultdict(list)
+        for snipe_id, member_ign, role in team_rows:
+            participants_all[snipe_id].append((member_ign, role))
+
+        team_counter_any = Counter(
+            _format_team_names_compact(pairs)
+            for pairs in participants_all.values()
+            if pairs
+        )
+        team_counter_roles = Counter(
+            _format_team_compact(pairs)
+            for pairs in participants_all.values()
+            if pairs
+        )
+        most_common_team_any, team_any_count = team_counter_any.most_common(1)[0] if team_counter_any else ('\u2014', 0)
+        most_common_team_roles, team_role_count = team_counter_roles.most_common(1)[0] if team_counter_roles else ('\u2014', 0)
+
+        recent_ids = {row[0] for row in recent_snipes}
+        recent_participants = {
+            snipe_id: pairs for snipe_id, pairs in participants_all.items() if snipe_id in recent_ids
+        }
+        guild_colors = await _get_guild_color_map(guild_tag for _, _, _, guild_tag, _, _ in recent_snipes)
+
+        rank_text = rank_color = None
+        try:
+            player = await asyncio.to_thread(PlayerStats, ign, 1)
+            if not player.error:
+                if player.taq and player.linked and player.rank in discord_ranks:
+                    rank_text = player.rank.upper()
+                    rank_color = discord_ranks[player.rank]['color']
+                elif player.guild_rank:
+                    rank_text = player.guild_rank.upper()
+                    rank_color = '#a0aeb0'
+        except Exception:
+            pass
+
+        card = _generate_overview_card(
+            ign, rank_text, rank_color,
+            most_common_team_any, team_any_count,
+            most_common_team_roles, team_role_count,
+            recent_snipes, recent_participants,
+            avg_diff, top_hq, top_hq_count, total_snipes_all, guild_colors,
+        )
         buf = BytesIO()
         card.save(buf, format='PNG')
         buf.seek(0)
-        await ctx.followup.send(file=discord.File(buf, filename='duos.png'))
+        await ctx.followup.send(file=discord.File(buf, filename=f'snipe_overview_{ign}.png'))
 
-    # ── /warseason ────────────────────────────────────────────────────────────
+    @snipe.command(name='list', description='View the full snipe log')
+    async def snipe_list(
+        self,
+        ctx: discord.ApplicationContext,
+        sort: discord.Option(str, 'Sort by', choices=_LIST_SORT_CHOICES, required=False, default='Newest'),
+        season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
+    ):
+        await ctx.defer()
+        sc, sp = _season_clause(season)
+        sl = _season_label(season)
+        order_sql = _LIST_ORDER_SQL[sort]
+
+        role_case = (
+            "CASE sp.role "
+            "WHEN 'Healer' THEN 1 "
+            "WHEN 'Tank' THEN 2 "
+            "WHEN 'DPS' THEN 3 "
+            "WHEN 'Solo' THEN 4 "
+            "ELSE 99 END"
+        )
+
+        db = DB()
+        db.connect()
+        try:
+            db.cursor.execute(
+                f'SELECT sl.id, sl.sniped_at, sl.hq, sl.guild_tag, sl.difficulty, sl.conns '
+                f'FROM snipe_logs sl '
+                f'WHERE 1=1 {sc} '
+                f'ORDER BY {order_sql}',
+                sp
+            )
+            all_rows = db.cursor.fetchall()
+
+            db.cursor.execute(
+                f'SELECT sp.snipe_id, sp.ign, sp.role '
+                f'FROM snipe_participants sp '
+                f'JOIN snipe_logs sl ON sl.id = sp.snipe_id '
+                f'WHERE 1=1 {sc} '
+                f'ORDER BY sp.snipe_id DESC, {role_case}, sp.ign ASC',
+                sp
+            )
+            participant_rows = db.cursor.fetchall()
+        finally:
+            db.close()
+
+        participants_map = defaultdict(list)
+        for snipe_id, ign_name, role in participant_rows:
+            participants_map[snipe_id].append((ign_name, role))
+        guild_colors = await _get_guild_color_map(guild_tag for _, _, _, guild_tag, _, _ in all_rows)
+
+        total_pages = max(1, math.ceil(len(all_rows) / _LIST_PER_PAGE))
+        cards = [
+            _generate_list_card(
+                all_rows[i * _LIST_PER_PAGE:(i + 1) * _LIST_PER_PAGE],
+                participants_map,
+                guild_colors,
+                sort,
+                sl,
+                i + 1,
+                total_pages,
+                i * _LIST_PER_PAGE + 1,
+            )
+            for i in range(total_pages)
+        ]
+        await _make_paginator(_pages_from_cards(cards, 'snipe_list')).respond(ctx.interaction)
 
     @slash_command(description='Set the current war season', guild_ids=ALL_GUILD_IDS)
     async def warseason(
