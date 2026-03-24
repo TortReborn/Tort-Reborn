@@ -2,6 +2,7 @@ import asyncio
 import json
 import math
 import os
+import re
 import time
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
@@ -21,6 +22,13 @@ from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS', 'Solo']
 _ROLE_ORDER     = ['Healer', 'Tank', 'DPS', 'Solo']
+_ROLE_COLORS    = {
+    'Healer': '#0ca626',
+    'Tank':   '#0f6b7c',
+    'DPS':    '#7c0f1c',
+    'Solo':   '#2f0f7c',
+}
+_PARTICIPANT_NAME_COLOR = '#88868c'
 LB_SORT_CHOICES = ['Total Snipes', 'Personal Best', 'Best Streak', 'Current Streak']
 _LB_PER_PAGE        = 10
 _LIST_PER_PAGE      = 10
@@ -188,10 +196,10 @@ def _draw_table_header(draw, W, f_title, f_label, title, subtitle,
 
 
 def _draw_table_footer(draw, W, H, f_label, page_num, total_pages, ACCENT):
-    page_str = f'Page {page_num} of {total_pages}'
+    page_str = f'Page {page_num}' if total_pages == 1 else f'Page {page_num} of {total_pages}'
     ph = draw.textbbox((0, 0), page_str, font=f_label)[3]
     pw = draw.textbbox((0, 0), page_str, font=f_label)[2]
-    draw.text((W - 22 - pw, H - 20 - ph), page_str, font=f_label, fill=ACCENT)
+    draw.text((W - 22 - pw, H - 22 - ph), page_str, font=f_label, fill=ACCENT)
 
 
 def _fit_font(text: str, draw, path: str, max_size: int, max_w: int) -> ImageFont.FreeTypeFont:
@@ -251,6 +259,89 @@ def _fit_wrap_lines(
 
 def _normalize_guild_tag(tag: str | None) -> str:
     return (tag or '').strip().upper()
+
+
+def _strip_addline_format(text: str) -> str:
+    if not text:
+        return ''
+    return re.sub(r'&(?:#[0-9a-fA-F]{6}|.)', '', text)
+
+
+def _fit_addline_font(text: str, draw, path: str, max_size: int, max_w: int, min_size: int = 10) -> ImageFont.FreeTypeFont:
+    plain = _strip_addline_format(text)
+    sample = plain or '\u2014'
+    for size in range(max_size, min_size - 1, -1):
+        font = ImageFont.truetype(path, size)
+        if draw.textbbox((0, 0), sample, font=font)[2] <= max_w:
+            return font
+    return ImageFont.truetype(path, min_size)
+
+
+def _fit_addline_text(text: str, draw, path: str, max_size: int, max_w: int, min_size: int = 10) -> tuple[str, ImageFont.FreeTypeFont]:
+    plain = _strip_addline_format(text) or '\u2014'
+    font = _fit_addline_font(plain, draw, path, max_size, max_w, min_size=min_size)
+    if draw.textbbox((0, 0), plain, font=font)[2] <= max_w:
+        return plain, font
+
+    clipped = plain
+    while clipped and draw.textbbox((0, 0), f'{clipped}\u2026', font=font)[2] > max_w:
+        clipped = clipped[:-1].rstrip(' ,')
+    return (f'{clipped}\u2026' if clipped else '\u2026'), font
+
+
+def _colorize_role_words(text: str) -> str:
+    if not text or text == '\u2014':
+        return text
+    out = text
+    for role in _ROLE_ORDER:
+        out = re.sub(rf'\b{re.escape(role)}\b', f'&#{_ROLE_COLORS[role][1:]}{role}&f', out)
+    return out
+
+
+def _group_participants_by_role(pairs: list[tuple[str, str]]) -> dict[str, list[str]]:
+    grouped = defaultdict(list)
+    for ign, role in pairs:
+        grouped[role].append(ign)
+    return grouped
+
+
+def _draw_role_columns(draw, pairs: list[tuple[str, str]], start_x: int, y: int, max_x: int) -> None:
+    grouped = _group_participants_by_role(pairs)
+    roles = ['Healer', 'Tank', 'DPS']
+    total_w = max_x - start_x
+    gap = 10
+    usable_w = total_w - gap * (len(roles) - 1)
+    weights = {'Healer': 0.34, 'Tank': 0.33, 'DPS': 0.33}
+    col_ws = {}
+    used = 0
+    for idx, role in enumerate(roles):
+        if idx == len(roles) - 1:
+            col_ws[role] = max(56, usable_w - used)
+        else:
+            width = max(56, int(usable_w * weights[role]))
+            col_ws[role] = width
+            used += width
+    role_font = ImageFont.truetype('images/profile/5x5.ttf', 14)
+    label_ws = {role: draw.textbbox((0, 0), role, font=role_font)[2] for role in roles}
+    label_hs = {role: draw.textbbox((0, 0), role, font=role_font)[3] for role in roles}
+    cursor_x = start_x
+    for idx, role in enumerate(roles):
+        names = grouped.get(role)
+        col_x = cursor_x
+        col_w = col_ws[role]
+        cursor_x += col_w + gap
+        if not names:
+            continue
+        role_text = f'&#{_ROLE_COLORS[role][1:]}{role}'
+        names_text = ', '.join(names)
+        label_w = label_ws[role]
+        names_x = col_x + label_w + 4
+        names_max_w = max(18, col_x + col_w - names_x - 4)
+        fitted_text, names_font = _fit_addline_text(names_text, draw, 'images/profile/game.ttf', 18, names_max_w, min_size=8)
+        names_h = draw.textbbox((0, 0), fitted_text, font=names_font)[3]
+        names_y = y + max(0, label_hs[role] - names_h)
+        addLine(role_text, draw, role_font, col_x, y, drop_x=2, drop_y=2)
+        addLine(f'&#{_PARTICIPANT_NAME_COLOR[1:]}{fitted_text}', draw, names_font, names_x, names_y, drop_x=2, drop_y=2)
 
 
 def _load_athena_guild_colors_sync() -> dict[str, str]:
@@ -415,9 +506,10 @@ def _generate_snipe_card(
         by = ROWS_Y[idx // 4]
         card.paste(box_img, (bx, by), box_img)
         draw.text((bx + 8, by + 7), label, font=f_label, fill=ACCENT)
-        v_font = _fit_font(value, draw, 'images/profile/game.ttf', 32, BOX_W - 16)
-        val_w  = draw.textbbox((0, 0), value, font=v_font)[2]
-        addLine(value, draw, v_font, bx + BOX_W - 8 - val_w, by + 38, drop_x=3, drop_y=3)
+        formatted_value = _colorize_role_words(value) if label == 'Top Role' else value
+        v_font = _fit_addline_font(formatted_value, draw, 'images/profile/game.ttf', 32, BOX_W - 16)
+        val_w  = draw.textbbox((0, 0), _strip_addline_format(formatted_value), font=v_font)[2]
+        addLine(formatted_value, draw, v_font, bx + BOX_W - 8 - val_w, by + 38, drop_x=3, drop_y=3)
 
     # ── Right panel — lists ───────────────────────────────────────────────────
     LIST_Y, LIST_X, LIST_W = 294, 450, 360
@@ -562,8 +654,9 @@ def _generate_team_card(rows: list, season_label: str) -> Image.Image:
             addLine(str(total),  draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
             addLine(f'{best_diff}k' if best_diff else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
             roles_value = str(roles_text) if roles_text else '\u2014'
-            roles_font = _fit_font(roles_value, draw, 'images/profile/game.ttf', 24, W - CX[4] - 34)
-            addLine(roles_value, draw, roles_font, CX[4], ry + 6, drop_x=3, drop_y=3)
+            roles_formatted = _colorize_role_words(roles_value)
+            roles_font = _fit_addline_font(roles_formatted, draw, 'images/profile/game.ttf', 24, W - CX[4] - 34)
+            addLine(roles_formatted, draw, roles_font, CX[4], ry + 6, drop_x=3, drop_y=3)
     else:
         draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
     return card
@@ -615,8 +708,8 @@ def _format_team_compact(pairs: list[tuple[str, str]]) -> str:
     parts = []
     for role in _ROLE_ORDER:
         if role in grouped:
-            parts.append(f"{', '.join(grouped[role])} {role}")
-    return ' / '.join(parts) if parts else '\u2014'
+            parts.append(f"{role} {' '.join(grouped[role])}")
+    return ' '.join(parts) if parts else '\u2014'
 
 
 def _format_team_names_compact(pairs: list[tuple[str, str]]) -> str:
@@ -674,7 +767,7 @@ def _generate_overview_card(
         most_common_team_roles, draw, 'images/profile/game.ttf', 14, LW - 24, 2, min_size=10
     )
     for i, line in enumerate(team_role_lines):
-        addLine(line, draw, team_role_font, LX + 12, 300 + i * 14, drop_x=2, drop_y=2)
+        addLine(_colorize_role_words(line), draw, team_role_font, LX + 12, 300 + i * 14, drop_x=2, drop_y=2)
 
     draw.line([(LX, 362), (LX + LW, 362)], fill=SEP, width=2)
     draw.text((LX, 374), 'QUICK STATS', font=f_label, fill=ACCENT)
@@ -733,8 +826,7 @@ def _generate_overview_card(
             hq_text = display_hq(hq)
             hq_font = _fit_font(hq_text, draw, 'images/profile/game.ttf', 24, 250)
             meta_text = f'{difficulty}k  |  {conns} conns'
-            team_text = _format_team_compact(participants_map.get(snipe_id, []))
-            team_font = _fit_font(team_text, draw, 'images/profile/game.ttf', 18, row_w - 24)
+            team_pairs = participants_map.get(snipe_id, [])
             guild_value = guild_tag or '\u2014'
 
             draw.text((RX + 10, ry + 8), date_text, font=f_label, fill=ACCENT)
@@ -742,7 +834,7 @@ def _generate_overview_card(
             guild_color = guild_colors.get(_normalize_guild_tag(guild_tag), _DEFAULT_GUILD_COLOR)
             addLine(f'&#{guild_color[1:]}{guild_value}', draw, f_label, RX + 10, ry + 42, drop_x=2, drop_y=2)
             draw.text((RX + 200, ry + 42), meta_text, font=f_label, fill=WHITE)
-            draw.text((RX + 10, ry + 65), team_text, font=team_font, fill=DIM)
+            _draw_role_columns(draw, team_pairs, RX + 10, ry + 67, RX + row_w - 12)
     else:
         draw.text((RX, 126), 'No recent snipes found.', font=f_body, fill='#555555')
 
@@ -750,7 +842,7 @@ def _generate_overview_card(
 
 
 def _generate_list_card(page_rows, participants_map, guild_colors, sort_by, season_label, page_num, total_pages, start_idx):
-    W, H = 1280, 740
+    W, H = 1080, 740
     ROW_H = 58
     card, draw = _card_base(W, H)
 
@@ -783,17 +875,16 @@ def _generate_list_card(page_rows, participants_map, guild_colors, sort_by, seas
             hq_text = display_hq(hq)
             if draw.textbbox((0, 0), hq_text, font=f_small)[2] > 220:
                 hq_text = hq
-            participants_text = _format_team_compact(participants_map.get(snipe_id, []))
-            p_font = _fit_font(participants_text, draw, 'images/profile/game.ttf', 18, W - 140)
+            team_pairs = participants_map.get(snipe_id, [])
 
             draw.text((CX[0], ry + 2), f'#{start_idx + i}', font=f_small, fill=ACCENT)
             addLine(date_text, draw, f_small, CX[1], ry + 2, drop_x=3, drop_y=3)
             addLine(hq_text, draw, f_small, CX[2], ry + 2, drop_x=3, drop_y=3)
             guild_color = guild_colors.get(_normalize_guild_tag(guild_tag), _DEFAULT_GUILD_COLOR)
-            addLine(f'&#{guild_color[1:]}{guild_tag}', draw, f_small, CX[3], ry + 2, drop_x=3, drop_y=3)
+            addLine(f'&#{guild_color[1:]}{guild_tag or "\u2014"}', draw, f_small, CX[3], ry + 2, drop_x=3, drop_y=3)
             addLine(f'{difficulty}k', draw, f_small, CX[4], ry + 2, drop_x=3, drop_y=3)
             addLine(str(conns), draw, f_small, CX[5], ry + 2, drop_x=3, drop_y=3)
-            draw.text((CX[1], ry + 30), participants_text, font=p_font, fill=DIM)
+            _draw_role_columns(draw, team_pairs, CX[1], ry + 33, CX[4] - 12)
     else:
         draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
 
@@ -808,8 +899,8 @@ def _format_participants_log(pairs: list[tuple[str, str]]) -> str:
     parts = []
     for role in _ROLE_ORDER:
         if role in grouped:
-            parts.append(' '.join(grouped[role]) + ' ' + role)
-    return ' / '.join(parts)
+            parts.append(f"{role} {' '.join(grouped[role])}")
+    return ' '.join(parts)
 
 
 # ── Cog ───────────────────────────────────────────────────────────────────────
@@ -1029,7 +1120,7 @@ class SnipeTracker(commands.Cog):
                 ' WHERE other_sp.snipe_id IN ('
                 '   SELECT sp.snipe_id FROM snipe_participants sp WHERE sp.ign = %s'
                 ' ) AND other_sp.ign != %s'
-                ' GROUP BY other_sp.ign ORDER BY shared DESC LIMIT 3', (ign, ign)
+                ' GROUP BY other_sp.ign ORDER BY shared DESC LIMIT 6', (ign, ign)
             )
             teammate_rows = db.cursor.fetchall()
 
