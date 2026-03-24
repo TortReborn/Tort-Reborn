@@ -28,7 +28,16 @@ _ROLE_COLORS    = {
     'DPS':    '#7c0f1c',
     'Solo':   '#2f0f7c',
 }
-_PARTICIPANT_NAME_COLOR = '#88868c'
+_PARTICIPANT_NAME_COLOR = '#b5b4b4'
+_DIFFICULTY_COLORS = [
+    (202, '#ff00ab'),
+    (192, '#ff2121'),
+    (167, '#f56217'),
+    (120, '#ff9627'),
+    (100, '#ffcd35'),
+    (56,  '#4cb80f'),
+    (0,   '#a8f785'),
+]
 LB_SORT_CHOICES = ['Total Snipes', 'Personal Best', 'Best Streak', 'Current Streak']
 _LB_PER_PAGE        = 10
 _LIST_PER_PAGE      = 10
@@ -267,6 +276,23 @@ def _strip_addline_format(text: str) -> str:
     return re.sub(r'&(?:#[0-9a-fA-F]{6}|.)', '', text)
 
 
+def _difficulty_color(diff: int | float | None) -> str:
+    if diff is None:
+        return '#ffffff'
+    for threshold, color in _DIFFICULTY_COLORS:
+        if diff >= threshold:
+            return color
+    return _DIFFICULTY_COLORS[-1][1]
+
+
+def _format_difficulty_text(diff: int | float | None, prefix: str = '', suffix: str = '') -> str:
+    if diff is None:
+        return f'{prefix}\u2014{suffix}'
+    diff_text = f'{diff:.1f}k' if isinstance(diff, float) and not diff.is_integer() else f'{int(diff)}k'
+    color = _difficulty_color(diff)
+    return f'{prefix}&#{color[1:]}{diff_text}&f{suffix}'
+
+
 def _fit_addline_font(text: str, draw, path: str, max_size: int, max_w: int, min_size: int = 10) -> ImageFont.FreeTypeFont:
     plain = _strip_addline_format(text)
     sample = plain or '\u2014'
@@ -448,9 +474,11 @@ def _generate_snipe_card(
 
     if pb_row:
         hq_abbr, diff, _ = pb_row
-        pb_text = f"{display_hq(hq_abbr)} \u2014 {diff}k"
-        if draw.textbbox((0, 0), pb_text, font=f_pb)[2] > LW - 8:
-            pb_text = f"{hq_abbr} \u2014 {diff}k"
+        pb_plain = f"{display_hq(hq_abbr)} \u2014 {diff}k"
+        if draw.textbbox((0, 0), pb_plain, font=f_pb)[2] > LW - 8:
+            pb_text = _format_difficulty_text(diff, prefix=f'{hq_abbr} \u2014 ')
+        else:
+            pb_text = _format_difficulty_text(diff, prefix=f'{display_hq(hq_abbr)} \u2014 ')
         addLine(pb_text, draw, f_pb, LX, 196, drop_x=4, drop_y=4)
     else:
         draw.text((LX, 196), 'No snipes yet', font=f_pb, fill='#555555')
@@ -572,7 +600,7 @@ def _generate_lb_card(page_rows, sort_by, season_label, page_num, total_pages, s
             if i % 2 == 0:
                 card.paste(row_bg, (28, ry - 2), row_bg)
             rank = start_rank + i
-            best_str = f"{row['best_hq']} \u2014 {row['best_diff']}k" if row['best_hq'] else '\u2014'
+            best_str = _format_difficulty_text(row['best_diff'], prefix=f"{row['best_hq']} \u2014 ") if row['best_hq'] else '\u2014'
             draw.text((CX[0], ry + 4), f'#{rank}', font=f_small, fill=ACCENT)
             addLine(str(row['ign']),         draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(row['total']),       draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
@@ -616,7 +644,7 @@ def _generate_roles_card(page_rows, role, sort_by, season_label, page_num, total
             draw.text((CX[0], ry + 4), f'#{rank}', font=f_small, fill=ACCENT)
             addLine(str(ign),                            draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(times),                          draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
-            addLine(f'{best_diff}k' if best_diff else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
+            addLine(_format_difficulty_text(best_diff) if best_diff is not None else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
     else:
         draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
 
@@ -652,7 +680,7 @@ def _generate_team_card(rows: list, season_label: str) -> Image.Image:
             draw.text((CX[0], ry + 4), f'#{i + 1}', font=f_small, fill=ACCENT)
             addLine(str(ign),    draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(total),  draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
-            addLine(f'{best_diff}k' if best_diff else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
+            addLine(_format_difficulty_text(best_diff) if best_diff is not None else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
             roles_value = str(roles_text) if roles_text else '\u2014'
             roles_formatted = _colorize_role_words(roles_value)
             roles_font = _fit_addline_font(roles_formatted, draw, 'images/profile/game.ttf', 24, W - CX[4] - 34)
@@ -690,7 +718,7 @@ def _generate_duo_card(page_rows, season_label, page_num, total_pages, start_ran
             draw.text((CX[0], ry + 4), f'#{start_rank + i}', font=f_small, fill=ACCENT)
             addLine(f'{p1} + {p2}', draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(shared),    draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
-            addLine(f'{best_diff}k' if best_diff else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
+            addLine(_format_difficulty_text(best_diff) if best_diff is not None else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
     else:
         draw.text((38, 140), 'No entries yet.', font=f_small, fill='#555555')
 
@@ -775,7 +803,7 @@ def _generate_overview_card(
     BOX_W, BOX_H = 150, 92
     stat_boxes = [
         ('Total Snipes', str(total_snipes_all)),
-        ('Avg Diff.', f'{avg_diff:.1f}k' if avg_diff is not None else '\u2014'),
+        ('Avg Diff.', _format_difficulty_text(avg_diff) if avg_diff is not None else '\u2014'),
     ]
     for idx, (label, value) in enumerate(stat_boxes):
         bx = LX + (idx % 2) * (BOX_W + 15)
@@ -786,8 +814,8 @@ def _generate_overview_card(
         )
         card.paste(box, (bx, by), box)
         draw.text((bx + 8, by + 8), label, font=f_label, fill=ACCENT)
-        value_font = _fit_font(value, draw, 'images/profile/game.ttf', 26, BOX_W - 16)
-        value_w = draw.textbbox((0, 0), value, font=value_font)[2]
+        value_font = _fit_addline_font(value, draw, 'images/profile/game.ttf', 26, BOX_W - 16)
+        value_w = draw.textbbox((0, 0), _strip_addline_format(value), font=value_font)[2]
         addLine(value, draw, value_font, bx + BOX_W - 8 - value_w, by + 44, drop_x=3, drop_y=3)
 
     top_box_x = LX
@@ -825,16 +853,17 @@ def _generate_overview_card(
             date_text = sniped_at.strftime('%d/%m/%y') if sniped_at else '\u2014'
             hq_text = display_hq(hq)
             hq_font = _fit_font(hq_text, draw, 'images/profile/game.ttf', 24, 250)
-            meta_text = f'{difficulty}k  |  {conns} conns'
+            meta_text = _format_difficulty_text(difficulty, suffix=f'  |  {conns} conns')
             team_pairs = participants_map.get(snipe_id, [])
             guild_value = guild_tag or '\u2014'
 
             draw.text((RX + 10, ry + 8), date_text, font=f_label, fill=ACCENT)
             addLine(hq_text, draw, hq_font, RX + 120, ry + 6, drop_x=3, drop_y=3)
             guild_color = guild_colors.get(_normalize_guild_tag(guild_tag), _DEFAULT_GUILD_COLOR)
-            addLine(f'&#{guild_color[1:]}{guild_value}', draw, f_label, RX + 10, ry + 42, drop_x=2, drop_y=2)
-            draw.text((RX + 200, ry + 42), meta_text, font=f_label, fill=WHITE)
-            _draw_role_columns(draw, team_pairs, RX + 10, ry + 67, RX + row_w - 12)
+            meta_y = ry + 34
+            meta_x = addLine(f'&#{guild_color[1:]}{guild_value}', draw, f_label, RX + 10, meta_y, drop_x=2, drop_y=2)
+            addLine(meta_text, draw, f_label, meta_x + 18, meta_y, drop_x=2, drop_y=2)
+            _draw_role_columns(draw, team_pairs, RX + 10, ry + 61, RX + row_w - 12)
     else:
         draw.text((RX, 126), 'No recent snipes found.', font=f_body, fill='#555555')
 
@@ -873,16 +902,15 @@ def _generate_list_card(page_rows, participants_map, guild_colors, sort_by, seas
 
             date_text = sniped_at.strftime('%d/%m/%y') if sniped_at else '\u2014'
             hq_text = display_hq(hq)
-            if draw.textbbox((0, 0), hq_text, font=f_small)[2] > 220:
-                hq_text = hq
+            hq_font = _fit_font(hq_text, draw, 'images/profile/game.ttf', 24, CX[3] - CX[2] - 18)
             team_pairs = participants_map.get(snipe_id, [])
 
             draw.text((CX[0], ry + 2), f'#{start_idx + i}', font=f_small, fill=ACCENT)
             addLine(date_text, draw, f_small, CX[1], ry + 2, drop_x=3, drop_y=3)
-            addLine(hq_text, draw, f_small, CX[2], ry + 2, drop_x=3, drop_y=3)
+            addLine(hq_text, draw, hq_font, CX[2], ry + 2, drop_x=3, drop_y=3)
             guild_color = guild_colors.get(_normalize_guild_tag(guild_tag), _DEFAULT_GUILD_COLOR)
             addLine(f'&#{guild_color[1:]}{guild_tag or "\u2014"}', draw, f_small, CX[3], ry + 2, drop_x=3, drop_y=3)
-            addLine(f'{difficulty}k', draw, f_small, CX[4], ry + 2, drop_x=3, drop_y=3)
+            addLine(_format_difficulty_text(difficulty), draw, f_small, CX[4], ry + 2, drop_x=3, drop_y=3)
             addLine(str(conns), draw, f_small, CX[5], ry + 2, drop_x=3, drop_y=3)
             _draw_role_columns(draw, team_pairs, CX[1], ry + 33, CX[4] - 12)
     else:
