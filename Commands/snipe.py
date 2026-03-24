@@ -474,12 +474,9 @@ def _generate_snipe_card(
 
     if pb_row:
         hq_abbr, diff, _ = pb_row
-        pb_plain = f"{display_hq(hq_abbr)} \u2014 {diff}k"
-        if draw.textbbox((0, 0), pb_plain, font=f_pb)[2] > LW - 8:
-            pb_text = _format_difficulty_text(diff, prefix=f'{hq_abbr} \u2014 ')
-        else:
-            pb_text = _format_difficulty_text(diff, prefix=f'{display_hq(hq_abbr)} \u2014 ')
-        addLine(pb_text, draw, f_pb, LX, 196, drop_x=4, drop_y=4)
+        pb_text = _format_difficulty_text(diff, prefix=f'{display_hq(hq_abbr)} \u2014 ')
+        pb_font = _fit_addline_font(pb_text, draw, 'images/profile/game.ttf', 35, LW - 8, min_size=20)
+        addLine(pb_text, draw, pb_font, LX, 196, drop_x=4, drop_y=4)
     else:
         draw.text((LX, 196), 'No snipes yet', font=f_pb, fill='#555555')
 
@@ -498,7 +495,9 @@ def _generate_snipe_card(
     if teammate_rows:
         for i, (tm_ign, count) in enumerate(teammate_rows[:6]):
             s = 'snipe' if count == 1 else 'snipes'
-            addLine(f'{tm_ign} \u2014 {count} {s}', draw, f_small, LX, 412 + i * 28, drop_x=3, drop_y=3)
+            teammate_text = f'{tm_ign} \u2014 {count} {s}'
+            teammate_font = _fit_addline_font(teammate_text, draw, 'images/profile/game.ttf', 26, LW - 8, min_size=18)
+            addLine(teammate_text, draw, teammate_font, LX, 412 + i * 34, drop_x=3, drop_y=3)
     else:
         draw.text((LX, 412), 'None yet', font=f_small, fill='#555555')
 
@@ -564,9 +563,8 @@ def _generate_snipe_card(
     if hq_rows:
         for i, (abbr, count) in enumerate(hq_rows[:3]):
             hq_text = f'{display_hq(abbr)} \u2014 {count}'
-            if draw.textbbox((0, 0), hq_text, font=f_small)[2] > LIST_W - 16:
-                hq_text = f'{abbr} \u2014 {count}'
-            addLine(hq_text, draw, f_small, LIST_X + 8, SECT2_Y + 32 + i * 34, drop_x=3, drop_y=3)
+            hq_font = _fit_addline_font(hq_text, draw, 'images/profile/game.ttf', 26, LIST_W - 16, min_size=18)
+            addLine(hq_text, draw, hq_font, LIST_X + 8, SECT2_Y + 32 + i * 34, drop_x=3, drop_y=3)
     else:
         draw.text((LIST_X + 8, SECT2_Y + 32), 'None yet', font=f_small, fill='#555555')
 
