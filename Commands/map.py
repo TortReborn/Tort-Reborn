@@ -175,6 +175,8 @@ class Map(commands.Cog):
 
     @slash_command(
         description="Displays the full territory map, or a zoomed-in version for a specific guild prefix.",
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
     )
     @external_rate_limit()
     async def map(self, ctx: discord.ApplicationContext, guild: Option(str, "Guild prefix to zoom in on", required=False)):

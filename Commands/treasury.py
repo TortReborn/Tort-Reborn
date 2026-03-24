@@ -13,7 +13,11 @@ class Treasury(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Display all territories ordered by time held')
+    @slash_command(
+        description='Display all territories ordered by time held',
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
+    )
     @external_rate_limit()
     async def treasury(self, ctx: discord.ApplicationContext):
         await ctx.defer()
