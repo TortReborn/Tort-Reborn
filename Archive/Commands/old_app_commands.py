@@ -18,7 +18,7 @@ from Helpers.openai_helper import (
 )
 from Helpers.sheets import add_row
 from Helpers.variables import (
-    ALL_GUILD_IDS,
+    HOME_GUILD_IDS,
     MEMBER_APP_CHANNEL_ID,
     APP_MANAGER_ROLE_MENTION,
     INVITED_CATEGORY_NAME,
@@ -34,7 +34,7 @@ class ApplicationCommands(commands.Cog):
 
     old_app_group = SlashCommandGroup(
         'old-app', '[DEPRECATED] Old ticket-based application commands (use /app instead)',
-        guild_ids=ALL_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
 

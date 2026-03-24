@@ -24,7 +24,7 @@ MIN_QUEUER_RANK_INDEX = 5
 REMOVE_ROLES = [
     'Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', 'Manatee', '★Coastal Waters', 'Piranha',
     'Barracuda', '★★ Azure Ocean', 'Angler', '★☆☆ Blue Sea', 'Hammerhead', '★★☆Deep Sea',
-    'Sailfish', '★★★Dark Sea', 'Dolphin', 'Trial-Chief', 'Narwhal', '★★★★Abyss Waters',
+    'Sailfish', '★★★Dark Sea', 'Dolphin', 'Trial-Narwhal', 'Narwhal', '★★★★Abyss Waters',
     '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
     '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛠️ PROFESSIONS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
     '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🎖️MILITARY⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🏹Spearhead',
@@ -52,6 +52,7 @@ class PromotionQueueProcessor(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def _task(self):
+        # Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)
         rows = await asyncio.to_thread(self._fetch_pending_entries)
         if not rows:
             return
@@ -108,17 +109,20 @@ class PromotionQueueProcessor(commands.Cog):
         try:
             db.cursor.execute(
                 """
-                SELECT id, uuid, ign, current_rank, new_rank,
-                       action_type, queued_by_discord_id, queued_by_ign
-                FROM promotion_queue
-                WHERE id IN (
-                    SELECT id FROM promotion_queue
-                    WHERE status = 'pending'
-                    ORDER BY created_at ASC
-                    LIMIT %s
-                    FOR UPDATE SKIP LOCKED
+                WITH claimed AS (
+                    UPDATE promotion_queue
+                    SET status = 'processing'
+                    WHERE id IN (
+                        SELECT id FROM promotion_queue
+                        WHERE status = 'pending'
+                        ORDER BY created_at ASC
+                        LIMIT %s
+                        FOR UPDATE SKIP LOCKED
+                    )
+                    RETURNING id, uuid, ign, current_rank, new_rank,
+                              action_type, queued_by_discord_id, queued_by_ign
                 )
-                ORDER BY created_at ASC
+                SELECT * FROM claimed ORDER BY id ASC
                 """,
                 (MAX_ENTRIES_PER_CYCLE,)
             )
@@ -134,7 +138,8 @@ class PromotionQueueProcessor(commands.Cog):
         db.connect()
         try:
             db.cursor.execute(
-                "UPDATE promotion_queue SET status = 'completed', completed_at = NOW() WHERE id = %s",
+                "UPDATE promotion_queue SET status = 'completed', completed_at = NOW() "
+                "WHERE id = %s AND status = 'processing'",
                 (entry_id,)
             )
             db.connection.commit()
@@ -148,7 +153,7 @@ class PromotionQueueProcessor(commands.Cog):
         try:
             db.cursor.execute(
                 "UPDATE promotion_queue SET status = 'failed', completed_at = NOW(), "
-                "error_message = %s WHERE id = %s",
+                "error_message = %s WHERE id = %s AND status = 'processing'",
                 (error_message, entry_id)
             )
             db.connection.commit()

@@ -15,7 +15,7 @@ from discord import Permissions
 
 from Helpers.database import DB
 from Helpers.variables import (
-    ALL_GUILD_IDS,
+    HOME_GUILD_IDS,
     WEBSITE_URL,
     RAID_COLLECTING_CHANNEL_ID,
     SHELL_EMOJI,
@@ -252,7 +252,7 @@ class ConvertView(View):
 class Generate(commands.Cog):
     generate = SlashCommandGroup(
         "generate", "ADMIN: Generate persistent messages/panels",
-        guild_ids=ALL_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=Permissions(administrator=True),
     )
 

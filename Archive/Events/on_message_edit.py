@@ -7,6 +7,7 @@ from discord.ext import commands
 from Helpers.database import DB
 from Helpers.functions import getNameFromUUID
 from Helpers.logger import log, ERROR
+from Helpers.variables import is_home_guild
 from Helpers.openai_helper import (
     extract_ign,
     validate_application_completeness,
@@ -21,6 +22,11 @@ class OnMessageEdit(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
         """Handle message edits in application tickets for re-validation."""
+        # Ignore edits from DMs and external (non-home) guilds
+        guild_id = payload.data.get('guild_id')
+        if not guild_id or not is_home_guild(int(guild_id)):
+            return
+
         # Only process if message content changed
         if "content" not in payload.data:
             return

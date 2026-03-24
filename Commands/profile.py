@@ -14,7 +14,8 @@ import json
 from Helpers.classes import PlayerStats
 from Helpers.functions import pretty_date, generate_rank_badge, generate_banner, getData, format_number, addLine, vertical_gradient, round_corners, generate_badge
 from Helpers.logger import log, ERROR
-from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors, ALL_GUILD_IDS
+from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors
+from Helpers.rate_limiter import external_rate_limit
 from Helpers.storage import get_background
 
 
@@ -22,7 +23,8 @@ class Profile(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays a guild profile of guild member', guild_ids=ALL_GUILD_IDS)
+    @slash_command(description='Displays a guild profile of guild member')
+    @external_rate_limit()
     async def profile(self, ctx: discord.ApplicationContext, name: discord.Option(str, required=True), days: discord.Option(int, min=1, max=30, default=7)):
         await ctx.defer()
         player = await asyncio.to_thread(PlayerStats, name, days)
@@ -88,7 +90,7 @@ class Profile(commands.Cog):
         try:
             headers = {'User-Agent': os.getenv("visage_UA")}
             url = f"https://visage.surgeplay.com/bust/500/{player.UUID}"
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=6)
             skin = Image.open(BytesIO(response.content))
         except Exception as e:
             log(ERROR, f"{e}", context="profile")

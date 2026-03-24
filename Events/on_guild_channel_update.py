@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
-from Helpers.variables import CLOSED_CATEGORY_NAME
+from Helpers.variables import CLOSED_CATEGORY_NAME, is_home_guild
 
 
 class OnGuildChannelUpdate(commands.Cog):
@@ -14,6 +14,10 @@ class OnGuildChannelUpdate(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before: discord.TextChannel, after: discord.TextChannel):
+        # Ignore channel updates from external (non-home) guilds
+        if not is_home_guild(after.guild.id):
+            return
+
         before_cat = getattr(before, 'category', None)
         after_cat = getattr(after, 'category', None)
         moved_to_closed = (

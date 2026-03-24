@@ -367,6 +367,8 @@ class UpdateMemberData(commands.Cog):
 
     @tasks.loop(minutes=3)
     async def update_member_data(self):
+        # Guild restriction: fetches Wynncraft API data for "The Aquarium" guild,
+        # sends to home guild channels only (RAID_LOG_CHANNEL_ID, BOT_LOG_CHANNEL_ID, etc.)
         now = datetime.datetime.now(timezone.utc)
         log(INFO, f"STARTING LOOP — {now.strftime('%Y-%m-%d %H:%M:%S')} UTC", context="update_member_data")
 

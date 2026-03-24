@@ -17,7 +17,7 @@ from Helpers.database import (
     save_shell_exchange_mats,
 )
 from Helpers.variables import (
-    ALL_GUILD_IDS,
+    HOME_GUILD_IDS,
     LEGACY_MESSAGE_ID,
     LEGACY_WEBHOOK_URL,
     RATES_PING_ROLE_ID,
@@ -30,7 +30,7 @@ class ShellExchange(commands.Cog):
     shell_exchange_group = discord.SlashCommandGroup(
         "shell_exchange",
         "Shell exchange commands",
-        guild_ids=ALL_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
     edit_group = shell_exchange_group.create_subgroup("edit", "Edit shell exchange items")

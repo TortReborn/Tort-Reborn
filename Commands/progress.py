@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from io import BytesIO
@@ -11,7 +12,8 @@ from discord.ui import Select, View
 
 from Helpers.classes import PlayerStats
 from Helpers.functions import getPlayerData, fix_progressbar, getPlayerUUID, generate_rank_badge, create_progress_bar
-from Helpers.variables import class_map, ALL_GUILD_IDS
+from Helpers.variables import class_map
+from Helpers.rate_limiter import external_rate_limit
 from Helpers.logger import log, ERROR
 from Helpers.storage import get_background, get_background_file
 from StringProgressBar import progressBar
@@ -23,9 +25,11 @@ class Progress(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays player\'s Wynncraft progress', guild_ids=ALL_GUILD_IDS)
+    @slash_command(description='Displays player\'s Wynncraft progress')
+    @external_rate_limit()
     async def progress(self, message, name: discord.Option(str, require=True)):
-        playerdata = PlayerStats(name, 7)
+        await message.defer()
+        playerdata = await asyncio.to_thread(PlayerStats, name, 7)
 
         max_lvl = 1690
         max_combat = 106
@@ -35,7 +39,6 @@ class Progress(commands.Cog):
         max_dungeons = 18
         max_raids = 4
         max_overall = max_lvl + max_discovery + max_quests + max_dungeons + max_raids
-        await message.defer()
         if not playerdata:
             embed = discord.Embed(title=':no_entry: Something went wrong',
                                   description=f'Could not find a player with name **{name}**!', color=0xe33232)
@@ -72,7 +75,7 @@ class Progress(commands.Cog):
             try:
                 headers = {'User-Agent': os.getenv("visage_UA")}
                 url = f"https://visage.surgeplay.com/bust/500/{playerdata.UUID}"
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=6)
                 skin = Image.open(BytesIO(response.content))
             except Exception as e:
                 log(ERROR, f"{e}", context="progress")

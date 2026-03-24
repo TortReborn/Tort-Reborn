@@ -9,64 +9,68 @@ import json
 
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import ALL_GUILD_IDS
+from Helpers.variables import HOME_GUILD_IDS
+
 from Helpers.storage import get_background_file
 
 
 async def get_all_backgrounds(message: discord.AutocompleteContext):
     db = DB()
     db.connect()
-
-    backgrounds = []
-    db.cursor.execute('SELECT name FROM profile_backgrounds WHERE public = %s', (True,))
-    rows = db.cursor.fetchall()
-    db.close()
-    for bg in rows:
-        backgrounds.append(bg[0])
-    return [background for background in backgrounds if message.value.lower() in background.lower()]
+    try:
+        backgrounds = []
+        db.cursor.execute('SELECT name FROM profile_backgrounds WHERE public = %s', (True,))
+        rows = db.cursor.fetchall()
+        for bg in rows:
+            backgrounds.append(bg[0])
+        return [background for background in backgrounds if message.value.lower() in background.lower()]
+    finally:
+        db.close()
 
 
 class Background(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    background_group = SlashCommandGroup('background', 'Background commands', guild_ids=ALL_GUILD_IDS)
+    # Single command group for all background commands
+    background_group = SlashCommandGroup('background', 'Background commands', guild_ids=HOME_GUILD_IDS)
 
     @background_group.command(description="List all available backgrounds")
     async def list(self, message, owned_only: discord.Option(bool, default=False)):
         await message.defer()
         db = DB()
         db.connect()
-        if not owned_only:
-            title = 'List of available profile backgrounds'
-            db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))
-            row = db.cursor.fetchone()
-            if row:
-                owned_backgrounds = row[0]
+        try:
+            if not owned_only:
+                title = 'List of available profile backgrounds'
+                db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))
+                row = db.cursor.fetchone()
+                if row:
+                    owned_backgrounds = row[0]
+                else:
+                    owned_backgrounds = []
+                owned_backgrounds.insert(0, 0)
+                db.cursor.execute(
+                    'SELECT id, name FROM profile_backgrounds WHERE id = ANY(%s) OR public = %s',
+                    (owned_backgrounds, True)
+                )
+                backgrounds = db.cursor.fetchall()
             else:
-                owned_backgrounds = []
-            owned_backgrounds.insert(0, 0)
-            db.cursor.execute(
-                'SELECT id, name FROM profile_backgrounds WHERE id = ANY(%s) OR public = %s',
-                (owned_backgrounds, True)
-            )
-            backgrounds = db.cursor.fetchall()
-        else:
-            title = 'List of owned profile backgrounds'
-            db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))
-            row = db.cursor.fetchone()
-            if row:
-                owned_backgrounds = row[0]
-            else:
-                owned_backgrounds = []
-            owned_backgrounds.insert(0, 0)
-            db.cursor.execute(
-                'SELECT id, name FROM profile_backgrounds WHERE id = ANY(%s)',
-                (owned_backgrounds,)
-            )
-            backgrounds = db.cursor.fetchall()
-
-        db.close()
+                title = 'List of owned profile backgrounds'
+                db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))
+                row = db.cursor.fetchone()
+                if row:
+                    owned_backgrounds = row[0]
+                else:
+                    owned_backgrounds = []
+                owned_backgrounds.insert(0, 0)
+                db.cursor.execute(
+                    'SELECT id, name FROM profile_backgrounds WHERE id = ANY(%s)',
+                    (owned_backgrounds,)
+                )
+                backgrounds = db.cursor.fetchall()
+        finally:
+            db.close()
         str_backgrounds = ''
         for bg in backgrounds:
             str_backgrounds += (':white_check_mark: ' if bg[0] in owned_backgrounds else ':white_small_square: ') + f'{bg[1]}\n'
@@ -111,62 +115,64 @@ class Background(commands.Cog):
             embed.add_field(name='Price', value=str(bg_price))
 
         if bg_id in owned_backgrounds:
-            embed.add_field(name=f':white_check_mark: Owned', value=f'You own this background, apply it by using:\n`/background set background: {bg_name}`', inline=False)
+            embed.add_field(name=':white_check_mark: Owned', value=f'You own this background, apply it by using:\n`/background set background:{bg_name}`', inline=False)
 
         bg_file = get_background_file(bg_id)
         embed.set_image(url=f"attachment://{bg_id}.png")
 
         await message.respond(embed=embed, file=bg_file)
 
-    @background_group.command(description="Set a background as active")
+    @background_group.command(name="set", description="Set a background as active")
     @option("background", description="Pick a background to set as your active one.", autocomplete=get_all_backgrounds)
-    async def set(self, message, background: str):
+    async def set_background(self, message, background: str):
         await message.defer(ephemeral=True)
         db = DB()
         db.connect()
-        db.cursor.execute(
-            'SELECT * FROM profile_backgrounds WHERE UPPER(name) = UPPER(%s)', (background,)
-        )
-        bg = db.cursor.fetchone()
-        if not bg:
-            embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
-                                  description=f'Could not find a background with name **{background}**.\nPlease check your spelling or try again later.',
-                                  color=0xe33232)
-            await message.respond(embed=embed)
-            db.close()
-            return
-
-        bg_id = bg[0]
-        bg_name = bg[1]
-
-        db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))
-        row = db.cursor.fetchone()
-        if row:
-            owned_backgrounds = row[0]
-        else:
-            owned_backgrounds = []
-        owned_backgrounds.insert(0, 0)
-
-        if bg_id in owned_backgrounds:
+        try:
             db.cursor.execute(
-                'UPDATE profile_customization SET background = %s WHERE \"user\" = %s',
-                (bg_id, str(message.author.id))
+                'SELECT * FROM profile_backgrounds WHERE UPPER(name) = UPPER(%s)', (background,)
             )
-            db.connection.commit()
-            embed = discord.Embed(title=':white_check_mark: Background set!',
-                                  description=f':frame_photo: **{bg_name}** was set as your active background.',
-                                  color=0x34eb40)
-            bg_file = get_background_file(bg_id)
-            embed.set_thumbnail(url=f"attachment://{bg_id}.png")
+            bg = db.cursor.fetchone()
+            if not bg:
+                embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
+                                      description=f'Could not find a background with name **{background}**.\nPlease check your spelling or try again later.',
+                                      color=0xe33232)
+                await message.respond(embed=embed)
+                return
 
-            await message.respond(embed=embed, file=bg_file)
-        else:
-            embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
-                                  description=f'You do not own **{bg_name}** background.\n',
-                                  color=0xe33232)
-            await message.respond(embed=embed)
+            bg_id = bg[0]
+            bg_name = bg[1]
 
-        db.close()
+            db.cursor.execute('SELECT owned FROM profile_customization WHERE \"user\" = %s', (str(message.author.id),))
+            row = db.cursor.fetchone()
+            if row:
+                owned_backgrounds = row[0]
+            else:
+                owned_backgrounds = []
+            owned_backgrounds.insert(0, 0)
+
+            if bg_id in owned_backgrounds:
+                # Use upsert so first-time users' backgrounds are saved
+                db.cursor.execute(
+                    'INSERT INTO profile_customization (\"user\", background) VALUES (%s, %s) '
+                    'ON CONFLICT (\"user\") DO UPDATE SET background = EXCLUDED.background',
+                    (str(message.author.id), bg_id)
+                )
+                db.connection.commit()
+                embed = discord.Embed(title=':white_check_mark: Background set!',
+                                      description=f':frame_photo: **{bg_name}** was set as your active background.',
+                                      color=0x34eb40)
+                bg_file = get_background_file(bg_id)
+                embed.set_thumbnail(url=f"attachment://{bg_id}.png")
+
+                await message.respond(embed=embed, file=bg_file)
+            else:
+                embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
+                                      description=f'You do not own **{bg_name}** background.\n',
+                                      color=0xe33232)
+                await message.respond(embed=embed)
+        finally:
+            db.close()
 
     @commands.Cog.listener()
     async def on_ready(self):
