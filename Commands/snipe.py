@@ -17,7 +17,8 @@ from PIL import Image, ImageDraw, ImageFont
 from Helpers.classes import Guild, Page, PlayerStats
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, generate_badge, get_guild_color, vertical_gradient, round_corners
-from Helpers.snipe_utils import HQ_CHOICES, display_hq, is_dry
+from Helpers.snipe_utils import display_hq, get_canonical_territory_name, is_dry, normalize_hq_for_storage
+from Helpers.territory_abbrevs import TERRITORY_TO_ABBREV
 from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS', 'Solo']
@@ -47,7 +48,7 @@ _LIST_ORDER_SQL     = {
     'Oldest':      "sl.sniped_at ASC",
     'Hardest':     "sl.difficulty DESC, sl.sniped_at DESC",
     'Easiest':     "sl.difficulty ASC, sl.sniped_at DESC",
-    'Least Conns': "CAST(sl.conns AS INT) ASC, sl.sniped_at DESC",
+    'Least Conns': "sl.conns ASC, sl.sniped_at DESC",
 }
 _ATHENA_GUILD_LIST_URL = 'https://athena.wynntils.com/cache/get/guildList'
 _ATHENA_GUILD_TTL      = 6 * 60 * 60
@@ -123,6 +124,29 @@ _LB_SORT_KEY = {
     'Best Streak':    lambda x: (-x['best_streak'],  x['ign']),
     'Current Streak': lambda x: (-x['cur_streak'],  x['ign']),
 }
+
+# ── DB helpers ───────────────────────────────────────────────────────────────
+
+def _resolve_ign(db, ign: str) -> str:
+    """Return the stored canonical casing for an IGN, or ign itself if unseen."""
+    db.cursor.execute(
+        'SELECT ign FROM snipe_participants WHERE LOWER(ign) = LOWER(%s) LIMIT 1', (ign,)
+    )
+    row = db.cursor.fetchone()
+    return row[0] if row else ign
+
+
+def _resolve_igns(db, igns: list[str]) -> dict[str, str]:
+    """Resolve multiple IGNs to canonical casing in a single query.
+    Returns a mapping of lowercased input → canonical stored IGN."""
+    if not igns:
+        return {}
+    db.cursor.execute(
+        'SELECT DISTINCT ON (LOWER(ign)) ign FROM snipe_participants WHERE LOWER(ign) = ANY(%s) ORDER BY LOWER(ign), ign',
+        ([i.lower() for i in igns],)
+    )
+    return {row[0].lower(): row[0] for row in db.cursor.fetchall()}
+
 
 # ── Paginator helper ─────────────────────────────────────────────────────────
 
@@ -388,10 +412,11 @@ def _load_athena_guild_colors_sync() -> dict[str, str]:
             if prefix and color:
                 colors[prefix] = color
         _ATHENA_GUILD_COLORS = colors
-        _ATHENA_GUILD_FETCHED_AT = now
     except Exception:
         if _ATHENA_GUILD_COLORS is None:
             _ATHENA_GUILD_COLORS = {}
+    finally:
+        _ATHENA_GUILD_FETCHED_AT = now
 
     return _ATHENA_GUILD_COLORS
 
@@ -945,6 +970,17 @@ def _format_participants_log(pairs: list[tuple[str, str]]) -> str:
     return ' '.join(parts)
 
 
+async def _hq_autocomplete(ctx: discord.AutocompleteContext):
+    typed = (ctx.value or "").casefold()
+    results = []
+    for full_name, abbrev in TERRITORY_TO_ABBREV.items():
+        if not typed or typed in abbrev.casefold() or typed in full_name.casefold():
+            results.append(discord.OptionChoice(name=f"{full_name} ({abbrev})", value=abbrev))
+        if len(results) == 25:
+            break
+    return results
+
+
 # ── Cog ───────────────────────────────────────────────────────────────────────
 
 class SnipeTracker(commands.Cog):
@@ -960,7 +996,7 @@ class SnipeTracker(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         participants:   discord.Option(str, "Participants as 'IGN Role, IGN Role, ...'", required=True),
-        hq:             discord.Option(str, 'HQ location', choices=HQ_CHOICES, required=True),
+        hq:             discord.Option(str, 'HQ location (name or abbreviation)', autocomplete=_hq_autocomplete, required=True),
         difficulty:     discord.Option(int, 'Difficulty in thousands (e.g. 192 for 192k)', required=True),
         guild:          discord.Option(str, 'Guild tag that owned the HQ', required=True),
         conns:          discord.Option(int, 'Connections (0–6)', required=True, min_value=0, max_value=6),
@@ -977,6 +1013,11 @@ class SnipeTracker(commands.Cog):
         if log_to_channel and image is None:
             await ctx.followup.send(':no_entry: You must attach a screenshot when logging to the snipe channel.', ephemeral=True)
             return
+
+        if get_canonical_territory_name(hq) is None:
+            await ctx.followup.send(f':no_entry: Unknown HQ `{hq}`. Type a territory name or abbreviation.', ephemeral=True)
+            return
+        hq = normalize_hq_for_storage(hq)
 
         pairs = []
         role_choices_lower = {r.lower(): r for r in ROLE_CHOICES}
@@ -1027,10 +1068,12 @@ class SnipeTracker(commands.Cog):
             db.cursor.execute(
                 'INSERT INTO snipe_logs (hq, difficulty, sniped_at, guild_tag, conns, logged_by, season) '
                 'VALUES (%s, %s, to_timestamp(%s), %s, %s, %s, %s) RETURNING id',
-                (hq, difficulty, ts, guild.upper(), str(conns), ctx.author.id, season)
+                (hq, difficulty, ts, guild.upper(), conns, ctx.author.id, season)
             )
             snipe_id = db.cursor.fetchone()[0]
+            canonical_map = _resolve_igns(db, [ign for ign, _ in pairs])
             for ign, role in pairs:
+                ign = canonical_map.get(ign.lower(), ign)
                 db.cursor.execute(
                     'INSERT INTO snipe_participants (snipe_id, ign, role) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING',
                     (snipe_id, ign, role)
@@ -1061,7 +1104,7 @@ class SnipeTracker(commands.Cog):
                 f"**Difficulty:** {diff_label} / {difficulty}k\n"
                 f"**Result:** Success"
             )
-            resp     = requests.get(image.url)
+            resp     = await asyncio.to_thread(requests.get, image.url)
             img_file = discord.File(BytesIO(resp.content), filename=image.filename)
             channel  = ctx.bot.get_channel(SNIPE_LOG_CHANNEL_ID)
             if channel:
@@ -1080,6 +1123,8 @@ class SnipeTracker(commands.Cog):
         db = DB()
         db.connect()
         try:
+            ign = _resolve_ign(db, ign)
+
             db.cursor.execute(
                 'SELECT total, rank FROM ('
                 '  SELECT ign, COUNT(*) AS total, RANK() OVER (ORDER BY COUNT(*) DESC) AS rank'
@@ -1095,7 +1140,7 @@ class SnipeTracker(commands.Cog):
                 '  SELECT sp.ign,'
                 '    MAX(sl.difficulty) AS best_diff,'
                 '    (SELECT sl2.hq FROM snipe_logs sl2 JOIN snipe_participants sp2 ON sp2.snipe_id = sl2.id'
-                '     WHERE sp2.ign = sp.ign ORDER BY sl2.difficulty DESC LIMIT 1) AS hq,'
+                '     WHERE sp2.ign = sp.ign ORDER BY sl2.difficulty DESC, sl2.id DESC LIMIT 1) AS hq,'
                 '    RANK() OVER (ORDER BY MAX(sl.difficulty) DESC) AS rank'
                 '  FROM snipe_logs sl JOIN snipe_participants sp ON sp.snipe_id = sl.id GROUP BY sp.ign'
                 ') ranked WHERE ign = %s', (ign,)
@@ -1105,7 +1150,7 @@ class SnipeTracker(commands.Cog):
 
             db.cursor.execute(
                 'SELECT COUNT(*) FROM snipe_logs sl JOIN snipe_participants sp ON sp.snipe_id = sl.id'
-                " WHERE sp.ign = %s AND sl.conns = '0'", (ign,)
+                ' WHERE sp.ign = %s AND sl.conns = 0', (ign,)
             )
             zero_conn_count = db.cursor.fetchone()[0]
 
@@ -1115,7 +1160,7 @@ class SnipeTracker(commands.Cog):
             )
             dry_snipes = sum(
                 1 for hq_abbr, c in db.cursor.fetchall()
-                if c.lstrip('-').isdigit() and is_dry(hq_abbr, int(c))
+                if is_dry(hq_abbr, c)
             )
 
             db.cursor.execute(
@@ -1421,6 +1466,8 @@ class SnipeTracker(commands.Cog):
         db = DB()
         db.connect()
         try:
+            ign = _resolve_ign(db, ign)
+
             db.cursor.execute(
                 'SELECT COUNT(*), AVG(sl.difficulty) '
                 'FROM snipe_logs sl '

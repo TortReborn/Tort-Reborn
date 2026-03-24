@@ -1,23 +1,7 @@
 import json
 import os
 
-
-HQ_LOCATIONS = {
-    "BT": "Bandit's Toll",
-    "CC": "Corkus City",
-    "CO": "Cinfras Outskirts",
-    "BTRAIL": "Bloody Trail",
-    "CI": "Central Islands",
-    "NWE": "Nivla Woods Exit",
-    "PTT": "Path to Talor",
-    "CW": "Corrupted Warfront",
-    "NN": "Nodguj Nation",
-    "NR": "Nomads' Refuge",
-    "MBP": "Mine Base Plains",
-    "AL": "Almuj",
-}
-
-HQ_CHOICES = list(HQ_LOCATIONS.keys())
+from Helpers.territory_abbrevs import TERRITORY_TO_ABBREV
 
 _TERRITORIES_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "territories_verbose.json")
 with open(_TERRITORIES_PATH, encoding="utf-8") as f:
@@ -28,15 +12,17 @@ _ROUTE_COUNTS_BY_TERRITORY = {
     for territory_name, territory_data in _TERRITORIES.items()
 }
 
-_STORAGE_BY_CANONICAL_NAME = {
-    territory_name: code
-    for code, territory_name in HQ_LOCATIONS.items()
-}
+# full name → abbrev (all 406); used by normalize_hq_for_storage
+_STORAGE_BY_CANONICAL_NAME = TERRITORY_TO_ABBREV
 
-_ALIASES = {}
-for code, territory_name in HQ_LOCATIONS.items():
-    _ALIASES[code.casefold()] = territory_name
-    _ALIASES[territory_name.casefold()] = territory_name
+# abbrev → full name (all 406); used by display_hq
+_TERRITORY_FROM_ABBREV = {abbrev: name for name, abbrev in TERRITORY_TO_ABBREV.items()}
+
+# case-insensitive lookup: "cwr" → "Corrupted Warfront", "corrupted warfront" → "Corrupted Warfront"
+_ALIASES: dict[str, str] = {}
+for _full_name, _abbrev in TERRITORY_TO_ABBREV.items():
+    _ALIASES[_abbrev.casefold()] = _full_name
+    _ALIASES[_full_name.casefold()] = _full_name
 
 _ALIASES["nomad's refuge".casefold()] = "Nomads' Refuge"
 _ALIASES["nomad's refugee".casefold()] = "Nomads' Refuge"
@@ -49,7 +35,7 @@ def get_canonical_territory_name(hq_value: str) -> str | None:
         return None
     if raw in _ROUTE_COUNTS_BY_TERRITORY:
         return raw
-    return _ALIASES.get(raw.casefold(), raw if raw in _ROUTE_COUNTS_BY_TERRITORY else None)
+    return _ALIASES.get(raw.casefold())
 
 
 def normalize_hq_for_storage(hq_value: str) -> str:
@@ -61,8 +47,8 @@ def normalize_hq_for_storage(hq_value: str) -> str:
 
 def display_hq(hq_value: str) -> str:
     raw = (hq_value or "").strip()
-    if raw in HQ_LOCATIONS:
-        return HQ_LOCATIONS[raw]
+    if raw in _TERRITORY_FROM_ABBREV:
+        return _TERRITORY_FROM_ABBREV[raw]
     canonical_name = get_canonical_territory_name(raw)
     return canonical_name or raw
 

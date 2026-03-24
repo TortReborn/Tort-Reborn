@@ -27,7 +27,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from Helpers.database import DB
-from Helpers.snipe_utils import get_max_conns, normalize_hq_for_storage
+from Helpers.snipe_utils import get_canonical_territory_name, get_max_conns, normalize_hq_for_storage
 
 
 ROOT = Path(__file__).resolve().parent
@@ -297,23 +297,24 @@ def parse_difficulty(raw_value: object) -> int:
 
 def parse_conns(raw_value: object, hq_value: str) -> int:
     if isinstance(raw_value, int):
-        return raw_value
+        result = raw_value
+    else:
+        text = str(raw_value or "").strip()
+        if text.isdigit():
+            result = int(text)
+        elif match := CONN_PATTERN.match(text):
+            result = int(match.group(1))
+        elif text.casefold() == "dry":
+            max_conns = get_max_conns(hq_value)
+            if max_conns is None:
+                raise ValueError(f"Cannot resolve Dry for HQ {hq_value!r}.")
+            return max_conns
+        else:
+            raise ValueError(f"Could not parse connections from {text!r}.")
 
-    text = str(raw_value or "").strip()
-    if text.isdigit():
-        return int(text)
-
-    match = CONN_PATTERN.match(text)
-    if match:
-        return int(match.group(1))
-
-    if text.casefold() == "dry":
-        max_conns = get_max_conns(hq_value)
-        if max_conns is None:
-            raise ValueError(f"Cannot resolve Dry for HQ {hq_value!r}.")
-        return max_conns
-
-    raise ValueError(f"Could not parse connections from {text!r}.")
+    if not 0 <= result <= 6:
+        raise ValueError(f"Connections value {result!r} is out of range (0–6).")
+    return result
 
 
 def build_participants(row: dict[str, str], mapping: dict[str, str]) -> tuple[tuple[str, str], ...]:
@@ -373,6 +374,8 @@ def prepare_snipes(
                 if not hq_raw:
                     raise ValueError("HQ Name is empty.")
                 hq = normalize_hq_for_storage(hq_raw)
+                if get_canonical_territory_name(hq) is None:
+                    raise ValueError(f"Unknown HQ '{hq_raw}'. Check territory name or add it to TERRITORY_TO_ABBREV.")
 
                 guild_tag = str(get_override_value(row_override, "guild", row.get("Guild", ""))).strip().upper()
                 if not guild_tag:
@@ -410,12 +413,11 @@ def participants_match(db: DB, snipe_id: int, participants: tuple[tuple[str, str
         SELECT ign, role
         FROM snipe_participants
         WHERE snipe_id = %s
-        ORDER BY ign, role
         """,
         (snipe_id,),
     )
-    existing = tuple(db.cursor.fetchall())
-    return existing == tuple(sorted(participants))
+    existing = set(db.cursor.fetchall())
+    return existing == set(participants)
 
 
 def find_existing_snipe(db: DB, snipe: ParsedSnipe) -> int | None:
@@ -431,7 +433,7 @@ def find_existing_snipe(db: DB, snipe: ParsedSnipe) -> int | None:
           AND conns = %s
         ORDER BY id
         """,
-        (snipe.season, snipe.hq, snipe.difficulty, snipe.timestamp, snipe.guild_tag, str(snipe.conns)),
+        (snipe.season, snipe.hq, snipe.difficulty, snipe.timestamp, snipe.guild_tag, snipe.conns),
     )
     for row in db.cursor.fetchall():
         snipe_id = row[0]
@@ -460,7 +462,7 @@ def import_snipes(db: DB, snipes: list[ParsedSnipe], logged_by: int, dry_run: bo
             VALUES (%s, %s, to_timestamp(%s), %s, %s, %s, %s)
             RETURNING id
             """,
-            (snipe.hq, snipe.difficulty, snipe.timestamp, snipe.guild_tag, str(snipe.conns), logged_by, snipe.season),
+            (snipe.hq, snipe.difficulty, snipe.timestamp, snipe.guild_tag, snipe.conns, logged_by, snipe.season),
         )
         snipe_id = db.cursor.fetchone()[0]
 
