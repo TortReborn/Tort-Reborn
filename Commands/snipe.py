@@ -780,22 +780,38 @@ def _generate_overview_card(
     )
     card.paste(team_box, (LX, 208), team_box)
 
-    draw.text((LX + 12, 220), 'General', font=f_label, fill=ACCENT)
-    draw.text((LX + 112, 220), f'x{team_any_count}', font=f_label, fill=WHITE)
-    team_any_font, team_any_lines = _fit_wrap_lines(
-        most_common_team_any, draw, 'images/profile/game.ttf', 16, LW - 24, 2, min_size=11
-    )
-    for i, line in enumerate(team_any_lines):
-        addLine(line, draw, team_any_font, LX + 12, 238 + i * 15, drop_x=2, drop_y=2)
+    def _draw_team_section(
+        header_x: int,
+        count_x: int,
+        header_y: int,
+        body_y: int,
+        header: str,
+        count: int,
+        lines: list[str],
+        font,
+        colorize_roles: bool = False,
+        line_gap: int = 18,
+    ):
+        draw.text((header_x, header_y), header, font=f_label, fill=ACCENT)
+        draw.text((count_x, header_y), f'x{count}', font=f_label, fill=WHITE)
 
-    draw.line([(LX + 12, 274), (LX + LW - 12, 274)], fill=SEP, width=1)
-    draw.text((LX + 12, 282), 'Matching Roles', font=f_label, fill=ACCENT)
-    draw.text((LX + 192, 282), f'x{team_role_count}', font=f_label, fill=WHITE)
-    team_role_font, team_role_lines = _fit_wrap_lines(
-        most_common_team_roles, draw, 'images/profile/game.ttf', 14, LW - 24, 2, min_size=10
+        for i, line in enumerate(lines):
+            text = _colorize_role_words(line) if colorize_roles else line
+            addLine(text, draw, font, LX + 12, body_y + i * line_gap, drop_x=2, drop_y=2)
+
+    team_any_font, team_any_lines = _fit_wrap_lines(
+        most_common_team_any, draw, 'images/profile/game.ttf', 16, LW - 32, 2, min_size=11
     )
-    for i, line in enumerate(team_role_lines):
-        addLine(_colorize_role_words(line), draw, team_role_font, LX + 12, 300 + i * 14, drop_x=2, drop_y=2)
+    _draw_team_section(LX + 12, LX + 112, 216, 240, 'General', team_any_count, team_any_lines, team_any_font, line_gap=18)
+
+    team_role_font, team_role_lines = _fit_wrap_lines(
+        most_common_team_roles, draw, 'images/profile/game.ttf', 14, LW - 32, 2, min_size=10
+    )
+    _draw_team_section(
+        LX + 12, LX + 192, 280, 306,
+        'Matching Roles', team_role_count, team_role_lines, team_role_font,
+        colorize_roles=True, line_gap=17
+    )
 
     draw.line([(LX, 362), (LX + LW, 362)], fill=SEP, width=2)
     draw.text((LX, 374), 'QUICK STATS', font=f_label, fill=ACCENT)
