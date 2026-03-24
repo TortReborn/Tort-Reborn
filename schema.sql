@@ -451,11 +451,24 @@ CREATE TABLE IF NOT EXISTS snipe_logs (
   difficulty  INT         NOT NULL,
   sniped_at   TIMESTAMPTZ NOT NULL,
   guild_tag   VARCHAR(10) NOT NULL,
-  conns       VARCHAR(5)  NOT NULL DEFAULT '0' CHECK (conns IN ('0','1','2','3','4','5','6')),
+  conns       SMALLINT    NOT NULL DEFAULT 0 CHECK (conns BETWEEN 0 AND 6),
   logged_by   BIGINT      NOT NULL,
   season      INT         NOT NULL DEFAULT 1
 );
-ALTER TABLE snipe_logs ADD COLUMN IF NOT EXISTS season INT NOT NULL DEFAULT 1;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'snipe_logs' AND column_name = 'conns' AND data_type = 'character varying'
+  ) THEN
+    ALTER TABLE snipe_logs DROP CONSTRAINT IF EXISTS snipe_logs_conns_check;
+    ALTER TABLE snipe_logs ALTER COLUMN conns DROP DEFAULT;
+    ALTER TABLE snipe_logs ALTER COLUMN conns TYPE SMALLINT USING conns::SMALLINT;
+    ALTER TABLE snipe_logs ALTER COLUMN conns SET DEFAULT 0;
+    ALTER TABLE snipe_logs ADD CONSTRAINT snipe_logs_conns_check CHECK (conns BETWEEN 0 AND 6);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS snipe_participants (
   snipe_id    INT         NOT NULL REFERENCES snipe_logs(id) ON DELETE CASCADE,
@@ -469,3 +482,12 @@ CREATE INDEX IF NOT EXISTS idx_snipe_participants_ign
 
 CREATE INDEX IF NOT EXISTS idx_snipe_logs_sniped_at
   ON snipe_logs(sniped_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_snipe_logs_season
+  ON snipe_logs(season);
+
+CREATE INDEX IF NOT EXISTS idx_snipe_logs_hq
+  ON snipe_logs(hq);
+
+CREATE INDEX IF NOT EXISTS idx_snipe_logs_guild_tag
+  ON snipe_logs(guild_tag);
