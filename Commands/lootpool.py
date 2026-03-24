@@ -21,6 +21,8 @@ class LootPool(commands.Cog):
     lootpool = SlashCommandGroup(
         name="lootpool",
         description="Commands to fetch weekly lootpool data",
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
     )
 
     def __init__(self, client):

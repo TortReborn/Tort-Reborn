@@ -23,7 +23,11 @@ class Profile(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays a guild profile of guild member')
+    @slash_command(
+        description='Displays a guild profile of guild member',
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
+    )
     @external_rate_limit()
     async def profile(self, ctx: discord.ApplicationContext, name: discord.Option(str, required=True), days: discord.Option(int, min=1, max=30, default=7)):
         await ctx.defer()

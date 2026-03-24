@@ -58,6 +58,8 @@ class Raids(commands.Cog):
     @slash_command(
         name="raids",
         description="Show raid rankings and counts for a player",
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
     )
     @external_rate_limit()
     async def raids(self,

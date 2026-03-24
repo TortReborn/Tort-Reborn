@@ -61,7 +61,11 @@ class Online(commands.Cog):
         return max(0, bbox[2] - bbox[0]), max(0, bbox[3] - bbox[1])
     # ------------------------------------
 
-    @slash_command(description='Sends a list of online guild members')
+    @slash_command(
+        description='Sends a list of online guild members',
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
+    )
     @external_rate_limit()
     async def online(self, ctx: discord.ApplicationContext, guild: discord.Option(str, required=True)):
         await ctx.defer()

@@ -25,7 +25,11 @@ class Progress(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Displays player\'s Wynncraft progress')
+    @slash_command(
+        description='Displays player\'s Wynncraft progress',
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
+    )
     @external_rate_limit()
     async def progress(self, message, name: discord.Option(str, require=True)):
         await message.defer()
