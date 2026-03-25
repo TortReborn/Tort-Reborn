@@ -19,7 +19,7 @@ from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, generate_badge, get_guild_color, vertical_gradient, round_corners
 from Helpers.snipe_utils import display_hq, get_canonical_territory_name, is_dry, normalize_hq_for_storage
 from Helpers.territory_abbrevs import TERRITORY_TO_ABBREV
-from Helpers.variables import ALL_GUILD_IDS, SNIPE_LOG_CHANNEL_ID, discord_ranks
+from Helpers.variables import ALL_GUILD_IDS, HQ_TEAM_ROLE_ID, TAQ_GUILD_ID, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS', 'Solo']
 _ROLE_ORDER     = ['Healer', 'Tank', 'DPS', 'Solo']
@@ -1025,7 +1025,15 @@ class SnipeTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    snipe = SlashCommandGroup('snipe', 'Snipe tracking commands', guild_ids=ALL_GUILD_IDS)
+    snipe = SlashCommandGroup('snipe', 'Snipe tracking commands')
+
+    async def cog_check(self, ctx: discord.ApplicationContext) -> bool:
+        guild = ctx.bot.get_guild(TAQ_GUILD_ID)
+        member = guild.get_member(ctx.author.id) if guild else None
+        if not member or not discord.utils.get(member.roles, id=HQ_TEAM_ROLE_ID):
+            await ctx.respond(':no_entry: You need the **HQ Team** role to use snipe commands.', ephemeral=True)
+            return False
+        return True
 
     # ── /snipe log ────────────────────────────────────────────────────────────
 
