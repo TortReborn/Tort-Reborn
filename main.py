@@ -210,6 +210,7 @@ extensions = [
     'Tasks.kick_list_tracker',
     'Tasks.promotion_queue_processor',
     'Tasks.process_website_decisions',
+    'Tasks.sync_war_builds',
 ]
 
 for ext in extensions:
