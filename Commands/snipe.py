@@ -983,6 +983,44 @@ async def _hq_autocomplete(ctx: discord.AutocompleteContext):
 
 # ── Cog ───────────────────────────────────────────────────────────────────────
 
+class SnipeLogConfirmView(discord.ui.View):
+    def __init__(self, invoker_id: int):
+        super().__init__(timeout=60)
+        self.invoker_id  = invoker_id
+        self.confirmed   = None  # True / False / None (timeout)
+        self.interaction = None  # set on button click
+        self.message     = None  # set after send, for timeout cleanup
+
+    @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green, emoji='✅')
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user.id != self.invoker_id:
+            await interaction.response.send_message('Only you can confirm this.', ephemeral=True)
+            return
+        self.confirmed   = True
+        self.interaction = interaction
+        await interaction.response.edit_message(content='Logging snipe…', embed=None, view=None)
+        self.stop()
+
+    @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red, emoji='❌')
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user.id != self.invoker_id:
+            await interaction.response.send_message('Only you can cancel this.', ephemeral=True)
+            return
+        self.confirmed   = False
+        self.interaction = interaction
+        await interaction.response.edit_message(content='Snipe log cancelled.', embed=None, view=None)
+        self.stop()
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(content='Timed out — snipe was not logged.', embed=None, view=self)
+            except Exception:
+                pass
+
+
 class SnipeTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -1062,6 +1100,29 @@ class SnipeTracker(commands.Cog):
         season = season if season is not None else _get_current_season()
         dry    = is_dry(hq, conns)
 
+        conn_display = f'{conns} (Dry)' if dry else str(conns)
+        snipe_dt_str = datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%d/%m/%Y')
+        preview_embed = discord.Embed(
+            title='Confirm Snipe Log',
+            description=f'**{display_hq(hq)}** sniped from **{guild.upper()}**',
+            color=0xe67e22
+        )
+        preview_embed.add_field(name='Difficulty',   value=f'{difficulty}k',  inline=True)
+        preview_embed.add_field(name='Connections',  value=conn_display,       inline=True)
+        preview_embed.add_field(name='Date',         value=snipe_dt_str,       inline=True)
+        preview_embed.add_field(name='Season',       value=str(season),        inline=True)
+        preview_embed.add_field(name='Participants', value='\n'.join(f'**{i}** \u2014 {r}' for i, r in pairs), inline=False)
+        if log_to_channel:
+            preview_embed.set_footer(text='This snipe will also be posted to the snipe log channel.')
+
+        view = SnipeLogConfirmView(invoker_id=ctx.author.id)
+        msg  = await ctx.followup.send(embed=preview_embed, view=view, ephemeral=True)
+        view.message = msg
+        await view.wait()
+
+        if not view.confirmed:
+            return
+
         db = DB()
         db.connect()
         try:
@@ -1082,20 +1143,19 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
-        conn_display = f'{conns} (Dry)' if dry else str(conns)
-        embed = discord.Embed(
+        success_embed = discord.Embed(
             title='Snipe Logged',
             description=f'**{display_hq(hq)}** sniped from **{guild.upper()}**',
             color=0x2ecc71
         )
-        embed.add_field(name='Difficulty',   value=f'{difficulty}k', inline=True)
-        embed.add_field(name='Connections',  value=conn_display,      inline=True)
-        embed.add_field(name='Participants', value='\n'.join(f'**{i}** \u2014 {r}' for i, r in pairs), inline=False)
-        await ctx.followup.send(embed=embed, ephemeral=True)
+        success_embed.add_field(name='Difficulty',   value=f'{difficulty}k', inline=True)
+        success_embed.add_field(name='Connections',  value=conn_display,      inline=True)
+        success_embed.add_field(name='Participants', value='\n'.join(f'**{i}** \u2014 {r}' for i, r in pairs), inline=False)
+        await view.interaction.edit_original_response(content='', embed=success_embed)
 
         if log_to_channel:
-            snipe_dt       = datetime.fromtimestamp(ts, tz=timezone.utc)
-            diff_label     = 'Drysnipe' if dry else f'{conns} Conns'
+            snipe_dt         = datetime.fromtimestamp(ts, tz=timezone.utc)
+            diff_label       = 'Drysnipe' if dry else f'{conns} Conns'
             participants_str = _format_participants_log(pairs)
             log_text = (
                 f"**Date:** {snipe_dt.strftime('%d/%m/%y')}\n"
