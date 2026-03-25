@@ -14,7 +14,7 @@ from Helpers.classes import LinkAccount, PlayerStats, PlayerShells
 from Helpers.database import DB
 from Helpers.functions import addLine, split_sentence, expand_image, getPlayerUUID
 from Helpers.logger import log, ERROR
-from Helpers.variables import ALL_GUILD_IDS, discord_ranks, discord_rank_roles
+from Helpers.variables import HOME_GUILD_IDS, discord_ranks, discord_rank_roles
 
 
 class ShellModalName(Modal):
@@ -87,7 +87,7 @@ class Manage(commands.Cog):
 
     manage_group = SlashCommandGroup(
         'manage', 'HR: Guild management commands',
-        guild_ids=ALL_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True)
     )
 
@@ -100,90 +100,95 @@ class Manage(commands.Cog):
         rank: discord.Option(str, choices=list(discord_ranks.keys()))
     ):
         db = DB(); db.connect()
-        # Fetch invoker and target ranks
-        db.cursor.execute(
-            "SELECT rank FROM discord_links WHERE discord_id = %s",
-            (ctx.user.id,)
-        )
-        inv = db.cursor.fetchone()
-        if not inv:
-            await ctx.respond(':no_entry: You must link your account before assigning ranks.', ephemeral=True)
-            db.close()
-            return
-        initiator_rank = inv[0]
-        initiator_index = list(discord_ranks).index(initiator_rank)
+        try:
+            # Fetch invoker and target ranks
+            db.cursor.execute(
+                "SELECT rank FROM discord_links WHERE discord_id = %s",
+                (ctx.user.id,)
+            )
+            inv = db.cursor.fetchone()
+            if not inv:
+                await ctx.respond(':no_entry: You must link your account before assigning ranks.', ephemeral=True)
+                return
+            initiator_rank = inv[0]
+            initiator_index = list(discord_ranks).index(initiator_rank)
 
-        # Prevent self-assignment
-        if user.id == ctx.user.id:
-            await ctx.respond(':no_entry: You cannot change your own rank.', ephemeral=True)
-            db.close()
-            return
-
-        db.cursor.execute(
-            "SELECT rank FROM discord_links WHERE discord_id = %s",
-            (user.id,)
-        )
-        tgt = db.cursor.fetchone()
-        if not tgt:
-            # Let the existing modal handle linking
-            rows = True
-        else:
-            current_rank = tgt[0]
-            target_index = list(discord_ranks).index(current_rank)
-            if target_index >= initiator_index:
-                await ctx.respond(':no_entry: You can only change ranks for members below your own.', ephemeral=True)
-                db.close()
+            # Prevent self-assignment
+            if user.id == ctx.user.id:
+                await ctx.respond(':no_entry: You cannot change your own rank.', ephemeral=True)
                 return
 
-        # Proceed with role updates
-        db.cursor.execute(
-            "SELECT ign FROM discord_links WHERE discord_id = %s", (user.id,)
-        )
-        rows = db.cursor.fetchall()
-
-        added = 'Added Roles:'
-        removed = 'Removed Roles:'
-        all_roles = ctx.guild.roles
-
-        if rows:
-            await ctx.defer(ephemeral=True)
-            # Apply new rank roles
-            for role_name in discord_ranks[rank]['roles']:
-                role_obj = discord.utils.get(all_roles, name=role_name)
-                if role_obj and role_obj not in user.roles:
-                    await user.add_roles(role_obj)
-                    added += f"\n - {role_name}"
-            # Remove old rank roles
-            for role_name in [r for r in discord_rank_roles if r not in discord_ranks[rank]['roles']]:
-                role_obj = discord.utils.get(all_roles, name=role_name)
-                if role_obj and role_obj in user.roles:
-                    await user.remove_roles(role_obj)
-                    removed += f"\n - {role_name}"
-            # Update DB
             db.cursor.execute(
-                "UPDATE discord_links SET rank = %s WHERE discord_id = %s",
-                (rank, user.id)
+                "SELECT rank FROM discord_links WHERE discord_id = %s",
+                (user.id,)
             )
-            db.connection.commit()
-            # Update nickname
-            try:
-                current = user.nick or user.name
-                parts = current.split(' ', 1)
-                base = parts[1] if len(parts) > 1 else parts[0]
-                await user.edit(nick=f"{rank} {base}")
-            except:
-                pass
-            await ctx.followup.send(f"{added}\n\n{removed}", ephemeral=True)
-        else:
-            modal = LinkAccount(
-                title="Link User to Minecraft IGN",
-                user=user,
-                rank=rank,
-                added=added,
-                removed=removed
+            tgt = db.cursor.fetchone()
+            if not tgt:
+                # Let the existing modal handle linking
+                rows = True
+            else:
+                current_rank = tgt[0]
+                target_index = list(discord_ranks).index(current_rank)
+                if target_index >= initiator_index:
+                    await ctx.respond(':no_entry: You can only change ranks for members below your own.', ephemeral=True)
+                    return
+
+            # Validate that the chosen new rank is below the initiator's rank
+            new_rank_index = list(discord_ranks).index(rank)
+            if new_rank_index >= initiator_index:
+                await ctx.respond(':no_entry: You cannot assign a rank equal to or above your own.', ephemeral=True)
+                return
+
+            # Proceed with role updates
+            db.cursor.execute(
+                "SELECT ign FROM discord_links WHERE discord_id = %s", (user.id,)
             )
-            await ctx.interaction.response.send_modal(modal)
-        db.close()
+            rows = db.cursor.fetchall()
+
+            added = 'Added Roles:'
+            removed = 'Removed Roles:'
+            all_roles = ctx.guild.roles
+
+            if rows:
+                await ctx.defer(ephemeral=True)
+                # Apply new rank roles
+                for role_name in discord_ranks[rank]['roles']:
+                    role_obj = discord.utils.get(all_roles, name=role_name)
+                    if role_obj and role_obj not in user.roles:
+                        await user.add_roles(role_obj)
+                        added += f"\n - {role_name}"
+                # Remove old rank roles
+                for role_name in [r for r in discord_rank_roles if r not in discord_ranks[rank]['roles']]:
+                    role_obj = discord.utils.get(all_roles, name=role_name)
+                    if role_obj and role_obj in user.roles:
+                        await user.remove_roles(role_obj)
+                        removed += f"\n - {role_name}"
+                # Update DB
+                db.cursor.execute(
+                    "UPDATE discord_links SET rank = %s WHERE discord_id = %s",
+                    (rank, user.id)
+                )
+                db.connection.commit()
+                # Update nickname
+                try:
+                    current = user.nick or user.name
+                    parts = current.split(' ', 1)
+                    base = parts[1] if len(parts) > 1 else parts[0]
+                    await user.edit(nick=f"{rank} {base}")
+                except:
+                    pass
+                await ctx.followup.send(f"{added}\n\n{removed}", ephemeral=True)
+            else:
+                modal = LinkAccount(
+                    title="Link User to Minecraft IGN",
+                    user=user,
+                    rank=rank,
+                    added=added,
+                    removed=removed
+                )
+                await ctx.interaction.response.send_modal(modal)
+        finally:
+            db.close()
 
     @manage_group.command(name='shells', description='HR: Add or remove shells from a user')
     async def shells(

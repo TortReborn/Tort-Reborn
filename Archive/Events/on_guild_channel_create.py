@@ -18,6 +18,7 @@ class OnGuildChannelCreate(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
+        # Guild restriction: only processes channels in TAQ_GUILD_ID (home guild)
         if not (
             channel.name.startswith("ticket-")
             and channel.guild.id == TAQ_GUILD_ID
@@ -53,10 +54,10 @@ class OnGuildChannelCreate(commands.Cog):
         font = ImageFont.truetype("images/profile/game.ttf", 38)
         draw.text((198, 13), user_name or "", font=font, fill="#ffba02")
 
-        with BytesIO() as buf:
-            img.save(buf, format="PNG")
-            buf.seek(0)
-            welcome_file = discord.File(buf, filename=f"welcome_{channel.id}.png")
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        welcome_file = discord.File(buf, filename=f"welcome_{channel.id}.png")
 
         view = View()
         await channel.send(file=welcome_file, view=view)

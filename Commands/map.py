@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.commands import slash_command, Option
-from Helpers.variables import ALL_GUILD_IDS
+from Helpers.rate_limiter import external_rate_limit
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timezone
 from io import BytesIO
@@ -175,8 +175,10 @@ class Map(commands.Cog):
 
     @slash_command(
         description="Displays the full territory map, or a zoomed-in version for a specific guild prefix.",
-        guild_ids=ALL_GUILD_IDS
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
     )
+    @external_rate_limit()
     async def map(self, ctx: discord.ApplicationContext, guild: Option(str, "Guild prefix to zoom in on", required=False)):
         """Slash command to show territory map."""
         await ctx.defer()

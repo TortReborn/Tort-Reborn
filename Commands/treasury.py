@@ -5,14 +5,20 @@ import datetime
 import math
 
 from Helpers.database import get_territory_data
-from Helpers.variables import ALL_GUILD_IDS
+from Helpers.rate_limiter import external_rate_limit
+from Helpers.pagination import add_paginator_buttons
 
 
 class Treasury(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @slash_command(description='Display all territories ordered by time held', guild_ids=ALL_GUILD_IDS)
+    @slash_command(
+        description='Display all territories ordered by time held',
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
+    )
+    @external_rate_limit()
     async def treasury(self, ctx: discord.ApplicationContext):
         await ctx.defer()
 
@@ -93,29 +99,14 @@ class Treasury(commands.Cog):
 
             # 5. Create paginator with navigation buttons
             paginator = pages.Paginator(pages=book)
-            paginator.add_button(
-                pages.PaginatorButton("first", emoji="<:first_arrows:1198703152204103760>",
-                                      style=discord.ButtonStyle.blurple)
-            )
-            paginator.add_button(
-                pages.PaginatorButton("prev", emoji="<:left_arrow:1198703157501509682>",
-                                      style=discord.ButtonStyle.blurple)
-            )
-            paginator.add_button(
-                pages.PaginatorButton("next", emoji="<:right_arrow:1198703156088021112>",
-                                      style=discord.ButtonStyle.blurple)
-            )
-            paginator.add_button(
-                pages.PaginatorButton("last", emoji="<:last_arrows:1198703153726627880>",
-                                      style=discord.ButtonStyle.blurple)
-            )
+            add_paginator_buttons(paginator)
 
             await paginator.respond(ctx.interaction)
 
         except Exception as e:
             error_embed = discord.Embed(
                 title='Error',
-                description=f'An error occurred: {str(e)}',
+                description='An error occurred while fetching territory data. Please try again later.',
                 color=discord.Color.red()
             )
             await ctx.followup.send(embed=error_embed, ephemeral=True)

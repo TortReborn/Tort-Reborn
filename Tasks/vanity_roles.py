@@ -12,7 +12,7 @@ from discord import default_permissions
 
 from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers.database import DB, get_current_guild_data
-from Helpers.variables import ALL_GUILD_IDS, TAQ_GUILD_ID, ANNOUNCEMENT_CHANNEL_ID, FAQ_CHANNEL_ID, VANITY_ROLE_IDS
+from Helpers.variables import HOME_GUILD_IDS, TAQ_GUILD_ID, ANNOUNCEMENT_CHANNEL_ID, FAQ_CHANNEL_ID, VANITY_ROLE_IDS
 
 START_DATE_UTC = date(2025, 8, 31)  # first run date (YYYY, M, D)
 
@@ -278,6 +278,7 @@ class VanityRoles(commands.Cog):
     # Internal runner + announcer
     # -----------------------------
     async def _run_biweekly_and_announce(self) -> None:
+        # Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)
         if getattr(self, "_running", None) is None:
             self._running = asyncio.Lock()
 
@@ -430,7 +431,7 @@ class VanityRoles(commands.Cog):
     # -----------------------------
     # Slash command: preview/run
     # -----------------------------
-    @slash_command(name="vanityroles", guild_ids=ALL_GUILD_IDS, description="Admin: preview or run the bi-weekly vanity role job")
+    @slash_command(name="vanityroles", guild_ids=HOME_GUILD_IDS, description="Admin: preview or run the bi-weekly vanity role job")
     @default_permissions(administrator=True)
     async def vanityroles(self, ctx: discord.ApplicationContext, action: discord.Option(str, choices=["run", "preview"])):
         """Admin helper: 'run' applies changes now + announces; 'preview' prints counts only."""

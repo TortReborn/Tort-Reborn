@@ -18,6 +18,7 @@ class CacheGuildColors(commands.Cog):
 
     @tasks.loop(hours=1)
     async def cache_guild_colors(self):
+        # Guild restriction: no Discord guild interaction — fetches external API data and caches in DB
         if not self.client.is_ready():
             return
 

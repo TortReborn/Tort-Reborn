@@ -351,7 +351,9 @@ CREATE TABLE IF NOT EXISTS applications (
   thread_id         BIGINT,
   poll_message_id   BIGINT,
   guild_leave_pending BOOLEAN    DEFAULT FALSE,
-  poll_status       TEXT         DEFAULT ':green_circle: Received'
+  poll_status       TEXT         DEFAULT ':green_circle: Received',
+  bot_processed     BOOLEAN      DEFAULT FALSE,
+  invite_image      TEXT
 );
 
 CREATE TABLE IF NOT EXISTS application_votes (
@@ -411,7 +413,7 @@ CREATE TABLE IF NOT EXISTS promotion_queue (
   queued_by_discord_id BIGINT       NOT NULL,
   queued_by_ign        VARCHAR(64)  NOT NULL,
   created_at           TIMESTAMPTZ  DEFAULT NOW(),
-  status               VARCHAR(20)  NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
+  status               VARCHAR(20)  NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
   completed_at         TIMESTAMPTZ,
   error_message        TEXT
 );

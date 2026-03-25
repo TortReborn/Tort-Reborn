@@ -136,14 +136,31 @@ TAQ_GUILD_ID = _cfg["TAQ_GUILD_ID"]
 EXEC_GUILD_ID = _cfg["EXEC_GUILD_ID"]
 DEV_GUILD_ID = 1364751619018850405  # always the same — used for error logs
 
-# ---- Server Buckets (DEV always included for testing) ----
+# ---- Server Buckets (DEV included only in test mode) ----
 PERSONAL_TEST_GUILD_ID = 1352901131977625631  # personal test server
 
-_extra = [PERSONAL_TEST_GUILD_ID] if IS_TEST_MODE else []
+if IS_TEST_MODE:
+    TAQ_GUILD_IDS = list(set([TAQ_GUILD_ID, DEV_GUILD_ID, PERSONAL_TEST_GUILD_ID]))
+    EXEC_GUILD_IDS = list(set([EXEC_GUILD_ID, DEV_GUILD_ID, PERSONAL_TEST_GUILD_ID]))
+    ALL_GUILD_IDS = list(set([TAQ_GUILD_ID, EXEC_GUILD_ID, DEV_GUILD_ID, PERSONAL_TEST_GUILD_ID]))
+else:
+    TAQ_GUILD_IDS = [TAQ_GUILD_ID]
+    EXEC_GUILD_IDS = [EXEC_GUILD_ID]
+    ALL_GUILD_IDS = list(set([TAQ_GUILD_ID, EXEC_GUILD_ID]))
 
-TAQ_GUILD_IDS = list(set([TAQ_GUILD_ID, DEV_GUILD_ID] + _extra))
-EXEC_GUILD_IDS = list(set([EXEC_GUILD_ID, DEV_GUILD_ID] + _extra))
-ALL_GUILD_IDS = list(set([TAQ_GUILD_ID, EXEC_GUILD_ID, DEV_GUILD_ID] + _extra))
+# ---- Home Guild IDs (canonical list of trusted guilds for admin commands) ----
+HOME_GUILD_IDS = ALL_GUILD_IDS
+
+# ---- Public Command Allowlist (everything NOT listed here is admin-only) ----
+PUBLIC_COMMANDS = {
+    'online', 'profile', 'progress', 'raids',
+    'worlds', 'map', 'treasury', 'lootpool',
+}
+
+
+def is_home_guild(guild_id: int) -> bool:
+    """Check if a guild ID belongs to a home (trusted) guild."""
+    return guild_id in HOME_GUILD_IDS
 
 # =============================================================================
 # Channel IDs

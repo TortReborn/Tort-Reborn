@@ -90,10 +90,17 @@ storage = S3Storage()
 # --- Profile background helpers ---
 
 def get_background(bg_id) -> Image.Image:
-    """Download a profile background from S3."""
+    """Download a profile background from S3. Falls back to local default in test mode."""
+    from Helpers.variables import IS_TEST_MODE
     img = storage.get_image(f"profile_backgrounds/{bg_id}.png")
     if img:
         return img
+    if bg_id != 1:
+        img = storage.get_image("profile_backgrounds/1.png")
+        if img:
+            return img
+    if IS_TEST_MODE:
+        return Image.open("images/profile_pictures/default.png")
     raise FileNotFoundError(f"Background {bg_id} not found in S3")
 
 

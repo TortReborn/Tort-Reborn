@@ -33,32 +33,32 @@ def date_diff(time=False):
     return diff.days
 
 
-def getPlayerData(name):
+def getPlayerData(name, token=None):
     if name.lower() == 'woodcreature':
         name = 'aa7402cc-bf1c-4aed-838b-fd8897d38836'
     url = f'https://api.wynncraft.com/v2/player/{name}/stats'
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:
         return False
 
 
-def getPlayerDatav3(uuid):
+def getPlayerDatav3(uuid, token=None):
     url = f'https://api.wynncraft.com/v3/player/{uuid}?fullResult'
     try:
-        resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:
         return False
 
 
-def getData(guild):
+def getData(guild, token=None):
     url = f"https://api.wynncraft.com/v3/guild/{urlify(guild)}"
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
     except requests.RequestException:
@@ -131,13 +131,13 @@ def calcPercentage(p, m):
     return math.floor((100 / m) * p)
 
 
-def getGuildMembers(guild):
+def getGuildMembers(guild, token=None):
     url = (
       'https://api.wynncraft.com/public_api.php'
       f'?action=guildStats&command={urlify(guild)}'
     )
     try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json().get('members', [])
     except requests.RequestException:
@@ -156,7 +156,7 @@ def dropShadow(image):
     return image
 
 
-def getPlayerUUID(player):
+def getPlayerUUID(player, token=None):
     try:
         req = requests.get(f"https://api.mojang.com/users/profiles/minecraft/{player}")
         username = req.json()['name']
@@ -164,7 +164,7 @@ def getPlayerUUID(player):
         return [username, str(player_uuid)]
     except:
         try:
-            req = requests.get(f"https://api.wynncraft.com/v3/player/{player}", headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"}, timeout=10)
+            req = requests.get(f"https://api.wynncraft.com/v3/player/{player}", headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"}, timeout=10)
             username = req.json()['username']
             player_uuid = UUID(req.json()['uuid'])
             return [username, str(player_uuid)]
@@ -662,7 +662,7 @@ def colorize(img, rgb_color):
 
 # Online player list (30s TTL)
 
-def getOnlinePlayers():
+def getOnlinePlayers(token=None):
     """Return a mapping of username (case-sensitive as returned by the API)
     -> server string (e.g. "WC1").  The method first tries the v3 player
     module online list.  If that fails for any reason, it falls back to the
@@ -678,7 +678,7 @@ def getOnlinePlayers():
     # Preferred v3 endpoint (30 seconds TTL)
     v3_url = "https://api.wynncraft.com/v3/player"
     try:
-        resp = requests.get(v3_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(v3_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         if resp.status_code == 200:
             data = resp.json()
             if 'players' in data and isinstance(data['players'], dict):
@@ -689,7 +689,7 @@ def getOnlinePlayers():
     # Fallback to legacy endpoint (using a different timeout for the fallback)
     legacy_url = "https://api.wynncraft.com/public_api.php?action=onlinePlayers"
     try:
-        resp = requests.get(legacy_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(legacy_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         if resp.status_code == 200:
             data = resp.json()
             # Legacy format returns a list of servers, each with a list of players
@@ -708,7 +708,7 @@ def getOnlinePlayers():
 
 # Online player list keyed by UUID (30s TTL)
 
-def getOnlinePlayersUUID():
+def getOnlinePlayersUUID(token=None):
     """Return a mapping of lowercase UUID -> server string (e.g. "WC1").
 
     The Wynncraft v3 player endpoint supports different identifier modes. By
@@ -725,7 +725,7 @@ def getOnlinePlayersUUID():
     uuid_url = "https://api.wynncraft.com/v3/player?identifier=uuid"
 
     try:
-        resp = requests.get(uuid_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(uuid_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         if resp.status_code == 200:
             data = resp.json()
             players = data.get("players", {})

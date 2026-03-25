@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
-from Helpers.variables import EXEC_GUILD_IDS
+from Helpers.variables import HOME_GUILD_IDS
 from Tasks.kick_list_tracker import (
     _add_to_kick_list_sync,
     _remove_from_kick_list_sync,
@@ -23,7 +23,7 @@ class KickList(commands.Cog):
     kicklist = SlashCommandGroup(
         "kicklist",
         "Manage the guild kick list",
-        guild_ids=EXEC_GUILD_IDS,
+        guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_roles=True),
     )
 

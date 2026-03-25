@@ -22,7 +22,8 @@ from Helpers.functions import (
 )
 from Helpers.classes import PlayerStats
 from Helpers.database import DB
-from Helpers.variables import discord_ranks, minecraft_banner_colors, ALL_GUILD_IDS, wynn_ranks
+from Helpers.variables import discord_ranks, minecraft_banner_colors, wynn_ranks
+from Helpers.rate_limiter import external_rate_limit
 from Helpers.storage import get_background
 
 # ---------------------------------------------------------------------------
@@ -57,8 +58,10 @@ class Raids(commands.Cog):
     @slash_command(
         name="raids",
         description="Show raid rankings and counts for a player",
-        guild_ids=ALL_GUILD_IDS,
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
     )
+    @external_rate_limit()
     async def raids(self,
                     ctx: discord.ApplicationContext,
                     name: Option(str, "Minecraft username", required=True)):

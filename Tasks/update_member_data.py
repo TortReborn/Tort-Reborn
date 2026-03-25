@@ -367,11 +367,13 @@ class UpdateMemberData(commands.Cog):
 
     @tasks.loop(minutes=3)
     async def update_member_data(self):
+        # Guild restriction: fetches Wynncraft API data for "The Aquarium" guild,
+        # sends to home guild channels only (RAID_LOG_CHANNEL_ID, BOT_LOG_CHANNEL_ID, etc.)
         now = datetime.datetime.now(timezone.utc)
         log(INFO, f"STARTING LOOP — {now.strftime('%Y-%m-%d %H:%M:%S')} UTC", context="update_member_data")
 
         # fetch guild over HTTP off the event loop
-        guild = await asyncio.to_thread(Guild, "The Aquarium")
+        guild = await asyncio.to_thread(Guild, "The Aquarium", "WYNN_LOOP_TOKEN")
 
         # 1 Pull latest guild contributions
         contrib_map = {member['uuid']: member.get('contributed', 0) for member in guild.all_members}
@@ -497,7 +499,7 @@ class UpdateMemberData(commands.Cog):
                         log(INFO, f"Rate limit reached, sleeping {wait:.1f}s", context="update_member_data")
                     await asyncio.sleep(wait)
                 self.request_times.append(datetime.datetime.now(timezone.utc))
-                res=await asyncio.to_thread(getPlayerDatav3,m['uuid'])
+                res=await asyncio.to_thread(getPlayerDatav3,m['uuid'],"WYNN_LOOP_TOKEN")
             results.append(res)
 
         prev = self.previous_data
@@ -793,7 +795,7 @@ class UpdateMemberData(commands.Cog):
 
         db = DB()
         db.connect()
-        guild = Guild("The Aquarium")
+        guild = Guild("The Aquarium", "WYNN_LOOP_TOKEN")
         snap = {'time': int(time.time()), 'members': []}
 
         total_members = len(guild.all_members)
@@ -815,7 +817,7 @@ class UpdateMemberData(commands.Cog):
                 username = m['name']
 
                 async with self._semaphore:
-                    pf = await asyncio.to_thread(getPlayerDatav3, uuid)
+                    pf = await asyncio.to_thread(getPlayerDatav3, uuid, "WYNN_LOOP_TOKEN")
                 if not isinstance(pf, dict):
                     failed_members.append(m)
                     continue

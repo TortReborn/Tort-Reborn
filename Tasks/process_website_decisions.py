@@ -23,7 +23,8 @@ class ProcessWebsiteDecisions(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def process_decisions(self):
-        """Poll for website-made accept/deny decisions and execute them."""
+        """Poll for website-made accept/deny decisions and execute them.
+        Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)."""
         rows = await asyncio.to_thread(self._claim_pending_decisions)
         if not rows:
             return

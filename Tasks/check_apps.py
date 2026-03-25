@@ -6,7 +6,7 @@ from discord.ext import tasks, commands
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
-from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME
+from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME, is_home_guild
 
 
 class CheckApps(commands.Cog):
@@ -37,6 +37,14 @@ class CheckApps(commands.Cog):
 
         for app_id, channel_id, thread_id, discord_id, ign in rows:
             try:
+                # Security guard: validate thread belongs to home guild before processing
+                if thread_id:
+                    thread = self.client.get_channel(thread_id)
+                    if thread and hasattr(thread, 'guild') and thread.guild:
+                        if not is_home_guild(thread.guild.id):
+                            log(ERROR, f"Skipping non-home guild thread {thread_id} for app {app_id}", context="check_apps")
+                            continue
+
                 await self._check_pending_leave(app_id, channel_id, thread_id, ign, discord_id)
             except Exception as e:
                 log(ERROR, f"Error for app {app_id}: {e}", context="check_apps")
@@ -114,7 +122,8 @@ class CheckApps(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def auto_close_web_apps(self):
-        """Auto-close denied apps after 24h and accepted apps when user has roles."""
+        """Auto-close denied apps after 24h and accepted apps when user has roles.
+        Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)."""
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
             return
