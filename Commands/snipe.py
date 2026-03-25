@@ -462,6 +462,20 @@ def _row_bg_img(W, ROW_H=40):
     return row_bg
 
 
+def _get_earned_badges(total_snipes: int) -> list:
+    """Return ordered list of earned badge image paths (max 9 for 3×3 grid)."""
+    badges = []
+    # Total Snipes medal
+    if total_snipes >= 100:
+        badges.append('images/snipe/total_snipes/total_snipes_gold.png')
+    elif total_snipes >= 50:
+        badges.append('images/snipe/total_snipes/total_snipes_silver.png')
+    elif total_snipes >= 25:
+        badges.append('images/snipe/total_snipes/total_snipes_bronze.png')
+    # Future medals appended here (up to 9 total)
+    return badges
+
+
 # ── Card generators ──────────────────────────────────────────────────────────
 
 def _generate_snipe_card(
@@ -564,7 +578,7 @@ def _generate_snipe_card(
         addLine(formatted_value, draw, v_font, bx + BOX_W - 8 - val_w, by + 38, drop_x=3, drop_y=3)
 
     # ── Right panel — lists ───────────────────────────────────────────────────
-    LIST_Y, LIST_X, LIST_W = 294, 450, 360
+    LIST_Y, LIST_X, LIST_W = 294, 450, 390
     LIST_H = H - 40 - LIST_Y
 
     list_bg = Image.new('RGBA', (LIST_W, LIST_H), (0, 0, 0, 0))
@@ -582,16 +596,46 @@ def _generate_snipe_card(
     else:
         draw.text((LIST_X + 8, LIST_Y + 52), 'None yet', font=f_small, fill='#555555')
 
-    SECT2_Y = LIST_Y + 162
+    SECT2_Y = LIST_Y + 18 + LIST_H // 2
     draw.line([(LIST_X + 8, SECT2_Y), (LIST_X + LIST_W - 8, SECT2_Y)], fill=SEP, width=1)
     draw.text((LIST_X + 8, SECT2_Y + 8), 'MOST SNIPED HQs', font=f_label, fill=ACCENT)
     if hq_rows:
         for i, (abbr, count) in enumerate(hq_rows[:3]):
             hq_text = f'{display_hq(abbr)} \u2014 {count}'
             hq_font = _fit_addline_font(hq_text, draw, 'images/profile/game.ttf', 26, LIST_W - 16, min_size=18)
-            addLine(hq_text, draw, hq_font, LIST_X + 8, SECT2_Y + 32 + i * 34, drop_x=3, drop_y=3)
+            addLine(hq_text, draw, hq_font, LIST_X + 8, SECT2_Y + 34 + i * 34, drop_x=3, drop_y=3)
     else:
-        draw.text((LIST_X + 8, SECT2_Y + 32), 'None yet', font=f_small, fill='#555555')
+        draw.text((LIST_X + 8, SECT2_Y + 34), 'None yet', font=f_small, fill='#555555')
+
+    # ── Right panel — badges (3×3 grid) ──────────────────────────────────────
+    BADGE_SIZE = 80
+    BADGE_GAP  = 30
+    BADGE_AREA_X = COLS_X[2]                          # 850 — aligns with cols 2 & 3
+    BADGE_AREA_W = COLS_X[3] + BOX_W - BADGE_AREA_X  # 390
+    BADGE_AREA_Y = LIST_Y + 18              # 312
+    BADGE_AREA_H = H - 22 - BADGE_AREA_Y   # 326
+
+    badge_bg = Image.new('RGBA', (BADGE_AREA_W, BADGE_AREA_H), (0, 0, 0, 0))
+    ImageDraw.Draw(badge_bg).rounded_rectangle(
+        ((0, 0), (BADGE_AREA_W - 1, BADGE_AREA_H - 1)), fill=(0, 0, 0, 40), radius=8
+    )
+    card.paste(badge_bg, (BADGE_AREA_X, BADGE_AREA_Y), badge_bg)
+
+    grid_w = 3 * BADGE_SIZE + 2 * BADGE_GAP   # 300
+    grid_h = 3 * BADGE_SIZE + 2 * BADGE_GAP   # 300
+    b_left = BADGE_AREA_X + (BADGE_AREA_W - grid_w) // 2
+    b_top  = BADGE_AREA_Y + (BADGE_AREA_H - grid_h) // 2
+
+    earned = _get_earned_badges(total_snipes)
+    for slot, path in enumerate(earned[:9]):
+        col = slot % 3
+        row = slot // 3
+        bx = b_left + col * (BADGE_SIZE + BADGE_GAP)
+        by = b_top  + row * (BADGE_SIZE + BADGE_GAP)
+        badge_img = Image.open(path).convert('RGBA').resize(
+            (BADGE_SIZE, BADGE_SIZE), Image.LANCZOS
+        )
+        card.paste(badge_img, (bx, by), badge_img)
 
     return card
 
@@ -606,7 +650,7 @@ def _generate_lb_card(page_rows, sort_by, season_label, page_num, total_pages, s
     f_label = ImageFont.truetype('images/profile/5x5.ttf',  20)
     f_small = ImageFont.truetype('images/profile/game.ttf', 24)
 
-    CX        = [38, 108, 360, 472, 685, 822]
+    CX        = [38, 108, 360, 472, 600, 780]
     HEADERS   = ['RANK', 'PLAYER', 'SNIPES', 'BEST DIFF.', 'BEST STREAK', 'CUR. STREAK']
     SORT_COLS = [None, None, 'Total Snipes', 'Personal Best', 'Best Streak', 'Current Streak']
 
@@ -623,7 +667,7 @@ def _generate_lb_card(page_rows, sort_by, season_label, page_num, total_pages, s
             if i % 2 == 0:
                 card.paste(row_bg, (28, ry - 2), row_bg)
             rank = start_rank + i
-            best_str = _format_difficulty_text(row['best_diff'], prefix=f"{row['best_hq']} \u2014 ") if row['best_hq'] else '\u2014'
+            best_str = _format_difficulty_text(row['best_diff']) if row['best_diff'] else '\u2014'
             draw.text((CX[0], ry + 4), f'#{rank}', font=f_small, fill=ACCENT)
             addLine(str(row['ign']),         draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(row['total']),       draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
