@@ -18,13 +18,13 @@ WELCOME_CHANNEL = WELCOME_CHANNEL_ID
 
 class Guild:
 
-    def __init__(self, guild):
+    def __init__(self, guild, token=None):
         if len(guild) <= 4:
             url = f'https://api.wynncraft.com/v3/guild/prefix/{urlify(guild)}'
         else:
             url = f'https://api.wynncraft.com/v3/guild/{urlify(guild)}'
 
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         resp.raise_for_status()
         guild_data = resp.json()
 

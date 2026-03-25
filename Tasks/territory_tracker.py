@@ -3,6 +3,7 @@ import datetime
 import discord
 import json
 import asyncio
+import os
 import random
 from typing import Dict, List, Set
 
@@ -442,7 +443,8 @@ async def _get_session() -> aiohttp.ClientSession:
     global _http_session
     if _http_session is None or _http_session.closed:
         timeout = aiohttp.ClientTimeout(total=15, connect=5, sock_read=10)
-        _http_session = aiohttp.ClientSession(timeout=timeout, raise_for_status=True)
+        headers = {"Authorization": f"Bearer {os.getenv('WYNN_LOOP_TOKEN')}"}
+        _http_session = aiohttp.ClientSession(timeout=timeout, raise_for_status=True, headers=headers)
     return _http_session
 
 async def _close_session():
