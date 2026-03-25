@@ -1025,11 +1025,29 @@ class SnipeTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    snipe = SlashCommandGroup('snipe', 'Snipe tracking commands')
+    snipe = SlashCommandGroup(
+        'snipe',
+        'Snipe tracking commands',
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install},
+        contexts={discord.InteractionContextType.guild, discord.InteractionContextType.bot_dm, discord.InteractionContextType.private_channel},
+    )
+
+    async def _get_home_member(self, user_id: int) -> discord.Member | None:
+        guild = self.client.get_guild(TAQ_GUILD_ID)
+        if guild is None:
+            return None
+
+        member = guild.get_member(user_id)
+        if member is not None:
+            return member
+
+        try:
+            return await guild.fetch_member(user_id)
+        except (discord.NotFound, discord.HTTPException):
+            return None
 
     async def cog_check(self, ctx: discord.ApplicationContext) -> bool:
-        guild = ctx.bot.get_guild(TAQ_GUILD_ID)
-        member = guild.get_member(ctx.author.id) if guild else None
+        member = await self._get_home_member(ctx.author.id)
         if not member or not discord.utils.get(member.roles, id=HQ_TEAM_ROLE_ID):
             await ctx.respond(':no_entry: You need the **HQ Team** role to use snipe commands.', ephemeral=True)
             return False
@@ -1053,7 +1071,8 @@ class SnipeTracker(commands.Cog):
     ):
         await ctx.defer(ephemeral=True)
 
-        if not discord.utils.get(ctx.author.roles, name='War Trainer'):
+        member = await self._get_home_member(ctx.author.id)
+        if not member or not discord.utils.get(member.roles, name='War Trainer'):
             await ctx.followup.send(':no_entry: You must have the **War Trainer** role to log snipes.', ephemeral=True)
             return
         if log_to_channel and image is None:
@@ -1707,7 +1726,8 @@ class SnipeTracker(commands.Cog):
         season: discord.Option(int, 'Season number', required=True, min_value=1),
     ):
         await ctx.defer(ephemeral=True)
-        if not discord.utils.get(ctx.author.roles, name='War Trainer'):
+        member = await self._get_home_member(ctx.author.id)
+        if not member or not discord.utils.get(member.roles, name='War Trainer'):
             await ctx.followup.send(':no_entry: You must have the **War Trainer** role to set the war season.', ephemeral=True)
             return
         _set_current_season(season)

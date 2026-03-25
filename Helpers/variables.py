@@ -155,6 +155,7 @@ HOME_GUILD_IDS = ALL_GUILD_IDS
 PUBLIC_COMMANDS = {
     'online', 'profile', 'progress', 'raids',
     'worlds', 'map', 'treasury', 'lootpool',
+    'snipe',
 }
 
 
