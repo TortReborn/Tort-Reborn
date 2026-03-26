@@ -8,6 +8,7 @@ load_dotenv()
 # =============================================================================
 
 IS_TEST_MODE = os.getenv("TEST_MODE", "").lower() in ("true", "1", "t")
+ERROR_PING_USER_ID = os.getenv("ERROR_PING_USER_ID")
 
 # =============================================================================
 # Environment-Specific Config
