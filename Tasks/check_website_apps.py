@@ -304,11 +304,11 @@ class CheckWebsiteApps(commands.Cog):
         # Send vote buttons in the thread
         await thread.send("**Vote on this application:**", view=ThreadVoteView())
 
-        # Update applications table with channel_id, thread_id, poll_message_id
-        await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id)
+        # Update applications table with channel_id, thread_id, poll_message_id, app_number
+        await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id, app_number)
 
     @staticmethod
-    def _update_application(app_id, channel_id, thread_id, poll_message_id):
+    def _update_application(app_id, channel_id, thread_id, poll_message_id, app_number=None):
         """Blocking: update the applications row with Discord IDs."""
         db = DB()
         db.connect()
@@ -317,10 +317,10 @@ class CheckWebsiteApps(commands.Cog):
                 """
                 UPDATE applications
                 SET channel_id = %s, thread_id = %s, poll_message_id = %s,
-                    poll_status = ':green_circle: Received'
+                    poll_status = ':green_circle: Received', app_number = %s
                 WHERE id = %s
                 """,
-                (channel_id, thread_id, poll_message_id, app_id),
+                (channel_id, thread_id, poll_message_id, app_number, app_id),
             )
             db.connection.commit()
         finally:

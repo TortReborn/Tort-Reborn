@@ -31,7 +31,7 @@ class OnGuildChannelUpdate(commands.Cog):
         # When a ticket arrives in Closed Applications, rename based on app type and decision
         db = DB(); db.connect()
         db.cursor.execute(
-            "SELECT application_type, status, id, answers FROM applications WHERE channel_id = %s",
+            "SELECT application_type, status, id, answers, app_number FROM applications WHERE channel_id = %s",
             (after.id,)
         )
         row = db.cursor.fetchone()
@@ -40,15 +40,16 @@ class OnGuildChannelUpdate(commands.Cog):
         if not row:
             return
 
-        app_type, status, app_id, answers = row
+        app_type, status, app_id, answers, app_number = row
         if isinstance(answers, str):
             answers = json.loads(answers)
         ign = (answers.get("ign") or "").strip()
+        display_number = app_number if app_number is not None else app_id
 
         if status == "accepted":
-            new_name = f"accepted-{app_id}-{ign}" if app_type == "guild" else f"c-accepted-{app_id}-{ign}"
+            new_name = f"accepted-{display_number}-{ign}" if app_type == "guild" else f"c-accepted-{display_number}-{ign}"
         elif status == "denied":
-            new_name = f"denied-{app_id}-{ign}" if app_type == "guild" else f"c-denied-{app_id}-{ign}"
+            new_name = f"denied-{display_number}-{ign}" if app_type == "guild" else f"c-denied-{display_number}-{ign}"
         else:
             new_name = None
 

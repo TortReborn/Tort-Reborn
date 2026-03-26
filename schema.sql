@@ -202,7 +202,14 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'new_app' AND column_name = 'app_message_id') THEN
     ALTER TABLE new_app ADD COLUMN app_message_id BIGINT;
   END IF;
+  -- applications: app_number column for persistent counter-based naming
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'applications' AND column_name = 'app_number') THEN
+    ALTER TABLE applications ADD COLUMN app_number INT;
+  END IF;
 END $$;
+
+-- Seed app_counter if missing (won't overwrite existing value)
+INSERT INTO bot_settings (key, value) VALUES ('app_counter', '3725') ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- Guild Bank Transactions
@@ -353,7 +360,8 @@ CREATE TABLE IF NOT EXISTS applications (
   guild_leave_pending BOOLEAN    DEFAULT FALSE,
   poll_status       TEXT         DEFAULT ':green_circle: Received',
   bot_processed     BOOLEAN      DEFAULT FALSE,
-  invite_image      TEXT
+  invite_image      TEXT,
+  app_number        INT
 );
 
 CREATE TABLE IF NOT EXISTS application_votes (

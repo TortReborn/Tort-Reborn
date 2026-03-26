@@ -58,7 +58,7 @@ class ProcessWebsiteDecisions(commands.Cog):
                 )
                 RETURNING id, application_type, discord_id, discord_username,
                           status, answers, channel_id, thread_id, poll_message_id,
-                          guild_leave_pending, invite_image
+                          guild_leave_pending, invite_image, app_number
                 """
             )
             rows = db.cursor.fetchall()
@@ -74,7 +74,7 @@ class ProcessWebsiteDecisions(commands.Cog):
     async def _process_decision(self, row):
         (app_id, app_type, discord_id, discord_username,
          status, answers, channel_id, thread_id, poll_message_id,
-         guild_leave_pending, invite_image) = row
+         guild_leave_pending, invite_image, app_number) = row
 
         if isinstance(answers, str):
             answers = json.loads(answers)
@@ -104,23 +104,30 @@ class ProcessWebsiteDecisions(commands.Cog):
             except Exception:
                 applicant = None
 
+        # Use app_number (from app_counter) for channel naming, fall back to app_id
+        display_number = app_number if app_number is not None else app_id
+
         if status == "accepted":
             if app_type == "guild":
                 await self._accept_guild(app_id, channel, applicant, discord_id,
-                                         discord_username, ign, thread_id, invite_image, answers)
+                                         discord_username, ign, thread_id, invite_image, answers,
+                                         display_number=display_number)
             else:
                 await self._accept_community(app_id, channel, applicant, discord_id,
-                                             discord_username, ign, thread_id)
+                                             discord_username, ign, thread_id,
+                                             display_number=display_number)
         elif status == "denied":
             await self._deny(app_id, app_type, channel, applicant, discord_id,
-                             discord_username, ign, thread_id)
+                             discord_username, ign, thread_id,
+                             display_number=display_number)
 
     # ------------------------------------------------------------------
     # Accept — Guild
     # ------------------------------------------------------------------
 
     async def _accept_guild(self, app_id, channel, applicant, discord_id,
-                            discord_username, ign, thread_id, invite_image, answers=None):
+                            discord_username, ign, thread_id, invite_image, answers=None,
+                            display_number=None):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
         partytort = discord.utils.get(channel.guild.emojis, name="partytort")
         party_emoji = str(partytort) if partytort else "\U0001F389"
@@ -194,7 +201,7 @@ class ProcessWebsiteDecisions(commands.Cog):
                 except discord.Forbidden:
                     pass
             try:
-                await channel.edit(name=f"accepted-{app_id}-{ign}")
+                await channel.edit(name=f"accepted-{display_number}-{ign}")
             except discord.Forbidden:
                 pass
             await update_web_poll_embed(self.client, channel.id,
@@ -224,7 +231,8 @@ class ProcessWebsiteDecisions(commands.Cog):
     # ------------------------------------------------------------------
 
     async def _accept_community(self, app_id, channel, applicant, discord_id,
-                                discord_username, ign, thread_id):
+                                discord_username, ign, thread_id,
+                                display_number=None):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
 
         await channel.send(
@@ -264,7 +272,7 @@ class ProcessWebsiteDecisions(commands.Cog):
 
         # Rename channel
         try:
-            await channel.edit(name=f"c-accepted-{app_id}-{ign}")
+            await channel.edit(name=f"c-accepted-{display_number}-{ign}")
         except discord.Forbidden:
             pass
 
@@ -283,7 +291,8 @@ class ProcessWebsiteDecisions(commands.Cog):
     # ------------------------------------------------------------------
 
     async def _deny(self, app_id, app_type, channel, applicant, discord_id,
-                    discord_username, ign, thread_id):
+                    discord_username, ign, thread_id,
+                    display_number=None):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
 
         await channel.send(
@@ -296,8 +305,8 @@ class ProcessWebsiteDecisions(commands.Cog):
         )
 
         # Rename channel
-        new_name = (f"denied-{app_id}-{ign}" if app_type == "guild"
-                    else f"c-denied-{app_id}-{ign}")
+        new_name = (f"denied-{display_number}-{ign}" if app_type == "guild"
+                    else f"c-denied-{display_number}-{ign}")
         try:
             await channel.edit(name=new_name)
         except discord.Forbidden:

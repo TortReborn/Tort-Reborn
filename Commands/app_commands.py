@@ -54,7 +54,7 @@ class WebAppCommands(commands.Cog):
                 # Try channel_id first, then thread_id
                 db.cursor.execute(
                     """SELECT id, application_type, discord_id, thread_id, status,
-                              channel_id, guild_leave_pending, answers, discord_username
+                              channel_id, guild_leave_pending, answers, discord_username, app_number
                        FROM applications WHERE channel_id = %s""",
                     (source_id,)
                 )
@@ -62,7 +62,7 @@ class WebAppCommands(commands.Cog):
                 if not row:
                     db.cursor.execute(
                         """SELECT id, application_type, discord_id, thread_id, status,
-                                  channel_id, guild_leave_pending, answers, discord_username
+                                  channel_id, guild_leave_pending, answers, discord_username, app_number
                            FROM applications WHERE thread_id = %s""",
                         (source_id,)
                     )
@@ -80,7 +80,7 @@ class WebAppCommands(commands.Cog):
             )
             return None
 
-        app_id, app_type, discord_id, thread_id, status, channel_id, guild_leave_pending, answers, discord_username = row
+        app_id, app_type, discord_id, thread_id, status, channel_id, guild_leave_pending, answers, discord_username, app_number = row
 
         if require_status and status != require_status:
             await ctx.followup.send(
@@ -121,6 +121,7 @@ class WebAppCommands(commands.Cog):
             "channel_id": channel_id,
             "guild_leave_pending": guild_leave_pending,
             "answers": answers,
+            "app_number": app_number,
         }
 
         return ticket_channel, row_dict
