@@ -462,18 +462,18 @@ def _row_bg_img(W, ROW_H=40):
     return row_bg
 
 
-def _get_earned_badges(total_snipes: int) -> list:
-    """Return ordered list of earned badge image paths (max 9 for 3×3 grid)."""
-    badges = []
-    # Total Snipes medal
-    if total_snipes >= 100:
-        badges.append('images/snipe/total_snipes/total_snipes_gold.png')
-    elif total_snipes >= 50:
-        badges.append('images/snipe/total_snipes/total_snipes_silver.png')
-    elif total_snipes >= 25:
-        badges.append('images/snipe/total_snipes/total_snipes_bronze.png')
-    # Future medals appended here (up to 9 total)
-    return badges
+# def _get_earned_badges(total_snipes: int) -> list:
+#     """Return ordered list of earned badge image paths (max 9 for 3×3 grid)."""
+#     badges = []
+#     # Total Snipes medal
+#     if total_snipes >= 100:
+#         badges.append('images/snipe/total_snipes/total_snipes_gold.png')
+#     elif total_snipes >= 50:
+#         badges.append('images/snipe/total_snipes/total_snipes_silver.png')
+#     elif total_snipes >= 25:
+#         badges.append('images/snipe/total_snipes/total_snipes_bronze.png')
+#     # Future medals appended here (up to 9 total)
+#     return badges
 
 
 # ── Card generators ──────────────────────────────────────────────────────────
@@ -607,35 +607,35 @@ def _generate_snipe_card(
     else:
         draw.text((LIST_X + 8, SECT2_Y + 34), 'None yet', font=f_small, fill='#555555')
 
-    # ── Right panel — badges (3×3 grid) ──────────────────────────────────────
-    BADGE_SIZE = 80
-    BADGE_GAP  = 30
-    BADGE_AREA_X = COLS_X[2]                          # 850 — aligns with cols 2 & 3
-    BADGE_AREA_W = COLS_X[3] + BOX_W - BADGE_AREA_X  # 390
-    BADGE_AREA_Y = LIST_Y + 18              # 312
-    BADGE_AREA_H = H - 22 - BADGE_AREA_Y   # 326
-
-    badge_bg = Image.new('RGBA', (BADGE_AREA_W, BADGE_AREA_H), (0, 0, 0, 0))
-    ImageDraw.Draw(badge_bg).rounded_rectangle(
-        ((0, 0), (BADGE_AREA_W - 1, BADGE_AREA_H - 1)), fill=(0, 0, 0, 40), radius=8
-    )
-    card.paste(badge_bg, (BADGE_AREA_X, BADGE_AREA_Y), badge_bg)
-
-    grid_w = 3 * BADGE_SIZE + 2 * BADGE_GAP   # 300
-    grid_h = 3 * BADGE_SIZE + 2 * BADGE_GAP   # 300
-    b_left = BADGE_AREA_X + (BADGE_AREA_W - grid_w) // 2
-    b_top  = BADGE_AREA_Y + (BADGE_AREA_H - grid_h) // 2
-
-    earned = _get_earned_badges(total_snipes)
-    for slot, path in enumerate(earned[:9]):
-        col = slot % 3
-        row = slot // 3
-        bx = b_left + col * (BADGE_SIZE + BADGE_GAP)
-        by = b_top  + row * (BADGE_SIZE + BADGE_GAP)
-        badge_img = Image.open(path).convert('RGBA').resize(
-            (BADGE_SIZE, BADGE_SIZE), Image.LANCZOS
-        )
-        card.paste(badge_img, (bx, by), badge_img)
+    # ── Right panel — badges (3×3 grid) — disabled pending release ──────────
+    # BADGE_SIZE = 80
+    # BADGE_GAP  = 30
+    # BADGE_AREA_X = COLS_X[2]                          # 850 — aligns with cols 2 & 3
+    # BADGE_AREA_W = COLS_X[3] + BOX_W - BADGE_AREA_X  # 390
+    # BADGE_AREA_Y = LIST_Y + 18              # 312
+    # BADGE_AREA_H = H - 22 - BADGE_AREA_Y   # 326
+    #
+    # badge_bg = Image.new('RGBA', (BADGE_AREA_W, BADGE_AREA_H), (0, 0, 0, 0))
+    # ImageDraw.Draw(badge_bg).rounded_rectangle(
+    #     ((0, 0), (BADGE_AREA_W - 1, BADGE_AREA_H - 1)), fill=(0, 0, 0, 40), radius=8
+    # )
+    # card.paste(badge_bg, (BADGE_AREA_X, BADGE_AREA_Y), badge_bg)
+    #
+    # grid_w = 3 * BADGE_SIZE + 2 * BADGE_GAP   # 300
+    # grid_h = 3 * BADGE_SIZE + 2 * BADGE_GAP   # 300
+    # b_left = BADGE_AREA_X + (BADGE_AREA_W - grid_w) // 2
+    # b_top  = BADGE_AREA_Y + (BADGE_AREA_H - grid_h) // 2
+    #
+    # earned = _get_earned_badges(total_snipes)
+    # for slot, path in enumerate(earned[:9]):
+    #     col = slot % 3
+    #     row = slot // 3
+    #     bx = b_left + col * (BADGE_SIZE + BADGE_GAP)
+    #     by = b_top  + row * (BADGE_SIZE + BADGE_GAP)
+    #     badge_img = Image.open(path).convert('RGBA').resize(
+    #         (BADGE_SIZE, BADGE_SIZE), Image.LANCZOS
+    #     )
+    #     card.paste(badge_img, (bx, by), badge_img)
 
     return card
 
