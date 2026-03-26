@@ -484,17 +484,9 @@ class WebAppCommands(commands.Cog):
             return
 
         applicant = await self._resolve_member(channel, int(app["discord_id"]))
-        mention = applicant.mention if applicant else f"<@{app['discord_id']}>"
 
-        # Send rescind message to the applicant
-        await channel.send(
-            f"Hi {mention},\n\n"
-            f"Unfortunately, your acceptance to **The Aquarium** has been **rescinded** "
-            f"as you did not join within the expected timeframe.\n\n"
-            f"If you're still interested, you're welcome to reapply in the future.\n\n"
-            f"Best Regards,\n"
-            f"The Aquarium Applications Team"
-        )
+        # Log rescind message in the channel
+        await channel.send("This application acceptance has been rescinded.")
 
         # Update DB status to denied
         await asyncio.to_thread(self._db_rescind, app["id"])
