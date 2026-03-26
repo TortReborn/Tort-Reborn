@@ -24,9 +24,9 @@ from Helpers.variables import ALL_GUILD_IDS, HQ_TEAM_ROLE_ID, TAQ_GUILD_ID, SNIP
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS', 'Solo']
 _ROLE_ORDER     = ['Healer', 'Tank', 'DPS', 'Solo']
 _ROLE_COLORS    = {
-    'Healer': '#0ca626',
-    'Tank':   '#0f6b7c',
-    'DPS':    '#7c0f1c',
+    'Healer': '#51D868',
+    'Tank':   '#00D2E6',
+    'DPS':    '#FF442F',
     'Solo':   '#2f0f7c',
 }
 _PARTICIPANT_NAME_COLOR = '#b5b4b4'
@@ -929,7 +929,7 @@ def _generate_overview_card(
             ry = 112 + i * row_h
             row = Image.new('RGBA', (row_w, row_h - 8), (0, 0, 0, 0))
             ImageDraw.Draw(row).rounded_rectangle(
-                ((0, 0), (row_w - 1, row_h - 9)), fill=(255, 255, 255, 14), radius=8
+                ((0, 0), (row_w - 1, row_h - 9)), fill=(0, 0, 0, 55), radius=8
             )
             card.paste(row, (RX - 2, ry - 2), row)
 
@@ -975,7 +975,7 @@ def _generate_list_card(page_rows, participants_map, guild_colors, sort_by, seas
 
     row_bg = Image.new('RGBA', (W - 56, ROW_H - 4), (0, 0, 0, 0))
     ImageDraw.Draw(row_bg).rounded_rectangle(
-        ((0, 0), (W - 57, ROW_H - 5)), fill=(255, 255, 255, 14), radius=6
+        ((0, 0), (W - 57, ROW_H - 5)), fill=(0, 0, 0, 55), radius=6
     )
 
     if page_rows:
@@ -1112,6 +1112,7 @@ class SnipeTracker(commands.Cog):
         log_to_channel: discord.Option(bool, 'Post to snipe log channel', required=False, default=False),
         image:          discord.Option(discord.Attachment, 'Screenshot (required when logging to channel)', required=False, default=None),
         season:         discord.Option(int, 'Season (defaults to current)', required=False, default=None),
+        notes:          discord.Option(str, 'Additional notes (only shown in snipe log channel post)', required=False, default=None),
     ):
         await ctx.defer(ephemeral=True)
 
@@ -1189,6 +1190,8 @@ class SnipeTracker(commands.Cog):
         preview_embed.add_field(name='Date',         value=snipe_dt_str,       inline=True)
         preview_embed.add_field(name='Season',       value=str(season),        inline=True)
         preview_embed.add_field(name='Participants', value=_format_participants_log(pairs), inline=False)
+        if notes:
+            preview_embed.add_field(name='Notes', value=notes, inline=False)
         if log_to_channel:
             preview_embed.set_footer(text='This snipe will also be posted to the snipe log channel.')
 
@@ -1244,6 +1247,7 @@ class SnipeTracker(commands.Cog):
                 f"**Location:** {display_hq(hq)} ({guild.upper()})\n"
                 f"**Difficulty:** {diff_label} / {difficulty}k\n"
                 f"**Result:** Success"
+                + (f"\n**Notes:** {notes}" if notes else "")
             )
             resp     = await asyncio.to_thread(requests.get, image.url)
             img_file = discord.File(BytesIO(resp.content), filename=image.filename)
