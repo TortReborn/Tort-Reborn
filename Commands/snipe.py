@@ -625,16 +625,25 @@ def _generate_snipe_card(
     # b_left = BADGE_AREA_X + (BADGE_AREA_W - grid_w) // 2
     # b_top  = BADGE_AREA_Y + (BADGE_AREA_H - grid_h) // 2
     #
+    # # DEBUG: force all slots to empty medals
+    # # earned = []
     # earned = _get_earned_badges(total_snipes)
-    # for slot, path in enumerate(earned[:9]):
+    #
+    # empty_medal = Image.open('images/snipe/misc/empty_medal.png').convert('RGBA').resize(
+    #     (BADGE_SIZE, BADGE_SIZE), Image.LANCZOS
+    # )
+    # for slot in range(9):
     #     col = slot % 3
     #     row = slot // 3
     #     bx = b_left + col * (BADGE_SIZE + BADGE_GAP)
     #     by = b_top  + row * (BADGE_SIZE + BADGE_GAP)
-    #     badge_img = Image.open(path).convert('RGBA').resize(
-    #         (BADGE_SIZE, BADGE_SIZE), Image.LANCZOS
-    #     )
-    #     card.paste(badge_img, (bx, by), badge_img)
+    #     if slot < len(earned):
+    #         badge_img = Image.open(earned[slot]).convert('RGBA').resize(
+    #             (BADGE_SIZE, BADGE_SIZE), Image.LANCZOS
+    #         )
+    #         card.paste(badge_img, (bx, by), badge_img)
+    #     else:
+    #         card.paste(empty_medal, (bx, by), empty_medal)
 
     return card
 
