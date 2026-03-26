@@ -156,6 +156,14 @@ async def on_application_command_error(
         f'```\n{traceback_string}\n```'
     )
 
+    try:
+        await ctx.respond(
+            "⚠️ Something went wrong. This command might have recently been updated, please try again. If the issue persists, contact Thunderr.",
+            ephemeral=True
+        )
+    except discord.HTTPException:
+        pass  # Interaction expired or already responded
+
 
 # =============================================================================
 # Load Extensions
