@@ -464,6 +464,49 @@ class WebAppCommands(commands.Cog):
 
         await ctx.followup.send("Application closed.", ephemeral=True)
 
+    # --- /app forceclose ---
+
+    @app_group.command(name='forceclose', description='HR: Force-close a stuck application ticket')
+    async def forceclose(self, ctx: ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        result = await self._lookup_web_app(ctx)
+        if result is None:
+            return
+
+        channel, app = result
+
+        # Check if already closed
+        guild = self.client.get_guild(channel.guild.id) or channel.guild
+        closed_cat = discord.utils.get(guild.categories, name=CLOSED_CATEGORY_NAME)
+        if closed_cat and getattr(channel, 'category', None) == closed_cat:
+            await ctx.followup.send("This application is already closed.", ephemeral=True)
+            return
+
+        # Revoke applicant's access to the channel
+        applicant = await self._resolve_member(channel, int(app["discord_id"]))
+        if applicant:
+            try:
+                await channel.set_permissions(applicant, overwrite=None)
+            except discord.Forbidden:
+                pass
+
+        # Send close message
+        await channel.send("This application has been force-closed.")
+
+        # Move to Closed Applications category (on_guild_channel_update handles rename + poll update)
+        if closed_cat:
+            try:
+                await channel.edit(category=closed_cat)
+            except discord.Forbidden:
+                await ctx.followup.send(
+                    "Could not move channel to Closed Applications (missing permissions).",
+                    ephemeral=True,
+                )
+                return
+
+        await ctx.followup.send("Application force-closed.", ephemeral=True)
+
     # --- /app transcribe ---
 
     @app_group.command(name='transcribe', description='HR: Transcribe this application to the archive channel')

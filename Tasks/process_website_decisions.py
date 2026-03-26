@@ -135,6 +135,7 @@ class ProcessWebsiteDecisions(commands.Cog):
         # Look up player UUID and guild status
         uuid = None
         in_guild = False
+        in_taq = False
         current_guild_name = None
 
         if ign:
@@ -149,14 +150,51 @@ class ProcessWebsiteDecisions(commands.Cog):
                         current_guild_name = guild_info.get("name")
                         if current_guild_name:
                             in_guild = True
+                            if current_guild_name == "The Aquarium":
+                                in_taq = True
 
         # Build the invite image attachment if provided
         invite_file = None
         if invite_image:
             invite_file = self._decode_invite_image(invite_image, discord_username)
 
-        # Send acceptance message
-        if in_guild:
+        # Auto-link in discord_links
+        link_id = applicant.id if applicant else int(discord_id)
+
+        if in_taq:
+            # Player is already in The Aquarium — accept and register immediately
+            msg_text = (
+                f"Hey {mention},\n\n"
+                f"Congratulations, your application to join **The Aquarium** has been "
+                f"**accepted**! {party_emoji}\n\n"
+                f"You're already in the guild — your Discord roles are being set up now.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
+
+            if invite_file:
+                await channel.send(msg_text, file=invite_file)
+            else:
+                await channel.send(msg_text)
+
+            if ign and uuid:
+                await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
+
+            # Trigger immediate registration (same pattern as app_commands.py)
+            cog = self.client.get_cog("UpdateMemberData")
+            if cog and uuid:
+                try:
+                    await cog._auto_register_joined_member(uuid, ign)
+                except Exception as e:
+                    log(ERROR, f"Immediate registration failed for {ign}: {e}",
+                        context="process_website_decisions")
+
+            await update_web_poll_embed(self.client, channel.id,
+                                        ":orange_circle: Registered", 0xFFE019)
+            await asyncio.to_thread(self._db_set_guild_leave, app_id, False)
+
+        elif in_guild:
+            # Player is in another guild — pending leave
             msg_text = (
                 f"Hey {mention},\n\n"
                 f"Congratulations, your application to join **The Aquarium** has been "
@@ -167,7 +205,21 @@ class ProcessWebsiteDecisions(commands.Cog):
                 f"Best Regards,\n"
                 f"The Aquarium Applications Team"
             )
+
+            if invite_file:
+                await channel.send(msg_text, file=invite_file)
+            else:
+                await channel.send(msg_text)
+
+            if ign and uuid:
+                await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
+
+            await update_web_poll_embed(self.client, channel.id,
+                                        ":yellow_circle: Accepted - Pending Leave", 0xFFE019)
+            await asyncio.to_thread(self._db_set_guild_leave, app_id, True)
+
         else:
+            # Player is not in any guild — send invite instructions
             msg_text = (
                 f"Hey {mention},\n\n"
                 f"Congratulations, your application to join **The Aquarium** has been "
@@ -178,21 +230,14 @@ class ProcessWebsiteDecisions(commands.Cog):
                 f"The Aquarium Applications Team"
             )
 
-        if invite_file:
-            await channel.send(msg_text, file=invite_file)
-        else:
-            await channel.send(msg_text)
+            if invite_file:
+                await channel.send(msg_text, file=invite_file)
+            else:
+                await channel.send(msg_text)
 
-        # Auto-link in discord_links
-        link_id = applicant.id if applicant else int(discord_id)
-        if ign and uuid:
-            await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
+            if ign and uuid:
+                await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=False)
 
-        # Update poll embed and channel based on guild status
-        if in_guild:
-            await update_web_poll_embed(self.client, channel.id,
-                                        ":yellow_circle: Accepted - Pending Leave", 0xFFE019)
-        else:
             guild_obj = self.client.get_guild(channel.guild.id) or channel.guild
             invited_cat = discord.utils.get(guild_obj.categories, name=INVITED_CATEGORY_NAME)
             if invited_cat:
@@ -206,9 +251,7 @@ class ProcessWebsiteDecisions(commands.Cog):
                 pass
             await update_web_poll_embed(self.client, channel.id,
                                         ":green_circle: Invited", 0x3ED63E)
-
-        # Update DB with guild_leave_pending
-        await asyncio.to_thread(self._db_set_guild_leave, app_id, in_guild)
+            await asyncio.to_thread(self._db_set_guild_leave, app_id, False)
 
         # Update exec thread
         await self._update_exec_thread(thread_id, "accepted", "Guild Member", ign)
