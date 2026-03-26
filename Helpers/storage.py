@@ -1,6 +1,7 @@
 """
 Helpers/storage.py
-S3-compatible storage abstraction for profile backgrounds and avatar caching.
+S3-compatible storage abstraction for profile backgrounds, avatar caching,
+and shell exchange icons.
 Currently backed by Supabase Storage (S3-compatible API).
 """
 
@@ -122,3 +123,34 @@ def get_cached_avatar(uuid: str) -> bytes | None:
 def save_cached_avatar(uuid: str, data: bytes):
     """Upload an avatar to the cache."""
     storage.put_bytes(f"avatars/{uuid}.png", data)
+
+
+# --- Shell exchange icon helpers ---
+
+def _se_icon_key(category: str, name_key: str) -> str:
+    """Build the S3 key for a shell exchange icon.
+
+    category: "ings" or "mats"
+    name_key: normalised name, e.g. "ancient heart" → stored as "ancient_heart"
+    """
+    safe = name_key.replace(" ", "_")
+    return f"shell_exchange/{category}/{safe}.png"
+
+
+def get_shell_exchange_icon(category: str, name_key: str) -> Image.Image | None:
+    """Download a shell exchange icon from S3."""
+    return storage.get_image(_se_icon_key(category, name_key))
+
+
+def save_shell_exchange_icon(category: str, name_key: str, image: Image.Image):
+    """Upload a shell exchange icon to S3."""
+    storage.put_image(_se_icon_key(category, name_key), image)
+
+
+def delete_shell_exchange_icon(category: str, name_key: str):
+    """Delete a shell exchange icon from S3."""
+    key = _se_icon_key(category, name_key)
+    try:
+        storage.client.delete_object(Bucket=storage._bucket, Key=key)
+    except ClientError:
+        pass

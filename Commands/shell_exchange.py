@@ -16,6 +16,7 @@ from Helpers.database import (
     get_shell_exchange_mats,
     save_shell_exchange_mats,
 )
+from Helpers.storage import delete_shell_exchange_icon
 from Helpers.variables import (
     ALL_GUILD_IDS,
     LEGACY_MESSAGE_ID,
@@ -463,6 +464,70 @@ class ShellExchange(commands.Cog):
         mats_config[key][t_key]["toggled"] = toggled
         self.save_mats_config(mats_config)
         await ctx.respond(f"Updated material '{name}' tier {tier}: shells={shells}, per={per}, highlight={highlight}, toggled={toggled}", ephemeral=True)
+
+    @edit_group.command(name="add_ingredient", description="Add a new ingredient entry")
+    async def add_ingredient(self, ctx: discord.ApplicationContext,
+                             name: discord.Option(str, required=True, description="Ingredient name (e.g. Ancient Heart)")):
+        ings_config = self.load_ings_config()
+        key = name.strip().casefold()
+        for k in ings_config:
+            if k.casefold() == key:
+                await ctx.respond(f"Ingredient '{name}' already exists.", ephemeral=True)
+                return
+        ings_config[key] = {"shells": 1, "per": 1, "highlight": False, "toggled": True}
+        self.save_ings_config(ings_config)
+        await ctx.respond(f"Added ingredient '{name.strip()}' with default values. Upload its 16x16 image via the website.", ephemeral=True)
+
+    @edit_group.command(name="remove_ingredient", description="Remove an ingredient entry and its image")
+    async def remove_ingredient(self, ctx: discord.ApplicationContext,
+                                name: discord.Option(str, required=True, description="Ingredient name", autocomplete=autocomplete_ingredient_names)):
+        ings_config = self.load_ings_config()
+        key = None
+        for k in ings_config:
+            if k.casefold() == name.strip().casefold():
+                key = k
+                break
+        if key is None:
+            await ctx.respond(f"Ingredient '{name}' not found.", ephemeral=True)
+            return
+        del ings_config[key]
+        self.save_ings_config(ings_config)
+        delete_shell_exchange_icon("ings", key)
+        await ctx.respond(f"Removed ingredient '{name}' and its image.", ephemeral=True)
+
+    @edit_group.command(name="add_material", description="Add a new material entry")
+    async def add_material(self, ctx: discord.ApplicationContext,
+                           name: discord.Option(str, required=True, description="Material name (e.g. Dernic Gem)")):
+        mats_config = self.load_mats_config()
+        key = name.strip().casefold()
+        for k in mats_config:
+            if k.casefold() == key:
+                await ctx.respond(f"Material '{name}' already exists.", ephemeral=True)
+                return
+        mats_config[key] = {
+            "t1": {"shells": 1, "per": 1, "highlight": False, "toggled": True},
+            "t2": {"shells": 1, "per": 1, "highlight": False, "toggled": True},
+            "t3": {"shells": 1, "per": 1, "highlight": False, "toggled": True},
+        }
+        self.save_mats_config(mats_config)
+        await ctx.respond(f"Added material '{name.strip()}' with default tier values. Upload its 16x16 image via the website.", ephemeral=True)
+
+    @edit_group.command(name="remove_material", description="Remove a material entry and its image")
+    async def remove_material(self, ctx: discord.ApplicationContext,
+                              name: discord.Option(str, required=True, description="Material name", autocomplete=autocomplete_material_names)):
+        mats_config = self.load_mats_config()
+        key = None
+        for k in mats_config:
+            if k.casefold() == name.strip().casefold():
+                key = k
+                break
+        if key is None:
+            await ctx.respond(f"Material '{name}' not found.", ephemeral=True)
+            return
+        del mats_config[key]
+        self.save_mats_config(mats_config)
+        delete_shell_exchange_icon("mats", key)
+        await ctx.respond(f"Removed material '{name}' and its image.", ephemeral=True)
 
     @shell_exchange_group.command(name="list", description='List available items')
     async def shell_exchange_list(self, ctx: discord.ApplicationContext, 
