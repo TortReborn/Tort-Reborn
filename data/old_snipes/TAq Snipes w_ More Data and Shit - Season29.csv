@@ -1,0 +1,75 @@
+Date,Healer,Guards,Dps(s),Guild,HQ Name,Difficulty (Conns),Difficulty (Dmg Raw),Difficulty (Dmg)
+04/01/2026,Tex,"Sonny, Change","Gonner, kio",Aeq,Corrupted Warfront,1 conn,65812,65k
+04/01/2026,Tex,"Fallen, Goose","Gonner, iga",Aeq,Corrupted Warfront,Dry,81900,81k
+05/01/2026,Kenji,"Rippi, Goose","kio, iga",Seq,Bloody Trail,0 conn,56700,56k
+05/01/2026,Fred,"Rippi, a3","Goose, iga",NewM,Almuj,Dry,106312,106k
+09/01/2026,Kenji,"Gonner, a3","kio, iga",Aeq,Corrupted Warfront,1 conn,65812,65k
+09/01/2026,Kenji,"Gonner, a3","kio, iga",AVO,Cinfras Outskirts,2 conn,93960,93k
+09/01/2026,Hiarta,"Sonny, Goose","Gonner, iga",PUN,Central Islands,0 conn,44550,44k
+11/01/2026,Tex,"Gonner, Fallen",iga,NewM,Almuj,0 conn,32400,32k
+12/01/2026,Sonny,"Rippi, Stormin","iga, Gonner",ANO,Nodguj Nation,1 conn,55282,55k
+12/01/2026,Sonny,"Rippi, Stormin","iga, Gonner",ANO,Selchar,1 conn,38475,38k
+12/01/2026,Hiarta,"Rippi, etw","iga, Gonner",AVO,Cinfras Outskirts,0 conn,42525,42k
+12/01/2026,Hiarta,"Rippi, etw","iga, Gonner",AVO,Cinfras Outskirts,0 conn,32400,32k
+12/01/2026,Tex,"Rippi, Blader","iga, Gonner",Aeq,Elkurn,0 conn,58725,58k
+14/01/2026,Tex,"Blader, Iga",Gonner,HOC,Corkus City,0 conn,40500,40k
+16/01/2026,Kenji,"a3, Blader, Rippi","iga, Gonner",ANO,Nodguj Nation,1 conn,52650,52k
+16/01/2026,Kenji,"a3, Rippi","iga, Gonner",Seq,Bloody Trail,0 conn,56700,56k
+17/01/2026,Tex,"Fallen, Blader","iga, Gonner",PUN,Central Islands,0 conn,44550,44k
+17/01/2026,Tex,"Fallen, Blader","iga, Gonner",BFS,Corkus City,0 conn,40500,40k
+17/01/2026,Squid,"Slyguy, Rippi","Zombie, Kenji",AVO,Cinfras Outskirts,0 conn,54675,54k
+17/01/2026,Kenji,"a3, Fallen","Squid, Gonner, Zombie",AVO,Cinfras Outskirts,0 conn,54675,54k
+17/01/2026,a3,"Rippi, Fallen","Kenji, Gonner",AVO,Cinfras Outskirts,0 conn,42525,42k
+20/01/2026,,"Goose, Tex","Kenji, iga, kio",BFS,Corkus City,0 conn,37500,37k
+21/01/2026,Gonner,"etw, Goose",iga,AVO,Cinfras Outskirts,0 conn,52650,52k
+21/01/2026,Gonner,"etw, Blader","iga, Goose",Seq,Bloody Trail,0 conn,56700,56k
+22/01/2026,Gonner,"etw, censing","iga, Goose",AVO,Cinfras Outskirts,0 conn,46575,46k
+23/01/2026,Kenji,"Gonner, Rippi","kio, iga",SSNE,Corkus City,Dry,126562,126k
+23/01/2026,Kenji,"a3, etw","Goose, Gonner",AVO,Cinfras Outskirts,0 conn,44550,44k
+24/01/2026,Iga,"a3, Gonner","Tex, Kenji",AVO,Cinfras Outskirts,0 conn,54675,54k
+24/01/2026,Squid,"Tex, Blader","Gonner, Kenji",Aeq,Corrupted Warfront,0 conn,58725,58k
+24/01/2026,,"etw, Gonner, Squid",iga,AVO,Cinfras Outskirts,0 conn,30375,30k
+25/01/2026,Squid,"Blader, Iga","Kenji, Tex",Aeq,Corrupted Warfront,0 conn,58725,58k
+25/01/2026,Squid,"Tex, Blader","Kenji, iga",Seq,Bloody Trail,1 conn,76342,76k
+27/01/2026,Gonner,"etw, Blader",iga,AVO,Cinfras Outskirts,0 conn,52650,52k
+28/01/2026,Kenji,"Rippi, Blader","Gonner, iga",ANO,Nodguj Nation,2 conn,71280,71k
+29/01/2026,Kenji,"Zombie, Iga",Gonner,AVO,Cinfras Outskirts,2 conn,51840,51k
+31/01/2026,Gonner,"Blader, Kenji",iga,LEAF,Corkus City,0 conn,55282,55k
+01/02/2026,Squid,"Blader, Tex","iga, Gonner",Aeq,Corrupted Warfront,0 conn,58725,58k
+01/02/2026,Tex,"Blader, a3","iga, Gonner",ANO,Nodguj Nation,2 conn,71280,71k
+01/02/2026,Gonner,"Iga, kio",Zombie,AVO,Cinfras Outskirts,1 conn,47385,47k
+05/02/2026,Kenji,"Slyguy, Blader","kio, iga",Seq,Bloody Trail,0 conn,56700,56k
+05/02/2026,Kenji,"Slyguy, Blader","kio, iga",AVO,Cinfras Outskirts,0 conn,54675,54k
+05/02/2026,Kenji,"Rippi, Iga",kio,PUN,Central Islands,2 conn,77760,77k
+06/02/2026,Kenji,"Squid, Zombie","kio, Gonner",ETKW,Bandit's Toll,Dry,133650,133k
+11/02/2026,Kenji,"Zombie, Miki","iga, Gonner",Aeq,Corrupted Warfront,1 conn,78975,78k
+13/02/2026,Kenji,"Stormin, Rippi","kio, Gonner",PUN,Central Islands,0 conn,40500,40k
+15/02/2026,Iga,"censing, Gonner","kio, Flo",AVO,Cinfras Outskirts,0 conn,54675,54k
+15/02/2026,Kenji,"Gonner, kio",Flo,SSNE,Corkus City,Dry,89062,89k
+15/02/2026,Iga,"Gonner, kio","Kenji, Flo",PUN,Central Islands,0 conn,44550,44k
+15/02/2026,Kenji,"Rippi, Miki","Flo, kio",Aeq,Corrupted Warfront,1 conn,78975,78k
+15/02/2026,Kenji,"Rippi, Miki","Flo, kio",Seq,Bloody Trail,0 conn,56700,56k
+16/02/2026,Flo,"Gonner, Zombie","Kenji, iga",Aeq,Corrupted Warfront,1 conn,52650,52k
+17/02/2026,a3,"Snowbunny, kio","iga, Kenji",Seq,Bloody Trail,0 conn,56700,56k
+17/02/2026,Lava,"Flo, Slyguy","iga, Gonner",Seq,Bloody Trail,0 conn,56700,56k
+17/02/2026,Lava,"Flo, Slyguy","iga, Gonner",PUN,Central Islands,0 conn,44550,44k
+17/02/2026,Kenji,"Squid, Miki","kio, Flo",AVO,Cinfras Outskirts,0 conn,54675,54k
+17/02/2026,Kenji,"Squid, Miki","kio, Flo",ETKW,Bandit's Toll,Dry,133650,133k
+20/02/2026,Lava,"Miki, Snowbunny","Flo, Kenji",AVO,Cinfras Outskirts,2 conn,68040,68k
+20/02/2026,Lava,"Miki, Snowbunny","Flo, Kenji",Seq,Bloody Trail,2 conn,97200,97k
+20/02/2026,Kenji,"Miki, Flo","kio, iga",Seq,Bloody Trail,4 conn,142560,142k
+21/02/2026,Lava,"Iga, kio",Flo,PUN,Central Islands,3 conn,96187,96k
+21/02/2026,Lava,"kio, Change","Flo, iga",ETKW,Bandit's Toll,2 conn,90720,90k
+22/02/2026,Kenji,"Squid, Flo","iga, kio",Aeq,Corrupted Warfront,0 conn,58725,58k
+23/02/2026,Kenji,"Fallen, Flo","iga, kio",AVO,Cinfras Outskirts,0 conn,50625,50k
+23/02/2026,Lava,"Miki, Sonny","Flo, iga",Seq,Bloody Trail,1 conn,76342,76k
+24/02/2026,Sonny,"Miki, Rippi","Flo, iga",AVO,Cinfras Outskirts,1 conn,73710,73k
+24/02/2026,Kenji,"Flo, Miki","iga, Gonner",ANO,Nodguj Nation,2 conn,71280,71k
+24/02/2026,Lava,"Flo, Miki","kio, Kenji",ETKW,Bandit's Toll,2 conn,90720,90k
+24/02/2026,Lava,"Flo, Miki","kio, Kenji",AVO,Cinfras Outskirts,0 conn,54675,54k
+24/02/2026,Lava,"Flo, Miki","kio, Kenji",Seq,Bloody Trail,0 conn,56700,56k
+24/02/2026,Lava,"Flo, Miki","kio, Kenji",SSNE,Corkus City,Dry,66927,66k
+27/02/2026,Kio,"Flo, Miki","Gonner, Kenji",Seq,Bloody Trail,5 conn,167062,167k
+28/02/2026,Tex,"Flo, Miki","kio, Kenji",AVO,Cinfras Outskirts,2 conn,93960,93k
+28/02/2026,Tex,"Sonny, Change","iga, Gonner",Aeq,Corrupted Warfront,1 conn,78975,78k
+28/02/2026,Tex,"Goose, Change","iga, Gonner",ANO,Nodguj Nation,1 conn,55282,55k
