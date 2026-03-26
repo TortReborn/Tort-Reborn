@@ -17,8 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 from Helpers.classes import Guild, Page, PlayerStats
 from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, generate_badge, get_guild_color, vertical_gradient, round_corners
-from Helpers.snipe_utils import display_hq, get_canonical_territory_name, is_dry, normalize_hq_for_storage
-from Helpers.territory_abbrevs import TERRITORY_TO_ABBREV
+from Helpers.snipe_utils import ALL_TERRITORY_NAMES, display_hq, is_dry, normalize_hq_for_storage
 from Helpers.variables import ALL_GUILD_IDS, HQ_TEAM_ROLE_ID, TAQ_GUILD_ID, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS']
@@ -1025,9 +1024,9 @@ def _format_participants_log(pairs: list[tuple[str, str]]) -> str:
 async def _hq_autocomplete(ctx: discord.AutocompleteContext):
     typed = (ctx.value or "").casefold()
     results = []
-    for full_name, abbrev in TERRITORY_TO_ABBREV.items():
-        if not typed or typed in abbrev.casefold() or typed in full_name.casefold():
-            results.append(discord.OptionChoice(name=f"{full_name} ({abbrev})", value=abbrev))
+    for full_name in ALL_TERRITORY_NAMES:
+        if not typed or typed in full_name.casefold():
+            results.append(discord.OptionChoice(name=full_name, value=full_name))
         if len(results) == 25:
             break
     return results
@@ -1134,10 +1133,11 @@ class SnipeTracker(commands.Cog):
             return
 
         # Validate and normalize HQ
-        if get_canonical_territory_name(hq) is None:
-            await ctx.followup.send(f':no_entry: Unknown HQ `{hq}`. Type a territory name or abbreviation.', ephemeral=True)
-            return
+        hq_raw = hq
         hq = normalize_hq_for_storage(hq)
+        if hq is None:
+            await ctx.followup.send(f':no_entry: Unknown HQ `{hq_raw}`. Type a territory name.', ephemeral=True)
+            return
 
         # Parse participants string into (IGN, role) pairs
         pairs = []
