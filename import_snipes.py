@@ -27,7 +27,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from Helpers.database import DB
-from Helpers.snipe_utils import get_canonical_territory_name, get_max_conns, normalize_hq_for_storage
+from Helpers.snipe_utils import get_max_conns, normalize_hq_for_storage
 
 
 ROOT = Path(__file__).resolve().parent
@@ -374,8 +374,8 @@ def prepare_snipes(
                 if not hq_raw:
                     raise ValueError("HQ Name is empty.")
                 hq = normalize_hq_for_storage(hq_raw)
-                if get_canonical_territory_name(hq) is None:
-                    raise ValueError(f"Unknown HQ '{hq_raw}'. Check territory name or add it to TERRITORY_TO_ABBREV.")
+                if hq is None:
+                    raise ValueError(f"Unknown HQ '{hq_raw}'. Check territory name.")
 
                 guild_tag = str(get_override_value(row_override, "guild", row.get("Guild", ""))).strip().upper()
                 if not guild_tag:
