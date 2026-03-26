@@ -21,13 +21,12 @@ from Helpers.snipe_utils import display_hq, get_canonical_territory_name, is_dry
 from Helpers.territory_abbrevs import TERRITORY_TO_ABBREV
 from Helpers.variables import ALL_GUILD_IDS, HQ_TEAM_ROLE_ID, TAQ_GUILD_ID, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
-ROLE_CHOICES    = ['Tank', 'Healer', 'DPS', 'Solo']
-_ROLE_ORDER     = ['Healer', 'Tank', 'DPS', 'Solo']
+ROLE_CHOICES    = ['Tank', 'Healer', 'DPS']
+_ROLE_ORDER     = ['Healer', 'Tank', 'DPS']
 _ROLE_COLORS    = {
     'Healer': '#51D868',
     'Tank':   '#00D2E6',
     'DPS':    '#FF442F',
-    'Solo':   '#2f0f7c',
 }
 _PARTICIPANT_NAME_COLOR = '#b5b4b4'
 _DIFFICULTY_COLORS = [
@@ -1526,8 +1525,7 @@ class SnipeTracker(commands.Cog):
                 f"SELECT sp.ign, COUNT(*) AS total, MAX(sl.difficulty) AS best_diff, "
                 f"MAX(CASE WHEN sp.role = 'Healer' THEN 1 ELSE 0 END) AS has_healer, "
                 f"MAX(CASE WHEN sp.role = 'Tank' THEN 1 ELSE 0 END) AS has_tank, "
-                f"MAX(CASE WHEN sp.role = 'DPS' THEN 1 ELSE 0 END) AS has_dps, "
-                f"MAX(CASE WHEN sp.role = 'Solo' THEN 1 ELSE 0 END) AS has_solo "
+                f"MAX(CASE WHEN sp.role = 'DPS' THEN 1 ELSE 0 END) AS has_dps "
                 f' FROM snipe_participants sp'
                 f' JOIN snipe_logs sl ON sl.id = sp.snipe_id'
                 f' WHERE 1=1 {sc}'
@@ -1554,7 +1552,7 @@ class SnipeTracker(commands.Cog):
 
         # Build role strings per player
         rows = []
-        for ign, total, best_diff, has_healer, has_tank, has_dps, has_solo in raw_rows:
+        for ign, total, best_diff, has_healer, has_tank, has_dps in raw_rows:
             if current_names is not None and ign.casefold() not in current_names:
                 continue
             roles = []
@@ -1564,8 +1562,6 @@ class SnipeTracker(commands.Cog):
                 roles.append('Tank')
             if has_dps:
                 roles.append('DPS')
-            if has_solo:
-                roles.append('Solo')
             rows.append((ign, total, best_diff, ', '.join(roles) if roles else '\u2014'))
 
         # Generate and send roster card
@@ -1635,7 +1631,6 @@ class SnipeTracker(commands.Cog):
             "WHEN 'Healer' THEN 1 "
             "WHEN 'Tank' THEN 2 "
             "WHEN 'DPS' THEN 3 "
-            "WHEN 'Solo' THEN 4 "
             "ELSE 99 END"
         )
 
@@ -1774,7 +1769,6 @@ class SnipeTracker(commands.Cog):
             "WHEN 'Healer' THEN 1 "
             "WHEN 'Tank' THEN 2 "
             "WHEN 'DPS' THEN 3 "
-            "WHEN 'Solo' THEN 4 "
             "ELSE 99 END"
         )
 
