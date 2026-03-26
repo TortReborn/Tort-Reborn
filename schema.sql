@@ -449,7 +449,7 @@ CREATE TABLE IF NOT EXISTS territory_exchanges (
 
 CREATE TABLE IF NOT EXISTS snipe_logs (
   id          SERIAL      PRIMARY KEY,
-  hq          VARCHAR(20) NOT NULL,
+  hq          VARCHAR(64) NOT NULL,
   difficulty  INT         NOT NULL,
   sniped_at   TIMESTAMPTZ NOT NULL,
   guild_tag   VARCHAR(10) NOT NULL,
