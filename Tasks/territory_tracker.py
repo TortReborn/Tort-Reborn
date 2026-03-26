@@ -599,8 +599,13 @@ def save_territory_exchanges(owner_changes: dict):
                 exchange_time TIMESTAMPTZ NOT NULL,
                 territory     VARCHAR(100) NOT NULL,
                 attacker_name VARCHAR(100) NOT NULL,
-                defender_name VARCHAR(100) NOT NULL
+                defender_name VARCHAR(100)
             )
+        """)
+        # Drop NOT NULL on defender_name for existing tables (season start = no defenders)
+        db.cursor.execute("""
+            ALTER TABLE territory_exchanges
+            ALTER COLUMN defender_name DROP NOT NULL
         """)
         db.cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_te_territory_time
@@ -634,9 +639,9 @@ def save_territory_exchanges(owner_changes: dict):
                 VALUES (%s, %s, %s, %s)
             """, (exchange_time, terr, new_info['owner'], old_info['owner']))
 
-            if new_info['owner'] != 'None':
+            if new_info['owner']:
                 guilds_seen[new_info['owner']] = new_info['prefix']
-            if old_info['owner'] != 'None':
+            if old_info['owner']:
                 guilds_seen[old_info['owner']] = old_info['prefix']
 
         # Upsert guild prefixes
@@ -801,7 +806,9 @@ class TerritoryTracker(commands.Cog):
             # tally post-update counts
             new_counts = Counter()
             for info in new_data.values():
-                new_counts[info['guild']['name']] += 1
+                guild_name = (info.get('guild') or {}).get('name')
+                if guild_name:
+                    new_counts[guild_name] += 1
 
             # ---------- CLAIM-BROKEN ALERTS (CONFIG-DRIVEN) ----------
             # fires on transition: previously owned ALL tiles in claim → now missing any tile
@@ -917,19 +924,21 @@ class TerritoryTracker(commands.Cog):
                 old_info = old_data.get(terr)
                 if not old_info:
                     continue
-                old_owner = old_info['guild']['name']
-                new_owner = new_info['guild']['name']
+                old_guild = old_info.get('guild') or {}
+                new_guild = new_info.get('guild') or {}
+                old_owner = old_guild.get('name')
+                new_owner = new_guild.get('name')
                 if old_owner != new_owner:
                     change_data = {
                         'old': {
                             'owner': old_owner,
-                            'prefix': old_info['guild']['prefix'],
-                            'acquired': old_info['acquired']
+                            'prefix': old_guild.get('prefix'),
+                            'acquired': old_info.get('acquired')
                         },
                         'new': {
                             'owner': new_owner,
-                            'prefix': new_info['guild']['prefix'],
-                            'acquired': new_info['acquired']
+                            'prefix': new_guild.get('prefix'),
+                            'acquired': new_info.get('acquired')
                         }
                     }
                     all_owner_changes[terr] = change_data

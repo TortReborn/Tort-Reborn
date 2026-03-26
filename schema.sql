@@ -440,5 +440,5 @@ CREATE TABLE IF NOT EXISTS territory_exchanges (
   exchange_time TIMESTAMPTZ  NOT NULL,
   territory     VARCHAR(100) NOT NULL,
   attacker_name VARCHAR(100) NOT NULL,
-  defender_name VARCHAR(100) NOT NULL
+  defender_name VARCHAR(100)
 );

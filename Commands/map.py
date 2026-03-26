@@ -20,7 +20,7 @@ def mapCreator(guild_prefix: Optional[str] = None):
     Returns (discord.File | None, discord.Embed). If file is None, only the embed should be sent.
     """
     map_img = Image.open("images/map/wynncraft_map.png").convert("RGBA")
-    font = ImageFont.truetype("lib/documents/arial.ttf", 40)
+    font = ImageFont.truetype("images/profile/minecraft_font.ttf", 40)
 
     with open("data/territories_verbose.json", "r") as f:
         local_territories = json.load(f)
