@@ -213,7 +213,7 @@ def _card_base(W: int, H: int):
     return card, ImageDraw.Draw(card)
 
 
-# ── Shared table header renderer ─────────────────────────────────────────────
+# ── Shared table header renderer ────────────────────────────────────────────
 
 def _draw_table_header(draw, W, f_title, f_label, title, subtitle,
                        headers, cx, sort_by, sort_cols,
@@ -587,7 +587,7 @@ def _generate_snipe_card(
     )
     card.paste(list_bg, (LIST_X, LIST_Y + 18), list_bg)
 
-    draw.text((LIST_X + 8, LIST_Y + 26), 'TOP 3 GUILDS SNIPED', font=f_label, fill=ACCENT)
+    draw.text((LIST_X + 8, LIST_Y + 26), 'MOST SNIPED GUILDS', font=f_label, fill=ACCENT)
     if top_guilds:
         for i, (tag, count) in enumerate(top_guilds[:3]):
             color = (guild_colors or {}).get(_normalize_guild_tag(tag), _DEFAULT_GUILD_COLOR)
@@ -1010,8 +1010,8 @@ def _format_participants_log(pairs: list[tuple[str, str]]) -> str:
     parts = []
     for role in _ROLE_ORDER:
         if role in grouped:
-            parts.append(f"{role} {' '.join(grouped[role])}")
-    return ' '.join(parts)
+            parts.append(f"{' '.join(grouped[role])} {role}")
+    return ' / '.join(parts)
 
 
 async def _hq_autocomplete(ctx: discord.AutocompleteContext):
@@ -1115,6 +1115,7 @@ class SnipeTracker(commands.Cog):
     ):
         await ctx.defer(ephemeral=True)
 
+        # Check War Trainer role
         member = await self._get_home_member(ctx.author.id)
         if not member or not discord.utils.get(member.roles, name='War Trainer'):
             await ctx.followup.send(':no_entry: You must have the **War Trainer** role to log snipes.', ephemeral=True)
@@ -1123,11 +1124,13 @@ class SnipeTracker(commands.Cog):
             await ctx.followup.send(':no_entry: You must attach a screenshot when logging to the snipe channel.', ephemeral=True)
             return
 
+        # Validate and normalize HQ
         if get_canonical_territory_name(hq) is None:
             await ctx.followup.send(f':no_entry: Unknown HQ `{hq}`. Type a territory name or abbreviation.', ephemeral=True)
             return
         hq = normalize_hq_for_storage(hq)
 
+        # Parse participants string into (IGN, role) pairs
         pairs = []
         role_choices_lower = {r.lower(): r for r in ROLE_CHOICES}
         ign_parts = []
@@ -1151,6 +1154,7 @@ class SnipeTracker(commands.Cog):
             await ctx.followup.send(':no_entry: You must provide at least one participant.', ephemeral=True)
             return
 
+        # Parse snipe date
         if snipe_date is not None:
             if '/' in snipe_date:
                 try:
@@ -1168,9 +1172,11 @@ class SnipeTracker(commands.Cog):
         else:
             ts = int(time.time())
 
+        # Resolve season + dry flag
         season = season if season is not None else _get_current_season()
         dry    = is_dry(hq, conns)
 
+        # Build confirmation embed
         conn_display = f'{conns} (Dry)' if dry else str(conns)
         snipe_dt_str = datetime.fromtimestamp(ts, tz=timezone.utc).strftime('%d/%m/%Y')
         preview_embed = discord.Embed(
@@ -1182,10 +1188,11 @@ class SnipeTracker(commands.Cog):
         preview_embed.add_field(name='Connections',  value=conn_display,       inline=True)
         preview_embed.add_field(name='Date',         value=snipe_dt_str,       inline=True)
         preview_embed.add_field(name='Season',       value=str(season),        inline=True)
-        preview_embed.add_field(name='Participants', value='\n'.join(f'**{i}** \u2014 {r}' for i, r in pairs), inline=False)
+        preview_embed.add_field(name='Participants', value=_format_participants_log(pairs), inline=False)
         if log_to_channel:
             preview_embed.set_footer(text='This snipe will also be posted to the snipe log channel.')
 
+        # Show confirm view and wait for response
         view = SnipeLogConfirmView(invoker_id=ctx.author.id)
         msg  = await ctx.followup.send(embed=preview_embed, view=view, ephemeral=True)
         view.message = msg
@@ -1194,6 +1201,7 @@ class SnipeTracker(commands.Cog):
         if not view.confirmed:
             return
 
+        # Write snipe and participants to DB
         db = DB()
         db.connect()
         try:
@@ -1214,6 +1222,7 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Send success embed
         success_embed = discord.Embed(
             title='Snipe Logged',
             description=f'**{display_hq(hq)}** sniped from **{guild.upper()}**',
@@ -1221,9 +1230,10 @@ class SnipeTracker(commands.Cog):
         )
         success_embed.add_field(name='Difficulty',   value=f'{difficulty}k', inline=True)
         success_embed.add_field(name='Connections',  value=conn_display,      inline=True)
-        success_embed.add_field(name='Participants', value='\n'.join(f'**{i}** \u2014 {r}' for i, r in pairs), inline=False)
+        success_embed.add_field(name='Participants', value=_format_participants_log(pairs), inline=False)
         await view.interaction.edit_original_response(content='', embed=success_embed)
 
+        # Post to snipe log channel
         if log_to_channel:
             snipe_dt         = datetime.fromtimestamp(ts, tz=timezone.utc)
             diff_label       = 'Drysnipe' if dry else f'{conns} Conns'
@@ -1254,8 +1264,10 @@ class SnipeTracker(commands.Cog):
         db = DB()
         db.connect()
         try:
+            # Resolve canonical IGN casing
             ign = _resolve_ign(db, ign)
 
+            # Total snipes + rank by count
             db.cursor.execute(
                 'SELECT total, rank FROM ('
                 '  SELECT ign, COUNT(*) AS total, RANK() OVER (ORDER BY COUNT(*) DESC) AS rank'
@@ -1266,6 +1278,7 @@ class SnipeTracker(commands.Cog):
             total_snipes   = rank_total_row[0] if rank_total_row else 0
             rank_total     = rank_total_row[1] if rank_total_row else None
 
+            # Personal best difficulty + difficulty rank
             db.cursor.execute(
                 'SELECT hq, best_diff, rank FROM ('
                 '  SELECT sp.ign,'
@@ -1279,12 +1292,14 @@ class SnipeTracker(commands.Cog):
             pb_row    = db.cursor.fetchone()
             rank_diff = pb_row[2] if pb_row else None
 
+            # Zero-connection snipes
             db.cursor.execute(
                 'SELECT COUNT(*) FROM snipe_logs sl JOIN snipe_participants sp ON sp.snipe_id = sl.id'
                 ' WHERE sp.ign = %s AND sl.conns = 0', (ign,)
             )
             zero_conn_count = db.cursor.fetchone()[0]
 
+            # Dry snipe count
             db.cursor.execute(
                 'SELECT sl.hq, sl.conns FROM snipe_logs sl'
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id WHERE sp.ign = %s', (ign,)
@@ -1294,6 +1309,7 @@ class SnipeTracker(commands.Cog):
                 if is_dry(hq_abbr, c)
             )
 
+            # First and latest snipe timestamps
             db.cursor.execute(
                 'SELECT MIN(sl.sniped_at), MAX(sl.sniped_at) FROM snipe_logs sl'
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id WHERE sp.ign = %s', (ign,)
@@ -1302,6 +1318,7 @@ class SnipeTracker(commands.Cog):
             first_snipe  = time_row[0] if time_row else None
             latest_snipe = time_row[1] if time_row else None
 
+            # Unique guilds and HQs sniped
             db.cursor.execute(
                 'SELECT COUNT(DISTINCT sl.guild_tag), COUNT(DISTINCT sl.hq) FROM snipe_logs sl'
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id WHERE sp.ign = %s', (ign,)
@@ -1310,6 +1327,7 @@ class SnipeTracker(commands.Cog):
             unique_guilds = uniq_row[0] if uniq_row else 0
             unique_hqs    = uniq_row[1] if uniq_row else 0
 
+            # Most snipes in a single day
             db.cursor.execute(
                 'SELECT MAX(daily_count) FROM ('
                 '  SELECT COUNT(*) AS daily_count FROM snipe_logs sl'
@@ -1319,6 +1337,7 @@ class SnipeTracker(commands.Cog):
             )
             most_in_day = db.cursor.fetchone()[0] or 0
 
+            # Top 3 most sniped guilds
             db.cursor.execute(
                 'SELECT sl.guild_tag, COUNT(*) AS n FROM snipe_logs sl'
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id'
@@ -1326,6 +1345,7 @@ class SnipeTracker(commands.Cog):
             )
             top_guilds = db.cursor.fetchall()
 
+            # All sniped HQs by frequency
             db.cursor.execute(
                 'SELECT sl.hq, COUNT(*) AS n FROM snipe_logs sl'
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id'
@@ -1333,6 +1353,7 @@ class SnipeTracker(commands.Cog):
             )
             hq_rows = db.cursor.fetchall()
 
+            # Top teammates by shared snipe count
             db.cursor.execute(
                 'SELECT other_sp.ign, COUNT(*) AS shared FROM snipe_participants other_sp'
                 ' WHERE other_sp.snipe_id IN ('
@@ -1350,12 +1371,14 @@ class SnipeTracker(commands.Cog):
             role_row = db.cursor.fetchone()
             top_role = f'{role_row[0]} ({role_row[1]})' if role_row else None
 
+            # Number of distinct seasons with at least one snipe
             db.cursor.execute(
                 'SELECT COUNT(DISTINCT sl.season) FROM snipe_logs sl'
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id WHERE sp.ign = %s', (ign,)
             )
             seasons_active = db.cursor.fetchone()[0] or 0
 
+            # Compute daily snipe streaks
             db.cursor.execute(
                 "SELECT DISTINCT DATE(sl.sniped_at AT TIME ZONE 'UTC') FROM snipe_logs sl"
                 ' JOIN snipe_participants sp ON sp.snipe_id = sl.id WHERE sp.ign = %s', (ign,)
@@ -1366,6 +1389,7 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Fetch TAq rank badge info
         rank_text = rank_color = None
         try:
             player = await asyncio.to_thread(PlayerStats, ign, 1)
@@ -1379,8 +1403,10 @@ class SnipeTracker(commands.Cog):
         except Exception:
             pass
 
+        # Fetch guild colors for top guilds
         guild_colors = await _get_guild_color_map(tag for tag, _ in top_guilds)
 
+        # Generate and send stats card
         card = _generate_snipe_card(
             ign, total_snipes, rank_total, rank_diff, pb_row,
             dry_snipes, zero_conn_count, most_in_day,
@@ -1404,9 +1430,11 @@ class SnipeTracker(commands.Cog):
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
+        # Resolve season clause and label
         sc, sp  = _season_clause(season)
         sl      = _season_label(season)
 
+        # Fetch and sort all player stats
         db = DB()
         db.connect()
         try:
@@ -1416,6 +1444,7 @@ class SnipeTracker(commands.Cog):
 
         player_stats.sort(key=_LB_SORT_KEY[sort])
 
+        # Paginate into leaderboard cards
         PER_PAGE    = 10
         total_pages = max(1, math.ceil(len(player_stats) / PER_PAGE))
         cards = [
@@ -1438,10 +1467,12 @@ class SnipeTracker(commands.Cog):
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
+        # Resolve season and sort order
         sc, sp = _season_clause(season)
         sl     = _season_label(season)
         order  = 'COUNT(*) DESC' if sort == 'Amount' else 'MAX(sl.difficulty) DESC'
 
+        # Fetch role participants
         db = DB()
         db.connect()
         try:
@@ -1457,6 +1488,7 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Paginate into role leaderboard cards
         PER_PAGE    = 10
         total_pages = max(1, math.ceil(len(all_rows) / PER_PAGE))
         cards = [
@@ -1478,9 +1510,11 @@ class SnipeTracker(commands.Cog):
         inguild: discord.Option(bool, 'Only show players currently in TAq', required=False, default=False),
     ):
         await ctx.defer()
+        # Resolve season
         sc, sp = _season_clause(season)
         sl     = _season_label(season)
 
+        # Fetch per-player totals and role flags
         db = DB()
         db.connect()
         try:
@@ -1500,6 +1534,7 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Optionally filter to current TAq members
         current_names = None
         if inguild:
             current_data = get_current_guild_data()
@@ -1513,6 +1548,7 @@ class SnipeTracker(commands.Cog):
                 await ctx.followup.send(':no_entry: Current TAq member data is unavailable right now.')
                 return
 
+        # Build role strings per player
         rows = []
         for ign, total, best_diff, has_healer, has_tank, has_dps, has_solo in raw_rows:
             if current_names is not None and ign.casefold() not in current_names:
@@ -1528,6 +1564,7 @@ class SnipeTracker(commands.Cog):
                 roles.append('Solo')
             rows.append((ign, total, best_diff, ', '.join(roles) if roles else '\u2014'))
 
+        # Generate and send roster card
         card = _generate_team_card(rows, sl)
         buf = BytesIO()
         card.save(buf, format='PNG')
@@ -1536,16 +1573,18 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe duos ───────────────────────────────────────────────────────────
 
-    @snipe.command(name='duos', description='View top snipe duos')
+    @snipe.command(name='duos', description='View snipe duos')
     async def snipe_duos(
         self,
         ctx: discord.ApplicationContext,
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
+        # Resolve season
         sc, sp = _season_clause(season)
         sl     = _season_label(season)
 
+        # Fetch all duo pairs with shared snipe count
         db = DB()
         db.connect()
         try:
@@ -1562,6 +1601,7 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Paginate into duo leaderboard cards
         total_pages = max(1, math.ceil(len(rows) / _LB_PER_PAGE))
         cards = [
             _generate_duo_card(
@@ -1575,9 +1615,9 @@ class SnipeTracker(commands.Cog):
         ]
         await _make_paginator(_pages_from_cards(cards, 'duos')).respond(ctx.interaction)
 
-    # ── /warseason ────────────────────────────────────────────────────────────
+    # ── /snipe overview ───────────────────────────────────────────────────────
 
-    @snipe.command(name='overview', description='View a player snipe overview')
+    @snipe.command(name='overview', description='View the snipe overview of a player')
     async def snipe_overview(
         self,
         ctx: discord.ApplicationContext,
@@ -1585,6 +1625,7 @@ class SnipeTracker(commands.Cog):
     ):
         await ctx.defer()
 
+        # SQL CASE for deterministic role sort order
         role_case = (
             "CASE sp.role "
             "WHEN 'Healer' THEN 1 "
@@ -1597,8 +1638,10 @@ class SnipeTracker(commands.Cog):
         db = DB()
         db.connect()
         try:
+            # Resolve canonical IGN casing
             ign = _resolve_ign(db, ign)
 
+            # Total snipes and average difficulty
             db.cursor.execute(
                 'SELECT COUNT(*), AVG(sl.difficulty) '
                 'FROM snipe_logs sl '
@@ -1610,6 +1653,7 @@ class SnipeTracker(commands.Cog):
             total_snipes_all = summary_row[0] or 0
             avg_diff = float(summary_row[1]) if summary_row and summary_row[1] is not None else None
 
+            # Most frequently sniped HQ
             db.cursor.execute(
                 'SELECT sl.hq, COUNT(*) AS n '
                 'FROM snipe_logs sl '
@@ -1622,6 +1666,7 @@ class SnipeTracker(commands.Cog):
             top_hq = display_hq(top_hq_row[0]) if top_hq_row else None
             top_hq_count = top_hq_row[1] if top_hq_row else 0
 
+            # Last 5 snipes for this player
             db.cursor.execute(
                 'SELECT sl.id, sl.sniped_at, sl.hq, sl.guild_tag, sl.difficulty, sl.conns '
                 'FROM snipe_logs sl '
@@ -1632,6 +1677,7 @@ class SnipeTracker(commands.Cog):
             )
             recent_snipes = db.cursor.fetchall()
 
+            # All participants for snipes involving this player
             db.cursor.execute(
                 f'SELECT sp.snipe_id, sp.ign, sp.role '
                 f'FROM snipe_participants sp '
@@ -1645,14 +1691,17 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Guard: no snipes logged yet
         if total_snipes_all == 0:
             await ctx.followup.send(f":no_entry: `{ign}` has no logged snipes.")
             return
 
+        # Group participants by snipe ID
         participants_all = defaultdict(list)
         for snipe_id, member_ign, role in team_rows:
             participants_all[snipe_id].append((member_ign, role))
 
+        # Find most common team compositions
         team_counter_any = Counter(
             _format_team_names_compact(pairs)
             for pairs in participants_all.values()
@@ -1666,12 +1715,14 @@ class SnipeTracker(commands.Cog):
         most_common_team_any, team_any_count = team_counter_any.most_common(1)[0] if team_counter_any else ('\u2014', 0)
         most_common_team_roles, team_role_count = team_counter_roles.most_common(1)[0] if team_counter_roles else ('\u2014', 0)
 
+        # Isolate participants for the 5 recent snipes
         recent_ids = {row[0] for row in recent_snipes}
         recent_participants = {
             snipe_id: pairs for snipe_id, pairs in participants_all.items() if snipe_id in recent_ids
         }
         guild_colors = await _get_guild_color_map(guild_tag for _, _, _, guild_tag, _, _ in recent_snipes)
 
+        # Fetch TAq rank badge info
         rank_text = rank_color = None
         try:
             player = await asyncio.to_thread(PlayerStats, ign, 1)
@@ -1685,6 +1736,7 @@ class SnipeTracker(commands.Cog):
         except Exception:
             pass
 
+        # Generate and send overview card
         card = _generate_overview_card(
             ign, rank_text, rank_color,
             most_common_team_any, team_any_count,
@@ -1697,6 +1749,8 @@ class SnipeTracker(commands.Cog):
         buf.seek(0)
         await ctx.followup.send(file=discord.File(buf, filename=f'snipe_overview_{ign}.png'))
 
+    # ── /snipe list ───────────────────────────────────────────────────────────
+
     @snipe.command(name='list', description='View the full snipe log')
     async def snipe_list(
         self,
@@ -1705,10 +1759,12 @@ class SnipeTracker(commands.Cog):
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
+        # Resolve season and sort order
         sc, sp = _season_clause(season)
         sl = _season_label(season)
         order_sql = _LIST_ORDER_SQL[sort]
 
+        # SQL CASE for deterministic role sort order
         role_case = (
             "CASE sp.role "
             "WHEN 'Healer' THEN 1 "
@@ -1721,6 +1777,7 @@ class SnipeTracker(commands.Cog):
         db = DB()
         db.connect()
         try:
+            # Fetch all snipe entries for the season
             db.cursor.execute(
                 f'SELECT sl.id, sl.sniped_at, sl.hq, sl.guild_tag, sl.difficulty, sl.conns '
                 f'FROM snipe_logs sl '
@@ -1730,6 +1787,7 @@ class SnipeTracker(commands.Cog):
             )
             all_rows = db.cursor.fetchall()
 
+            # Fetch all participants for the filtered snipes
             db.cursor.execute(
                 f'SELECT sp.snipe_id, sp.ign, sp.role '
                 f'FROM snipe_participants sp '
@@ -1742,11 +1800,13 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
+        # Map participants to their snipe IDs
         participants_map = defaultdict(list)
         for snipe_id, ign_name, role in participant_rows:
             participants_map[snipe_id].append((ign_name, role))
         guild_colors = await _get_guild_color_map(guild_tag for _, _, _, guild_tag, _, _ in all_rows)
 
+        # Paginate into list cards
         total_pages = max(1, math.ceil(len(all_rows) / _LIST_PER_PAGE))
         cards = [
             _generate_list_card(
@@ -1763,6 +1823,8 @@ class SnipeTracker(commands.Cog):
         ]
         await _make_paginator(_pages_from_cards(cards, 'snipe_list')).respond(ctx.interaction)
 
+    # ── /warseason ────────────────────────────────────────────────────────────
+
     @slash_command(description='Set the current war season', guild_ids=ALL_GUILD_IDS)
     async def warseason(
         self,
@@ -1770,6 +1832,7 @@ class SnipeTracker(commands.Cog):
         season: discord.Option(int, 'Season number', required=True, min_value=1),
     ):
         await ctx.defer(ephemeral=True)
+        # Check War Trainer role
         member = await self._get_home_member(ctx.author.id)
         if not member or not discord.utils.get(member.roles, name='War Trainer'):
             await ctx.followup.send(':no_entry: You must have the **War Trainer** role to set the war season.', ephemeral=True)
