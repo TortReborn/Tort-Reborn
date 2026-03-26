@@ -12,7 +12,7 @@ from discord import Embed
 
 from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
-from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS
+from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS, ERROR_PING_USER_ID
 from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO
 from Helpers import logger
 from Commands.generate import ApplicationButtonView
@@ -147,8 +147,9 @@ async def on_application_command_error(
     if ch is None:
         log(ERROR, f'Error channel not found. Error in /{ctx.command.qualified_name}: {traceback_string}')
         raise error
+    ping = f'<@{ERROR_PING_USER_ID}>\n' if ERROR_PING_USER_ID else ''
     await ch.send(
-        f'<@170719819715313665>\n'
+        f'{ping}'
         f'## {ctx.author}{guild_info}, <#{ctx.channel_id}>:\n'
         f'```\n/{ctx.command.qualified_name}{options}\n```'
         f'## Traceback:\n'
