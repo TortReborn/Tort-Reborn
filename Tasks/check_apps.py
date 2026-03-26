@@ -122,7 +122,7 @@ class CheckApps(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def auto_close_web_apps(self):
-        """Auto-close denied apps after 24h and accepted apps when user has roles.
+        """Auto-close denied apps after 24h, accepted+linked apps after 1h, and stale invited apps after 4 days.
         Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)."""
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
@@ -161,6 +161,17 @@ class CheckApps(commands.Cog):
                 )
             except Exception as e:
                 log(ERROR, f"Error closing accepted community app {app_id}: {e}", context="check_apps")
+
+        # --- Accepted apps where player never joined: 4 days after review ---
+        stale_invited_rows = await asyncio.to_thread(self._fetch_auto_close_stale_invited)
+        for app_id, channel_id, discord_id in stale_invited_rows:
+            try:
+                await self._auto_close_channel(
+                    guild, closed_cat, channel_id, discord_id,
+                    "This application has been automatically closed — the applicant did not join within 4 days."
+                )
+            except Exception as e:
+                log(ERROR, f"Error closing stale invited app {app_id}: {e}", context="check_apps")
 
     async def _auto_close_channel(self, guild, closed_cat, channel_id, discord_id, message):
         """Move an app channel to the closed category (triggers on_guild_channel_update for rename + poll)."""
@@ -227,6 +238,27 @@ class CheckApps(commands.Cog):
                      AND a.channel_id IS NOT NULL AND a.channel_id > 0
                      AND dl.linked = TRUE""",
                 (app_type,)
+            )
+            return db.cursor.fetchall()
+        finally:
+            db.close()
+
+    @staticmethod
+    def _fetch_auto_close_stale_invited():
+        """Fetch accepted guild apps where the player never joined, 4+ days after review."""
+        db = DB()
+        db.connect()
+        try:
+            db.cursor.execute(
+                """SELECT a.id, a.channel_id, a.discord_id FROM applications a
+                   LEFT JOIN discord_links dl ON dl.discord_id = CAST(a.discord_id AS BIGINT)
+                   WHERE a.status = 'accepted'
+                     AND a.application_type = 'guild'
+                     AND a.poll_status != ':red_circle: Closed'
+                     AND a.reviewed_at IS NOT NULL
+                     AND a.reviewed_at + interval '4 days' < NOW()
+                     AND a.channel_id IS NOT NULL AND a.channel_id > 0
+                     AND (dl.linked IS NULL OR dl.linked = FALSE)"""
             )
             return db.cursor.fetchall()
         finally:

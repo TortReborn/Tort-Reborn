@@ -469,6 +469,25 @@ class UpdateMemberData(commands.Cog):
         self.previous_members = curr_map
         self._save_to_cache("memberList", curr_map)
 
+        # 3b: Sweep for unlinked members who are already in the guild
+        # Safety net for race conditions where a player joined before their app was accepted
+        try:
+            unlinked_rows = await asyncio.to_thread(self._fetch_unlinked_with_app)
+            for ul_uuid, ul_ign in unlinked_rows:
+                normalized = ul_uuid.replace('-', '')
+                match_uuid = None
+                for cm_uuid in curr_map:
+                    if cm_uuid.replace('-', '') == normalized:
+                        match_uuid = cm_uuid
+                        break
+                if match_uuid:
+                    try:
+                        await self._auto_register_joined_member(match_uuid, curr_map[match_uuid]['name'])
+                    except Exception as e:
+                        log(ERROR, f"Sweep registration error for {ul_ign}: {e}", context="auto_register_sweep")
+        except Exception as e:
+            log(ERROR, f"Unlinked member sweep error: {e}", context="auto_register_sweep")
+
         # 4: Rank changes
         role_changes = [(u, curr_map[u]['name'], prev_map[u]['rank'], curr_map[u]['rank'])
                         for u in curr_map if u in prev_map and prev_map[u].get('rank')!=curr_map[u]['rank']]
@@ -776,6 +795,22 @@ class UpdateMemberData(commands.Cog):
             await welcome_ch.send(embed=welcome_embed)
 
         log(INFO, f"Successfully registered {ign} ({member.name}) from accepted application.", context="auto_register")
+
+    @staticmethod
+    def _fetch_unlinked_with_app():
+        """Fetch discord_links entries that are unlinked but have an app channel (pending registration)."""
+        db = DB()
+        try:
+            db.connect()
+            db.cursor.execute(
+                """SELECT uuid, ign FROM discord_links
+                   WHERE linked = FALSE
+                     AND app_channel IS NOT NULL
+                     AND uuid IS NOT NULL"""
+            )
+            return db.cursor.fetchall()
+        finally:
+            db.close()
 
     async def _run_snapshot(self, target_date=None):
         """
