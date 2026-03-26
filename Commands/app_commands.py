@@ -464,13 +464,13 @@ class WebAppCommands(commands.Cog):
 
         await ctx.followup.send("Application closed.", ephemeral=True)
 
-    # --- /app forceclose ---
+    # --- /app rescind ---
 
-    @app_group.command(name='forceclose', description='HR: Force-close a stuck application ticket')
-    async def forceclose(self, ctx: ApplicationContext):
+    @app_group.command(name='rescind', description='HR: Rescind an accepted application and close the ticket')
+    async def rescind(self, ctx: ApplicationContext):
         await ctx.defer(ephemeral=True)
 
-        result = await self._lookup_web_app(ctx)
+        result = await self._lookup_web_app(ctx, require_status='accepted')
         if result is None:
             return
 
@@ -483,18 +483,34 @@ class WebAppCommands(commands.Cog):
             await ctx.followup.send("This application is already closed.", ephemeral=True)
             return
 
-        # Revoke applicant's access to the channel
         applicant = await self._resolve_member(channel, int(app["discord_id"]))
+        mention = applicant.mention if applicant else f"<@{app['discord_id']}>"
+
+        # Send rescind message to the applicant
+        await channel.send(
+            f"Hi {mention},\n\n"
+            f"Unfortunately, your acceptance to **The Aquarium** has been **rescinded** "
+            f"as you did not join within the expected timeframe.\n\n"
+            f"If you're still interested, you're welcome to reapply in the future.\n\n"
+            f"Best Regards,\n"
+            f"The Aquarium Applications Team"
+        )
+
+        # Update DB status to denied
+        await asyncio.to_thread(self._db_rescind, app["id"])
+
+        # Update poll embed
+        await update_web_poll_embed(self.client, channel.id,
+                                    ":orange_circle: Rescinded", 0xFFE019)
+
+        # Revoke applicant's access
         if applicant:
             try:
                 await channel.set_permissions(applicant, overwrite=None)
             except discord.Forbidden:
                 pass
 
-        # Send close message
-        await channel.send("This application has been force-closed.")
-
-        # Move to Closed Applications category (on_guild_channel_update handles rename + poll update)
+        # Move to Closed Applications category
         if closed_cat:
             try:
                 await channel.edit(category=closed_cat)
@@ -505,7 +521,10 @@ class WebAppCommands(commands.Cog):
                 )
                 return
 
-        await ctx.followup.send("Application force-closed.", ephemeral=True)
+        # Update exec thread
+        await self._update_exec_thread(app["thread_id"], "rescinded")
+
+        await ctx.followup.send("Application rescinded and closed.", ephemeral=True)
 
     # --- /app transcribe ---
 
@@ -630,6 +649,20 @@ class WebAppCommands(commands.Cog):
             db.close()
 
     @staticmethod
+    def _db_rescind(app_id):
+        db = DB(); db.connect()
+        try:
+            db.cursor.execute(
+                """UPDATE applications
+                   SET status = 'denied', guild_leave_pending = FALSE
+                   WHERE id = %s""",
+                (app_id,)
+            )
+            db.connection.commit()
+        finally:
+            db.close()
+
+    @staticmethod
     def _link_discord(discord_id, ign, uuid, app_channel, linked=False):
         db = DB(); db.connect()
         try:
@@ -673,6 +706,9 @@ class WebAppCommands(commands.Cog):
         if decision == "accepted":
             emoji = "\u2705"
             color = 0x3ED63E
+        elif decision == "rescinded":
+            emoji = "\u21A9\uFE0F"
+            color = 0xFF8C00
         else:
             emoji = "\u274C"
             color = 0xD93232
