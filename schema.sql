@@ -501,3 +501,14 @@ CREATE INDEX IF NOT EXISTS idx_snipe_logs_hq
 
 CREATE INDEX IF NOT EXISTS idx_snipe_logs_guild_tag
   ON snipe_logs(guild_tag);
+
+-- ── Snipe settings (shared between bot and web) ──────────────────────────────
+
+CREATE TABLE IF NOT EXISTS snipe_settings (
+  key   VARCHAR(64) PRIMARY KEY,
+  value TEXT        NOT NULL
+);
+
+INSERT INTO snipe_settings (key, value)
+VALUES ('current_season', '30')
+ON CONFLICT DO NOTHING;
