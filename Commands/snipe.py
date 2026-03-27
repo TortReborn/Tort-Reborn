@@ -1,5 +1,4 @@
 import asyncio
-import json
 import math
 import os
 import re
@@ -55,21 +54,23 @@ _GUILD_COLOR_CACHE   = {}
 _ATHENA_GUILD_COLORS = None
 _ATHENA_GUILD_FETCHED_AT = 0.0
 
-_SEASON_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'war_season.json')
-
 # ── Season helpers ───────────────────────────────────────────────────────────
 
 def _get_current_season() -> int:
-    try:
-        with open(_SEASON_FILE, encoding='utf-8') as f:
-            return json.load(f).get('current_season', 1)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return 1
+    with DB() as db:
+        db.cursor.execute("SELECT value FROM snipe_settings WHERE key = 'current_season'")
+        row = db.cursor.fetchone()
+        return int(row[0]) if row else 1
 
 
 def _set_current_season(season: int) -> None:
-    with open(_SEASON_FILE, 'w', encoding='utf-8') as f:
-        json.dump({'current_season': season}, f)
+    with DB() as db:
+        db.cursor.execute(
+            "INSERT INTO snipe_settings (key, value) VALUES ('current_season', %s) "
+            "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+            (str(season),)
+        )
+        db.connection.commit()
 
 
 def _season_clause(season_param) -> tuple[str, list]:
