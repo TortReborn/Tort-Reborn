@@ -832,13 +832,17 @@ def _generate_overview_card(
     ACCENT, SEP, WHITE, DIM = '#fad51e', '#3474eb', '#ffffff', '#8ea3cc'
     f_title = ImageFont.truetype('images/profile/5x5.ttf', 30)
     f_label = ImageFont.truetype('images/profile/5x5.ttf', 20)
-    f_name = ImageFont.truetype('images/profile/game.ttf', 46)
     f_body = ImageFont.truetype('images/profile/game.ttf', 22)
 
     LX, LW, SEP_X = 38, 315, 382
 
     draw.text((LX, 28), 'SNIPE OVERVIEW', font=f_title, fill=ACCENT)
-    addLine(ign, draw, f_name, LX, 62, drop_x=5, drop_y=5)
+    # Scale IGN font so long names stay within the left panel width,
+    # then pin the bottom of the text to just above the rank badge at y=120
+    ign_font = _fit_font(ign, draw, 'images/profile/game.ttf', 46, LW)
+    ign_h = draw.textbbox((0, 0), ign, font=ign_font)[3]
+    ign_y = 116 - ign_h
+    addLine(ign, draw, ign_font, LX, ign_y, drop_x=5, drop_y=5)
 
     if rank_text and rank_color:
         badge = generate_badge(text=rank_text, base_color=rank_color, scale=2)
@@ -1142,6 +1146,8 @@ class SnipeTracker(commands.Cog):
         # Parse participants string into (IGN, role) pairs
         pairs = []
         role_choices_lower = {r.lower(): r for r in ROLE_CHOICES}
+        role_choices_lower['heal']  = 'Healer'  # alias: heal -> Healer
+        role_choices_lower['guard'] = 'Tank'    # alias: guard -> Tank
         ign_parts = []
         for token in participants.replace(',', ' ').split():
             role = role_choices_lower.get(token.lower())
@@ -1161,6 +1167,29 @@ class SnipeTracker(commands.Cog):
             return
         if not pairs:
             await ctx.followup.send(':no_entry: You must provide at least one participant.', ephemeral=True)
+            return
+
+        # Reject IGNs that contain spaces (multi-word tokens)
+        for p_ign, _ in pairs:
+            if ' ' in p_ign:
+                await ctx.followup.send(f':no_entry: `{p_ign}` is not a valid IGN (spaces not allowed).', ephemeral=True)
+                return
+
+        # Verify all participants are current TAq members
+        current_data = await asyncio.to_thread(get_current_guild_data)
+        current_members = current_data.get('members', []) if isinstance(current_data, dict) else []
+        current_names = {
+            (m.get('name') or m.get('username') or '').casefold()
+            for m in current_members
+            if m.get('name') or m.get('username')
+        }
+        if not current_names:
+            await ctx.followup.send(':no_entry: Current TAq member data is unavailable. Please try again later.', ephemeral=True)
+            return
+        non_members = [p_ign for p_ign, _ in pairs if p_ign.casefold() not in current_names]
+        if non_members:
+            listed = ', '.join(f'`{n}`' for n in non_members)
+            await ctx.followup.send(f':no_entry: The following IGN(s) are not current TAq members: {listed}', ephemeral=True)
             return
 
         # Parse snipe date
