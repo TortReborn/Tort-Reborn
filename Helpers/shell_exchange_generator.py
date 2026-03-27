@@ -2,6 +2,9 @@ import os
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
+from Helpers.storage import get_shell_exchange_icon
+from Helpers.logger import log, WARN, ERROR
+
 # runtime config defaults
 
 GRID_COLUMNS = 4
@@ -32,9 +35,6 @@ BASE = os.path.dirname(os.path.abspath(__file__))  # Helpers
 BASE = os.path.dirname(BASE)  # project root
 RES = os.path.join(BASE, "images", "shell_exchange", "resources")
 
-INGS_DIR = os.path.join(BASE, "images", "shell_exchange", "Ings")
-MATS_DIR = os.path.join(BASE, "images", "shell_exchange", "Mats")
-
 FONT_FILE = os.path.join(BASE, "images", "profile", "game.ttf")
 STAR_FONT_FILE = os.path.join(RES, "Inter-VariableFont_opsz,wght.ttf")
 SHELL_ICON_FILE = os.path.join(RES, "shell.png")
@@ -52,11 +52,9 @@ RIGHT_PAD = 6
 
 # helpers
 
-def display_name(fn):
-    return os.path.splitext(fn)[0].replace("_", " ")
-
-def norm_key(fn):
-    return os.path.splitext(fn)[0].replace("_", " ").strip().casefold()
+def display_name(key):
+    """Convert a DB key like 'ancient heart' to 'Ancient Heart'."""
+    return key.strip().title()
 
 def load_font(path, size):
     try:
@@ -96,8 +94,12 @@ def draw_gradient_outline(draw, x0, y0, x1, y1, width=2):
     draw.rectangle((x0, y0, x0 + width, y1), fill=OUTLINE_GRADIENT_POINTS[0])
     draw.rectangle((x1 - width, y0, x1, y1), fill=OUTLINE_GRADIENT_POINTS[-1])
 
-def load_icon(path, h):
-    img = Image.open(path).convert("RGBA")
+def load_icon(source, h):
+    """Resize an icon to height *h*. *source* is a file path or PIL Image."""
+    if isinstance(source, Image.Image):
+        img = source.convert("RGBA")
+    else:
+        img = Image.open(source).convert("RGBA")
     w, ih = img.size
     s = h / ih
     return img.resize((int(w * s), h), Image.NEAREST)
@@ -183,19 +185,26 @@ def build_entry(name, icon, iw, ih, tier, cfg):
         "highlight": bool(cfg.get("highlight", False)),
     }
 
-def load_entries(folder, cfg_data, material):
-    cfg = cfg_data
+def load_entries(category, cfg_data, material):
+    """Load entries from DB config + S3 icons.
+
+    category: "ings" or "mats"
+    """
     entries = []
 
-    for fn in sorted(os.listdir(folder)):
-        if not fn.lower().endswith(".png"):
+    for key in sorted(cfg_data.keys()):
+        data = cfg_data[key]
+        if not isinstance(data, dict):
             continue
 
-        key = norm_key(fn)
-        data = cfg.get(key, {})
-        icon = load_icon(os.path.join(folder, fn), ICON_SIZE)
+        s3_img = get_shell_exchange_icon(category, key)
+        if s3_img is None:
+            log(WARN, f"Shell exchange icon missing in S3 for {category}/{key}", context="shell_exchange")
+            continue
+
+        icon = load_icon(s3_img, ICON_SIZE)
         iw, ih = icon.size
-        name = display_name(fn)
+        name = display_name(key)
 
         if material:
             for t in (1, 2, 3):
@@ -211,14 +220,14 @@ def load_entries(folder, cfg_data, material):
 # Render
 
 def render_panel(material_mode=False, ings_data=None, mats_data=None):
-    folder = MATS_DIR if material_mode else INGS_DIR
+    category = "mats" if material_mode else "ings"
     cfg_data = mats_data if material_mode else ings_data
 
     font = load_font(FONT_FILE, FONT_SIZE)
     star_font = load_font(STAR_FONT_FILE, 14)
     shell_icon = load_icon(SHELL_ICON_FILE, SHELL_SIZE)
 
-    entries = load_entries(folder, cfg_data or {}, material_mode)
+    entries = load_entries(category, cfg_data or {}, material_mode)
     if not entries:
         return None
 
