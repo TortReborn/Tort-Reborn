@@ -468,6 +468,9 @@ class ShellExchange(commands.Cog):
     @edit_group.command(name="add_ingredient", description="Add a new ingredient entry")
     async def add_ingredient(self, ctx: discord.ApplicationContext,
                              name: discord.Option(str, required=True, description="Ingredient name (e.g. Ancient Heart)")):
+        if not name or not name.strip():
+            await ctx.respond("Name cannot be empty.", ephemeral=True)
+            return
         ings_config = self.load_ings_config()
         key = name.strip().casefold()
         for k in ings_config:
@@ -498,6 +501,9 @@ class ShellExchange(commands.Cog):
     @edit_group.command(name="add_material", description="Add a new material entry")
     async def add_material(self, ctx: discord.ApplicationContext,
                            name: discord.Option(str, required=True, description="Material name (e.g. Dernic Gem)")):
+        if not name or not name.strip():
+            await ctx.respond("Name cannot be empty.", ephemeral=True)
+            return
         mats_config = self.load_mats_config()
         key = name.strip().casefold()
         for k in mats_config:
