@@ -157,10 +157,18 @@ async def on_application_command_error(
     )
 
     try:
-        await ctx.respond(
-            "⚠️ Something went wrong. This command might have recently been updated, please try again. If the issue persists, contact Thunderr.",
-            ephemeral=True
-        )
+        if ctx.interaction.response.is_done():
+            # Interaction was already deferred/responded — can't change ephemeral status.
+            # Use followup which can independently be ephemeral.
+            await ctx.followup.send(
+                "⚠️ Something went wrong. This command might have recently been updated, please try again. If the issue persists, contact Thunderr.",
+                ephemeral=True
+            )
+        else:
+            await ctx.interaction.response.send_message(
+                "⚠️ Something went wrong. This command might have recently been updated, please try again. If the issue persists, contact Thunderr.",
+                ephemeral=True
+            )
     except discord.HTTPException:
         pass  # Interaction expired or already responded
 
