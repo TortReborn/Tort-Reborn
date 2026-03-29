@@ -251,7 +251,7 @@ class_map = {'archer': '<:bow:966079566189842482>', 'hunter': '<:bow2:9660795657
 
 discord_rank_roles = ['Starfish', '☆Reef', 'Manatee', '★Coastal Waters', 'Piranha', 'Barracuda', '★★ Azure Ocean',
                       'Angler', '★☆☆ Blue Sea',
-                      'Hammerhead', '★★☆Deep Sea', 'Sailfish', '★★★Dark Sea', 'Dolphin', 'Trial-Narwhal', 'Narwhal',
+                      'Hammerhead', '★★☆Deep Sea', 'Sailfish', '★★★Dark Sea', 'Dolphin', 'Narwhal',
                       '★★★★Abyss Waters', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '✫✪✫ Hydra - Leader']
 
 discord_ranks = {

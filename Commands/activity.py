@@ -32,11 +32,10 @@ KICK_RANK_ORDER = {
     'sailfish': 6,
     'strategist': 4,     # fallback for game rank
     'dolphin': 7,
-    'trial-narwhal': 8,
-    'narwhal': 9,
+    'narwhal': 8,
     'chief': 7,          # fallback for game rank
-    'hydra': 10,
-    'owner': 10,
+    'hydra': 9,
+    'owner': 9,
 }
 
 def _load_json(path: str, default):
