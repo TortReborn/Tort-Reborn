@@ -52,6 +52,13 @@ class DB:
             log(ERROR, f"Connection failed: {e}", context="database")
             raise
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def close(self):
         """Close cursor and connection."""
         if self.cursor:
