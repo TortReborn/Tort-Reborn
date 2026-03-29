@@ -53,13 +53,18 @@ class PromotionQueueProcessor(commands.Cog):
     @tasks.loop(minutes=1)
     async def _task(self):
         # Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)
-        rows = await asyncio.to_thread(self._fetch_pending_entries)
+        try:
+            rows = await asyncio.to_thread(self._fetch_pending_entries)
+        except Exception as e:
+            log(ERROR, f"Failed to fetch pending entries: {e}", context="promotion_queue")
+            return
         if not rows:
             return
 
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if not guild:
-            log(ERROR, f"Could not find guild {TAQ_GUILD_ID}", context="promotion_queue")
+            log(ERROR, f"Could not find guild {TAQ_GUILD_ID} — skipping {len(rows)} pending entries",
+                context="promotion_queue")
             return
 
         successes = []
@@ -87,9 +92,14 @@ class PromotionQueueProcessor(commands.Cog):
         if successes or failures:
             await self._post_summary(successes, failures)
 
+    @_task.error
+    async def _task_error(self, error):
+        log(ERROR, f"Promotion queue task crashed and stopped: {error}", context="promotion_queue")
+
     @_task.before_loop
     async def _before(self):
         await self.client.wait_until_ready()
+        log(INFO, "Promotion queue processor started", context="promotion_queue")
 
     @commands.Cog.listener()
     async def on_ready(self):
