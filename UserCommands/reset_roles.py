@@ -112,7 +112,7 @@ class ResetRoles(commands.Cog):
                 'Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', 'Manatee',
                 '★Coastal Waters', 'Piranha', 'Barracuda', '★★ Azure Ocean', 'Angler',
                 '★☆☆ Blue Sea', 'Hammerhead', '★★☆Deep Sea', 'Sailfish',
-                '★★★Dark Sea', 'Dolphin', 'Trial-Narwhal', 'Narwhal', '★★★★Abyss Waters',
+                '★★★Dark Sea', 'Dolphin', 'Narwhal', '★★★★Abyss Waters',
                 '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
                 '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
                 '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',

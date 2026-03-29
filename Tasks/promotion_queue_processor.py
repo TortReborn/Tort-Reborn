@@ -24,7 +24,7 @@ MIN_QUEUER_RANK_INDEX = 5
 REMOVE_ROLES = [
     'Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', 'Manatee', '★Coastal Waters', 'Piranha',
     'Barracuda', '★★ Azure Ocean', 'Angler', '★☆☆ Blue Sea', 'Hammerhead', '★★☆Deep Sea',
-    'Sailfish', '★★★Dark Sea', 'Dolphin', 'Trial-Narwhal', 'Narwhal', '★★★★Abyss Waters',
+    'Sailfish', '★★★Dark Sea', 'Dolphin', 'Narwhal', '★★★★Abyss Waters',
     '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
     '🥇 RANKS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛠️ PROFESSIONS⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
     '✨ COSMETIC ROLES⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🎖️MILITARY⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🏹Spearhead',
@@ -52,7 +52,6 @@ class PromotionQueueProcessor(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def _task(self):
-        # Guild restriction: operates exclusively on TAQ_GUILD_ID (home guild)
         try:
             rows = await asyncio.to_thread(self._fetch_pending_entries)
         except Exception as e:
@@ -62,10 +61,6 @@ class PromotionQueueProcessor(commands.Cog):
             return
 
         guild = self.client.get_guild(TAQ_GUILD_ID)
-        if not guild:
-            log(ERROR, f"Could not find guild {TAQ_GUILD_ID} — skipping {len(rows)} pending entries",
-                context="promotion_queue")
-            return
 
         successes = []
         failures = []
