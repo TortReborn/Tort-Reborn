@@ -647,9 +647,17 @@ class WebAppCommands(commands.Cog):
             db.cursor.execute(
                 """UPDATE applications
                    SET status = 'denied', guild_leave_pending = FALSE
-                   WHERE id = %s""",
+                   WHERE id = %s
+                   RETURNING discord_id""",
                 (app_id,)
             )
+            row = db.cursor.fetchone()
+            if row:
+                db.cursor.execute(
+                    """UPDATE discord_links SET linked = TRUE
+                       WHERE discord_id = %s AND linked = FALSE""",
+                    (int(row[0]),)
+                )
             db.connection.commit()
         finally:
             db.close()
