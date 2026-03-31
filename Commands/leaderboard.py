@@ -194,9 +194,11 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 img.paste(warning_icon, (img.width - 24, row_idx * 36 + 11), warning_icon)
 
             # Slot background & dividers
-            bg_color.add(img, 530, (0, row_idx * 36 + 3))
-            img.paste(bg_color.divider, (55, row_idx * 36 + 3), bg_color.divider)
-            addLine(f'&f{rank_counter}.', draw, game_font, 10, row_idx * 36 + 9)
+            # LEFT_PAD = 15: canvas is 560px, bg bar is 530px -- shift content right by 15 for equal padding
+            LEFT_PAD = 15
+            bg_color.add(img, 530, (LEFT_PAD, row_idx * 36 + 3), start=True)
+            img.paste(bg_color.divider, (LEFT_PAD + 55, row_idx * 36 + 3), bg_color.divider)
+            addLine(f'&f{rank_counter}.', draw, game_font, LEFT_PAD + 10, row_idx * 36 + 9)
 
             # Rank stars (based on discord rank mapping)
             rank_key = (player.get('rank') or '').lower()
@@ -207,11 +209,11 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                     break
             stars = rank_map.get(general_rank, '')
             for s in range(len(stars)):
-                img.paste(rank_star, (65 + (s * 12), row_idx * 36 + 14), rank_star)
+                img.paste(rank_star, (LEFT_PAD + 65 + (s * 12), row_idx * 36 + 14), rank_star)
 
             # Name divider
-            img.paste(bg_color.divider, (133, row_idx * 36 + 3), bg_color.divider)
-            addLine(f'&f{player["name"]}', draw, game_font, 143, row_idx * 36 + 9)
+            img.paste(bg_color.divider, (LEFT_PAD + 133, row_idx * 36 + 3), bg_color.divider)
+            addLine(f'&f{player["name"]}', draw, game_font, LEFT_PAD + 143, row_idx * 36 + 9)
 
             # Value text right aligned
             value_str = "{:,}".format(int(player['contributed']))

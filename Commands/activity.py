@@ -166,20 +166,22 @@ class Activity(commands.Cog):
                 else:
                     rank_idx = row_idx if page_idx == 0 and row_idx <= 3 else None
                     tmpl = bg_templates['first' if rank_idx == 1 else 'second' if rank_idx == 2 else 'third' if rank_idx == 3 else 'other']
-                tmpl.add(canvas, 930, (0, row_idx * 36 - 33))
+                # LEFT_PAD = 25: canvas is 980px, bg bar is 930px -- shift content right by 25 for equal padding
+                LEFT_PAD = 25
+                tmpl.add(canvas, 930, (LEFT_PAD, row_idx * 36 - 33), start=True)
 
                 base_y = row_idx * 36 - 33
                 text_y = row_idx * 36 - 27
 
-                addLine(f'&f{start + row_idx}.', draw, game_font, 10, text_y)
-                canvas.paste(tmpl.divider, (55, base_y), tmpl.divider)
+                addLine(f'&f{start + row_idx}.', draw, game_font, LEFT_PAD + 10, text_y)
+                canvas.paste(tmpl.divider, (LEFT_PAD + 55, base_y), tmpl.divider)
 
                 stars_raw = RANK_STARS_MAP.get((player.get('game_rank') or '').lower(), '')
                 star_count = stars_raw if isinstance(stars_raw, int) else (stars_raw.count('*') if isinstance(stars_raw, str) else 0)
                 star_count = max(0, min(max_stars, star_count))
                 for i in range(star_count):
-                    canvas.paste(rank_star, (65 + i * star_slot, base_y + 11), rank_star)
-                after_stars = 65 + star_block_width + 5
+                    canvas.paste(rank_star, (LEFT_PAD + 65 + i * star_slot, base_y + 11), rank_star)
+                after_stars = LEFT_PAD + 65 + star_block_width + 5
                 canvas.paste(tmpl.divider, (after_stars, base_y), tmpl.divider)
 
                 dr = _clip_chars(player.get('discord_rank') or '', RANK_MAX_CHARS)
@@ -222,12 +224,13 @@ class Activity(commands.Cog):
             badge = generate_rank_badge(f"{days} days", "#0477c9", scale=1)
             canvas.paste(badge, ((canvas.width - badge.width) // 2, 98), badge)
 
-            canvas.paste(icon_map['Playtime'], (10, canvas.height - 18), icon_map['Playtime'])
-            draw.text((36, canvas.height - 23), "Playtime", font=legend_font)
-            canvas.paste(icon_map['Inactivity'], (160, canvas.height - 18), icon_map['Inactivity'])
-            draw.text((186, canvas.height - 23), "Inactivity", font=legend_font)
-            canvas.paste(icon_map['Kick Suitability'], (330, canvas.height - 18), icon_map['Kick Suitability'])
-            draw.text((356, canvas.height - 23), "Member for", font=legend_font)
+            # Legend icons offset by LEFT_PAD = 25 to match row content alignment
+            canvas.paste(icon_map['Playtime'], (35, canvas.height - 18), icon_map['Playtime'])
+            draw.text((61, canvas.height - 23), "Playtime", font=legend_font)
+            canvas.paste(icon_map['Inactivity'], (185, canvas.height - 18), icon_map['Inactivity'])
+            draw.text((211, canvas.height - 23), "Inactivity", font=legend_font)
+            canvas.paste(icon_map['Kick Suitability'], (355, canvas.height - 18), icon_map['Kick Suitability'])
+            draw.text((381, canvas.height - 23), "Member for", font=legend_font)
 
             final_img = Image.new('RGBA', (canvas.width, canvas.height), (0, 0, 0, 0))
             final_img.paste(bg_layout, ((canvas.width - bg_layout.width) // 2, (canvas.height - bg_layout.height) // 2))
