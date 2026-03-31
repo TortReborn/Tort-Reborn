@@ -51,10 +51,11 @@ CREATE TABLE IF NOT EXISTS profile_customization (
 );
 
 CREATE TABLE IF NOT EXISTS shells (
-  "user"  BIGINT      PRIMARY KEY,
-  shells  INT         NOT NULL DEFAULT 0,
-  balance INT         NOT NULL DEFAULT 0,
-  ign     VARCHAR(64)
+  "user"                 BIGINT      PRIMARY KEY,
+  shells                 INT         NOT NULL DEFAULT 0,
+  balance                INT         NOT NULL DEFAULT 0,
+  ign                    VARCHAR(64),
+  last_aspect_convert_at TIMESTAMPTZ
 );
 
 -- =============================================================================
