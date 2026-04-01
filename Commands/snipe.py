@@ -1180,7 +1180,7 @@ class SnipeTracker(commands.Cog):
         current_data = await asyncio.to_thread(get_current_guild_data)
         current_members = current_data.get('members', []) if isinstance(current_data, dict) else []
         current_names = {
-            (m.get('name') or m.get('username') or '').casefold()
+            (m.get('name') or m.get('username') or '').casefold(): (m.get('name') or m.get('username') or '')
             for m in current_members
             if m.get('name') or m.get('username')
         }
@@ -1252,9 +1252,8 @@ class SnipeTracker(commands.Cog):
                 (hq, difficulty, ts, guild.upper(), conns, ctx.author.id, season)
             )
             snipe_id = db.cursor.fetchone()[0]
-            canonical_map = _resolve_igns(db, [ign for ign, _ in pairs])
             for ign, role in pairs:
-                ign = canonical_map.get(ign.lower(), ign)
+                ign = current_names.get(ign.casefold(), ign)
                 db.cursor.execute(
                     'INSERT INTO snipe_participants (snipe_id, ign, role) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING',
                     (snipe_id, ign, role)
