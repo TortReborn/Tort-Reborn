@@ -27,7 +27,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 INGS_DIR = os.path.join(BASE, "images", "shell_exchange", "Ings")
 MATS_DIR = os.path.join(BASE, "images", "shell_exchange", "Mats")
 
-TARGET_SIZE = 16
+TARGET_SIZE = 32
 
 
 def norm_key(filename: str) -> str:
