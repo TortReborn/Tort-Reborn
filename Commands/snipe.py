@@ -37,6 +37,8 @@ _DIFFICULTY_COLORS = [
     (0,   '#a8f785'),
 ]
 LB_SORT_CHOICES = ['Total Snipes', 'Personal Best', 'Best Streak', 'Current Streak']
+# Podium colors for ranks 1/2/3 on leaderboards
+_TOP3_COLORS = {1: '#DAA520', 2: '#C0C0C0', 3: '#CD7F32'}
 _LB_PER_PAGE        = 10
 _LIST_PER_PAGE      = 10
 _LIST_SORT_CHOICES  = ['Newest', 'Oldest', 'Hardest', 'Easiest', 'Least Conns']
@@ -675,8 +677,9 @@ def _generate_lb_card(page_rows, sort_by, season_label, page_num, total_pages, s
             if i % 2 == 0:
                 card.paste(row_bg, (28, ry - 2), row_bg)
             rank = start_rank + i
+            rank_color = _TOP3_COLORS.get(rank, ACCENT)
             best_str = _format_difficulty_text(row['best_diff']) if row['best_diff'] else '\u2014'
-            draw.text((CX[0], ry + 4), f'#{rank}', font=f_small, fill=ACCENT)
+            draw.text((CX[0], ry + 4), f'#{rank}', font=f_small, fill=rank_color)
             addLine(str(row['ign']),         draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(row['total']),       draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
             addLine(best_str,                draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
@@ -790,7 +793,9 @@ def _generate_duo_card(page_rows, season_label, page_num, total_pages, start_ran
             ry = 134 + i * ROW_H
             if i % 2 == 0:
                 card.paste(row_bg, (28, ry - 2), row_bg)
-            draw.text((CX[0], ry + 4), f'#{start_rank + i}', font=f_small, fill=ACCENT)
+            rank = start_rank + i
+            rank_color = _TOP3_COLORS.get(rank, ACCENT)
+            draw.text((CX[0], ry + 4), f'#{rank}', font=f_small, fill=rank_color)
             addLine(f'{p1} + {p2}', draw, f_small, CX[1], ry + 4, drop_x=3, drop_y=3)
             addLine(str(shared),    draw, f_small, CX[2], ry + 4, drop_x=3, drop_y=3)
             addLine(_format_difficulty_text(best_diff) if best_diff is not None else '\u2014', draw, f_small, CX[3], ry + 4, drop_x=3, drop_y=3)
