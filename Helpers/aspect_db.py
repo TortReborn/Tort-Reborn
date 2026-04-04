@@ -18,9 +18,10 @@ from Helpers.variables import IS_TEST_MODE
 WEEKLY_THRESHOLD = 0 if IS_TEST_MODE else 5  # hours of playtime required
 
 
-def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
+def get_weekly_playtime_from_db(db: DB, uuid: str, joined_date=None) -> float:
     """Get player's playtime in the last 7 days from player_activity table.
-    Uses the unified calendar-date-based baseline lookup."""
+    Uses the unified calendar-date-based baseline lookup.
+    If joined_date is provided, only considers snapshots from current membership."""
     try:
         # Get most recent playtime
         db.cursor.execute("""
@@ -36,7 +37,7 @@ def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
         recent = recent_row[0] or 0
 
         # Get baseline from 7 calendar days ago using unified function
-        baseline, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', 7)
+        baseline, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', 7, joined_date=joined_date)
 
         return max(0.0, float(recent) - float(baseline))
     except Exception as e:
@@ -44,13 +45,13 @@ def get_weekly_playtime_from_db(db: DB, uuid: str) -> float:
         return 0.0
 
 
-def get_weekly_playtime(uuid: str) -> float:
+def get_weekly_playtime(uuid: str, joined_date=None) -> float:
     """Get player's playtime in the last 7 days from player_activity table.
     Creates its own DB connection for standalone use."""
     db = DB()
     try:
         db.connect()
-        return get_weekly_playtime_from_db(db, uuid)
+        return get_weekly_playtime_from_db(db, uuid, joined_date=joined_date)
     except Exception as e:
         log(ERROR, f"Error in get_weekly_playtime: {e}", context="aspect_db")
         return 0.0
@@ -149,7 +150,7 @@ def rebuild_queue(db: DB) -> Tuple[List[str], int]:
             continue
         
         # Must be in guild 7+ days and have 5+ hours weekly playtime
-        if dt > cutoff or get_weekly_playtime_from_db(db, uuid) < WEEKLY_THRESHOLD:
+        if dt > cutoff or get_weekly_playtime_from_db(db, uuid, joined_date=dt.date()) < WEEKLY_THRESHOLD:
             continue
         
         eligible.append(uuid)

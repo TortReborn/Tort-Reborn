@@ -2,6 +2,7 @@ import json
 import math
 import time
 from datetime import date, timedelta
+from dateutil import parser as dateutil_parser
 from io import BytesIO
 from typing import Dict, List, Any
 
@@ -107,13 +108,13 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             except Exception:
                 return 0, False
 
-        def find_baseline_value_from_db(uuid: str, key: str, window_days: int) -> tuple[int, bool]:
+        def find_baseline_value_from_db(uuid: str, key: str, window_days: int, joined_date=None) -> tuple[int, bool]:
             """
             Get baseline value from player_activity database table.
             Uses calendar-date-based lookup with corrupted-data handling.
             Returns (baseline_value, warn_flag).
             """
-            return get_player_activity_baseline_with_db(db, uuid, key, window_days)
+            return get_player_activity_baseline_with_db(db, uuid, key, window_days, joined_date=joined_date)
 
         # ---------------------------
         # Build leaderboard rows using CURRENT membership
@@ -126,11 +127,18 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             api_rank = m.get('rank', 'unknown')
             rank = uuid_to_discord_rank.get(uuid, api_rank)
 
+            # Parse member's current join date to filter out old membership snapshots
+            raw_joined = m.get('joined')
+            try:
+                member_joined_date = dateutil_parser.isoparse(raw_joined).date() if raw_joined else None
+            except Exception:
+                member_joined_date = None
+
             is_private = False  # Track if the relevant metric is private/null
 
             if order_key in CUMULATIVE_KEYS:
                 curr_val, is_null = get_current_value(uuid, order_key)
-                base_val, warn_flag = find_baseline_value_from_db(uuid, order_key, days)
+                base_val, warn_flag = find_baseline_value_from_db(uuid, order_key, days, joined_date=member_joined_date)
                 contributed = curr_val - base_val
                 if contributed < 0:
                     # In case of data resets or rollbacks, never show negatives

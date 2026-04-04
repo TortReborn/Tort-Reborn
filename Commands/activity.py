@@ -50,10 +50,10 @@ def _load_json(path: str, default):
         return default
 
 
-def _get_baseline_playtime_from_db(db: DB, uuid: str, days: int) -> float:
+def _get_baseline_playtime_from_db(db: DB, uuid: str, days: int, joined_date=None) -> float:
     """Get baseline playtime from player_activity table.
     Uses the unified calendar-date-based lookup with corrupted-data handling."""
-    value, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', days)
+    value, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', days, joined_date=joined_date)
     return float(value)
 
 
@@ -296,20 +296,23 @@ class Activity(commands.Cog):
                 playtime = raw_playtime if raw_playtime is not None else 0
                 uuid = member.get('uuid', '').lower()
 
-                # Get baseline playtime from database
-                baseline_pt = _get_baseline_playtime_from_db(db, uuid, days)
-
-                # Compute actual playtime delta
-                real_pt = max(0, float(playtime) - float(baseline_pt))
-
+                # Parse member's guild join date (needed for baseline filtering)
                 joined = next((p for p in taq_members if p.get('uuid') == uuid), {})
                 try:
                     joined_dt = parser.isoparse(joined.get('joined'))
                     if joined_dt.tzinfo:
                         joined_dt = joined_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
                     member_for = max(0, (now_dt - joined_dt).days)
+                    member_joined_date = joined_dt.date()
                 except Exception:
                     member_for = 0
+                    member_joined_date = None
+
+                # Get baseline playtime from database, filtered to current membership
+                baseline_pt = _get_baseline_playtime_from_db(db, uuid, days, joined_date=member_joined_date)
+
+                # Compute actual playtime delta
+                real_pt = max(0, float(playtime) - float(baseline_pt))
 
                 # New members (joined within 1 day) have no reliable baseline
                 if member_for < 2:

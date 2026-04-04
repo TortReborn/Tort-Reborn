@@ -255,11 +255,12 @@ class PlayerStats:
                 self.stats_days = days
 
                 if self.in_guild_for.days >= 1:
-                    # Get baseline values from database
-                    base_pt, warn_pt = get_player_activity_baseline(self.UUID, 'playtime', days)
-                    base_wars, warn_wars = get_player_activity_baseline(self.UUID, 'wars', days)
-                    base_xp, warn_xp = get_player_activity_baseline(self.UUID, 'contributed', days)
-                    base_raids, warn_raids = get_player_activity_baseline(self.UUID, 'raids', days)
+                    # Get baseline values from database, filtered to current membership period
+                    jd = self.guild_joined.date() if self.guild_joined else None
+                    base_pt, warn_pt = get_player_activity_baseline(self.UUID, 'playtime', days, joined_date=jd)
+                    base_wars, warn_wars = get_player_activity_baseline(self.UUID, 'wars', days, joined_date=jd)
+                    base_xp, warn_xp = get_player_activity_baseline(self.UUID, 'contributed', days, joined_date=jd)
+                    base_raids, warn_raids = get_player_activity_baseline(self.UUID, 'raids', days, joined_date=jd)
                     warn_flag = warn_pt or warn_wars or warn_xp or warn_raids
 
                     # 3) Compute inclusive deltas (clamped >= 0)

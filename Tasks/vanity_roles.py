@@ -10,6 +10,8 @@ from discord.ext import commands, tasks
 from discord.commands import slash_command
 from discord import default_permissions
 
+from dateutil import parser as dateutil_parser
+
 from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers.database import DB, get_current_guild_data
 from Helpers.variables import HOME_GUILD_IDS, TAQ_GUILD_ID, ANNOUNCEMENT_CHANNEL_ID, FAQ_CHANNEL_ID, VANITY_ROLE_IDS
@@ -36,10 +38,11 @@ def _get_current_value(cur_by_uuid: Dict[str, Dict[str, Any]], uuid: str, key: s
         return 0
 
 
-def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> Optional[int]:
+def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int, joined_date=None) -> Optional[int]:
     """
     Get baseline value from player_activity database table using index-based lookup.
-    Returns None if player has no record for the target date (new member).
+    Returns None if player has no record for the target date (new member),
+    or if the target date falls before the member's current join date.
     """
     try:
         # Get the window_days-th most recent snapshot date (0-indexed)
@@ -52,6 +55,11 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, window_days: int) -> Opti
         if not date_row:
             return None  # Not enough snapshots in database
         target_date = date_row[0]
+
+        # If the target date is before the member's current join date,
+        # any snapshot from that date is from a previous membership
+        if joined_date is not None and target_date < joined_date:
+            return None
 
         db.cursor.execute(f"""
             SELECT {key} FROM player_activity
@@ -86,11 +94,18 @@ def compute_windowed_stats(window_days: int = WINDOW_DAYS) -> Dict[str, Windowed
     out: Dict[str, WindowedStats] = {}
     try:
         for uuid in cur_by_uuid.keys():
+            # Parse member's current join date to filter out old membership snapshots
+            raw_joined = cur_by_uuid[uuid].get('joined')
+            try:
+                member_joined_date = dateutil_parser.isoparse(raw_joined).date() if raw_joined else None
+            except Exception:
+                member_joined_date = None
+
             curr_wars = _get_current_value(cur_by_uuid, uuid, "wars")
             curr_raids = _get_current_value(cur_by_uuid, uuid, "raids")
 
-            base_wars = _get_baseline_from_db(db, uuid, "wars", window_days)
-            base_raids = _get_baseline_from_db(db, uuid, "raids", window_days)
+            base_wars = _get_baseline_from_db(db, uuid, "wars", window_days, joined_date=member_joined_date)
+            base_raids = _get_baseline_from_db(db, uuid, "raids", window_days, joined_date=member_joined_date)
 
             # Skip players without baseline data (mid-period joins, returning members)
             if base_wars is None or base_raids is None:
