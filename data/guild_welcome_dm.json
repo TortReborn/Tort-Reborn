@@ -1,0 +1,13 @@
+{
+    "header": "Welcome to **The Aquarium**, [user]! You're officially a guild member now.",
+    "channels_title": "Here's a quick rundown of our important channels:",
+    "channels": [
+        { "channel": "[announcement_channel]", "description": "Guild announcements and important updates." },
+        { "channel": "[faq_channel]", "description": "Frequently asked questions and guild info." },
+        { "channel": "[rank_up_channel]", "description": "Insights into ranking up." },
+        { "channel": "[taq_roles_channel]", "description": "Guide to our rank-up and self-assignable roles." },
+        { "channel": "[bot_command_channel]", "description": "Channel to send all our bot commands using Tort Reborn." },
+        { "channel": "[raid_collecting_channel]", "description": "Where to collect shells and aspects from guild raids." }
+    ],
+    "footer": "If you have any questions, don't hesitate to ask around. We're glad to have you!"
+}
