@@ -1,5 +1,5 @@
 {
-    "header": "Welcome to **The Aquarium**, [user]! You're officially a guild member now.",
+    "header": "Welcome to **The Aquarium**, [user]! You're now free to explore our Discord and sail the seas.",
     "channels_title": "Here's a quick rundown of our important channels:",
     "channels": [
         { "channel": "[announcement_channel]", "description": "Guild announcements and important updates." },
