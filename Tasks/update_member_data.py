@@ -21,7 +21,7 @@ else:
     import os as _os
     sys.stdout = _os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
-from Helpers.logger import log, INFO, ERROR
+from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers.classes import Guild, DB, BasicPlayerStats
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
@@ -38,6 +38,13 @@ from Helpers.variables import (
     ALL_GUILD_IDS,
     TAQ_GUILD_ID,
     WELCOME_CHANNEL_ID,
+    ANNOUNCEMENT_CHANNEL_ID,
+    FAQ_CHANNEL_ID,
+    GUILD_BANK_CHANNEL_ID,
+    RANK_UP_CHANNEL_ID,
+    TAQ_ROLES_CHANNEL_ID,
+    BOT_COMMAND_CHANNEL_ID,
+    RAID_COLLECTING_CHANNEL_ID,
     discord_ranks,
 )
 
@@ -794,7 +801,54 @@ class UpdateMemberData(commands.Cog):
             welcome_embed.set_author(name="Welcome Aboard!", icon_url=member.display_avatar.url)
             await welcome_ch.send(embed=welcome_embed)
 
+        # Send welcome DM
+        await self._send_welcome_dm(member)
+
         log(INFO, f"Successfully registered {ign} ({member.name}) from accepted application.", context="auto_register")
+
+    async def _send_welcome_dm(self, member: discord.Member):
+        """Send a welcome DM to a newly registered guild member."""
+        try:
+            with open("data/guild_welcome_dm.json", "r", encoding="utf-8") as f:
+                template_data = json.load(f)
+        except Exception as e:
+            log(WARN, f"Could not load welcome DM template: {e}", context="auto_register")
+            return
+
+        placeholders = {
+            "[user]": member.mention,
+            "[welcome_channel]": f"<#{WELCOME_CHANNEL_ID}>",
+            "[announcement_channel]": f"<#{ANNOUNCEMENT_CHANNEL_ID}>",
+            "[faq_channel]": f"<#{FAQ_CHANNEL_ID}>",
+            "[guild_bank_channel]": f"<#{GUILD_BANK_CHANNEL_ID}>",
+            "[rank_up_channel]": f"<#{RANK_UP_CHANNEL_ID}>",
+            "[taq_roles_channel]": f"<#{TAQ_ROLES_CHANNEL_ID}>",
+            "[bot_command_channel]": f"<#{BOT_COMMAND_CHANNEL_ID}>",
+            "[raid_collecting_channel]": f"<#{RAID_COLLECTING_CHANNEL_ID}>",
+        }
+
+        def replace(text):
+            for key, value in placeholders.items():
+                text = text.replace(key, str(value))
+            return text
+
+        header = replace(template_data.get("header", ""))
+        channels_title = template_data.get("channels_title", "")
+        channels = "\n".join(
+            f"> {replace(ch['channel'])} - {ch['description']}"
+            for ch in template_data.get("channels", [])
+        )
+        footer = replace(template_data.get("footer", ""))
+
+        message = f"{header}\n\n{channels_title}\n\n{channels}\n\n{footer}"
+
+        try:
+            await member.send(message)
+            log(INFO, f"Sent welcome DM to {member.name}", context="auto_register")
+        except discord.Forbidden:
+            log(WARN, f"Could not DM {member.name} (DMs disabled or bot blocked)", context="auto_register")
+        except Exception as e:
+            log(WARN, f"Failed to send welcome DM to {member.name}: {e}", context="auto_register")
 
     @staticmethod
     def _fetch_unlinked_with_app():
