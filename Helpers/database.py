@@ -89,19 +89,23 @@ def get_current_guild_data() -> dict:
         db.close()
 
 
-def get_player_activity_baseline(uuid: str, key: str, days: int) -> tuple:
+def get_player_activity_baseline(uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
     """Get baseline value for a player from N calendar days ago.
 
     Uses date-based lookup (not OFFSET) for accuracy even with missing snapshot days.
     Handles corrupted 0-value entries from private profiles / API failures by walking
     forward to find the first non-zero value when zeros are followed by real data.
 
+    If joined_date is provided, only snapshots from the current membership period
+    (snapshot_date >= joined_date) are considered. This prevents returning members
+    from having inflated stats based on old data from a previous membership.
+
     Returns (value, warn_flag) tuple.
     """
     db = DB()
     db.connect()
     try:
-        return _get_baseline_from_db(db, uuid, key, days)
+        return _get_baseline_from_db(db, uuid, key, days, joined_date=joined_date)
     except Exception as e:
         log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
         return (0, True)
@@ -109,16 +113,16 @@ def get_player_activity_baseline(uuid: str, key: str, days: int) -> tuple:
         db.close()
 
 
-def get_player_activity_baseline_with_db(db: DB, uuid: str, key: str, days: int) -> tuple:
+def get_player_activity_baseline_with_db(db: DB, uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
     """Same as get_player_activity_baseline but uses an existing DB connection."""
     try:
-        return _get_baseline_from_db(db, uuid, key, days)
+        return _get_baseline_from_db(db, uuid, key, days, joined_date=joined_date)
     except Exception as e:
         log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
         return (0, True)
 
 
-def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
+def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
     """Core baseline lookup logic.
 
     Algorithm:
@@ -128,6 +132,9 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
     3. If no snapshot exists at or before the target date (new player), use their
        earliest available snapshot as baseline.
     4. If no snapshots exist at all, return (0, True).
+
+    If joined_date is provided, all queries are filtered to only consider snapshots
+    from the current membership period (snapshot_date >= joined_date).
     """
     # Whitelist of allowed column names to prevent SQL injection
     ALLOWED_KEYS = {"playtime", "contributed", "wars", "raids", "shells"}
@@ -139,12 +146,22 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
 
     target_date = datetime.date.today() - timedelta(days=days)
 
+    # Build conditional filter for membership period
+    join_filter = ""
+    join_params = ()
+    if joined_date is not None:
+        join_filter = "AND snapshot_date >= %s"
+        join_params = (joined_date,)
+        # Clamp target_date so baseline never reaches before current membership
+        if target_date < joined_date:
+            target_date = joined_date
+
     # 1. Find the player's snapshot closest to (but not after) N days ago
     db.cursor.execute(f"""
         SELECT {key}, snapshot_date FROM player_activity
-        WHERE uuid = %s AND snapshot_date <= %s
+        WHERE uuid = %s AND snapshot_date <= %s {join_filter}
         ORDER BY snapshot_date DESC LIMIT 1
-    """, (uuid, target_date))
+    """, (uuid, target_date) + join_params)
     row = db.cursor.fetchone()
 
     if row and row[0] is not None:
@@ -154,9 +171,9 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
         if value == 0:
             db.cursor.execute(f"""
                 SELECT {key}, snapshot_date FROM player_activity
-                WHERE uuid = %s AND snapshot_date > %s AND {key} > 0
+                WHERE uuid = %s AND snapshot_date > %s AND {key} > 0 {join_filter}
                 ORDER BY snapshot_date ASC LIMIT 1
-            """, (uuid, row[1]))
+            """, (uuid, row[1]) + join_params)
             nonzero = db.cursor.fetchone()
             if nonzero:
                 return (int(nonzero[0]), True)
@@ -166,9 +183,9 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
     #    use their earliest available snapshot
     db.cursor.execute(f"""
         SELECT {key}, snapshot_date FROM player_activity
-        WHERE uuid = %s
+        WHERE uuid = %s {join_filter}
         ORDER BY snapshot_date ASC LIMIT 1
-    """, (uuid,))
+    """, (uuid,) + join_params)
     earliest = db.cursor.fetchone()
     if earliest and earliest[0] is not None:
         value = earliest[0]
@@ -176,15 +193,15 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int) -> tuple:
         if value == 0:
             db.cursor.execute(f"""
                 SELECT {key} FROM player_activity
-                WHERE uuid = %s AND {key} > 0
+                WHERE uuid = %s AND {key} > 0 {join_filter}
                 ORDER BY snapshot_date ASC LIMIT 1
-            """, (uuid,))
+            """, (uuid,) + join_params)
             nonzero = db.cursor.fetchone()
             if nonzero:
                 return (int(nonzero[0]), True)
         return (int(value), True)
 
-    # 4. No snapshots at all
+    # 4. No snapshots at all (or none in current membership period)
     return (0, True)
 
 
