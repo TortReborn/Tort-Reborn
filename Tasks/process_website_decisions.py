@@ -8,7 +8,7 @@ from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
-from Helpers.embed_updater import update_web_poll_embed
+from Helpers.embed_updater import update_web_poll_embed, update_hammerhead_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
 from Helpers.variables import TAQ_GUILD_ID, INVITED_CATEGORY_NAME
 
@@ -78,6 +78,13 @@ class ProcessWebsiteDecisions(commands.Cog):
 
         if isinstance(answers, str):
             answers = json.loads(answers)
+
+        # Hammerhead applications: just update embed color/status
+        if app_type == "hammerhead":
+            await self._process_hammerhead_decision(
+                app_id, status, answers, channel_id, thread_id, poll_message_id
+            )
+            return
 
         ign = (answers.get("ign") or "").strip()
 
@@ -363,6 +370,32 @@ class ProcessWebsiteDecisions(commands.Cog):
         await self._update_exec_thread(thread_id, "denied")
 
         log(INFO, f"Processed website deny for app {app_id}",
+            context="process_website_decisions")
+
+    # ------------------------------------------------------------------
+    # Hammerhead decision — just update embed + thread notification
+    # ------------------------------------------------------------------
+
+    async def _process_hammerhead_decision(self, app_id, status, answers, channel_id, thread_id, poll_message_id):
+        ign_rank = (answers.get("hh_ign_rank") or "").strip()
+        ign = ign_rank.split(",")[0].strip() if ign_rank else "Unknown"
+
+        if status == "accepted":
+            new_status = ":green_circle: Accepted"
+            colour = 0x3ED63E
+        else:
+            new_status = ":red_circle: Denied"
+            colour = 0xD93232
+
+        # Update the poll embed on the last message
+        await update_hammerhead_poll_embed(
+            self.client, app_id, poll_message_id, new_status, colour
+        )
+
+        # Post decision notification in thread
+        await self._update_exec_thread(thread_id, status, "Hammerhead", ign)
+
+        log(INFO, f"Processed hammerhead {status} for app {app_id} (IGN: {ign})",
             context="process_website_decisions")
 
     # ------------------------------------------------------------------
