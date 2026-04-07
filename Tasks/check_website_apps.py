@@ -479,9 +479,9 @@ class CheckWebsiteApps(commands.Cog):
         else:
             time_str = str(submitted_at)
 
-        # Send embeds as separate messages
+        # Send embeds as separate messages, track all message IDs
         # Vote buttons go on the last message (same message the thread hangs off of)
-        first_msg = None
+        sent_message_ids = []
         last_msg = None
         for i, desc in enumerate(embeds_data):
             part_label = f"(Part {i + 1}/{total_parts})" if total_parts > 1 else ""
@@ -506,14 +506,13 @@ class CheckWebsiteApps(commands.Cog):
                     embed=embed,
                     view=ApplicationVoteView() if is_last else None,
                 )
-                first_msg = msg
-                last_msg = msg
             else:
                 msg = await exec_chan.send(
                     embed=embed,
                     view=ApplicationVoteView() if is_last else None,
                 )
-                last_msg = msg
+            sent_message_ids.append(msg.id)
+            last_msg = msg
 
         # Create discussion thread off the last embed message
         thread = None
@@ -527,11 +526,12 @@ class CheckWebsiteApps(commands.Cog):
             await thread.send("**Vote on this application:**", view=ThreadVoteView())
 
         # Update DB — poll_message_id points to last message (has vote buttons + status)
+        # message_ids stores all embed message IDs for lookup
         poll_msg_id = last_msg.id if last_msg else None
         thread_id = thread.id if thread else None
         await asyncio.to_thread(
-            self._update_application, app_id, HAMMERHEAD_APP_CHANNEL_ID,
-            thread_id, poll_msg_id, app_number
+            self._update_hh_application, app_id, HAMMERHEAD_APP_CHANNEL_ID,
+            thread_id, poll_msg_id, app_number, sent_message_ids
         )
 
     @staticmethod
@@ -548,6 +548,26 @@ class CheckWebsiteApps(commands.Cog):
                 WHERE id = %s
                 """,
                 (channel_id, thread_id, poll_message_id, app_number, app_id),
+            )
+            db.connection.commit()
+        finally:
+            db.close()
+
+    @staticmethod
+    def _update_hh_application(app_id, channel_id, thread_id, poll_message_id, app_number, message_ids):
+        """Blocking: update hammerhead application row with Discord IDs and all message IDs."""
+        db = DB()
+        db.connect()
+        try:
+            db.cursor.execute(
+                """
+                UPDATE applications
+                SET channel_id = %s, thread_id = %s, poll_message_id = %s,
+                    poll_status = ':green_circle: Received', app_number = %s,
+                    message_ids = %s
+                WHERE id = %s
+                """,
+                (channel_id, thread_id, poll_message_id, app_number, message_ids, app_id),
             )
             db.connection.commit()
         finally:

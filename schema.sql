@@ -348,7 +348,8 @@ CREATE TABLE IF NOT EXISTS applications (
   poll_status       TEXT         DEFAULT ':green_circle: Received',
   bot_processed     BOOLEAN      DEFAULT FALSE,
   invite_image      TEXT,
-  app_number        INT
+  app_number        INT,
+  message_ids       BIGINT[]     DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS application_votes (

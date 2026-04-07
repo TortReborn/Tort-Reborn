@@ -5,7 +5,7 @@ import discord
 from Helpers.database import DB
 from Helpers.logger import log, ERROR, INFO
 from Helpers.poll_edit import safe_edit_poll
-from Helpers.variables import MEMBER_APP_CHANNEL_ID
+from Helpers.variables import MEMBER_APP_CHANNEL_ID, HAMMERHEAD_APP_CHANNEL_ID
 
 
 def _get_vote_counts(application_id: int) -> dict:
@@ -78,13 +78,13 @@ def _delete_vote(application_id: int, voter_discord_id: str):
 
 
 def _get_app_id_from_poll(poll_message_id: int) -> int | None:
-    """Blocking: look up an application ID from its poll message ID."""
+    """Blocking: look up an application ID from its poll message ID or message_ids array."""
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            "SELECT id FROM applications WHERE poll_message_id = %s",
-            (poll_message_id,)
+            "SELECT id FROM applications WHERE poll_message_id = %s OR %s = ANY(message_ids)",
+            (poll_message_id, poll_message_id)
         )
         row = db.cursor.fetchone()
         return row[0] if row else None
@@ -292,11 +292,19 @@ class ThreadVoteView(discord.ui.View):
         if not poll_msg_id:
             return
 
+        # Try member app channel first, then hammerhead app channel
         exec_chan = interaction.client.get_channel(MEMBER_APP_CHANNEL_ID)
-        if not exec_chan:
-            return
+        if exec_chan:
+            try:
+                await _update_embed_votes(exec_chan, poll_msg_id, counts)
+                return
+            except Exception:
+                pass
 
-        try:
-            await _update_embed_votes(exec_chan, poll_msg_id, counts)
-        except Exception as e:
-            log(ERROR, f"Failed to sync poll embed from thread: {e}", context="views")
+        exec_chan = interaction.client.get_channel(HAMMERHEAD_APP_CHANNEL_ID)
+        if exec_chan:
+            try:
+                await _update_embed_votes(exec_chan, poll_msg_id, counts)
+                return
+            except Exception as e:
+                log(ERROR, f"Failed to sync poll embed from thread: {e}", context="views")
