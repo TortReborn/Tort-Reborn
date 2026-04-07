@@ -7,7 +7,7 @@ from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.classes import BasicPlayerStats
-from Helpers.database import DB, get_blacklist, get_next_app_number
+from Helpers.database import DB, get_blacklist, get_next_app_number, get_next_hh_app_number
 from Helpers.functions import generate_applicant_info
 from Helpers.variables import (
     TAQ_GUILD_ID,
@@ -445,7 +445,7 @@ class CheckWebsiteApps(commands.Cog):
         # Extract IGN from the ign_rank answer (format: "IGN, Rank")
         ign_rank = answers.get("hh_ign_rank", "").strip()
         ign = ign_rank.split(",")[0].strip() if ign_rank else discord_username
-        app_number = await asyncio.to_thread(get_next_app_number)
+        app_number = await asyncio.to_thread(get_next_hh_app_number)
 
         # Get the hammerhead app channel in the exec guild
         exec_chan = self.client.get_channel(HAMMERHEAD_APP_CHANNEL_ID)

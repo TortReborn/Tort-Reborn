@@ -445,6 +445,22 @@ def get_next_app_number() -> int:
         db.close()
 
 
+def get_next_hh_app_number() -> int:
+    """Atomically increment and return the next hammerhead application number."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            "UPDATE bot_settings SET value = (value::int + 1)::text "
+            "WHERE key = 'hh_app_counter' RETURNING value::int"
+        )
+        row = db.cursor.fetchone()
+        db.connection.commit()
+        return row[0]
+    finally:
+        db.close()
+
+
 def save_shell_exchange_mats(data: dict):
     """Save shell exchange material data to cache_entries."""
     db = DB()
