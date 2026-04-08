@@ -12,14 +12,16 @@ from typing import Tuple, Optional
 
 
 def coordToPixel(x: int, z: int) -> Tuple[int, int]:
-    return x + 2383, z + 6572
+    # Calibrated for fruma_map.png (4262x6644) using Detlas as reference.
+    # Game coordinate [402, -1657] maps to pixel [3049, 5052] on fruma_map.png
+    return x + 2562, z + 6634
 
 
 def mapCreator(guild_prefix: Optional[str] = None):
     """Builds the territory map. If guild_prefix is provided, zooms to that guild's territories.
     Returns (discord.File | None, discord.Embed). If file is None, only the embed should be sent.
     """
-    map_img = Image.open("images/map/wynncraft_map.png").convert("RGBA")
+    map_img = Image.open("images/map/fruma_map.png").convert("RGBA")
     font = ImageFont.truetype("images/profile/minecraft_font.ttf", 40)
 
     with open("data/territories_verbose.json", "r") as f:

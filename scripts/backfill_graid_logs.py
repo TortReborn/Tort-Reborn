@@ -39,6 +39,11 @@ BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 COMPLETED_BY_RE = re.compile(r"completed by:\s*(.+)", re.IGNORECASE)
 
 
+def unescape_markdown(name: str) -> str:
+    """Strip Discord markdown escape backslashes: \\_qtw -> _qtw"""
+    return name.replace("\\_", "_").replace("\\*", "*").replace("\\~", "~").replace("\\`", "`").replace("\\|", "|")
+
+
 def parse_embed(title: str, description: str) -> tuple[str | None, list[str]]:
     """
     Parse raid type and participant list from an embed.
@@ -60,7 +65,7 @@ def parse_embed(title: str, description: str) -> tuple[str | None, list[str]]:
             if name in title:
                 raid_type = name
                 break
-        return raid_type, real_names
+        return raid_type, [unescape_markdown(n) for n in real_names]
 
     # Old format: "**RaidName** completed by: Player1, Player2, ..."
     completed_by_match = COMPLETED_BY_RE.search(description)
@@ -79,7 +84,7 @@ def parse_embed(title: str, description: str) -> tuple[str | None, list[str]]:
         raw = completed_by_match.group(1).strip()
         # Split on ", " and " and " then clean up
         parts = re.split(r",\s*|\s+and\s+", raw)
-        igns = [p.strip() for p in parts if p.strip()]
+        igns = [unescape_markdown(p.strip()) for p in parts if p.strip()]
         if len(igns) >= 2:
             return raid_type, igns
 
