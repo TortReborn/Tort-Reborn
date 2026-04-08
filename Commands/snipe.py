@@ -1111,7 +1111,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe log ────────────────────────────────────────────────────────────
 
-    @snipe.command(name='log', description='Log a territory snipe')
+    @snipe.command(name='log', description='ADMIN: Log a territory snipe')
     async def log_snipe(
         self,
         ctx: discord.ApplicationContext,
@@ -1294,7 +1294,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe stats ──────────────────────────────────────────────────────────
 
-    @snipe.command(name='stats', description='View snipe statistics for a player')
+    @snipe.command(name='stats', description='HR: View snipe statistics for a player')
     async def snipe_stats(
         self,
         ctx: discord.ApplicationContext,
@@ -1463,7 +1463,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe leaderboard ────────────────────────────────────────────────────
 
-    @snipe.command(name='leaderboard', description='View snipe leaderboards')
+    @snipe.command(name='leaderboard', description='HR: View snipe leaderboards')
     async def snipe_leaderboard(
         self,
         ctx: discord.ApplicationContext,
@@ -1499,7 +1499,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe roles ──────────────────────────────────────────────────────────
 
-    @snipe.command(name='roles', description='View role leaderboards')
+    @snipe.command(name='roles', description='HR: View role leaderboards')
     async def snipe_roles(
         self,
         ctx: discord.ApplicationContext,
@@ -1543,7 +1543,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe team ───────────────────────────────────────────────────────────
 
-    @snipe.command(name='roster', description='View the snipe roster')
+    @snipe.command(name='roster', description='HR: View the snipe roster')
     async def snipe_roster(
         self,
         ctx: discord.ApplicationContext,
@@ -1611,7 +1611,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe duos ───────────────────────────────────────────────────────────
 
-    @snipe.command(name='duos', description='View snipe duos')
+    @snipe.command(name='duos', description='HR: View snipe duos')
     async def snipe_duos(
         self,
         ctx: discord.ApplicationContext,
@@ -1655,7 +1655,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe overview ───────────────────────────────────────────────────────
 
-    @snipe.command(name='overview', description='View the snipe overview of a player')
+    @snipe.command(name='overview', description='HR: View the snipe overview of a player')
     async def snipe_overview(
         self,
         ctx: discord.ApplicationContext,
@@ -1788,7 +1788,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /snipe list ───────────────────────────────────────────────────────────
 
-    @snipe.command(name='list', description='View the full snipe log')
+    @snipe.command(name='list', description='HR: View the full snipe log')
     async def snipe_list(
         self,
         ctx: discord.ApplicationContext,
@@ -1861,7 +1861,7 @@ class SnipeTracker(commands.Cog):
 
     # ── /warseason ────────────────────────────────────────────────────────────
 
-    @slash_command(description='Set the current war season', guild_ids=ALL_GUILD_IDS)
+    @slash_command(description='ADMIN: Set the current war season', guild_ids=ALL_GUILD_IDS)
     async def warseason(
         self,
         ctx: discord.ApplicationContext,
