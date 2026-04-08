@@ -106,22 +106,37 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
     db = _db_connect_with_retry()
     try:
         cur = db.cursor
-        # find active event
+        # find active event (may be None — raids happen outside events too)
         cur.execute("SELECT id FROM graid_events WHERE active = TRUE LIMIT 1")
         row = cur.fetchone()
-        if not row:
-            return
-        event_id = row[0]
+        event_id = row[0] if row else None
 
-        # upsert totals; 1 completion per player per validated group
+        # always log individual raid completion with type and participants
+        cur.execute(
+            "INSERT INTO graid_logs (event_id, raid_type) VALUES (%s, %s) RETURNING id",
+            (event_id, raid_name)
+        )
+        log_id = cur.fetchone()[0]
+
         for uid in uuid_list:
-            cur.execute("""
-                INSERT INTO graid_event_totals (event_id, uuid, total)
-                VALUES (%s, %s, 1)
-                ON CONFLICT (event_id, uuid) DO UPDATE
-                  SET total = graid_event_totals.total + 1,
-                      last_updated = NOW()
-            """, (event_id, uid))
+            cur.execute("SELECT ign FROM discord_links WHERE uuid = %s", (uid,))
+            ign_row = cur.fetchone()
+            ign = ign_row[0] if ign_row else None
+            cur.execute(
+                "INSERT INTO graid_log_participants (log_id, uuid, ign) VALUES (%s, %s, %s)",
+                (log_id, uid, ign)
+            )
+
+        # upsert totals only if there's an active event
+        if event_id is not None:
+            for uid in uuid_list:
+                cur.execute("""
+                    INSERT INTO graid_event_totals (event_id, uuid, total)
+                    VALUES (%s, %s, 1)
+                    ON CONFLICT (event_id, uuid) DO UPDATE
+                      SET total = graid_event_totals.total + 1,
+                          last_updated = NOW()
+                """, (event_id, uid))
         db.connection.commit()
     finally:
         db.close()
