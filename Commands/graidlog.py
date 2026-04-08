@@ -229,15 +229,13 @@ class GraidCommands(commands.Cog):
                 players[key]["total"] += cnt
 
             # Apply offsets (all-time)
-            cur.execute("SELECT uuid, raid_offset FROM graid_raid_offsets")
-            for uuid, offset in cur.fetchall():
+            cur.execute("SELECT gro.uuid, gro.raid_offset, dl.ign FROM graid_raid_offsets gro LEFT JOIN discord_links dl ON gro.uuid = dl.uuid")
+            for uuid, offset, dl_name in cur.fetchall():
                 key = str(uuid)
                 if key in players:
                     players[key]["total"] += offset
                 else:
-                    cur.execute("SELECT ign FROM discord_links WHERE uuid = %s", (uuid,))
-                    row = cur.fetchone()
-                    name = row[0] if row else key
+                    name = dl_name or key
                     players[key] = {"total": offset, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "Unknown": 0}
                     display_names[key] = name
 
