@@ -13,6 +13,7 @@ Run as standalone:
 """
 
 import asyncio
+import datetime
 import re
 import os
 import sys
@@ -125,8 +126,23 @@ async def backfill(channel: discord.TextChannel, dry_run: bool = False):
         inserted = 0
         skipped = 0
         bad_format = 0
+        msg_count = 0
+        first_date = None
+        last_date = None
 
-        async for message in channel.history(limit=None, oldest_first=True):
+        print("Scanning channel history...", flush=True)
+
+        start_after = datetime.datetime(2025, 5, 12, tzinfo=datetime.timezone.utc)
+
+        async for message in channel.history(limit=None, oldest_first=True, after=start_after):
+            msg_count += 1
+            last_date = message.created_at.strftime('%Y-%m-%d')
+            if first_date is None:
+                first_date = last_date
+                print(f"  First message: {first_date}", flush=True)
+            if msg_count % 200 == 0:
+                print(f"  ...scanned {msg_count} messages, up to {last_date} ({inserted} inserted, {skipped} dup, {bad_format} bad)", flush=True)
+
             if not message.embeds:
                 continue
 
@@ -155,8 +171,8 @@ async def backfill(channel: discord.TextChannel, dry_run: bool = False):
 
                 if dry_run:
                     ev_label = f"event {event_id}" if event_id else "no event"
-                    print(f"[DRY RUN] {raid_type or 'Unknown'} at {ts.strftime('%Y-%m-%d %H:%M')} "
-                          f"- {len(igns)} players ({', '.join(igns)}) - {ev_label}")
+                    print(f"  + {raid_type or 'Unknown'} {ts.strftime('%Y-%m-%d %H:%M')} "
+                          f"- {len(igns)}p ({', '.join(igns[:4])}) - {ev_label}", flush=True)
                     inserted += 1
                     continue
 
@@ -176,8 +192,14 @@ async def backfill(channel: discord.TextChannel, dry_run: bool = False):
                 existing_timestamps.add(ts)
                 inserted += 1
 
+                if inserted % 50 == 0:
+                    print(f"  ...inserted {inserted} raids so far", flush=True)
+
+        print(f"Scan complete. {msg_count} messages scanned ({first_date} to {last_date}).", flush=True)
+
         if not dry_run:
             db.connection.commit()
+            print("Committed to database.", flush=True)
 
         return inserted, skipped, bad_format
 
