@@ -117,6 +117,14 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             return get_player_activity_baseline_with_db(db, uuid, key, window_days, joined_date=joined_date)
 
         # ---------------------------
+        # Load raid offsets (only used for 'raids' key, all-time only)
+        # ---------------------------
+        raid_offsets: Dict[str, int] = {}
+        if order_key == 'raids' and days <= 0:
+            db.cursor.execute("SELECT uuid, raid_offset FROM graid_raid_offsets")
+            raid_offsets = {str(row[0]): row[1] for row in db.cursor.fetchall()}
+
+        # ---------------------------
         # Build leaderboard rows using CURRENT membership
         # ---------------------------
         player_rows: List[Dict[str, Any]] = []
@@ -154,6 +162,10 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 contributed, is_null = get_current_value(uuid, order_key)
                 warn_flag = False
                 is_private = is_null
+
+            # Apply raid offset for all-time raids leaderboard
+            if raid_offsets and uuid in raid_offsets:
+                contributed += raid_offsets[uuid]
 
             player_rows.append({
                 'name': name,
