@@ -208,20 +208,38 @@ class GraidCommands(commands.Cog):
         db = _db()
         try:
             cur = db.cursor
+            # UUID-first aggregation with display names from discord_links
             cur.execute("""
-                SELECT glp.ign, gl.raid_type, COUNT(*) as cnt
+                SELECT COALESCE(dl.ign, glp.ign) AS display_name, glp.uuid, gl.raid_type, COUNT(*) as cnt
                 FROM graid_log_participants glp
                 JOIN graid_logs gl ON glp.log_id = gl.id
-                GROUP BY glp.ign, gl.raid_type
+                LEFT JOIN discord_links dl ON glp.uuid = dl.uuid
+                GROUP BY glp.uuid, COALESCE(dl.ign, glp.ign), gl.raid_type
             """)
 
-            players: dict[str, dict[str, int]] = {}
-            for ign, raid_type, cnt in cur.fetchall():
-                if ign not in players:
-                    players[ign] = {"total": 0, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "Unknown": 0}
+            players: dict[str, dict[str, int]] = {}  # keyed by uuid string
+            display_names: dict[str, str] = {}
+            for display_name, uuid, raid_type, cnt in cur.fetchall():
+                key = str(uuid) if uuid else display_name
+                if key not in players:
+                    players[key] = {"total": 0, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "Unknown": 0}
+                    display_names[key] = display_name
                 s = _short(raid_type)
-                players[ign][s] += cnt
-                players[ign]["total"] += cnt
+                players[key][s] += cnt
+                players[key]["total"] += cnt
+
+            # Apply offsets (all-time)
+            cur.execute("SELECT uuid, raid_offset FROM graid_raid_offsets")
+            for uuid, offset in cur.fetchall():
+                key = str(uuid)
+                if key in players:
+                    players[key]["total"] += offset
+                else:
+                    cur.execute("SELECT ign FROM discord_links WHERE uuid = %s", (uuid,))
+                    row = cur.fetchone()
+                    name = row[0] if row else key
+                    players[key] = {"total": offset, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "Unknown": 0}
+                    display_names[key] = name
 
             if not players:
                 await ctx.followup.send("No guild raid data found.")
@@ -235,10 +253,11 @@ class GraidCommands(commands.Cog):
 
             top = sorted_players[:20]
             lines = []
-            for i, (ign, data) in enumerate(top, 1):
+            for i, (key, data) in enumerate(top, 1):
+                name = display_names.get(key, key)
                 type_parts = [f"{t}:{data[t]}" for t in ["NOTG", "TCC", "TNA", "NOL"] if data[t] > 0]
                 type_str = f" ({', '.join(type_parts)})" if type_parts else ""
-                lines.append(f"`{i:>2}.` **{ign}** — {data['total']}{type_str}")
+                lines.append(f"`{i:>2}.` **{name}** — {data['total']}{type_str}")
 
             embed = discord.Embed(
                 title="Guild Raid Leaderboard",
@@ -262,13 +281,28 @@ class GraidCommands(commands.Cog):
         db = _db()
         try:
             cur = db.cursor
-            cur.execute("""
-                SELECT gl.id, gl.raid_type, gl.completed_at
-                FROM graid_log_participants glp
-                JOIN graid_logs gl ON glp.log_id = gl.id
-                WHERE LOWER(glp.ign) = LOWER(%s)
-                ORDER BY gl.completed_at DESC
-            """, (ign,))
+
+            # Resolve IGN → UUID
+            cur.execute("SELECT uuid FROM discord_links WHERE LOWER(ign) = LOWER(%s) AND uuid IS NOT NULL", (ign,))
+            uuid_row = cur.fetchone()
+            player_uuid = uuid_row[0] if uuid_row else None
+
+            if player_uuid:
+                cur.execute("""
+                    SELECT gl.id, gl.raid_type, gl.completed_at
+                    FROM graid_log_participants glp
+                    JOIN graid_logs gl ON glp.log_id = gl.id
+                    WHERE glp.uuid = %s
+                    ORDER BY gl.completed_at DESC
+                """, (player_uuid,))
+            else:
+                cur.execute("""
+                    SELECT gl.id, gl.raid_type, gl.completed_at
+                    FROM graid_log_participants glp
+                    JOIN graid_logs gl ON glp.log_id = gl.id
+                    WHERE LOWER(glp.ign) = LOWER(%s)
+                    ORDER BY gl.completed_at DESC
+                """, (ign,))
 
             rows = cur.fetchall()
             if not rows:
@@ -276,6 +310,14 @@ class GraidCommands(commands.Cog):
                 return
 
             total = len(rows)
+
+            # Add offset
+            if player_uuid:
+                cur.execute("SELECT raid_offset FROM graid_raid_offsets WHERE uuid = %s", (player_uuid,))
+                off_row = cur.fetchone()
+                if off_row:
+                    total += off_row[0]
+
             type_counts = Counter()
             day_counts = Counter()
             raid_ids = []
@@ -287,16 +329,21 @@ class GraidCommands(commands.Cog):
 
             best_day, best_day_count = day_counts.most_common(1)[0]
 
+            # Teammates with display names from discord_links
             unique_ids = list(set(raid_ids))[:500]
             teammates = Counter()
             if unique_ids:
                 placeholders = ",".join(["%s"] * len(unique_ids))
+                exclude = player_uuid or '00000000-0000-0000-0000-000000000000'
                 cur.execute(
-                    f"SELECT ign FROM graid_log_participants WHERE log_id IN ({placeholders}) AND LOWER(ign) != LOWER(%s)",
-                    unique_ids + [ign]
+                    f"""SELECT COALESCE(dl.ign, glp.ign) AS display_name
+                        FROM graid_log_participants glp
+                        LEFT JOIN discord_links dl ON glp.uuid = dl.uuid
+                        WHERE glp.log_id IN ({placeholders}) AND glp.uuid != %s""",
+                    unique_ids + [exclude]
                 )
-                for (tm_ign,) in cur.fetchall():
-                    teammates[tm_ign] += 1
+                for (tm_name,) in cur.fetchall():
+                    teammates[tm_name] += 1
 
             type_lines = [f"**{t}**: {c}" for t, c in type_counts.most_common()]
             embed = discord.Embed(
@@ -334,8 +381,15 @@ class GraidCommands(commands.Cog):
             params = []
 
             if ign:
-                conditions.append("gl.id IN (SELECT log_id FROM graid_log_participants WHERE LOWER(ign) = LOWER(%s))")
-                params.append(ign)
+                # Resolve IGN → UUID for accurate filtering across name changes
+                cur.execute("SELECT uuid FROM discord_links WHERE LOWER(ign) = LOWER(%s) AND uuid IS NOT NULL", (ign,))
+                uuid_row = cur.fetchone()
+                if uuid_row:
+                    conditions.append("gl.id IN (SELECT log_id FROM graid_log_participants WHERE uuid = %s)")
+                    params.append(uuid_row[0])
+                else:
+                    conditions.append("gl.id IN (SELECT log_id FROM graid_log_participants WHERE LOWER(ign) = LOWER(%s))")
+                    params.append(ign)
             if raid_type:
                 full_name = RAID_SHORT_TO_FULL.get(raid_type.upper())
                 if full_name:
@@ -358,15 +412,20 @@ class GraidCommands(commands.Cog):
                 await ctx.followup.send("No guild raid logs found with those filters.", ephemeral=True)
                 return
 
+            # Display names from discord_links
             log_ids = [r[0] for r in rows]
             placeholders = ",".join(["%s"] * len(log_ids))
             cur.execute(
-                f"SELECT log_id, ign FROM graid_log_participants WHERE log_id IN ({placeholders}) ORDER BY ign",
+                f"""SELECT glp.log_id, COALESCE(dl.ign, glp.ign) AS display_name
+                    FROM graid_log_participants glp
+                    LEFT JOIN discord_links dl ON glp.uuid = dl.uuid
+                    WHERE glp.log_id IN ({placeholders})
+                    ORDER BY display_name""",
                 log_ids
             )
             parts_map: dict[int, list[str]] = {}
-            for lid, pign in cur.fetchall():
-                parts_map.setdefault(lid, []).append(pign)
+            for lid, pname in cur.fetchall():
+                parts_map.setdefault(lid, []).append(pname)
 
             lines = []
             for rid, rtype, completed in rows:
@@ -393,22 +452,40 @@ class GraidCommands(commands.Cog):
         db = _db()
         try:
             cur = db.cursor
+
+            # Total raids + offset
             cur.execute("SELECT COUNT(*) FROM graid_logs")
             total_raids = cur.fetchone()[0]
+            cur.execute("SELECT COALESCE(SUM(raid_offset), 0) FROM graid_raid_offsets")
+            total_raids += cur.fetchone()[0]
 
-            cur.execute("SELECT COUNT(DISTINCT ign) FROM graid_log_participants")
+            cur.execute("SELECT COUNT(DISTINCT uuid) FROM graid_log_participants")
             unique_players = cur.fetchone()[0]
 
             cur.execute("SELECT raid_type, COUNT(*) FROM graid_logs GROUP BY raid_type ORDER BY COUNT(*) DESC")
             type_lines = [f"**{_short(rt)}**: {cnt}" for rt, cnt in cur.fetchall()]
 
+            # Top players UUID-first with offsets
             cur.execute("""
-                SELECT glp.ign, COUNT(*) as cnt
+                SELECT COALESCE(dl.ign, glp.ign) AS display_name, glp.uuid, COUNT(*) as cnt
                 FROM graid_log_participants glp
-                JOIN graid_logs gl ON glp.log_id = gl.id
-                GROUP BY glp.ign ORDER BY cnt DESC LIMIT 5
+                LEFT JOIN discord_links dl ON glp.uuid = dl.uuid
+                GROUP BY glp.uuid, COALESCE(dl.ign, glp.ign)
+                ORDER BY cnt DESC LIMIT 10
             """)
-            top_lines = [f"`{i+1}.` **{ign}** — {cnt}" for i, (ign, cnt) in enumerate(cur.fetchall())]
+            top_raw = [(name, uuid, cnt) for name, uuid, cnt in cur.fetchall()]
+
+            # Add offsets to top players
+            cur.execute("SELECT uuid, raid_offset FROM graid_raid_offsets")
+            offsets = {str(u): o for u, o in cur.fetchall()}
+
+            top_with_offsets = []
+            for name, uuid, cnt in top_raw:
+                total = cnt + offsets.get(str(uuid), 0)
+                top_with_offsets.append((name, total))
+            top_with_offsets.sort(key=lambda x: -x[1])
+
+            top_lines = [f"`{i+1}.` **{name}** — {total}" for i, (name, total) in enumerate(top_with_offsets[:5])]
 
             embed = discord.Embed(title="Guild Raid Overview", color=0x3474EB)
             embed.add_field(name="Summary", value=f"**{total_raids}** raids by **{unique_players}** players", inline=False)

@@ -159,6 +159,12 @@ CREATE TABLE IF NOT EXISTS graid_event_raid_rewards (
   PRIMARY KEY (event_id, raid_type)
 );
 
+-- Per-UUID raid offsets for raids missed during bot downtime
+CREATE TABLE IF NOT EXISTS graid_raid_offsets (
+  uuid         UUID PRIMARY KEY,
+  raid_offset  INT NOT NULL DEFAULT 0
+);
+
 -- =============================================================================
 -- Activity Tracking
 -- =============================================================================
