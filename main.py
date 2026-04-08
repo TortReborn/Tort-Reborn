@@ -201,6 +201,7 @@ extensions = [
     'Commands.aspects',
     'Commands.map',
     'Commands.graidevent',
+    'Commands.graidlog',
     'Commands.treasury',
     'Commands.recruitment',
     'Commands.top_wars',

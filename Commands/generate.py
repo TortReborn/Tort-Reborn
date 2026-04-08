@@ -18,8 +18,11 @@ from Helpers.database import DB
 from Helpers.logger import log, ERROR
 from Helpers.variables import (
     HOME_GUILD_IDS,
+    TAQ_GUILD_ID,
     WEBSITE_URL,
     RAID_COLLECTING_CHANNEL_ID,
+    WAR_INFO_CHANNEL_ID,
+    SHELL_EXCHANGE_CHANNEL_ID,
     SHELL_EMOJI,
     ASPECT_EMOJI,
 )
@@ -596,6 +599,68 @@ class Generate(commands.Cog):
 
         await ctx.channel.send(embed=embed, view=view)
         await ctx.followup.send("Posted the shell conversion panel.", ephemeral=True)
+
+    @generate.command(name="promotions", description="ADMIN: Post the promotions / rank-up info message")
+    async def promotions(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        description = (
+            "Promotions rely on your role in the guild and how you help it! We value all sorts of "
+            "contributions, trying our best to give everyone a chance to rank up regardless of "
+            "their interests and skills.\n"
+            "\n"
+            "🕗\u200e \u200e \u200e **Passive contributions**\n"
+            "> • Being active in guild chat and/or on Discord\n"
+            "> • Joining voice calls\n"
+            "> • Playing with other guild members\n"
+            "> • Helping out a fellow guild member\n"
+            "> • Giving recommendations, advice and feedback.\n"
+            "\n"
+            "We are thankful for any positive effort that contributes to making TAq a friendly "
+            "and welcoming community! ♡\n"
+            "\n"
+            f"🔧\u200e \u200e \u200e **Active contributions**\n"
+            f"> • Joining the [war](https://discord.com/channels/{TAQ_GUILD_ID}/{WAR_INFO_CHANNEL_ID}) effort\n"
+            f"> • Completing [Guild Raids](https://discord.com/channels/{TAQ_GUILD_ID}/{RAID_COLLECTING_CHANNEL_ID})\n"
+            "> • Starting up giveaways (DM any chief)\n"
+            "> • Recruiting new guild members\n"
+            f"> • Donating [ingredients or materials](https://discord.com/channels/{TAQ_GUILD_ID}/{SHELL_EXCHANGE_CHANNEL_ID})\n"
+            "\n"
+            "The first rank-ups are easy to achieve. To get promoted to Manatee (recruiter), "
+            "something as easy as regularly chatting with the guild is enough!\n"
+            f"After reaching Angler, an [application]({WEBSITE_URL}/login?redirect=/apply/hammerhead) "
+            "is required in order to rank up and become a part of our HR team."
+        )
+
+        warring_description = (
+            "⚔️ **Ranking up through warring**\n"
+            "Jumping into guild wars is like hitting the fast lane to rank up in no time! It's an "
+            "absolute blast and a great way to dive into exciting end-game content. You get to "
+            "team up with fellow guild members, form strategies, and kick some towers!\n"
+            "\n"
+            "> Being active in wars is super important for our guild because it keeps us strong "
+            "and competitive. Plus, it's not just about the thrill – having war power means we "
+            "get to hold territories and generate sweet emeralds, which we can then spend on "
+            "guild events and community giveaways. So, if you're up for some action-packed fun "
+            "and want to help our guild thrive, join the war efforts today!\n"
+            "\n"
+            "The amount of wars you participate in will always be taken into account for "
+            "promotion waves. Bonus points if you help with starting rounds of FFA, teaching "
+            "other members, pinging when we get attacked, etc!\n"
+            "\n"
+            "⏩ Rank up shortcuts\n"
+            "```\n"
+            "- Starfish/Manatee → Piranha = learn how to queue\n"
+            "- Piranha → Barracuda = learning about defending our claim\n"
+            "- Barracuda → Angler = learn how to eco\n"
+            "```\n"
+            "We are always looking for new warrers, so do not hesitate to ask for information!"
+        )
+
+        embed1 = discord.Embed(description=description, color=0xA198E1)
+        embed2 = discord.Embed(description=warring_description, color=0xA198E1)
+        await ctx.channel.send(embeds=[embed1, embed2])
+        await ctx.followup.send("Posted the promotions info message.", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
