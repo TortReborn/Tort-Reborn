@@ -401,21 +401,22 @@ class CheckWebsiteApps(commands.Cog):
             except Exception as e:
                 log(ERROR, f"Stats image error for {ign}: {e}", context="check_website_apps")
 
-        # Send poll message with ping and vote buttons
-        vote_view = ApplicationVoteView()
+        # Send ping (+ image if available) as its own message so edits to the
+        # poll embed can never lose the attachment.
+        ping_kwargs = {"content": f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**"}
         if player_info_file:
-            poll_msg = await exec_chan.send(
-                f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
-                embed=poll_embed,
-                file=player_info_file,
-                view=vote_view,
-            )
-        else:
-            poll_msg = await exec_chan.send(
-                f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
-                embed=poll_embed,
-                view=vote_view,
-            )
+            ping_kwargs["file"] = player_info_file
+        await exec_chan.send(**ping_kwargs)
+
+        # Remove image reference from embed since the image lives in its own message now
+        poll_embed.set_image(url=None)
+
+        # Send the poll embed + vote buttons as a separate message
+        vote_view = ApplicationVoteView()
+        poll_msg = await exec_chan.send(
+            embed=poll_embed,
+            view=vote_view,
+        )
 
         # Create discussion thread
         thread = await poll_msg.create_thread(
