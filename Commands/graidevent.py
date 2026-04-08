@@ -88,7 +88,7 @@ class GraidEvent(commands.Cog):
 
     graid_event = SlashCommandGroup("graid-event", "HR: GRAID event commands", guild_ids=HOME_GUILD_IDS, default_member_permissions=discord.Permissions(manage_roles=True))
 
-    @graid_event.command(name="start", description="Start a new GRAID event")
+    @graid_event.command(name="start", description="ADMIN: Start a new GRAID event")
     async def graid_start(
         self, ctx: discord.ApplicationContext,
         title: str,
@@ -135,7 +135,7 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @graid_event.command(name="stop", description="Stop the current GRAID event")
+    @graid_event.command(name="stop", description="ADMIN: Stop the current GRAID event")
     async def graid_stop(self, ctx: discord.ApplicationContext):
         db = _db()
         try:
@@ -165,7 +165,7 @@ class GraidEvent(commands.Cog):
         finally:
             db.close()
 
-    @graid_event.command(name="info", description="Show the active GRAID event")
+    @graid_event.command(name="info", description="HR: Show the active GRAID event")
     async def graid_info(self, ctx: discord.ApplicationContext):
         db = _db()
         try:
@@ -202,7 +202,7 @@ class GraidEvent(commands.Cog):
             _EVENT_CACHE["items"], _EVENT_CACHE["ts"] = titles, now
         return titles  # list[str] (max 25 shown by Discord)
 
-    @graid_event.command(name="set", description="Activate an existing GRAID (by title)")
+    @graid_event.command(name="set", description="ADMIN: Activate an existing GRAID (by title)")
     async def graid_set(
         self,
         ctx: discord.ApplicationContext,
