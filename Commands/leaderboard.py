@@ -117,12 +117,31 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             return get_player_activity_baseline_with_db(db, uuid, key, window_days, joined_date=joined_date)
 
         # ---------------------------
-        # Load raid offsets (only used for 'raids' key, all-time only)
+        # For all-time raids, use graid_logs as source of truth (consistent with /graid leaderboard)
+        # ---------------------------
+        graid_totals: Dict[str, int] = {}
+        if order_key == 'raids' and days <= 0:
+            # Count raids from graid_log_participants (same source as /graid leaderboard)
+            db.cursor.execute("""
+                SELECT glp.uuid, COUNT(*) as cnt
+                FROM graid_log_participants glp
+                JOIN graid_logs gl ON glp.log_id = gl.id
+                GROUP BY glp.uuid
+            """)
+            graid_totals = {str(row[0]): row[1] for row in db.cursor.fetchall()}
+
+            # Apply offsets
+            db.cursor.execute("SELECT uuid, raid_offset FROM graid_raid_offsets")
+            for uuid_val, offset in db.cursor.fetchall():
+                key = str(uuid_val)
+                graid_totals[key] = graid_totals.get(key, 0) + offset
+
+        # ---------------------------
+        # Load raid offsets for time-windowed raids (non-all-time)
         # ---------------------------
         raid_offsets: Dict[str, int] = {}
-        if order_key == 'raids' and days <= 0:
-            db.cursor.execute("SELECT uuid, raid_offset FROM graid_raid_offsets")
-            raid_offsets = {str(row[0]): row[1] for row in db.cursor.fetchall()}
+        if order_key == 'raids' and days > 0:
+            pass  # Time-windowed raids use API snapshot deltas, no offsets needed
 
         # ---------------------------
         # Build leaderboard rows using CURRENT membership
@@ -144,7 +163,12 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
 
             is_private = False  # Track if the relevant metric is private/null
 
-            if order_key in CUMULATIVE_KEYS:
+            # All-time raids: use graid_logs data (consistent with /graid leaderboard)
+            if order_key == 'raids' and days <= 0:
+                contributed = graid_totals.get(uuid, 0)
+                warn_flag = False
+                is_private = False
+            elif order_key in CUMULATIVE_KEYS:
                 curr_val, is_null = get_current_value(uuid, order_key)
                 base_val, warn_flag = find_baseline_value_from_db(uuid, order_key, days, joined_date=member_joined_date)
                 contributed = curr_val - base_val
@@ -162,10 +186,6 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 contributed, is_null = get_current_value(uuid, order_key)
                 warn_flag = False
                 is_private = is_null
-
-            # Apply raid offset for all-time raids leaderboard
-            if raid_offsets and uuid in raid_offsets:
-                contributed += raid_offsets[uuid]
 
             player_rows.append({
                 'name': name,
