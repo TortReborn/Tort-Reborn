@@ -16,9 +16,18 @@
     "Aspect of Mystic Transfer",
     "Aspect of Runic Extravagance",
     "Aspect of Shining Status",
+    "Aspect of Futures Rewritten",
+    "Aspect of the Forbidden Ritual",
+    "Aspect of the Indescribable",
+    "Aspect of the Inescapable Void",
+    "Aspect of Limitless Knowledge",
+    "Aspect of Indoctrination",
+    "Aspect of the Vast Emptiness",
     "Riftwalker's Embodiment of Chronal Control",
+    "Riftwalker's Embodiment of Reality Alteration",
     "Light Bender's Embodiment of Celestial Brilliance",
-    "Arcanist's Embodiment of Total Obliteration"
+    "Arcanist's Embodiment of Total Obliteration",
+    "Mage's Embodiment of Morbid Curiosity"
   ],
   "archer": [
     "Aspect of Battlement Fortification",
@@ -31,6 +40,7 @@
     "Aspect of the Iron String",
     "Aspect of the North Wind",
     "Aspect of a Thunderbolt",
+    "Aspect of the Thunderbolt",
     "Aspect of the Beastmaster",
     "Aspect of Chaotic Demolition",
     "Aspect of Extreme Current",
@@ -40,10 +50,13 @@
     "Aspect of the Poltergeist",
     "Aspect of the Steadying Hand",
     "Aspect of Undercrank",
-    "Aspect of the Beastmaster",
+    "Aspect of the Battle-Fletcher",
+    "Aspect of the Barley-Woven",
+    "Aspect of Olfactorial Enhancement",
     "Boltslinger's Embodiment of Rended Skies",
     "Trapper's Embodiment of Persistence Predation",
-    "Sharpshooter's Embodiment of Laser Precision"
+    "Sharpshooter's Embodiment of Laser Precision",
+    "Archer's Embodiment of Perceptive Finesse"
   ],
   "warrior": [
     "Aspect of the Anvil Drop",
@@ -66,9 +79,14 @@
     "Aspect of Seeing Stars",
     "Aspect of the Tightrope Walk",
     "Aspect of Unquenching Flames",
+    "Aspect of the Enforcer",
+    "Aspect of the Humming Choir",
+    "Aspect of the Crimson Scrivener",
+    "Aspect of the Golden Dawn",
     "Fallen's Embodiment of Blind Fury",
     "Battle Monk's Embodiment of Complete Synchrony",
-    "Paladin's Embodiment of Undying Determination"
+    "Paladin's Embodiment of Undying Determination",
+    "Warrior's Embodiment of Everlasting Perseverance"
   ],
   "assassin": [
     "Aspect of Athleticism",
@@ -95,7 +113,8 @@
     "Aspect of Visual Distortion",
     "Shadestepper's Embodiment of Unseen Execution",
     "Trickster's Embodiment of Malevolent Mischief",
-    "Acrobat's Embodiment of Gravity Defiance"
+    "Acrobat's Embodiment of Gravity Defiance",
+    "Assassin's Embodiment of Otherworldly Detachment"
   ],
   "shaman": [
     "Aspect of Acceleration",
@@ -116,8 +135,12 @@
     "Aspect of Exsanguination",
     "Aspect of Seismic Sense",
     "Aspect of Stances",
+    "Aspect of the Artisan",
+    "Aspect of the Blurred Line",
+    "Aspect of the Bodyguard",
     "Summoner's Embodiment of the Omnipotent Overseer",
     "Ritualist's Embodiment of the Ancestral Avatar",
-    "Acolyte's Embodiment of Unwavering Adherence"
+    "Acolyte's Embodiment of Unwavering Adherence",
+    "Shaman's Embodiment of Serene Harmony"
   ]
 }
