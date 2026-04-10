@@ -103,7 +103,7 @@ class LootPool(commands.Cog):
             return
 
         loot = data.get("Loot", {})
-        raids = ["TNA", "TCC", "NOL", "NOTG"]
+        raids = ["TNA", "TCC", "NOL", "NOTG", "TWP"]
 
         # Load mapping JSON and invert to {aspect_name: class}
         try:
@@ -349,16 +349,32 @@ class LootPool(commands.Cog):
             count += 1
 
         title_font = ImageFont.truetype('images/profile/game.ttf', 40)
-        draw.text(xy=(w / 2, 16), text="Silent Expanse Expedition", font=title_font, fill=(85, 227, 64, 255), stroke_width=3,
-                  stroke_fill=(33, 33, 33, 255), align="center", anchor="mt")
-        draw.text(xy=(w / 2, 271), text="The Corkus Traversal", font=title_font, fill=(237, 202, 59, 255), stroke_width=3,
-                  stroke_fill=(107, 77, 22, 255), align="center", anchor="mt")
-        draw.text(xy=(w / 2, 526), text="Sky Islands Exploration", font=title_font, fill=(88, 214, 252, 255), stroke_width=3,
-                  stroke_fill=(31, 55, 108, 255), align="center", anchor="mt")
-        draw.text(xy=(w / 2, 781), text="Molten Heights Hike", font=title_font, fill=(189, 30, 30, 255), stroke_width=3,
-                  stroke_fill=(99, 11, 11, 255), align="center", anchor="mt")
-        draw.text(xy=(w / 2, 1036), text="Canyon of the Lost Excursion (South)", font=title_font, fill=(52, 64, 235, 255), stroke_width=3,
-                  stroke_fill=(21, 27, 115, 255), align="center", anchor="mt")
+        # (display name, fill RGBA, stroke RGBA) keyed by API region code.
+        # Iterated in API order so titles always line up with their item rows.
+        region_meta = {
+            "SE":        ("Silent Expanse Expedition",            (85, 227, 64, 255),  (33, 33, 33, 255)),
+            "Corkus":    ("The Corkus Traversal",                 (237, 202, 59, 255), (107, 77, 22, 255)),
+            "Sky":       ("Sky Islands Exploration",              (88, 214, 252, 255), (31, 55, 108, 255)),
+            "Molten":    ("Molten Heights Hike",                  (189, 30, 30, 255),  (99, 11, 11, 255)),
+            "Canyon":    ("Canyon of the Lost Excursion (South)", (52, 64, 235, 255),  (21, 27, 115, 255)),
+            "FrumaEast": ("Fruma East",                           (220, 130, 220, 255),(80, 30, 80, 255)),
+            "FrumaWest": ("Fruma West",                           (130, 220, 220, 255),(30, 80, 80, 255)),
+        }
+        for idx, region_key in enumerate(loot.keys()):
+            title, fill, stroke = region_meta.get(
+                region_key,
+                (region_key, (255, 255, 255, 255), (33, 33, 33, 255))
+            )
+            draw.text(
+                xy=(w / 2, 16 + 255 * idx),
+                text=title,
+                font=title_font,
+                fill=fill,
+                stroke_width=3,
+                stroke_fill=stroke,
+                align="center",
+                anchor="mt",
+            )
 
         with BytesIO() as file:
             lr_lp.save(file, format="PNG")

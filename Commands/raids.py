@@ -49,6 +49,8 @@ class Raids(commands.Cog):
         ("NOL",  "Orphion's Nexus of Light", "orphionSrPlayers"),
         ("TCC",  "The Canyon Colossus", "colossusSrPlayers"),
         ("TNA",  "The Nameless Anomaly", "namelessSrPlayers"),
+        # TODO: confirm rank key against api.wynncraft.com/v3/player/<name> — falls back to 0/N/A until then
+        ("TWP",  "The Wartorn Palace", "wartornSrPlayers"),
     ]
 
     def __init__(self, client: commands.Bot):
