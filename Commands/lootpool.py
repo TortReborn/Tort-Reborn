@@ -17,6 +17,49 @@ import os
 import json
 
 
+# Ward items are raid drops that don't have a real item icon — they're just
+# colored "wards" / tokens. We render them as generated colored swatches
+# instead of using a misleading chestplate icon.
+WARD_COLORS = {
+    "Pink Ward":   (255, 105, 180, 255),
+    "Orange Ward": (255, 140,   0, 255),
+    "Green Ward":  ( 34, 197,  94, 255),
+    "Red Ward":    (220,  38,  38, 255),
+    "Blue Ward":   ( 59, 130, 246, 255),
+    "Purple Ward": (168,  85, 247, 255),
+    "Yellow Ward": (250, 204,  21, 255),
+}
+
+
+def make_ward_icon(item_name: str, size: int = 100):
+    """Return a PIL RGBA image of a colored ward swatch, or None if not a ward."""
+    color = WARD_COLORS.get(item_name)
+    if not color:
+        return None
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    radius = max(4, size // 7)
+    inset = max(2, size // 25)
+    # Main colored fill with dark border
+    d.rounded_rectangle(
+        (inset, inset, size - inset - 1, size - inset - 1),
+        radius=radius,
+        fill=color,
+        outline=(0, 0, 0, 255),
+        width=max(1, size // 33),
+    )
+    # Subtle inner highlight ring for depth
+    if size >= 32:
+        inner_inset = inset + max(3, size // 14)
+        d.rounded_rectangle(
+            (inner_inset, inner_inset, size - inner_inset - 1, size - inner_inset - 1),
+            radius=max(2, radius - 4),
+            outline=(255, 255, 255, 90),
+            width=max(1, size // 50),
+        )
+    return img
+
+
 class LootPool(commands.Cog):
     lootpool = SlashCommandGroup(
         name="lootpool",
@@ -184,20 +227,30 @@ class LootPool(commands.Cog):
                     else:
                         text = aspect
 
-                    # Class icon if available
-                    cls = aspect_to_class.get(aspect)
+                    # Wards get a colored swatch in place of the class icon, and the
+                    # text is recolored to match the ward color so it's instantly
+                    # identifiable.
+                    ward_icon = make_ward_icon(aspect, class_icon_size)
+                    text_color = color
                     offset = 0
-                    if cls:
-                        icon_path = f"images/raids/aspect_{cls}.png"
-                        if os.path.isfile(icon_path):
-                            ci = Image.open(icon_path).convert("RGBA")
-                            ci.thumbnail((class_icon_size, class_icon_size))
-                            img.paste(ci, (x0+10, ty), ci)
-                            offset = class_icon_size + 5
+                    if ward_icon is not None:
+                        img.paste(ward_icon, (x0+10, ty), ward_icon)
+                        offset = class_icon_size + 5
+                        text_color = WARD_COLORS[aspect]
+                    else:
+                        # Class icon if available
+                        cls = aspect_to_class.get(aspect)
+                        if cls:
+                            icon_path = f"images/raids/aspect_{cls}.png"
+                            if os.path.isfile(icon_path):
+                                ci = Image.open(icon_path).convert("RGBA")
+                                ci.thumbnail((class_icon_size, class_icon_size))
+                                img.paste(ci, (x0+10, ty), ci)
+                                offset = class_icon_size + 5
 
                     # Wrap and draw
                     wrapped = wrap_text(text, title_font, col_w - 20 - offset, draw)
-                    draw.multiline_text((x0+10+offset, ty), wrapped, font=title_font, fill=color)
+                    draw.multiline_text((x0+10+offset, ty), wrapped, font=title_font, fill=text_color)
                     _, h = get_multiline_text_size(wrapped, title_font)
                     ty += h + line_spacing
 
@@ -294,16 +347,21 @@ class LootPool(commands.Cog):
             shiny_item = region_data['Shiny']['Item']
             items = [shiny_item] + region_data['Mythic']
             for i, item in enumerate(items):
-                item_img_file = mythics.get(item)
-                if item_img_file is None:
-                    # Unknown item (e.g. a freshly added mythic not yet mapped) — fall
-                    # back to a generic chestplate icon and log so we can patch the dict
-                    # without crashing the whole image render.
-                    log(ERROR, f"Unmapped lootpool item: {item!r} (region={region_name})", context="lootpool")
-                    item_img_file = "diamond_chestplate.png"
                 try:
-                    item_img = Image.open(os.path.join('images/mythics/', item_img_file))
-                    item_img.thumbnail((100, 100))
+                    # Wards have no real item icon — generate a colored swatch instead.
+                    ward_icon = make_ward_icon(item, 100)
+                    if ward_icon is not None:
+                        item_img = ward_icon
+                    else:
+                        item_img_file = mythics.get(item)
+                        if item_img_file is None:
+                            # Unknown item (e.g. a freshly added mythic not yet mapped) — fall
+                            # back to a generic chestplate icon and log so we can patch the dict
+                            # without crashing the whole image render.
+                            log(ERROR, f"Unmapped lootpool item: {item!r} (region={region_name})", context="lootpool")
+                            item_img_file = "diamond_chestplate.png"
+                        item_img = Image.open(os.path.join('images/mythics/', item_img_file))
+                        item_img.thumbnail((100, 100))
                     x = int(x1 + 28 + i * 156)
                     y = int(y1 + 25)
                     lr_lp.paste(item_img, (x, y), item_img)
