@@ -276,7 +276,8 @@ class UpdateMemberData(commands.Cog):
         "Nest of the Grootslangs",
         "The Canyon Colossus",
         "The Nameless Anomaly",
-        "Orphion's Nexus of Light"
+        "Orphion's Nexus of Light",
+        "The Wartorn Palace"
     ]
 
     def __init__(self, client):

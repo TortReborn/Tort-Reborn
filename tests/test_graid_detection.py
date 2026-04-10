@@ -31,6 +31,7 @@ RAID_NAMES = [
     "The Canyon Colossus",
     "The Nameless Anomaly",
     "Orphion's Nexus of Light",
+    "The Wartorn Palace",
 ]
 
 T0 = datetime.datetime(2025, 6, 1, 12, 0, 0, tzinfo=timezone.utc)

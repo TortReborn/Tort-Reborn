@@ -278,14 +278,16 @@ class Raids(commands.Cog):
             pass
 
     def _draw_raid_boxes(self, card: Image.Image, draw: ImageDraw.ImageDraw, stats: List[Tuple[str, int, int]]) -> None:
-        """Draw the 4 raid stat boxes in a 2x2 grid with padding, full-height icon column, and colored outlines by rank."""
-        title_font = ImageFont.truetype('images/profile/5x5.ttf', 54)
-        data_font = ImageFont.truetype('images/profile/game.ttf', 68)
+        """Draw raid stat boxes in a 3x2 grid (5 raids fit, last cell empty), full-height icon column, colored outlines by rank."""
+        title_font = ImageFont.truetype('images/profile/5x5.ttf', 44)
+        data_font = ImageFont.truetype('images/profile/game.ttf', 56)
 
         # Dimensions
-        box_w, box_h = 390, 200
+        num_cols = 3
+        box_w, box_h = 260, 200
+        col_gap = 15
         row_pad = 12  # vertical gap between rows
-        left_col_w = 200  # width reserved for the icon column
+        left_col_w = 130  # width reserved for the icon column
         corner_radius = 20
 
         # Outline colors (hex)
@@ -302,13 +304,16 @@ class Raids(commands.Cog):
                 icon_img = Image.new('RGBA', (60, 60), (0, 0, 0, 0))
             icons[abbr] = icon_img
 
-        start_x, start_y = 50, 730
-        x_gap = 410
+        # Center the grid horizontally on the 900px-wide card
+        grid_w = num_cols * box_w + (num_cols - 1) * col_gap
+        start_x = (900 - grid_w) // 2
+        start_y = 730
+        x_gap = box_w + col_gap
         y_gap = box_h + row_pad
 
         for i, (abbr, rank_val, count) in enumerate(stats):
-            x = start_x + (i % 2) * x_gap
-            y = start_y + (i // 2) * y_gap
+            x = start_x + (i % num_cols) * x_gap
+            y = start_y + (i // num_cols) * y_gap
 
             # Determine outline color
             outline_color = None
