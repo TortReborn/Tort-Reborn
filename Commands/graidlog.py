@@ -15,6 +15,7 @@ RAID_NAMES = [
     "The Canyon Colossus",
     "The Nameless Anomaly",
     "Orphion's Nexus of Light",
+    "The Wartorn Palace",
 ]
 
 RAID_SHORT = {
@@ -22,6 +23,7 @@ RAID_SHORT = {
     "The Canyon Colossus": "TCC",
     "The Nameless Anomaly": "TNA",
     "Orphion's Nexus of Light": "NOL",
+    "The Wartorn Palace": "TWP",
 }
 
 RAID_SHORT_TO_FULL = {v: k for k, v in RAID_SHORT.items()}
@@ -31,6 +33,7 @@ RAID_EMOJIS = {
     "The Canyon Colossus": "<:tcc:1316539938917060658>",
     "The Nameless Anomaly": "<:tna:1316539936438222850>",
     "Orphion's Nexus of Light": "<:nol:1316539940418621530>",
+    "The Wartorn Palace": "",
 }
 
 
@@ -62,7 +65,7 @@ async def _ign_autocomplete(ctx: AutocompleteContext):
 
 
 async def _raid_type_autocomplete(ctx: AutocompleteContext):
-    return ["NOTG", "TCC", "TNA", "NOL", "Unknown"]
+    return ["NOTG", "TCC", "TNA", "NOL", "TWP", "Unknown"]
 
 
 async def _member_autocomplete(ctx: AutocompleteContext):
@@ -97,7 +100,7 @@ class GraidCommands(commands.Cog):
     async def log_raid(
         self,
         ctx: discord.ApplicationContext,
-        raid_type: Option(str, "Raid type", choices=["NOTG", "TCC", "TNA", "NOL"], required=True),
+        raid_type: Option(str, "Raid type", choices=["NOTG", "TCC", "TNA", "NOL", "TWP"], required=True),
         player1: Option(str, "First participant", autocomplete=_member_autocomplete, required=True),
         player2: Option(str, "Second participant", autocomplete=_member_autocomplete, required=True),
         player3: Option(str, "Third participant", autocomplete=_member_autocomplete, required=True),
@@ -222,7 +225,7 @@ class GraidCommands(commands.Cog):
             for display_name, uuid, raid_type, cnt in cur.fetchall():
                 key = str(uuid) if uuid else display_name
                 if key not in players:
-                    players[key] = {"total": 0, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "Unknown": 0}
+                    players[key] = {"total": 0, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "TWP": 0, "Unknown": 0}
                     display_names[key] = display_name
                 s = _short(raid_type)
                 players[key][s] += cnt
@@ -236,7 +239,7 @@ class GraidCommands(commands.Cog):
                     players[key]["total"] += offset
                 else:
                     name = dl_name or key
-                    players[key] = {"total": offset, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "Unknown": 0}
+                    players[key] = {"total": offset, "NOTG": 0, "TCC": 0, "TNA": 0, "NOL": 0, "TWP": 0, "Unknown": 0}
                     display_names[key] = name
 
             if not players:
@@ -244,7 +247,7 @@ class GraidCommands(commands.Cog):
                 return
 
             sort_key = (sort or "").upper()
-            if sort_key in ("NOTG", "TCC", "TNA", "NOL", "UNKNOWN"):
+            if sort_key in ("NOTG", "TCC", "TNA", "NOL", "TWP", "UNKNOWN"):
                 sorted_players = sorted(players.items(), key=lambda x: (-x[1].get(sort_key, 0), -x[1]["total"]))
             else:
                 sorted_players = sorted(players.items(), key=lambda x: -x[1]["total"])
@@ -253,7 +256,7 @@ class GraidCommands(commands.Cog):
             lines = []
             for i, (key, data) in enumerate(top, 1):
                 name = display_names.get(key, key)
-                type_parts = [f"{t}:{data[t]}" for t in ["NOTG", "TCC", "TNA", "NOL"] if data[t] > 0]
+                type_parts = [f"{t}:{data[t]}" for t in ["NOTG", "TCC", "TNA", "NOL", "TWP"] if data[t] > 0]
                 type_str = f" ({', '.join(type_parts)})" if type_parts else ""
                 lines.append(f"`{i:>2}.` **{name}** — {data['total']}{type_str}")
 

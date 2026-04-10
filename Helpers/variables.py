@@ -59,6 +59,7 @@ _ENV_CONFIG = {
         "TCC_EMOJI": "<:tcc:1371906703099953242>",
         "TNA_EMOJI": "<:tna:1371906714949124247>",
         "NOL_EMOJI": "<:nol:1371906726940639272>",
+        "TWP_EMOJI": "",
         # Thread / Misc
         "SHELL_EXCHANGE_CHANNEL_ID": 1369134566723293199,
         "RATES_THREAD_ID": 1462137243194888212,
@@ -120,6 +121,7 @@ _ENV_CONFIG = {
         "TCC_EMOJI": "<:tcc:1316539938917060658>",
         "TNA_EMOJI": "<:tna:1316539936438222850>",
         "NOL_EMOJI": "<:nol:1316539940418621530>",
+        "TWP_EMOJI": "",
         # Thread / Misc
         "SHELL_EXCHANGE_CHANNEL_ID": 1135510651981287424,
         "RATES_THREAD_ID": 1279379192626282579,
@@ -236,6 +238,7 @@ NOTG_EMOJI = _cfg["NOTG_EMOJI"]
 TCC_EMOJI = _cfg["TCC_EMOJI"]
 TNA_EMOJI = _cfg["TNA_EMOJI"]
 NOL_EMOJI = _cfg["NOL_EMOJI"]
+TWP_EMOJI = _cfg["TWP_EMOJI"]
 
 # =============================================================================
 # Category / Channel Names (same across environments)

@@ -10,6 +10,7 @@ from Helpers.variables import RAID_LOG_CHANNEL_ID
 RAID_NAMES_LOWER = {n.lower() for n in [
     "Nest of the Grootslangs", "The Canyon Colossus",
     "The Nameless Anomaly", "Orphion's Nexus of Light",
+    "The Wartorn Palace",
 ]}
 BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 

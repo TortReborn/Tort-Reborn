@@ -29,6 +29,7 @@ RAID_NAMES = [
     "The Canyon Colossus",
     "The Nameless Anomaly",
     "Orphion's Nexus of Light",
+    "The Wartorn Palace",
 ]
 
 # Set of raid names lowercased, used to detect faulty "participant" entries
