@@ -142,6 +142,66 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
         db.close()
 
 
+def _graid_log_manual_sync(participants, raid_type):
+    """
+    Apply a manually-submitted raid log atomically.
+      participants: list of dicts {uuid: str|None, ign: str}
+      raid_type:    full raid name, or None for unknown
+    Mirrors the combined effect of _upsert_raid_group_sync and _graid_increment_group_sync,
+    but tolerates IGN-only participants (no Discord link). Players without a UUID
+    appear in graid_log_participants but are skipped for graid_event_totals and
+    uncollected_raids — same rule as the auto-detection path.
+    Returns the new graid_logs.id.
+    """
+    if not participants:
+        return None
+    db = _db_connect_with_retry()
+    try:
+        cur = db.cursor
+
+        cur.execute("SELECT id FROM graid_events WHERE active = TRUE LIMIT 1")
+        row = cur.fetchone()
+        event_id = row[0] if row else None
+
+        cur.execute(
+            "INSERT INTO graid_logs (event_id, raid_type) VALUES (%s, %s) RETURNING id",
+            (event_id, raid_type)
+        )
+        log_id = cur.fetchone()[0]
+
+        for p in participants:
+            cur.execute(
+                "INSERT INTO graid_log_participants (log_id, uuid, ign) VALUES (%s, %s, %s)",
+                (log_id, p.get('uuid'), p.get('ign'))
+            )
+
+        if event_id is not None:
+            for p in participants:
+                if p.get('uuid'):
+                    cur.execute("""
+                        INSERT INTO graid_event_totals (event_id, uuid, total)
+                        VALUES (%s, %s, 1)
+                        ON CONFLICT (event_id, uuid) DO UPDATE
+                          SET total = graid_event_totals.total + 1,
+                              last_updated = NOW()
+                    """, (event_id, p['uuid']))
+
+        for p in participants:
+            if p.get('uuid'):
+                cur.execute("""
+                    INSERT INTO uncollected_raids AS ur (uuid, ign, uncollected_raids, collected_raids)
+                    VALUES (%s, %s, 1, 0)
+                    ON CONFLICT (uuid) DO UPDATE
+                      SET uncollected_raids = ur.uncollected_raids + 1,
+                          ign               = EXCLUDED.ign
+                """, (p['uuid'], p.get('ign')))
+
+        db.connection.commit()
+        return log_id
+    finally:
+        db.close()
+
+
 def _write_current_snapshot_sync(contrib_map, rank_map, pf_map, online_map, guild_members):
     snap = {'time': int(time.time()), 'members': []}
 
@@ -321,13 +381,9 @@ class UpdateMemberData(commands.Cog):
         except Exception:
             traceback.print_exc()
 
-    async def _announce_raid(self, raid, group, guild, participant_names=None):
-        log(INFO, f"Announcing raid {raid}: {group}", context="update_member_data")
-        if participant_names:
-            names = [participant_names.get(uid, uid) for uid in group]
-        else:
-            participants = self.raid_participants[raid]["validated"]
-            names = [participants[uid]["name"] for uid in group]
+    async def _post_raid_announcement(self, raid, names, guild):
+        """Build and post the raid completion embed (with guild level progress image).
+        Used by both auto-detection (_announce_raid) and the queue processor."""
         bolded = [f"**{discord.utils.escape_markdown(n)}**" for n in names]
         names_str = ", ".join(bolded[:-1]) + ", and " + bolded[-1] if len(bolded) > 1 else bolded[0]
 
@@ -338,31 +394,126 @@ class UpdateMemberData(commands.Cog):
             title = f"{ASPECT_EMOJI} Guild Raid Completed!"
 
         channel = self.client.get_channel(RAID_ANNOUNCE_CHANNEL_ID)
-        if channel:
-            embed = discord.Embed(
-                title=title,
-                description=names_str,
-                color=0x00FF00
-            )
+        if not channel:
+            return
 
-            # Generate image-based progress bar
-            guild_level = getattr(guild, "level", None)
-            guild_xp = getattr(guild, "xpPercent", None)
-            if guild_level is not None and guild_xp is not None:
-                progress_img = self._render_guild_progress(guild_level, guild_xp)
-            else:
-                progress_img = self._render_guild_progress(0, 100)
+        embed = discord.Embed(
+            title=title,
+            description=names_str,
+            color=0x00FF00
+        )
 
-            buf = io.BytesIO()
-            progress_img.save(buf, format='PNG')
-            buf.seek(0)
-            file = discord.File(buf, filename="raid_progress.png")
-            embed.set_image(url="attachment://raid_progress.png")
+        # Generate image-based progress bar
+        guild_level = getattr(guild, "level", None) if guild else None
+        guild_xp = getattr(guild, "xpPercent", None) if guild else None
+        if guild_level is not None and guild_xp is not None:
+            progress_img = self._render_guild_progress(guild_level, guild_xp)
+        else:
+            progress_img = self._render_guild_progress(0, 100)
 
-            await channel.send(embed=embed, file=file)
+        buf = io.BytesIO()
+        progress_img.save(buf, format='PNG')
+        buf.seek(0)
+        file = discord.File(buf, filename="raid_progress.png")
+        embed.set_image(url="attachment://raid_progress.png")
+
+        await channel.send(embed=embed, file=file)
+
+    async def _announce_raid(self, raid, group, guild, participant_names=None):
+        log(INFO, f"Announcing raid {raid}: {group}", context="update_member_data")
+        if participant_names:
+            names = [participant_names.get(uid, uid) for uid in group]
+        else:
+            participants = self.raid_participants[raid]["validated"]
+            names = [participants[uid]["name"] for uid in group]
+
+        await self._post_raid_announcement(raid, names, guild)
 
         await asyncio.to_thread(_upsert_raid_group_sync, list(group))
         await asyncio.to_thread(_graid_increment_group_sync, list(group), raid)
+
+    async def _process_graid_queue(self, guild):
+        """Drain pending manually-logged raids submitted via the website.
+        Each row is run through the same DB + Discord-embed flow as auto-detection
+        so the website doesn't have to duplicate that logic."""
+        def _claim_pending():
+            db = _db_connect_with_retry()
+            try:
+                db.cursor.execute("""
+                    SELECT id, raid_type, mode, participants
+                    FROM graid_log_queue
+                    WHERE status = 'pending'
+                    ORDER BY created_at
+                    LIMIT 50
+                """)
+                return db.cursor.fetchall()
+            finally:
+                db.close()
+
+        try:
+            rows = await asyncio.to_thread(_claim_pending)
+        except Exception as e:
+            log(ERROR, f"queue claim failed: {e}", context="graid_queue")
+            return
+
+        if not rows:
+            return
+
+        log(INFO, f"Processing {len(rows)} queued graid log(s)", context="graid_queue")
+
+        for queue_id, raid_type, mode, participants_data in rows:
+            try:
+                # JSONB columns come back as already-parsed objects from psycopg,
+                # but tolerate the string case just in case.
+                if isinstance(participants_data, str):
+                    participants = json.loads(participants_data)
+                else:
+                    participants = participants_data or []
+
+                if not participants:
+                    raise ValueError("queue row has no participants")
+
+                # 1. DB writes (graid_logs, participants, event totals, uncollected_raids).
+                await asyncio.to_thread(_graid_log_manual_sync, participants, raid_type)
+
+                # 2. Discord announcement — match the website's previous behavior:
+                # only post for full groups with a known raid type. Individual logs are
+                # silent (they're for fixing missed/desynced raids, not announcements).
+                if mode == 'group' and raid_type:
+                    names = [p['ign'] for p in participants]
+                    await self._post_raid_announcement(raid_type, names, guild)
+
+                # 3. Mark done.
+                def _mark_done(qid):
+                    db = _db_connect_with_retry()
+                    try:
+                        db.cursor.execute(
+                            "UPDATE graid_log_queue SET status='done', processed_at=NOW() WHERE id=%s",
+                            (qid,)
+                        )
+                        db.connection.commit()
+                    finally:
+                        db.close()
+                await asyncio.to_thread(_mark_done, queue_id)
+                log(INFO, f"Processed queued graid log #{queue_id} ({raid_type or 'Unknown'}, {mode})", context="graid_queue")
+
+            except Exception as e:
+                log(ERROR, f"Failed to process queued graid log #{queue_id}: {e}", context="graid_queue")
+                traceback.print_exc()
+                def _mark_error(qid, msg):
+                    try:
+                        db = _db_connect_with_retry()
+                        try:
+                            db.cursor.execute(
+                                "UPDATE graid_log_queue SET status='error', error_message=%s, processed_at=NOW() WHERE id=%s",
+                                (msg[:500], qid)
+                            )
+                            db.connection.commit()
+                        finally:
+                            db.close()
+                    except Exception:
+                        pass
+                await asyncio.to_thread(_mark_error, queue_id, str(e))
 
     def _render_guild_progress(self, level, xp_percent):
         """Render a styled guild level progress bar image."""
@@ -690,6 +841,15 @@ class UpdateMemberData(commands.Cog):
                 eligible_xp_only.pop(uid)
             log(INFO, f"ALL-PRIVATE group formed: {participant_names}", context="update_member_data")
             await self._announce_raid(None, group, guild, participant_names=participant_names)
+
+        # --- 11c: Drain manually-logged raids queued by the website ---
+        # Runs here so we share the freshly-fetched `guild` object (for the
+        # level/xp progress image in _post_raid_announcement).
+        try:
+            await self._process_graid_queue(guild)
+        except Exception as e:
+            log(ERROR, f"_process_graid_queue crashed: {e}", context="graid_queue")
+            traceback.print_exc()
 
         # --- 12: Persist (unchanged, but now includes carry-forward) ---
         self.previous_data = new_data
