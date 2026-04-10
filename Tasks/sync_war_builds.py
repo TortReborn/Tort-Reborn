@@ -70,14 +70,34 @@ def _get_default_build_key(db_role):
 
 
 def _add_member_build(uuid, build_key, assigned_by='discord_sync'):
+    """Insert a member_builds row pinned to the build's latest version.
+
+    member_builds.version_major/minor are NOT NULL, so we must look up the
+    current latest from build_versions before inserting. If the build has no
+    versions yet, we skip the insert and log a warning.
+    """
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            """INSERT INTO member_builds (uuid, build_key, assigned_by)
-               VALUES (%s, %s, %s)
+            """SELECT major, minor FROM build_versions
+               WHERE build_key = %s
+               ORDER BY major DESC, minor DESC
+               LIMIT 1""",
+            (build_key,)
+        )
+        row = db.cursor.fetchone()
+        if not row:
+            log(WARN, f"No versions exist for build '{build_key}'; skipping auto-assign",
+                context="sync_war_builds")
+            return
+        major, minor = row
+
+        db.cursor.execute(
+            """INSERT INTO member_builds (uuid, build_key, version_major, version_minor, assigned_by)
+               VALUES (%s, %s, %s, %s, %s)
                ON CONFLICT (uuid, build_key) DO NOTHING""",
-            (uuid, build_key, assigned_by)
+            (uuid, build_key, major, minor, assigned_by)
         )
         db.connection.commit()
     finally:
