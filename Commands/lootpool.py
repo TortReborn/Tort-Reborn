@@ -295,6 +295,12 @@ class LootPool(commands.Cog):
             items = [shiny_item] + region_data['Mythic']
             for i, item in enumerate(items):
                 item_img_file = mythics.get(item)
+                if item_img_file is None:
+                    # Unknown item (e.g. a freshly added mythic not yet mapped) — fall
+                    # back to a generic chestplate icon and log so we can patch the dict
+                    # without crashing the whole image render.
+                    log(ERROR, f"Unmapped lootpool item: {item!r} (region={region_name})", context="lootpool")
+                    item_img_file = "diamond_chestplate.png"
                 try:
                     item_img = Image.open(os.path.join('images/mythics/', item_img_file))
                     item_img.thumbnail((100, 100))
