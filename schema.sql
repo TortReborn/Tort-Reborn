@@ -165,6 +165,27 @@ CREATE TABLE IF NOT EXISTS graid_raid_offsets (
   raid_offset  INT NOT NULL DEFAULT 0
 );
 
+-- Queue for manually-logged guild raids submitted via the website.
+-- The bot's update_member_data loop drains this queue and runs each entry
+-- through the same flow as auto-detected raids (DB writes + Discord embed
+-- with the guild level progress image), so the website doesn't have to
+-- duplicate that logic.
+CREATE TABLE IF NOT EXISTS graid_log_queue (
+  id               SERIAL      PRIMARY KEY,
+  raid_type        VARCHAR(40),                 -- Full raid name, NULL = unknown
+  mode             VARCHAR(16) NOT NULL,        -- 'group' or 'individual'
+  participants     JSONB       NOT NULL,        -- [{uuid: "..."|null, ign: "..."}, ...]
+  submitted_by     BIGINT,                      -- Discord ID of the submitter
+  submitted_by_ign VARCHAR(64),
+  status           VARCHAR(16) NOT NULL DEFAULT 'pending',  -- pending | done | error
+  error_message    TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at     TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_graid_log_queue_pending
+  ON graid_log_queue(created_at) WHERE status = 'pending';
+
 -- =============================================================================
 -- Activity Tracking
 -- =============================================================================
