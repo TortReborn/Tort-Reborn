@@ -405,7 +405,10 @@ class CheckWebsiteApps(commands.Cog):
         # poll embed can never lose the attachment.
         ping_kwargs = {"content": f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**"}
         if player_info_file:
+            image_embed = discord.Embed(colour=0x3ED63E)
+            image_embed.set_image(url=f"attachment://{filename}")
             ping_kwargs["file"] = player_info_file
+            ping_kwargs["embed"] = image_embed
         await exec_chan.send(**ping_kwargs)
 
         # Remove image reference from embed since the image lives in its own message now
