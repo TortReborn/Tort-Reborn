@@ -651,8 +651,8 @@ class Generate(commands.Cog):
             "⏩ Rank up shortcuts\n"
             "```\n"
             "- Starfish/Manatee → Piranha = learn how to queue\n"
-            "- Piranha → Barracuda = learning about defending our claim\n"
-            "- Barracuda → Angler = learn how to eco\n"
+            "- Piranha → Angler = learning about defending our claim\n"
+            "- Angler → Swordfish = learn how to eco\n"
             "```\n"
             "We are always looking for new warrers, so do not hesitate to ask for information!"
         )

@@ -271,8 +271,8 @@ class_map = {'archer': '<:bow:966079566189842482>', 'hunter': '<:bow2:9660795657
              'mage': '<:wand:966079565564887062>', 'darkwizard': '<:wand2:966079565795573780>'}
 
 
-discord_rank_roles = ['Starfish', '☆Reef', 'Manatee', '★Coastal Waters', 'Piranha', 'Barracuda', '★★ Azure Ocean',
-                      'Angler', '★☆☆ Blue Sea',
+discord_rank_roles = ['Starfish', '☆Reef', 'Manatee', '★Coastal Waters', 'Piranha', '★★ Azure Ocean',
+                      'Angler', 'Swordfish', '★☆☆ Blue Sea',
                       'Hammerhead', '★★☆Deep Sea', 'Sailfish', '★★★Dark Sea', 'Dolphin', 'Narwhal',
                       '★★★★Abyss Waters', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '✫✪✫ Hydra - Leader']
 
@@ -280,7 +280,7 @@ discord_ranks = {
     'Starfish': {
         'in_game_rank': 'RECRUIT',
         'stars': '',
-        'color': '#e8a41c',
+        'color': '#f8b01f',
         'image': 'starfish',
         'roles': ['Starfish', '☆Reef']
     },
@@ -294,42 +294,42 @@ discord_ranks = {
     'Piranha': {
         'in_game_rank': 'CAPTAIN',
         'stars': '**',
-        'color': '#c8ff00',
+        'color': '#aaf64a',
         'image': 'piranha',
         'roles': ['Piranha', '★★ Azure Ocean']
     },
-    'Barracuda': {
+    'Angler': {
         'in_game_rank': 'CAPTAIN',
         'stars': '**',
-        'color': '#79e64a',
-        'image': 'barracuda',
-        'roles': ['Barracuda', '★★ Azure Ocean']
+        'color': '#0bf6ef',
+        'image': 'angler',
+        'roles': ['Angler', '★★ Azure Ocean']
     },
-    'Angler': {
+    'Swordfish': {
         'in_game_rank': 'STRATEGIST',
         'stars': '***',
-        'color': '#00e2db',
-        'image': 'angler',
-        'roles': ['Angler', '★☆☆ Blue Sea']
+        'color': '#18baf1',
+        'image': 'swordfish',
+        'roles': ['Swordfish', '★☆☆ Blue Sea']
     },
     'Hammerhead': {
         'in_game_rank': 'STRATEGIST',
         'stars': '***',
-        'color': '#04b0eb',
+        'color': '#396aff',
         'image': 'hammerhead',
         'roles': ['Hammerhead', '★★☆Deep Sea', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
     },
     'Sailfish': {
         'in_game_rank': 'STRATEGIST',
         'stars': '***',
-        'color': '#396aff',
+        'color': '#9e6bff',
         'image': 'sailfish',
         'roles': ['Sailfish', '★★★Dark Sea', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
     },
     'Dolphin': {
         'in_game_rank': 'CHIEF',
         'stars': '****',
-        'color': '#9d68ff',
+        'color': '#e66bff',
         'image': 'dolphin',
         'roles': ['Dolphin', '★★★Dark Sea', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
     },
@@ -343,7 +343,7 @@ discord_ranks = {
     'Hydra': {
         'in_game_rank': 'OWNER',
         'stars': '*****',
-        'color': '#ac034c',
+        'color': '#b01444',
         'image': 'hydra',
         'roles': ['✫✪✫ Hydra - Leader', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
     }
