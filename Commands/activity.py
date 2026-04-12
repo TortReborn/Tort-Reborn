@@ -25,12 +25,12 @@ KICK_RANK_ORDER = {
     'manatee': 1,
     'recruiter': 1,
     'piranha': 2,
-    'barracuda': 3,
-    'captain': 2,        # fallback for game rank
-    'angler': 4,
+    'angler': 3,
+    'captain': 2,        # fallback for game rank (lowest captain)
+    'swordfish': 4,
     'hammerhead': 5,
     'sailfish': 6,
-    'strategist': 4,     # fallback for game rank
+    'strategist': 4,     # fallback for game rank (lowest strategist)
     'dolphin': 7,
     'narwhal': 8,
     'chief': 7,          # fallback for game rank

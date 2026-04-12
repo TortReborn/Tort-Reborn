@@ -110,7 +110,7 @@ class ResetRoles(commands.Cog):
             # Static list of roles to remove and roles to add
             to_remove = [
                 'Member', 'The Aquarium [TAq]', '☆Reef', 'Starfish', 'Manatee',
-                '★Coastal Waters', 'Piranha', 'Barracuda', '★★ Azure Ocean', 'Angler',
+                '★Coastal Waters', 'Piranha', '★★ Azure Ocean', 'Angler', 'Swordfish',
                 '★☆☆ Blue Sea', 'Hammerhead', '★★☆Deep Sea', 'Sailfish',
                 '★★★Dark Sea', 'Dolphin', 'Narwhal', '★★★★Abyss Waters',
                 '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
