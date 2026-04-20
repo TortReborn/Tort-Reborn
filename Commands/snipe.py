@@ -42,13 +42,7 @@ _TOP3_COLORS = {1: '#DAA520', 2: '#C0C0C0', 3: '#CD7F32'}
 _LB_PER_PAGE        = 10
 _LIST_PER_PAGE      = 10
 _LIST_SORT_CHOICES  = ['Newest', 'Oldest', 'Hardest', 'Easiest', 'Least Conns']
-_LIST_ORDER_SQL     = {
-    'Newest':      "sl.sniped_at DESC",
-    'Oldest':      "sl.sniped_at ASC",
-    'Hardest':     "sl.difficulty DESC, sl.sniped_at DESC",
-    'Easiest':     "sl.difficulty ASC, sl.sniped_at DESC",
-    'Least Conns': "sl.conns ASC, sl.sniped_at DESC",
-}
+
 _ATHENA_GUILD_LIST_URL = 'https://athena.wynntils.com/cache/get/guildList'
 _ATHENA_GUILD_TTL      = 6 * 60 * 60
 _DEFAULT_GUILD_COLOR = '#ffffff'
@@ -124,6 +118,21 @@ _LB_SORT_KEY = {
     'Personal Best':  lambda x: (-x['best_diff'],   x['ign']),
     'Best Streak':    lambda x: (-x['best_streak'],  x['ign']),
     'Current Streak': lambda x: (-x['cur_streak'],  x['ign']),
+}
+
+# Python sort keys for the roles leaderboard (rows are (ign, times, best_diff))
+_ROLES_SORT_KEY = {
+    'Amount':             lambda r: (-r[1], r[0]),
+    'Highest Difficulty': lambda r: (-(r[2] or 0), r[0]),
+}
+
+# Python sort keys for the snipe list (rows are (id, sniped_at, hq, guild_tag, difficulty, conns))
+_LIST_SORT_KEY_PY = {
+    'Newest':      lambda r: -r[1].timestamp(),
+    'Oldest':      lambda r:  r[1].timestamp(),
+    'Hardest':     lambda r: (-(r[4] or 0),                                  -r[1].timestamp()),
+    'Easiest':     lambda r: ( r[4] if r[4] is not None else float('inf'),   -r[1].timestamp()),
+    'Least Conns': lambda r: ( r[5] if r[5] is not None else float('inf'),   -r[1].timestamp()),
 }
 
 # ── DB helpers ───────────────────────────────────────────────────────────────
@@ -1082,6 +1091,355 @@ class SnipeLogConfirmView(discord.ui.View):
                 pass
 
 
+# ── Sort + paginate views ────────────────────────────────────────────────────
+
+class _LBView(discord.ui.View):
+    """Interactive sort and paginate view for the snipe leaderboard."""
+
+    def __init__(self, player_stats: list, season_label: str):
+        super().__init__(timeout=300)
+        self.player_stats = player_stats
+        self.season_label = season_label
+        self.sort_by = 'Total Snipes'
+        self.page    = 0
+        self._cache: dict[tuple, bytes] = {}
+        self._refresh_buttons()
+
+    def _total_pages(self) -> int:
+        return max(1, math.ceil(len(self.player_stats) / _LB_PER_PAGE))
+
+    def _refresh_buttons(self):
+        self.clear_items()
+        # Sort buttons (row 0)
+        for sort in LB_SORT_CHOICES:
+            btn = discord.ui.Button(
+                label=sort,
+                style=discord.ButtonStyle.primary if sort == self.sort_by else discord.ButtonStyle.secondary,
+                row=0,
+            )
+            btn.callback = self._make_sort_cb(sort)
+            self.add_item(btn)
+        # First / prev / page indicator / next / last (row 1)
+        total = self._total_pages()
+        at_first, at_last = self.page == 0, self.page >= total - 1
+
+        first_btn = discord.ui.Button(emoji='<:first_arrows:1198703152204103760>', style=discord.ButtonStyle.blurple, disabled=at_first, row=1)
+        first_btn.callback = self._first_cb
+        self.add_item(first_btn)
+
+        prev_btn = discord.ui.Button(emoji='<:left_arrow:1198703157501509682>', style=discord.ButtonStyle.red, disabled=at_first, row=1)
+        prev_btn.callback = self._prev_cb
+        self.add_item(prev_btn)
+
+        page_btn = discord.ui.Button(label=f'{self.page + 1} / {total}', style=discord.ButtonStyle.secondary, disabled=True, row=1)
+        self.add_item(page_btn)
+
+        next_btn = discord.ui.Button(emoji='<:right_arrow:1198703156088021112>', style=discord.ButtonStyle.green, disabled=at_last, row=1)
+        next_btn.callback = self._next_cb
+        self.add_item(next_btn)
+
+        last_btn = discord.ui.Button(emoji='<:last_arrows:1198703153726627880>', style=discord.ButtonStyle.blurple, disabled=at_last, row=1)
+        last_btn.callback = self._last_cb
+        self.add_item(last_btn)
+
+    def _make_sort_cb(self, sort: str):
+        async def callback(interaction: discord.Interaction):
+            self.sort_by = sort
+            self.page    = 0
+            await self._update(interaction)
+        return callback
+
+    async def _first_cb(self, interaction: discord.Interaction):
+        self.page = 0
+        await self._update(interaction)
+
+    async def _prev_cb(self, interaction: discord.Interaction):
+        self.page = max(0, self.page - 1)
+        await self._update(interaction)
+
+    async def _next_cb(self, interaction: discord.Interaction):
+        self.page = min(self._total_pages() - 1, self.page + 1)
+        await self._update(interaction)
+
+    async def _last_cb(self, interaction: discord.Interaction):
+        self.page = self._total_pages() - 1
+        await self._update(interaction)
+
+    async def _render_for(self, sort_by: str, page: int) -> bytes:
+        """Render and cache a specific sort/page combination."""
+        key = (sort_by, page)
+        if key in self._cache:
+            return self._cache[key]
+        sorted_data = sorted(self.player_stats, key=_LB_SORT_KEY[sort_by])
+        total       = self._total_pages()
+        start       = page * _LB_PER_PAGE
+        page_rows   = sorted_data[start:start + _LB_PER_PAGE]
+        card = await asyncio.to_thread(
+            _generate_lb_card,
+            page_rows, sort_by, self.season_label, page + 1, total, start + 1,
+        )
+        buf = BytesIO()
+        card.save(buf, format='PNG')
+        self._cache[key] = buf.getvalue()
+        return self._cache[key]
+
+    async def render_page(self) -> BytesIO:
+        return BytesIO(await self._render_for(self.sort_by, self.page))
+
+    async def prerender_sort(self, sort_by: str):
+        """Pre-render all pages for a sort order in the background."""
+        for p in range(self._total_pages()):
+            if (sort_by, p) not in self._cache:
+                await self._render_for(sort_by, p)
+                await asyncio.sleep(0)  # yield between renders
+
+    async def _update(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        self._refresh_buttons()
+        key = (self.sort_by, self.page)
+        if key not in self._cache:
+            await interaction.edit_original_response(view=self)
+        buf = await self.render_page()
+        await interaction.edit_original_response(
+            attachments=[],
+            file=discord.File(buf, filename='lb.png'),
+            view=self,
+        )
+        asyncio.create_task(self.prerender_sort(self.sort_by))
+
+
+class _RolesView(discord.ui.View):
+    """Interactive sort and paginate view for the roles leaderboard."""
+
+    def __init__(self, all_rows: list, role: str, season_label: str):
+        super().__init__(timeout=300)
+        self.all_rows     = all_rows
+        self.role         = role
+        self.season_label = season_label
+        self.sort_by      = 'Amount'
+        self.page         = 0
+        self._cache: dict[tuple, bytes] = {}
+        self._refresh_buttons()
+
+    def _total_pages(self) -> int:
+        return max(1, math.ceil(len(self.all_rows) / _LB_PER_PAGE))
+
+    def _refresh_buttons(self):
+        self.clear_items()
+        for sort in ['Amount', 'Highest Difficulty']:
+            btn = discord.ui.Button(
+                label=sort,
+                style=discord.ButtonStyle.primary if sort == self.sort_by else discord.ButtonStyle.secondary,
+                row=0,
+            )
+            btn.callback = self._make_sort_cb(sort)
+            self.add_item(btn)
+        total = self._total_pages()
+        at_first, at_last = self.page == 0, self.page >= total - 1
+
+        first_btn = discord.ui.Button(emoji='<:first_arrows:1198703152204103760>', style=discord.ButtonStyle.blurple, disabled=at_first, row=1)
+        first_btn.callback = self._first_cb
+        self.add_item(first_btn)
+
+        prev_btn = discord.ui.Button(emoji='<:left_arrow:1198703157501509682>', style=discord.ButtonStyle.red, disabled=at_first, row=1)
+        prev_btn.callback = self._prev_cb
+        self.add_item(prev_btn)
+
+        page_btn = discord.ui.Button(label=f'{self.page + 1} / {total}', style=discord.ButtonStyle.secondary, disabled=True, row=1)
+        self.add_item(page_btn)
+
+        next_btn = discord.ui.Button(emoji='<:right_arrow:1198703156088021112>', style=discord.ButtonStyle.green, disabled=at_last, row=1)
+        next_btn.callback = self._next_cb
+        self.add_item(next_btn)
+
+        last_btn = discord.ui.Button(emoji='<:last_arrows:1198703153726627880>', style=discord.ButtonStyle.blurple, disabled=at_last, row=1)
+        last_btn.callback = self._last_cb
+        self.add_item(last_btn)
+
+    def _make_sort_cb(self, sort: str):
+        async def callback(interaction: discord.Interaction):
+            self.sort_by = sort
+            self.page    = 0
+            await self._update(interaction)
+        return callback
+
+    async def _first_cb(self, interaction: discord.Interaction):
+        self.page = 0
+        await self._update(interaction)
+
+    async def _prev_cb(self, interaction: discord.Interaction):
+        self.page = max(0, self.page - 1)
+        await self._update(interaction)
+
+    async def _next_cb(self, interaction: discord.Interaction):
+        self.page = min(self._total_pages() - 1, self.page + 1)
+        await self._update(interaction)
+
+    async def _last_cb(self, interaction: discord.Interaction):
+        self.page = self._total_pages() - 1
+        await self._update(interaction)
+
+    async def _render_for(self, sort_by: str, page: int) -> bytes:
+        """Render and cache a specific sort/page combination."""
+        key = (sort_by, page)
+        if key in self._cache:
+            return self._cache[key]
+        sorted_data = sorted(self.all_rows, key=_ROLES_SORT_KEY[sort_by])
+        total       = self._total_pages()
+        start       = page * _LB_PER_PAGE
+        page_rows   = sorted_data[start:start + _LB_PER_PAGE]
+        card = await asyncio.to_thread(
+            _generate_roles_card,
+            page_rows, self.role, sort_by, self.season_label, page + 1, total, start + 1,
+        )
+        buf = BytesIO()
+        card.save(buf, format='PNG')
+        self._cache[key] = buf.getvalue()
+        return self._cache[key]
+
+    async def render_page(self) -> BytesIO:
+        return BytesIO(await self._render_for(self.sort_by, self.page))
+
+    async def prerender_sort(self, sort_by: str):
+        """Pre-render all pages for a sort order in the background."""
+        for p in range(self._total_pages()):
+            if (sort_by, p) not in self._cache:
+                await self._render_for(sort_by, p)
+                await asyncio.sleep(0)
+
+    async def _update(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        self._refresh_buttons()
+        key = (self.sort_by, self.page)
+        if key not in self._cache:
+            await interaction.edit_original_response(view=self)
+        buf = await self.render_page()
+        await interaction.edit_original_response(
+            attachments=[],
+            file=discord.File(buf, filename='roles.png'),
+            view=self,
+        )
+        asyncio.create_task(self.prerender_sort(self.sort_by))
+
+
+class _ListSortView(discord.ui.View):
+    """Interactive sort and paginate view for the snipe list."""
+
+    def __init__(self, all_rows: list, participants_map: dict, guild_colors: dict, season_label: str):
+        super().__init__(timeout=300)
+        self.all_rows        = all_rows
+        self.participants_map = participants_map
+        self.guild_colors    = guild_colors
+        self.season_label    = season_label
+        self.sort_by         = 'Newest'
+        self.page            = 0
+        self._cache: dict[tuple, bytes] = {}
+        self._refresh_buttons()
+
+    def _total_pages(self) -> int:
+        return max(1, math.ceil(len(self.all_rows) / _LIST_PER_PAGE))
+
+    def _refresh_buttons(self):
+        self.clear_items()
+        # Five sort buttons (row 0) - exactly at Discord's 5-per-row limit
+        for sort in _LIST_SORT_CHOICES:
+            btn = discord.ui.Button(
+                label=sort,
+                style=discord.ButtonStyle.primary if sort == self.sort_by else discord.ButtonStyle.secondary,
+                row=0,
+            )
+            btn.callback = self._make_sort_cb(sort)
+            self.add_item(btn)
+        # First / prev / page indicator / next / last (row 1)
+        total = self._total_pages()
+        at_first, at_last = self.page == 0, self.page >= total - 1
+
+        first_btn = discord.ui.Button(emoji='<:first_arrows:1198703152204103760>', style=discord.ButtonStyle.blurple, disabled=at_first, row=1)
+        first_btn.callback = self._first_cb
+        self.add_item(first_btn)
+
+        prev_btn = discord.ui.Button(emoji='<:left_arrow:1198703157501509682>', style=discord.ButtonStyle.red, disabled=at_first, row=1)
+        prev_btn.callback = self._prev_cb
+        self.add_item(prev_btn)
+
+        page_btn = discord.ui.Button(label=f'{self.page + 1} / {total}', style=discord.ButtonStyle.secondary, disabled=True, row=1)
+        self.add_item(page_btn)
+
+        next_btn = discord.ui.Button(emoji='<:right_arrow:1198703156088021112>', style=discord.ButtonStyle.green, disabled=at_last, row=1)
+        next_btn.callback = self._next_cb
+        self.add_item(next_btn)
+
+        last_btn = discord.ui.Button(emoji='<:last_arrows:1198703153726627880>', style=discord.ButtonStyle.blurple, disabled=at_last, row=1)
+        last_btn.callback = self._last_cb
+        self.add_item(last_btn)
+
+    def _make_sort_cb(self, sort: str):
+        async def callback(interaction: discord.Interaction):
+            self.sort_by = sort
+            self.page    = 0
+            await self._update(interaction)
+        return callback
+
+    async def _first_cb(self, interaction: discord.Interaction):
+        self.page = 0
+        await self._update(interaction)
+
+    async def _prev_cb(self, interaction: discord.Interaction):
+        self.page = max(0, self.page - 1)
+        await self._update(interaction)
+
+    async def _next_cb(self, interaction: discord.Interaction):
+        self.page = min(self._total_pages() - 1, self.page + 1)
+        await self._update(interaction)
+
+    async def _last_cb(self, interaction: discord.Interaction):
+        self.page = self._total_pages() - 1
+        await self._update(interaction)
+
+    async def _render_for(self, sort_by: str, page: int) -> bytes:
+        """Render and cache a specific sort/page combination."""
+        key = (sort_by, page)
+        if key in self._cache:
+            return self._cache[key]
+        sorted_rows = sorted(self.all_rows, key=_LIST_SORT_KEY_PY[sort_by])
+        total       = self._total_pages()
+        start       = page * _LIST_PER_PAGE
+        page_rows   = sorted_rows[start:start + _LIST_PER_PAGE]
+        card = await asyncio.to_thread(
+            _generate_list_card,
+            page_rows, self.participants_map, self.guild_colors,
+            sort_by, self.season_label, page + 1, total, start + 1,
+        )
+        buf = BytesIO()
+        card.save(buf, format='PNG')
+        self._cache[key] = buf.getvalue()
+        return self._cache[key]
+
+    async def render_page(self) -> BytesIO:
+        return BytesIO(await self._render_for(self.sort_by, self.page))
+
+    async def prerender_sort(self, sort_by: str):
+        """Pre-render all pages for a sort order in the background."""
+        for p in range(self._total_pages()):
+            if (sort_by, p) not in self._cache:
+                await self._render_for(sort_by, p)
+                await asyncio.sleep(0)
+
+    async def _update(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        self._refresh_buttons()
+        key = (self.sort_by, self.page)
+        if key not in self._cache:
+            await interaction.edit_original_response(view=self)
+        buf = await self.render_page()
+        await interaction.edit_original_response(
+            attachments=[],
+            file=discord.File(buf, filename='list.png'),
+            view=self,
+        )
+        asyncio.create_task(self.prerender_sort(self.sort_by))
+
+
 class SnipeTracker(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -1473,15 +1831,14 @@ class SnipeTracker(commands.Cog):
     async def snipe_leaderboard(
         self,
         ctx: discord.ApplicationContext,
-        sort:   discord.Option(str, 'Sort by', choices=LB_SORT_CHOICES, required=False, default='Total Snipes'),
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
         # Resolve season clause and label
-        sc, sp  = _season_clause(season)
-        sl      = _season_label(season)
+        sc, sp = _season_clause(season)
+        sl     = _season_label(season)
 
-        # Fetch and sort all player stats
+        # Fetch all player stats (sorting is handled live via view buttons)
         db = DB()
         db.connect()
         try:
@@ -1489,19 +1846,10 @@ class SnipeTracker(commands.Cog):
         finally:
             db.close()
 
-        player_stats.sort(key=_LB_SORT_KEY[sort])
-
-        # Paginate into leaderboard cards
-        PER_PAGE    = 10
-        total_pages = max(1, math.ceil(len(player_stats) / PER_PAGE))
-        cards = [
-            _generate_lb_card(
-                player_stats[i * PER_PAGE:(i + 1) * PER_PAGE],
-                sort, sl, i + 1, total_pages, i * PER_PAGE + 1
-            )
-            for i in range(total_pages)
-        ]
-        await _make_paginator(_pages_from_cards(cards, 'lb')).respond(ctx.interaction)
+        view = _LBView(player_stats, sl)
+        buf  = await view.render_page()
+        await ctx.followup.send(file=discord.File(buf, filename='lb.png'), view=view)
+        asyncio.create_task(view.prerender_sort(view.sort_by))
 
     # ── /snipe roles ──────────────────────────────────────────────────────────
 
@@ -1510,16 +1858,14 @@ class SnipeTracker(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         role:   discord.Option(str, 'Role to view', choices=ROLE_CHOICES, required=True),
-        sort:   discord.Option(str, 'Sort by', choices=['Amount', 'Highest Difficulty'], required=False, default='Amount'),
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
-        # Resolve season and sort order
+        # Resolve season (sorting is handled live via view buttons)
         sc, sp = _season_clause(season)
         sl     = _season_label(season)
-        order  = 'COUNT(*) DESC' if sort == 'Amount' else 'MAX(sl.difficulty) DESC'
 
-        # Fetch role participants
+        # Fetch all role participants unsorted; view sorts in Python
         db = DB()
         db.connect()
         try:
@@ -1528,24 +1874,17 @@ class SnipeTracker(commands.Cog):
                 f'FROM snipe_participants sp '
                 f'JOIN snipe_logs sl ON sl.id = sp.snipe_id '
                 f'WHERE sp.role = %s {sc} '
-                f'GROUP BY sp.ign ORDER BY {order}',
+                f'GROUP BY sp.ign',
                 [role] + sp
             )
             all_rows = db.cursor.fetchall()
         finally:
             db.close()
 
-        # Paginate into role leaderboard cards
-        PER_PAGE    = 10
-        total_pages = max(1, math.ceil(len(all_rows) / PER_PAGE))
-        cards = [
-            _generate_roles_card(
-                all_rows[i * PER_PAGE:(i + 1) * PER_PAGE],
-                role, sort, sl, i + 1, total_pages, i * PER_PAGE + 1
-            )
-            for i in range(total_pages)
-        ]
-        await _make_paginator(_pages_from_cards(cards, 'roles')).respond(ctx.interaction)
+        view = _RolesView(all_rows, role, sl)
+        buf  = await view.render_page()
+        await ctx.followup.send(file=discord.File(buf, filename='roles.png'), view=view)
+        asyncio.create_task(view.prerender_sort(view.sort_by))
 
     # ── /snipe team ───────────────────────────────────────────────────────────
 
@@ -1798,16 +2137,14 @@ class SnipeTracker(commands.Cog):
     async def snipe_list(
         self,
         ctx: discord.ApplicationContext,
-        sort: discord.Option(str, 'Sort by', choices=_LIST_SORT_CHOICES, required=False, default='Newest'),
         season: discord.Option(int, 'Season (0 = all-time, default = current)', required=False, default=None),
     ):
         await ctx.defer()
-        # Resolve season and sort order
+        # Resolve season (sorting is handled live via view buttons)
         sc, sp = _season_clause(season)
-        sl = _season_label(season)
-        order_sql = _LIST_ORDER_SQL[sort]
+        sl     = _season_label(season)
 
-        # SQL CASE for deterministic role sort order
+        # SQL CASE for deterministic role sort order within each snipe
         role_case = (
             "CASE sp.role "
             "WHEN 'Healer' THEN 1 "
@@ -1819,12 +2156,12 @@ class SnipeTracker(commands.Cog):
         db = DB()
         db.connect()
         try:
-            # Fetch all snipe entries for the season
+            # Fetch all snipe entries; view sorts in Python on button press
             db.cursor.execute(
                 f'SELECT sl.id, sl.sniped_at, sl.hq, sl.guild_tag, sl.difficulty, sl.conns '
                 f'FROM snipe_logs sl '
                 f'WHERE 1=1 {sc} '
-                f'ORDER BY {order_sql}',
+                f'ORDER BY sl.sniped_at DESC',
                 sp
             )
             all_rows = db.cursor.fetchall()
@@ -1848,22 +2185,10 @@ class SnipeTracker(commands.Cog):
             participants_map[snipe_id].append((ign_name, role))
         guild_colors = await _get_guild_color_map(guild_tag for _, _, _, guild_tag, _, _ in all_rows)
 
-        # Paginate into list cards
-        total_pages = max(1, math.ceil(len(all_rows) / _LIST_PER_PAGE))
-        cards = [
-            _generate_list_card(
-                all_rows[i * _LIST_PER_PAGE:(i + 1) * _LIST_PER_PAGE],
-                participants_map,
-                guild_colors,
-                sort,
-                sl,
-                i + 1,
-                total_pages,
-                i * _LIST_PER_PAGE + 1,
-            )
-            for i in range(total_pages)
-        ]
-        await _make_paginator(_pages_from_cards(cards, 'snipe_list')).respond(ctx.interaction)
+        view = _ListSortView(all_rows, participants_map, guild_colors, sl)
+        buf  = await view.render_page()
+        await ctx.followup.send(file=discord.File(buf, filename='list.png'), view=view)
+        asyncio.create_task(view.prerender_sort(view.sort_by))
 
     # ── /warseason ────────────────────────────────────────────────────────────
 
