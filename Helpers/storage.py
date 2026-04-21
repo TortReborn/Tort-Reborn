@@ -32,6 +32,10 @@ class S3Storage:
             self._bucket = os.getenv("S3_BUCKET_NAME", "Tort-Reborn-Prod")
 
     @property
+    def _is_configured(self) -> bool:
+        return bool(os.getenv("S3_ENDPOINT_URL") and os.getenv("S3_ACCESS_KEY_ID"))
+
+    @property
     def client(self):
         if self._client is None:
             self._client = boto3.client(
@@ -46,10 +50,12 @@ class S3Storage:
         return self._client
 
     def get_bytes(self, key: str) -> bytes | None:
+        if not self._is_configured:
+            return None
         try:
             resp = self.client.get_object(Bucket=self._bucket, Key=key)
             return resp["Body"].read()
-        except ClientError:
+        except Exception:
             return None
 
     def get_image(self, key: str) -> Image.Image | None:
@@ -60,13 +66,15 @@ class S3Storage:
 
     def get_bytes_if_fresh(self, key: str, max_age_seconds: int) -> bytes | None:
         """Return object bytes only if younger than max_age_seconds."""
+        if not self._is_configured:
+            return None
         try:
             head = self.client.head_object(Bucket=self._bucket, Key=key)
             age = (datetime.now(timezone.utc) - head["LastModified"]).total_seconds()
             if age > max_age_seconds:
                 return None
             return self.get_bytes(key)
-        except ClientError:
+        except Exception:
             return None
 
     def put_bytes(self, key: str, data: bytes, content_type: str = "image/png"):
