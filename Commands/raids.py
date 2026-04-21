@@ -260,17 +260,18 @@ class Raids(commands.Cog):
         card = self._fast_vertical_gradient(width=self.CARD_W, height=self.CARD_H, main_color=tag_color)
         card = round_corners(card)
 
-        overlay = self._fast_vertical_gradient(width=self.CARD_W - 40, height=self.CARD_H - 40,
+        # 25px border matches profile card style -- no separate round_corners on overlay
+        overlay = self._fast_vertical_gradient(width=self.CARD_W - 50, height=self.CARD_H - 50,
                                                main_color=grad_start,
                                                secondary_color=grad_end)
-        overlay = round_corners(overlay, radius=18)
-        card.paste(overlay, (20, 20), overlay)
+        card.paste(overlay, (25, 25), overlay)
         return card
 
     def _draw_background(self, card: Image.Image, tag_color: str, bg_index: int) -> None:
         """Outline rect + user-selected background PNG."""
+        # Default radius=25 matches profile's bg_outline style
         outline = self._fast_vertical_gradient(width=438, height=545, main_color=tag_color, reverse=True)
-        outline = round_corners(outline, radius=18)
+        outline = round_corners(outline)
         card.paste(outline, (41, 100), outline)
 
         bg_img = get_background(bg_index)
@@ -313,7 +314,8 @@ class Raids(commands.Cog):
         rank_badge = generate_rank_badge(player_stats.tag_display, tag_color)
         rank_badge = self._fit_badge_width(rank_badge, 380)
         w, h = rank_badge.size
-        card.paste(rank_badge, (250 - w // 2, 96), rank_badge)
+        # Center on portrait area (x=41 to x=479, center=260) to match profile centering logic
+        card.paste(rank_badge, (260 - w // 2, 96), rank_badge)
 
     def _draw_guild_elements(self, card: Image.Image, player: Dict, player_stats: PlayerStats) -> None:
         guild_info = player.get("guild")
@@ -375,11 +377,11 @@ class Raids(commands.Cog):
             bn = None
 
         guild_badge_x = 108
-        guild_badge_y = 625
+        guild_badge_y = 620
         card.paste(g_badge, (guild_badge_x, guild_badge_y), g_badge)
         card.paste(gr_badge, (guild_badge_x, guild_badge_y + g_badge.height), gr_badge)
         if bn is not None:
-            card.paste(bn, (41, 543), bn)
+            card.paste(bn, (41, 538), bn)
 
     def _draw_raid_panel(self, card: Image.Image, draw: ImageDraw.ImageDraw, stats: List[Dict],
                          summary: Dict[str, str], tag_color: str) -> None:
