@@ -375,11 +375,11 @@ class Raids(commands.Cog):
             bn = None
 
         guild_badge_x = 108
-        guild_badge_y = 602
+        guild_badge_y = 625
         card.paste(g_badge, (guild_badge_x, guild_badge_y), g_badge)
         card.paste(gr_badge, (guild_badge_x, guild_badge_y + g_badge.height), gr_badge)
         if bn is not None:
-            card.paste(bn, (41, 542), bn)
+            card.paste(bn, (41, 543), bn)
 
     def _draw_raid_panel(self, card: Image.Image, draw: ImageDraw.ImageDraw, stats: List[Dict],
                          summary: Dict[str, str], tag_color: str) -> None:
