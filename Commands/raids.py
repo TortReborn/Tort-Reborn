@@ -53,6 +53,11 @@ class Raids(commands.Cog):
         ("TNA",  "The Nameless Anomaly", ("The Nameless Anomaly",), ("namelessSrPlayers",), ("nameless", "anomaly")),
         ("WTP",  "The Queen's Wartorn Palace", ("The Wartorn Palace", "Wartorn Palace"), ("wartornSrPlayers", "wartornPalaceSrPlayers", "palaceSrPlayers"), ("wartorn", "palace")),
     ]
+    # Temporary API shim: until Wynn exposes Queen's Wartorn Palace by name,
+    # treat the generic "unknown" bucket as WTP, but only if no explicit WTP key exists.
+    TEMP_RAID_COUNT_FALLBACKS: Dict[str, Tuple[str, ...]] = {
+        "WTP": ("unknown",),
+    }
 
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -175,7 +180,11 @@ class Raids(commands.Cog):
         stats: List[Dict] = []
         for abbr, full, aliases, rank_keys, rank_fragments in self.RAIDS:
             rank_val = self._lookup_rank(ranking, rank_keys, rank_fragments)
-            count = self._lookup_raid_count(raids_list, aliases)
+            count = self._lookup_raid_count(
+                raids_list,
+                aliases,
+                self.TEMP_RAID_COUNT_FALLBACKS.get(abbr, ()),
+            )
             stats.append({
                 "abbr": abbr,
                 "name": full,
@@ -185,7 +194,11 @@ class Raids(commands.Cog):
         return stats
 
     @staticmethod
-    def _lookup_raid_count(raids_list: Dict, aliases: Tuple[str, ...]) -> int:
+    def _lookup_raid_count(
+        raids_list: Dict,
+        aliases: Tuple[str, ...],
+        fallback_aliases: Tuple[str, ...] = (),
+    ) -> int:
         for name in aliases:
             if name in raids_list:
                 return raids_list.get(name, 0) or 0
@@ -195,6 +208,15 @@ class Raids(commands.Cog):
             for key, value in raids_list.items()
         }
         for name in aliases:
+            key = name.lower().replace("the ", "").strip()
+            if key in normalized:
+                return normalized.get(key, 0) or 0
+
+        for name in fallback_aliases:
+            if name in raids_list:
+                return raids_list.get(name, 0) or 0
+
+        for name in fallback_aliases:
             key = name.lower().replace("the ", "").strip()
             if key in normalized:
                 return normalized.get(key, 0) or 0
@@ -368,7 +390,7 @@ class Raids(commands.Cog):
         accent = "#fad51e"
         sep = tag_color if tag_color.startswith("#") else f"#{tag_color}"
 
-        f_title = self._font('images/profile/5x5.ttf', 30)
+        f_title = self._font('images/profile/5x5.ttf', 38)
         divider_y = panel_y + 48
         summary_y = divider_y + 48
 
@@ -398,7 +420,7 @@ class Raids(commands.Cog):
 
     def _draw_summary_box(self, card: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int, w: int, h: int,
                           label: str, value: str) -> None:
-        f_label = self._font('images/profile/5x5.ttf', 22)
+        f_label = self._font('images/profile/5x5.ttf', 27)
         f_value = self._fit_font(value, draw, 'images/profile/game.ttf', 31, w - 18, min_size=18)
 
         box = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -406,7 +428,7 @@ class Raids(commands.Cog):
         bdraw.rounded_rectangle((0, 0, w - 1, h - 1), radius=10, fill=(0, 0, 0, 30))
         card.paste(box, (x, y), box)
 
-        draw.text((x + (w // 2), y - 13), label, font=f_label, fill="#fad51e", anchor="mm")
+        draw.text((x + (w // 2), y - 16), label, font=f_label, fill="#fad51e", anchor="mm")
         addLine(value, draw, f_value, x + (w // 2), y + (h // 2) + 2, drop_x=3, drop_y=3, anchor="mm")
 
     def _draw_single_raid_card(self, card: Image.Image, x: int, y: int, w: int, h: int,
@@ -427,13 +449,14 @@ class Raids(commands.Cog):
         icon.thumbnail((104, 104))
         box.paste(icon, ((w - icon.width) // 2, 22), icon)
 
-        bdraw.text((w // 2, 138), abbr, font=self._font('images/profile/5x5.ttf', 28), fill="#fad51e", anchor="mm")
+        abbr_font = self._fit_font(abbr, bdraw, 'images/profile/5x5.ttf', 36, w - 12, min_size=26)
+        bdraw.text((w // 2, 138), abbr, font=abbr_font, fill="#fad51e", anchor="mm")
 
-        name_font = self._font('images/profile/5x5.ttf', 13)
+        name_font = self._font('images/profile/5x5.ttf', 16)
         for line_idx, line in enumerate(self._wrap_lines(item["name"], bdraw, name_font, w - 20, max_lines=3)):
-            bdraw.text((w // 2, 164 + line_idx * 17), line, font=name_font, fill="#ffffff", anchor="mm")
+            bdraw.text((w // 2, 172 + line_idx * 21), line, font=name_font, fill="#ffffff", anchor="mm")
 
-        label_font = self._font('images/profile/5x5.ttf', 17)
+        label_font = self._font('images/profile/5x5.ttf', 22)
         value_font = self._font('images/profile/game.ttf', 34)
         small_value_font = self._font('images/profile/game.ttf', 28)
         rank_text = f"#{rank_val}" if rank_val else "N/A"
