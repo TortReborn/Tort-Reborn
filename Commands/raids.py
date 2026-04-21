@@ -38,8 +38,7 @@ from Helpers.storage import get_background, get_cached_avatar, save_cached_avata
 class Raids(commands.Cog):
     """
     /raids <username>
-    Generates a wide profile-style card showing the player's guild raid rankings & counts.
-    Incorporates the same customization hooks (background, gradients, tag colors) used in /profile.
+    Generates a Raid Stats Card
     """
 
     CARD_W = 1300
