@@ -52,7 +52,7 @@ class Raids(commands.Cog):
         ("NOL",  "Orphion's Nexus of Light", ("Orphion's Nexus of Light",), ("orphionSrPlayers",), ("orphion",)),
         ("TCC",  "The Canyon Colossus", ("The Canyon Colossus",), ("colossusSrPlayers",), ("colossus",)),
         ("TNA",  "The Nameless Anomaly", ("The Nameless Anomaly",), ("namelessSrPlayers",), ("nameless", "anomaly")),
-        ("TWP",  "The Wartorn Palace", ("The Wartorn Palace", "Wartorn Palace"), ("wartornSrPlayers", "wartornPalaceSrPlayers", "palaceSrPlayers"), ("wartorn", "palace")),
+        ("WTP",  "The Queen's Wartorn Palace", ("The Wartorn Palace", "Wartorn Palace"), ("wartornSrPlayers", "wartornPalaceSrPlayers", "palaceSrPlayers"), ("wartorn", "palace")),
     ]
 
     def __init__(self, client: commands.Bot):
