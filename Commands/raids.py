@@ -10,7 +10,7 @@ import requests
 import discord
 from discord.ext import commands
 from discord.commands import slash_command, Option
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageColor
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageColor, ImageChops
 
 from Helpers.functions import (
     round_corners,
@@ -46,6 +46,14 @@ class Raids(commands.Cog):
     FONT_CACHE: Dict[Tuple[str, int], ImageFont.FreeTypeFont] = {}
 
     # (abbr, display name, API count aliases, possible ranking keys, fallback ranking fragments)
+    NAME_LINES: Dict[str, Tuple[str, str, str]] = {
+        "NOTG": ("Nest", "of the", "Grootslangs"),
+        "NOL":  ("Orphion's", "Nexus", "of Light"),
+        "TCC":  ("The", "Canyon", "Colossus"),
+        "TNA":  ("The", "Nameless", "Anomaly"),
+        "WTP":  ("The Queen's", "Wartorn", "Palace"),
+    }
+
     RAIDS: List[Tuple[str, str, Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]] = [
         ("NOTG", "Nest of the Grootslangs", ("Nest of the Grootslangs",), ("grootslangSrPlayers",), ("grootslang",)),
         ("NOL",  "Orphion's Nexus of Light", ("Orphion's Nexus of Light",), ("orphionSrPlayers",), ("orphion",)),
@@ -246,13 +254,13 @@ class Raids(commands.Cog):
 
         favorite = max(counted, key=lambda item: item["count"]) if counted else None
         best = min(ranked, key=lambda item: item["rank"]) if ranked else None
-        top_100 = sum(1 for item in ranked if item["rank"] <= 100)
+        avg_rank = f'#{round(sum(item["rank"] for item in ranked) / len(ranked))}' if ranked else "N/A"
 
         return {
             "total": str(total),
             "favorite": favorite["abbr"] if favorite else "N/A",
             "best_rank": f'#{best["rank"]} {best["abbr"]}' if best else "N/A",
-            "top_100": str(top_100),
+            "avg_rank": avg_rank,
         }
 
     # ------------------------- Drawing pieces ---------------------------------
@@ -308,7 +316,14 @@ class Raids(commands.Cog):
         except Exception:
             skin = Image.open('images/profile/x-steve500.png').convert('RGBA')
         skin.thumbnail((480, 480))
-        card.paste(skin, (20, 156), skin)
+
+        # Clip skin to portrait bounds — prevents second-layer skins from bleeding past the border
+        portrait_mask = Image.new("L", card.size, 0)
+        ImageDraw.Draw(portrait_mask).rounded_rectangle((41, 100, 479, 645), radius=25, fill=255)
+        skin_layer = Image.new("RGBA", card.size, (0, 0, 0, 0))
+        skin_layer.paste(skin, (20, 156), skin)
+        skin_layer.putalpha(ImageChops.multiply(skin_layer.getchannel('A'), portrait_mask))
+        card.paste(skin_layer, (0, 0), skin_layer)
 
     def _draw_rank_badge(self, card: Image.Image, player_stats: PlayerStats, tag_color: str) -> None:
         """Centered support/rank badge like profile card."""
@@ -388,23 +403,23 @@ class Raids(commands.Cog):
                          summary: Dict[str, str], tag_color: str) -> None:
         """Draw the wide raid panel and all five raid cards."""
         panel_x = 520
-        panel_y = 42
         panel_w = self.CARD_W - panel_x - 38
         accent = "#fad51e"
         sep = tag_color if tag_color.startswith("#") else f"#{tag_color}"
 
-        f_title = self._font('images/profile/5x5.ttf', 38)
-        divider_y = panel_y + 48
+        f_title = self._font('images/profile/5x5.ttf', 54)
+        divider_y = 100          # header zone: inner panel top (y=25) → y=100
+        title_y = 25 + (75 - 54) // 2   # center size-54 text in the 75px zone
         summary_y = divider_y + 48
 
-        draw.text((panel_x, panel_y), "Raids", font=f_title, fill=accent)
+        draw.text((panel_x, title_y), "Raids", font=f_title, fill=accent)
         draw.line([(panel_x, divider_y), (panel_x + panel_w, divider_y)], fill=sep, width=2)
 
         summary_entries = [
             ("Total", summary["total"]),
             ("Best", summary["best_rank"]),
             ("Favorite", summary["favorite"]),
-            ("Top 100", summary["top_100"]),
+            ("Avg. Rank", summary["avg_rank"]),
         ]
         box_gap = 12
         box_w = (panel_w - box_gap * 3) // 4
@@ -415,7 +430,7 @@ class Raids(commands.Cog):
         raid_y = 235
         raid_gap = 10
         raid_w = (panel_w - raid_gap * (len(stats) - 1)) // len(stats)
-        raid_h = 385
+        raid_h = 405
 
         for idx, item in enumerate(stats):
             x = panel_x + idx * (raid_w + raid_gap)
@@ -452,27 +467,26 @@ class Raids(commands.Cog):
         icon.thumbnail((104, 104))
         box.paste(icon, ((w - icon.width) // 2, 22), icon)
 
-        abbr_font = self._fit_font(abbr, bdraw, 'images/profile/5x5.ttf', 36, w - 12, min_size=26)
+        abbr_font = self._fit_font(abbr, bdraw, 'images/profile/5x5.ttf', 44, w - 12, min_size=28)
         bdraw.text((w // 2, 138), abbr, font=abbr_font, fill="#fad51e", anchor="mm")
 
         name_font = self._font('images/profile/5x5.ttf', 16)
-        for line_idx, line in enumerate(self._wrap_lines(item["name"], bdraw, name_font, w - 20, max_lines=3)):
+        fixed_lines = self.NAME_LINES.get(abbr)
+        name_lines = list(fixed_lines) if fixed_lines else self._wrap_lines(item["name"], bdraw, name_font, w - 20, max_lines=3)
+        for line_idx, line in enumerate(name_lines):
             bdraw.text((w // 2, 172 + line_idx * 21), line, font=name_font, fill="#ffffff", anchor="mm")
 
-        label_font = self._font('images/profile/5x5.ttf', 22)
-        value_font = self._font('images/profile/game.ttf', 34)
-        small_value_font = self._font('images/profile/game.ttf', 28)
+        label_font = self._font('images/profile/5x5.ttf', 27)
         rank_text = f"#{rank_val}" if rank_val else "N/A"
 
-        bdraw.text((w // 2, 238), "Rank", font=label_font, fill="#fad51e", anchor="mm")
-        rank_font = self._fit_font(rank_text, bdraw, 'images/profile/game.ttf', 34, w - 26, min_size=20)
-        self._draw_shadow_text(bdraw, (w // 2, 270), rank_text, rank_font, outline_color or "#ffffff", anchor="mm")
+        bdraw.text((w // 2, 250), "Rank", font=label_font, fill="#fad51e", anchor="mm")
+        rank_font = self._fit_font(rank_text, bdraw, 'images/profile/game.ttf', 42, w - 14, min_size=20)
+        self._draw_shadow_text(bdraw, (w // 2, 288), rank_text, rank_font, outline_color or "#ffffff", anchor="mm")
 
-        bdraw.text((w // 2, 314), "Clears", font=label_font, fill="#fad51e", anchor="mm")
+        bdraw.text((w // 2, 330), "Clears", font=label_font, fill="#fad51e", anchor="mm")
         count_text = str(count)
-        count_font = small_value_font if len(count_text) > 4 else value_font
-        count_font = self._fit_font(count_text, bdraw, 'images/profile/game.ttf', count_font.size, w - 26, min_size=20)
-        self._draw_shadow_text(bdraw, (w // 2, 350), count_text, count_font, "#ffffff", anchor="mm")
+        count_font = self._fit_font(count_text, bdraw, 'images/profile/game.ttf', 42, w - 8, min_size=20)
+        self._draw_shadow_text(bdraw, (w // 2, 370), count_text, count_font, "#ffffff", anchor="mm")
 
         card.paste(box, (x, y), box)
 
