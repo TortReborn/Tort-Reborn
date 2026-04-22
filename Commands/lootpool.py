@@ -4,7 +4,7 @@ import discord
 import requests
 from discord.ext import commands
 from discord.commands import SlashCommandGroup
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from Helpers.variables import mythics
@@ -15,6 +15,7 @@ from Helpers.logger import log, ERROR
 import time
 import os
 import json
+from pathlib import Path
 
 
 # Ward items are raid drops that don't have a real item icon — they're just
@@ -71,8 +72,192 @@ class LootPool(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    RAID_DISPLAY_ORDER = ["TNA", "TCC", "NOL", "NOTG", "TWP"]
+    LOOTRUN_REGION_ORDER = ["SE", "Corkus", "Sky", "Molten", "Canyon", "FrumaEast", "FrumaWest"]
+    WARD_ICON_DIR = Path("images/wards")
+    MYTHIC_ICON_DIR = Path("images/mythics")
+    ASPECT_ICON_DIR = Path("images/raids")
+
     def _format_list(self, items):
         return "\n".join(items) if items else "None"
+
+    def _as_mapping(self, value):
+        return value if isinstance(value, dict) else {}
+
+    def _as_list(self, value):
+        return value if isinstance(value, list) else []
+
+    def _extract_aspect_payload(self, data: dict) -> tuple[dict, int]:
+        data = self._as_mapping(data)
+        top_ts = data.get("Timestamp")
+        if isinstance(top_ts, int):
+            timestamp = top_ts
+        else:
+            timestamp = int(time.time())
+
+        if isinstance(data.get("Loot"), dict):
+            return data["Loot"], timestamp
+
+        aspects = self._as_mapping(data.get("Aspects"))
+        if isinstance(aspects.get("Loot"), dict):
+            return aspects["Loot"], timestamp
+        if aspects:
+            nested_ts = aspects.get("Timestamp")
+            if isinstance(nested_ts, int):
+                timestamp = nested_ts
+            return aspects, timestamp
+
+        return {}, timestamp
+
+    def _extract_lootrun_payload(self, data: dict) -> tuple[dict, int]:
+        data = self._as_mapping(data)
+        timestamp = data.get("Timestamp") if isinstance(data.get("Timestamp"), int) else int(time.time())
+
+        if isinstance(data.get("Loot"), dict):
+            return data["Loot"], timestamp
+
+        items = self._as_mapping(data.get("Items"))
+        if isinstance(items.get("Loot"), dict):
+            return items["Loot"], timestamp
+        if items:
+            nested_ts = items.get("Timestamp")
+            if isinstance(nested_ts, int):
+                timestamp = nested_ts
+            return items, timestamp
+
+        return {}, timestamp
+
+    def _ordered_keys(self, payload: dict, preferred_order: list[str]) -> list[str]:
+        payload = self._as_mapping(payload)
+        ordered = [key for key in preferred_order if key in payload]
+        ordered.extend(key for key in payload.keys() if key not in ordered)
+        return ordered
+
+    def _resolve_ward_icon_name(self, item_name: str | None) -> str | None:
+        if not isinstance(item_name, str):
+            return None
+        normalized = " ".join(item_name.replace("\u00a0", " ").replace("\u00c0", " ").split()).strip().lower()
+        if not normalized:
+            return None
+        return {
+            "yellow ward": "yellow_ward.png",
+            "white ward": "white_ward.png",
+            "red ward": "red_ward.png",
+            "purple ward": "purple_ward.png",
+            "pink ward": "pink_ward.png",
+            "orange ward": "orange_ward.png",
+            "green ward": "green_ward.png",
+            "cyan ward": "cyan_ward.png",
+            "blue ward": "blue_ward.png",
+            "black ward": "black_ward.png",
+        }.get(normalized)
+
+    def _load_local_icon(self, icon_path: Path) -> Image.Image | None:
+        try:
+            with Image.open(icon_path) as local_icon:
+                return local_icon.convert("RGBA")
+        except Exception as e:
+            log(ERROR, f"Failed to load local icon: {icon_path} ({e})", context="lootpool")
+            return None
+
+    def _fit_icon(self, icon: Image.Image, max_size: tuple[int, int], *, upscale: bool = False,
+                  resample=Image.Resampling.LANCZOS) -> Image.Image:
+        """Fit an icon inside max_size, optionally allowing upscale."""
+        out = icon.copy()
+        if not upscale:
+            out.thumbnail(max_size, resample=resample)
+            return out
+
+        w, h = out.size
+        target_w, target_h = max_size
+        if w <= 0 or h <= 0:
+            return out
+
+        scale = min(target_w / w, target_h / h)
+        if scale <= 0:
+            return out
+
+        new_size = (max(1, int(round(w * scale))), max(1, int(round(h * scale))))
+        return out.resize(new_size, resample=resample)
+
+    def _resolve_special_icon_name(self, item_name: str | None) -> str | None:
+        if not isinstance(item_name, str):
+            return None
+
+        normalized = " ".join(item_name.replace("\u00a0", " ").replace("\u00c0", " ").split()).strip().lower()
+        if not normalized:
+            return None
+
+        ward_icon = self._resolve_ward_icon_name(item_name)
+        if ward_icon:
+            return ward_icon
+
+        misc_icon = {
+            "liquid emerald": "liquid_emerald.png",
+            "emerald block": "emerald_block.png",
+            "emerald": "emerald.png",
+            "packed crafter bag [1/1]": "crafter_packed.png",
+            "stuffed crafter bag [1/1]": "crafter_stuffed.png",
+            "varied crafter bag [1/1]": "crafter_varied.png",
+            "corkian insulator": "insulator.png",
+            "corkian simulator": "simulator.png",
+            "tol rune": "tol.png",
+            "uth rune": "uth.png",
+            "nii rune": "nii.png",
+            "az rune": "az.png",
+            "ek rune": "ek.png",
+        }.get(normalized)
+        if misc_icon:
+            return misc_icon
+
+        if normalized.endswith(" key"):
+            return "dungeon_key.png"
+        if normalized.startswith("corkian amplifier"):
+            return "corkian_amplifier.png"
+
+        powder_parts = normalized.split(" powder ")
+        if len(powder_parts) == 2 and powder_parts[0] in {"earth", "thunder", "water", "fire", "air"}:
+            return "powder.png"
+
+        return None
+
+    def _load_local_lootpool_icon(self, item_name: str) -> Image.Image | None:
+        ward_icon_name = self._resolve_ward_icon_name(item_name)
+        if ward_icon_name:
+            ward_path = self.WARD_ICON_DIR / ward_icon_name
+            if ward_path.is_file():
+                return self._load_local_icon(ward_path)
+            log(ERROR, f"Local ward icon missing: {ward_path}", context="lootpool")
+            return None
+
+        file_name = mythics.get(item_name) or self._resolve_special_icon_name(item_name)
+        if not file_name:
+            return None
+
+        icon_path = self.MYTHIC_ICON_DIR / file_name
+        if not icon_path.is_file():
+            log(ERROR, f"Local lootpool icon missing: {icon_path} (item={item_name!r})", context="lootpool")
+            return None
+        return self._load_local_icon(icon_path)
+
+    def _load_local_aspect_icon(self, aspect_name: str, aspect_to_class: dict[str, str]) -> Image.Image | None:
+        ward_icon_name = self._resolve_ward_icon_name(aspect_name)
+        if ward_icon_name:
+            ward_path = self.WARD_ICON_DIR / ward_icon_name
+            if ward_path.is_file():
+                return self._load_local_icon(ward_path)
+            log(ERROR, f"Local ward icon missing: {ward_path}", context="lootpool")
+            return None
+
+        cls = aspect_to_class.get(aspect_name)
+        if not cls:
+            return None
+
+        icon_path = self.ASPECT_ICON_DIR / f"aspect_{cls}.png"
+        if not icon_path.is_file():
+            log(ERROR, f"Local aspect icon missing: {icon_path} (aspect={aspect_name!r})", context="lootpool")
+            return None
+        return self._load_local_icon(icon_path)
 
     def _cache_data(self, cache_key: str, data: dict):
         """Cache API data to database"""
@@ -109,16 +294,6 @@ class LootPool(commands.Cog):
             except:
                 pass
 
-    async def _init_session(self):
-        def _create_session():
-            session = requests.Session()
-            try:
-                session.get("https://nori.fish/api/tokens")
-            except Exception:
-                pass
-            return session
-        return await asyncio.to_thread(_create_session)
-
     @lootpool.command(
         name="aspects",
         description="Provides weekly aspects data as an image"
@@ -127,16 +302,24 @@ class LootPool(commands.Cog):
     async def aspects(self, ctx: discord.ApplicationContext):
         await ctx.defer()
 
-        # Fetch API data
-        try:
-            resp = await asyncio.to_thread(requests.get, "https://nori.fish/api/aspects", timeout=15)
-            resp.raise_for_status()
-            data = resp.json()
-            
-            # Cache the aspects data
-            self._cache_data('aspectData', data)
-            
-        except Exception:
+        data = None
+        last_error = None
+        for url in ("https://nori.fish/api/raids", "https://nori.fish/api/aspects"):
+            try:
+                resp = await asyncio.to_thread(requests.get, url, timeout=15)
+                resp.raise_for_status()
+                candidate = resp.json()
+                loot, timestamp = self._extract_aspect_payload(candidate)
+                if loot:
+                    data = candidate
+                    self._cache_data('aspectData', candidate)
+                    break
+            except Exception as e:
+                last_error = e
+
+        if data is None:
+            if last_error:
+                log(ERROR, f"Failed to fetch aspects data: {last_error}", context="lootpool")
             embed = discord.Embed(
                 title=":no_entry: Error",
                 description="Failed to fetch aspects data. Please try again later.",
@@ -145,10 +328,17 @@ class LootPool(commands.Cog):
             await ctx.followup.send(embed=embed)
             return
 
-        loot = data.get("Loot", {})
-        raids = ["TNA", "TCC", "NOL", "NOTG", "TWP"]
+        loot, timestamp = self._extract_aspect_payload(data)
+        raids = self._ordered_keys(loot, self.RAID_DISPLAY_ORDER)
+        if not raids:
+            embed = discord.Embed(
+                title=":no_entry: Error",
+                description="Nori returned no raid aspect data.",
+                color=0xe33232
+            )
+            await ctx.followup.send(embed=embed)
+            return
 
-        # Load mapping JSON and invert to {aspect_name: class}
         try:
             with open('data/aspect_class_map.json', 'r') as f:
                 class_map = json.load(f)
@@ -227,26 +417,19 @@ class LootPool(commands.Cog):
                     else:
                         text = aspect
 
-                    # Wards get a colored swatch in place of the class icon, and the
-                    # text is recolored to match the ward color so it's instantly
-                    # identifiable.
-                    ward_icon = make_ward_icon(aspect, class_icon_size)
                     text_color = color
                     offset = 0
-                    if ward_icon is not None:
+                    icon_img = self._load_local_aspect_icon(aspect, aspect_to_class)
+                    if icon_img is not None:
+                        icon_img.thumbnail((class_icon_size, class_icon_size))
+                        img.paste(icon_img, (x0+10, ty), icon_img)
+                        offset = class_icon_size + 5
+                    elif aspect in WARD_COLORS:
+                        # Last-resort fallback if the remote ward asset is unavailable.
+                        ward_icon = make_ward_icon(aspect, class_icon_size)
                         img.paste(ward_icon, (x0+10, ty), ward_icon)
                         offset = class_icon_size + 5
                         text_color = WARD_COLORS[aspect]
-                    else:
-                        # Class icon if available
-                        cls = aspect_to_class.get(aspect)
-                        if cls:
-                            icon_path = f"images/raids/aspect_{cls}.png"
-                            if os.path.isfile(icon_path):
-                                ci = Image.open(icon_path).convert("RGBA")
-                                ci.thumbnail((class_icon_size, class_icon_size))
-                                img.paste(ci, (x0+10, ty), ci)
-                                offset = class_icon_size + 5
 
                     # Wrap and draw
                     wrapped = wrap_text(text, title_font, col_w - 20 - offset, draw)
@@ -255,7 +438,7 @@ class LootPool(commands.Cog):
                     ty += h + line_spacing
 
         # Try to pull a timestamp from the API (fallback to now if missing)
-        ts = data.get("Timestamp") or int(time.time())
+        ts = timestamp
         next_rot = ts + 604800  # one week in seconds
 
         # Prepare the image file
@@ -285,14 +468,8 @@ class LootPool(commands.Cog):
     @external_rate_limit()
     async def lootruns(self, ctx: discord.ApplicationContext):
         await ctx.defer()
-        session = await self._init_session()
-        csrf_token = session.cookies.get('csrf_token') or session.cookies.get('csrftoken')
-        headers = {}
-        if csrf_token:
-            headers['X-CSRF-Token'] = csrf_token
-
         try:
-            resp = await asyncio.to_thread(session.get, "https://nori.fish/api/lootpool", headers=headers, timeout=15)
+            resp = await asyncio.to_thread(requests.get, "https://nori.fish/api/lootpool", timeout=15)
             resp.raise_for_status()
             data = resp.json()
             
@@ -312,20 +489,32 @@ class LootPool(commands.Cog):
             title="Weekly Mythic Lootpool",
             color=0x7a187a,
         )
-        embed.add_field(name=":arrows_counterclockwise: Next rotation:", value=f'<t:{(data.get("Timestamp") or int(time.time())) + 604800}:f>')
+        loot, timestamp = self._extract_lootrun_payload(data)
+        if not loot:
+            embed = discord.Embed(
+                title=":no_entry: Error",
+                description="Nori returned no lootrun pool data.",
+                color=0xe33232
+            )
+            await ctx.followup.send(embed=embed)
+            return
 
-        loot = data.get("Loot", {})
+        embed.add_field(name=":arrows_counterclockwise: Next rotation:", value=f'<t:{timestamp + 604800}:f>')
+
+        region_order = self._ordered_keys(loot, self.LOOTRUN_REGION_ORDER)
         region_widths = []
-        n_regions = 0
         longest = 0
-        for region, region_data in loot.items():
-            n_regions += 1
-            length = len(region_data.get("Mythic", [])) + 1
+        for region in region_order:
+            region_data = self._as_mapping(loot.get(region))
+            mythics_in_region = self._as_list(region_data.get("Mythic"))
+            shiny_data = self._as_mapping(region_data.get("Shiny"))
+            length = len(mythics_in_region) + (1 if shiny_data.get("Item") else 0)
+            length = max(length, 1)
             region_widths.append(156 * length)
             longest = max(longest, length)
 
         w = 156 * longest
-        h = 263 * n_regions  # height based on number of lr regions for future proofing
+        h = 263 * len(region_order)  # height based on number of lr regions for future proofing
         lr_lp = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         draw = ImageDraw.Draw(lr_lp)
 
@@ -333,7 +522,8 @@ class LootPool(commands.Cog):
         shiny.thumbnail((36, 36))
 
         count = 0
-        for region_name, region_data in loot.items():
+        for region_name in region_order:
+            region_data = self._as_mapping(loot.get(region_name))
             r = region_widths[count]
             x1 = (w - r) / 2
             x2 = w - x1
@@ -344,24 +534,21 @@ class LootPool(commands.Cog):
             draw.rectangle(xy=(x1 + 4, y1 + 4, x2 - 4, y2 - 4), fill=(36, 0, 89, 255))
             draw.rectangle(xy=(x1 + 8, y1 + 8, x2 - 8, y2 - 8), fill=(0, 0, 0, 200))
 
-            shiny_item = region_data['Shiny']['Item']
-            items = [shiny_item] + region_data['Mythic']
+            shiny_data = self._as_mapping(region_data.get('Shiny'))
+            shiny_item = shiny_data.get('Item')
+            mythic_items = self._as_list(region_data.get('Mythic'))
+            items = ([shiny_item] if isinstance(shiny_item, str) and shiny_item else []) + mythic_items
             for i, item in enumerate(items):
                 try:
-                    # Wards have no real item icon — generate a colored swatch instead.
-                    ward_icon = make_ward_icon(item, 100)
-                    if ward_icon is not None:
-                        item_img = ward_icon
+                    item_img = self._load_local_lootpool_icon(item)
+                    if item_img is None:
+                        log(ERROR, f"Missing local icon for lootpool item: {item!r} (region={region_name})", context="lootpool")
+                        ward_icon = make_ward_icon(item, 100)
+                        item_img = ward_icon if ward_icon is not None else Image.open("images/mythics/diamond_chestplate.png").convert("RGBA")
+                    if self._resolve_ward_icon_name(item):
+                        item_img = self._fit_icon(item_img, (100, 100), upscale=True, resample=Image.Resampling.NEAREST)
                     else:
-                        item_img_file = mythics.get(item)
-                        if item_img_file is None:
-                            # Unknown item (e.g. a freshly added mythic not yet mapped) — fall
-                            # back to a generic chestplate icon and log so we can patch the dict
-                            # without crashing the whole image render.
-                            log(ERROR, f"Unmapped lootpool item: {item!r} (region={region_name})", context="lootpool")
-                            item_img_file = "diamond_chestplate.png"
-                        item_img = Image.open(os.path.join('images/mythics/', item_img_file))
-                        item_img.thumbnail((100, 100))
+                        item_img = self._fit_icon(item_img, (100, 100))
                     x = int(x1 + 28 + i * 156)
                     y = int(y1 + 25)
                     lr_lp.paste(item_img, (x, y), item_img)
@@ -385,7 +572,7 @@ class LootPool(commands.Cog):
                     tracker_font = ImageFont.truetype("images/profile/game.ttf", 18)
                     if item == shiny_item and i < 1:
                         lines_in_name = name_text.count("\n") + 1
-                        tracker_text_raw = region_data['Shiny']['Tracker']
+                        tracker_text_raw = str(shiny_data.get('Tracker', ''))
                         wrapped_tracker = wrap_text(tracker_text_raw, tracker_font, 140, draw)
                         tracker_lines = wrapped_tracker.count("\n") + 1
                         tracker_y = y + 115 + (lines_in_name * 20)
@@ -422,9 +609,11 @@ class LootPool(commands.Cog):
             "Molten":    ("Molten Heights Hike",                  (189, 30, 30, 255),  (99, 11, 11, 255)),
             "Canyon":    ("Canyon of the Lost Excursion (South)", (52, 64, 235, 255),  (21, 27, 115, 255)),
             "FrumaEast": ("Fruma East",                           (220, 130, 220, 255),(80, 30, 80, 255)),
+            "Fruma East":("Fruma East",                           (220, 130, 220, 255),(80, 30, 80, 255)),
             "FrumaWest": ("Fruma West",                           (130, 220, 220, 255),(30, 80, 80, 255)),
+            "Fruma West":("Fruma West",                           (130, 220, 220, 255),(30, 80, 80, 255)),
         }
-        for idx, region_key in enumerate(loot.keys()):
+        for idx, region_key in enumerate(region_order):
             title, fill, stroke = region_meta.get(
                 region_key,
                 (region_key, (255, 255, 255, 255), (33, 33, 33, 255))
