@@ -388,6 +388,10 @@ class LootPool(commands.Cog):
         line_spacing = 8
         raid_icon_size = 144
         class_icon_size = 24
+        reward_section_inner_padding = 22
+        reward_column_gap = 18
+        reward_column_text_inset = 10
+        reward_icon_text_gap = 12
         gambit_section_gap = 24
         gambit_entry_gap = 12
         gambit_card_padding = 18
@@ -403,21 +407,37 @@ class LootPool(commands.Cog):
         dummy_draw = ImageDraw.Draw(dummy_img)
 
         # Compute max lines to determine canvas height
+        img_w = cols * col_w + padding * (cols + 1)
+        reward_section_x0 = padding
+        reward_section_x1 = img_w - padding
+        rewards_content_w = (reward_section_x1 - reward_section_x0) - (reward_section_inner_padding * 2)
+        reward_col_w = int((rewards_content_w - (reward_column_gap * max(0, cols - 1))) / max(1, cols))
+
         max_lines = 0
+        max_reward_text_h = 0
         for raid in raids:
             count = 0
+            reward_text_h = 0
             for rarity in ["Mythic", "Fabled", "Legendary"]:
                 for aspect in loot.get(raid, {}).get(rarity, []):
                     text = aspect.replace("Aspect of ", "")
                     text = text[:1].upper() + text[1:] if text else text
-                    wrapped = wrap_text(text, title_font, col_w - 20, dummy_draw)
+                    wrapped = wrap_text(text, title_font, reward_col_w - (reward_column_text_inset * 2), dummy_draw)
                     count += wrapped.count("\n") + 1
+                    reward_text_h += get_multiline_text_size(wrapped, title_font)[1] + line_spacing
             max_lines = max(max_lines, count)
+            max_reward_text_h = max(max_reward_text_h, reward_text_h)
 
         # Canvas size
         line_h = get_multiline_text_size("Test", title_font)[1]
-        img_w = cols * col_w + padding * (cols + 1)
-        raids_img_h = padding + raid_icon_size + max_lines * (line_h + line_spacing) + padding
+        rewards_section_h = (
+            reward_section_inner_padding +
+            raid_icon_size +
+            reward_icon_text_gap +
+            max(max_reward_text_h, max_lines * (line_h + line_spacing)) +
+            reward_section_inner_padding
+        )
+        raids_img_h = padding + rewards_section_h + padding
 
         gambit_icon = self._load_local_icon(self.ASPECT_ICON_DIR / "gambit.png")
         if gambit_icon is not None:
@@ -476,31 +496,42 @@ class LootPool(commands.Cog):
         img = Image.new("RGBA", (img_w, img_h), (0,0,0,0))
         draw = ImageDraw.Draw(img)
 
-        # Draw each raid column
-        for i, raid in enumerate(raids):
-            x0 = padding + i * (col_w + padding)
-            y0 = padding + raid_icon_size // 2
-            y1 = raids_img_h - padding
+        reward_section_y0 = padding
+        reward_section_y1 = reward_section_y0 + rewards_section_h
+        draw.rounded_rectangle(
+            (reward_section_x0, reward_section_y0, reward_section_x1, reward_section_y1),
+            radius=14,
+            fill=(0, 0, 0, 255),
+            outline=(36, 0, 89, 255),
+            width=4,
+        )
 
-            # Background panel
+        # Draw each raid inside a shared reward field.
+        for i, raid in enumerate(raids):
+            x0 = reward_section_x0 + reward_section_inner_padding + i * (reward_col_w + reward_column_gap)
+            x1 = x0 + reward_col_w
+            column_y0 = reward_section_y0 + reward_section_inner_padding
+            column_y1 = reward_section_y1 - reward_section_inner_padding
             draw.rounded_rectangle(
-                (x0, y0, x0 + col_w, y1 + padding),
-                radius=10,
-                fill=(0,0,0,255),
-                outline=(36,0,89,255),
-                width=4
+                (x0, column_y0, x1, column_y1),
+                radius=12,
+                fill=(14, 10, 25, 255),
+                outline=(76, 30, 122, 255),
+                width=2,
             )
 
             # Raid icon
             raid_path = f"images/raids/{raid}.png"
+            icon_slot_y = column_y0 + reward_column_text_inset
             if os.path.isfile(raid_path):
                 raid_icon = Image.open(raid_path).convert("RGBA")
                 raid_icon.thumbnail((raid_icon_size, raid_icon_size))
-                ix = x0 + (col_w - raid_icon.width) // 2
-                img.paste(raid_icon, (ix, padding), raid_icon)
+                ix = x0 + (reward_col_w - raid_icon.width) // 2
+                iy = icon_slot_y + (raid_icon_size - raid_icon.height) // 2
+                img.paste(raid_icon, (ix, iy), raid_icon)
 
             # Draw aspects below icon
-            ty = padding + raid_icon_size + line_spacing
+            ty = icon_slot_y + raid_icon_size + reward_icon_text_gap
             for rarity, color in [("Mythic",(170,0,170,255)), ("Fabled",(255,85,85,255)), ("Legendary",(85,255,255,255))]:
                 for aspect in loot.get(raid, {}).get(rarity, []):
                     # Prepare text
@@ -518,18 +549,18 @@ class LootPool(commands.Cog):
                     icon_img = self._load_local_aspect_icon(aspect, aspect_to_class)
                     if icon_img is not None:
                         icon_img.thumbnail((class_icon_size, class_icon_size))
-                        img.paste(icon_img, (x0+10, ty), icon_img)
+                        img.paste(icon_img, (x0 + reward_column_text_inset, ty), icon_img)
                         offset = class_icon_size + 5
                     elif aspect in WARD_COLORS:
                         # Last-resort fallback if the remote ward asset is unavailable.
                         ward_icon = make_ward_icon(aspect, class_icon_size)
-                        img.paste(ward_icon, (x0+10, ty), ward_icon)
+                        img.paste(ward_icon, (x0 + reward_column_text_inset, ty), ward_icon)
                         offset = class_icon_size + 5
                         text_color = WARD_COLORS[aspect]
 
                     # Wrap and draw
-                    wrapped = wrap_text(text, title_font, col_w - 20 - offset, draw)
-                    draw.multiline_text((x0+10+offset, ty), wrapped, font=title_font, fill=text_color)
+                    wrapped = wrap_text(text, title_font, reward_col_w - (reward_column_text_inset * 2) - offset, draw)
+                    draw.multiline_text((x0 + reward_column_text_inset + offset, ty), wrapped, font=title_font, fill=text_color)
                     _, h = get_multiline_text_size(wrapped, title_font)
                     ty += h + line_spacing
 
