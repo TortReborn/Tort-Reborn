@@ -15,6 +15,7 @@ from Helpers.logger import log, ERROR
 import time
 import os
 import json
+import re
 from pathlib import Path
 
 
@@ -132,6 +133,32 @@ class LootPool(commands.Cog):
         ordered = [key for key in preferred_order if key in payload]
         ordered.extend(key for key in payload.keys() if key not in ordered)
         return ordered
+
+    def _clean_gambit_text(self, value) -> str:
+        if not isinstance(value, str):
+            return "Unknown"
+        text = value.replace("\r\n", "\n").replace("\r", "\n").strip()
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        return text or "Unknown"
+
+    def _extract_gambits_payload(self, data: dict) -> list[dict]:
+        payload = self._as_mapping(data)
+        entries = self._as_list(payload.get("Entries"))
+        return [self._as_mapping(entry) for entry in entries if isinstance(entry, dict)]
+
+    def _wrap_gambit_text(self, text: str, font, width: int, draw: ImageDraw.ImageDraw) -> str:
+        wrapped_parts = []
+        for line in self._clean_gambit_text(text).split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            wrapped_parts.append(wrap_text(line, font, width, draw))
+        return "\n".join(wrapped_parts) if wrapped_parts else "Unknown"
+
+    def _multiline_block_height(self, text: str, font, *, spacing: int = 0) -> int:
+        base_h = get_multiline_text_size(text, font)[1]
+        line_count = text.count("\n") + 1 if text else 1
+        return base_h + max(0, line_count - 1) * spacing
 
     def _resolve_ward_icon_name(self, item_name: str | None) -> str | None:
         if not isinstance(item_name, str):
@@ -304,6 +331,7 @@ class LootPool(commands.Cog):
 
         data = None
         last_error = None
+        gambit_entries = []
         for url in ("https://nori.fish/api/raids", "https://nori.fish/api/aspects"):
             try:
                 resp = await asyncio.to_thread(requests.get, url, timeout=15)
@@ -327,6 +355,13 @@ class LootPool(commands.Cog):
             )
             await ctx.followup.send(embed=embed)
             return
+
+        try:
+            gambits_resp = await asyncio.to_thread(requests.get, "https://nori.fish/api/gambits", timeout=15)
+            gambits_resp.raise_for_status()
+            gambit_entries = self._extract_gambits_payload(gambits_resp.json())
+        except Exception as e:
+            log(ERROR, f"Failed to fetch gambits data: {e}", context="lootpool")
 
         loot, timestamp = self._extract_aspect_payload(data)
         raids = self._ordered_keys(loot, self.RAID_DISPLAY_ORDER)
@@ -353,9 +388,17 @@ class LootPool(commands.Cog):
         line_spacing = 8
         raid_icon_size = 144
         class_icon_size = 24
+        gambit_section_gap = 24
+        gambit_entry_gap = 12
+        gambit_card_padding = 18
+        gambit_icon_size = 26
+        gambit_text_spacing = 4
 
         # Prepare fonts and dummy draw
         title_font = ImageFont.truetype("images/profile/game.ttf", 18)
+        gambit_header_font = ImageFont.truetype("images/profile/game.ttf", 24)
+        gambit_name_font = ImageFont.truetype("images/profile/game.ttf", 20)
+        gambit_desc_font = ImageFont.truetype("images/profile/game.ttf", 18)
         dummy_img = Image.new('RGBA', (1,1), (0,0,0,0))
         dummy_draw = ImageDraw.Draw(dummy_img)
 
@@ -373,8 +416,61 @@ class LootPool(commands.Cog):
 
         # Canvas size
         line_h = get_multiline_text_size("Test", title_font)[1]
-        img_h = padding + raid_icon_size + max_lines * (line_h + line_spacing) + padding
         img_w = cols * col_w + padding * (cols + 1)
+        raids_img_h = padding + raid_icon_size + max_lines * (line_h + line_spacing) + padding
+
+        gambit_icon = self._load_local_icon(self.ASPECT_ICON_DIR / "gambit.png")
+        if gambit_icon is not None:
+            gambit_icon = self._fit_icon(
+                gambit_icon,
+                (gambit_icon_size, gambit_icon_size),
+                upscale=True,
+                resample=Image.Resampling.NEAREST,
+            )
+
+        gambit_layout = []
+        gambit_section_height = 0
+        if gambit_entries:
+            section_inner_w = img_w - (padding * 4)
+            gambit_cols = max(1, min(4, len(gambit_entries)))
+            gambit_col_gap = 12
+            card_w = max(
+                240,
+                int((section_inner_w - (gambit_col_gap * (gambit_cols - 1))) / gambit_cols),
+            )
+            icon_offset = (gambit_icon.width + 12) if gambit_icon is not None else 0
+            text_w = max(150, card_w - (gambit_card_padding * 2) - icon_offset)
+            for entry in gambit_entries:
+                name = self._wrap_gambit_text(entry.get("name", "Unknown"), gambit_name_font, text_w, dummy_draw)
+                description = self._wrap_gambit_text(entry.get("description", "Unknown"), gambit_desc_font, text_w, dummy_draw)
+                name_h = self._multiline_block_height(name, gambit_name_font, spacing=gambit_text_spacing)
+                desc_h = self._multiline_block_height(description, gambit_desc_font, spacing=gambit_text_spacing)
+                text_h = name_h + 8 + desc_h
+                icon_h = gambit_icon.height if gambit_icon is not None else 0
+                card_h = max(text_h, icon_h) + (gambit_card_padding * 2) + 8
+                gambit_layout.append({
+                    "name": name,
+                    "description": description,
+                    "name_h": name_h,
+                    "card_w": card_w,
+                    "card_h": card_h,
+                })
+
+            header_h = get_multiline_text_size("Current Gambits", gambit_header_font)[1]
+            row_heights = []
+            for row_start in range(0, len(gambit_layout), gambit_cols):
+                row_entries = gambit_layout[row_start:row_start + gambit_cols]
+                row_heights.append(max(entry["card_h"] for entry in row_entries))
+            gambit_section_height = (
+                padding +
+                header_h +
+                16 +
+                sum(row_heights) +
+                (gambit_entry_gap * max(0, len(row_heights) - 1)) +
+                padding + 10
+            )
+
+        img_h = raids_img_h + (gambit_section_gap + gambit_section_height if gambit_layout else 0)
 
         # Create canvas
         img = Image.new("RGBA", (img_w, img_h), (0,0,0,0))
@@ -384,11 +480,11 @@ class LootPool(commands.Cog):
         for i, raid in enumerate(raids):
             x0 = padding + i * (col_w + padding)
             y0 = padding + raid_icon_size // 2
-            y1 = img_h - padding
+            y1 = raids_img_h - padding
 
             # Background panel
             draw.rounded_rectangle(
-                (x0, y0, x0 + col_w, y1+padding),
+                (x0, y0, x0 + col_w, y1 + padding),
                 radius=10,
                 fill=(0,0,0,255),
                 outline=(36,0,89,255),
@@ -436,6 +532,80 @@ class LootPool(commands.Cog):
                     draw.multiline_text((x0+10+offset, ty), wrapped, font=title_font, fill=text_color)
                     _, h = get_multiline_text_size(wrapped, title_font)
                     ty += h + line_spacing
+
+        if gambit_layout:
+            section_x0 = padding
+            section_y0 = raids_img_h + gambit_section_gap
+            section_x1 = img_w - padding
+            section_y1 = img_h - padding
+
+            draw.rounded_rectangle(
+                (section_x0, section_y0, section_x1, section_y1),
+                radius=14,
+                fill=(0, 0, 0, 255),
+                outline=(36, 0, 89, 255),
+                width=4,
+            )
+
+            header_y = section_y0 + padding
+            draw.text(
+                (section_x0 + padding, header_y),
+                "Current Gambits",
+                font=gambit_header_font,
+                fill=(255, 215, 90, 255),
+            )
+
+            entry_x0 = section_x0 + padding
+            entry_x1 = section_x1 - padding
+            content_w = entry_x1 - entry_x0
+            gambit_cols = max(1, min(4, len(gambit_layout)))
+            gambit_col_gap = 12
+            card_w = max(
+                240,
+                int((content_w - (gambit_col_gap * (gambit_cols - 1))) / gambit_cols),
+            )
+            entry_y = header_y + get_multiline_text_size("Current Gambits", gambit_header_font)[1] + 16
+
+            for row_start in range(0, len(gambit_layout), gambit_cols):
+                row_entries = gambit_layout[row_start:row_start + gambit_cols]
+                row_h = max(entry["card_h"] for entry in row_entries)
+
+                for col_idx, entry in enumerate(row_entries):
+                    card_x0 = entry_x0 + col_idx * (card_w + gambit_col_gap)
+                    card_x1 = card_x0 + card_w
+                    card_y1 = entry_y + row_h
+
+                    draw.rounded_rectangle(
+                        (card_x0, entry_y, card_x1, card_y1),
+                        radius=12,
+                        fill=(14, 10, 25, 255),
+                        outline=(76, 30, 122, 255),
+                        width=2,
+                    )
+
+                    text_x = card_x0 + gambit_card_padding
+                    text_y = entry_y + gambit_card_padding
+                    if gambit_icon is not None:
+                        icon_y = entry_y + (row_h - gambit_icon.height) // 2
+                        img.paste(gambit_icon, (text_x, icon_y), gambit_icon)
+                        text_x += gambit_icon.width + 12
+
+                    draw.multiline_text(
+                        (text_x, text_y),
+                        entry["name"],
+                        font=gambit_name_font,
+                        fill=(255, 215, 90, 255),
+                        spacing=gambit_text_spacing,
+                    )
+                    draw.multiline_text(
+                        (text_x, text_y + entry["name_h"] + 8),
+                        entry["description"],
+                        font=gambit_desc_font,
+                        fill=(230, 230, 240, 255),
+                        spacing=gambit_text_spacing,
+                    )
+
+                entry_y += row_h + gambit_entry_gap
 
         # Try to pull a timestamp from the API (fallback to now if missing)
         ts = timestamp
