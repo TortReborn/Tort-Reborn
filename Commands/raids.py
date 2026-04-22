@@ -54,6 +54,7 @@ class Raids(commands.Cog):
         ("WTP",  "The Queen's Wartorn Palace", ("The Wartorn Palace", "Wartorn Palace"), ("wartornSrPlayers", "wartornPalaceSrPlayers", "palaceSrPlayers"), ("wartorn", "palace")),
     ]
     # Temporary API shim: until Wynn exposes Queen's Wartorn Palace by name,
+    # Raid list may need to be updated once API updates so the key matches
     # treat the generic "unknown" bucket as WTP, but only if no explicit WTP key exists.
     TEMP_RAID_COUNT_FALLBACKS: Dict[str, Tuple[str, ...]] = {
         "WTP": ("unknown",),
