@@ -402,7 +402,7 @@ class Raids(commands.Cog):
     def _draw_raid_panel(self, card: Image.Image, draw: ImageDraw.ImageDraw, stats: List[Dict],
                          summary: Dict[str, str], tag_color: str) -> None:
         """Draw the wide raid panel and all five raid cards."""
-        panel_x = 520
+        panel_x = 492
         panel_w = self.CARD_W - panel_x - 38
         accent = "#fad51e"
         sep = tag_color if tag_color.startswith("#") else f"#{tag_color}"
