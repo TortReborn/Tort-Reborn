@@ -73,7 +73,10 @@ class LootPool(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    RAID_DISPLAY_ORDER = ["TNA", "TCC", "NOL", "NOTG", "TWP"]
+    # nori.fish uses NOG for NOTG and TWP for WTP
+    RAID_DISPLAY_ORDER = ["TNA", "TCC", "NOL", "NOG", "TWP"]
+    # Map nori.fish abbreviations to local image filename prefixes
+    RAID_ICON_MAP = {"NOG": "NOTG", "TWP": "WTP"}
     LOOTRUN_REGION_ORDER = ["SE", "Corkus", "Sky", "Molten", "Canyon", "FrumaEast", "FrumaWest"]
     WARD_ICON_DIR = Path("images/wards")
     MYTHIC_ICON_DIR = Path("images/mythics")
@@ -520,8 +523,9 @@ class LootPool(commands.Cog):
                 width=2,
             )
 
-            # Raid icon
-            raid_path = f"images/raids/{raid}.png"
+            # Raid icon -- resolve nori.fish key to local filename
+            icon_name = self.RAID_ICON_MAP.get(raid, raid)
+            raid_path = f"images/raids/{icon_name}.png"
             icon_slot_y = column_y0 + reward_column_text_inset
             if os.path.isfile(raid_path):
                 raid_icon = Image.open(raid_path).convert("RGBA")

@@ -55,18 +55,14 @@ class Raids(commands.Cog):
     }
 
     RAIDS: List[Tuple[str, str, Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]] = [
-        ("NOTG", "Nest of the Grootslangs", ("Nest of the Grootslangs",), ("grootslangSrPlayers",), ("grootslang",)),
-        ("NOL",  "Orphion's Nexus of Light", ("Orphion's Nexus of Light",), ("orphionSrPlayers",), ("orphion",)),
-        ("TCC",  "The Canyon Colossus", ("The Canyon Colossus",), ("colossusSrPlayers",), ("colossus",)),
-        ("TNA",  "The Nameless Anomaly", ("The Nameless Anomaly",), ("namelessSrPlayers",), ("nameless", "anomaly")),
-        ("WTP",  "The Queen's Wartorn Palace", ("The Wartorn Palace", "Wartorn Palace"), ("wartornSrPlayers", "wartornPalaceSrPlayers", "palaceSrPlayers"), ("wartorn", "palace")),
+        ("NOTG", "Nest of the Grootslangs", ("Nest of the Grootslangs",), ("grootslangCompletion",), ("grootslang",)),
+        ("NOL",  "Orphion's Nexus of Light", ("Orphion's Nexus of Light",), ("orphionCompletion",), ("orphion",)),
+        ("TCC",  "The Canyon Colossus", ("The Canyon Colossus",), ("colossusCompletion",), ("colossus",)),
+        ("TNA",  "The Nameless Anomaly", ("The Nameless Anomaly",), ("namelessCompletion",), ("nameless", "anomaly")),
+        # WTP is internally called "Fruma" by the API -- frumaCompletion tracks WTP clears
+        ("WTP",  "The Queen's Wartorn Palace", ("The Wartorn Palace", "Wartorn Palace"), ("frumaCompletion",), ("fruma",)),
     ]
-    # Temporary API shim: until Wynn exposes Queen's Wartorn Palace by name,
-    # Raid list may need to be updated once API updates so the key matches
-    # treat the generic "unknown" bucket as WTP, but only if no explicit WTP key exists.
-    TEMP_RAID_COUNT_FALLBACKS: Dict[str, Tuple[str, ...]] = {
-        "WTP": ("unknown",),
-    }
+    TEMP_RAID_COUNT_FALLBACKS: Dict[str, Tuple[str, ...]] = {}
 
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -238,9 +234,10 @@ class Raids(commands.Cog):
             if value:
                 return value
 
+        # Fall back to fragment matching for both completion and srplayers keys
         for key, value in ranking.items():
             key_l = key.lower()
-            if "srplayers" not in key_l:
+            if "completion" not in key_l and "srplayers" not in key_l:
                 continue
             if any(fragment in key_l for fragment in fragments):
                 return value or 0
