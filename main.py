@@ -209,6 +209,7 @@ extensions = [
     'Commands.wave_promote',
     'Commands.app_commands',
     'Commands.kick_list',
+    'Commands.embed_manager',
 
     # Dev Commands
     'Commands.render_text',
@@ -242,6 +243,7 @@ extensions = [
     'Tasks.promotion_queue_processor',
     'Tasks.process_website_decisions',
     'Tasks.sync_war_builds',
+    'Tasks.sync_managed_messages',
 ]
 
 for ext in extensions:
