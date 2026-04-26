@@ -34,6 +34,7 @@ from Helpers.variables import (
     TCC_EMOJI,
     TNA_EMOJI,
     NOL_EMOJI,
+    TWP_EMOJI,
     ASPECT_EMOJI,
     ALL_GUILD_IDS,
     TAQ_GUILD_ID,
@@ -59,7 +60,8 @@ RAID_EMOJIS = {
     "Nest of the Grootslangs": NOTG_EMOJI,
     "The Canyon Colossus": TCC_EMOJI,
     "The Nameless Anomaly": TNA_EMOJI,
-    "Orphion's Nexus of Light": NOL_EMOJI
+    "Orphion's Nexus of Light": NOL_EMOJI,
+    "The Wartorn Palace": TWP_EMOJI,
 }
 
 # --- thread-safe DB + snapshot helpers ---

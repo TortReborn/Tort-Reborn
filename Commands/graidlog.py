@@ -8,7 +8,7 @@ from discord import Option
 from discord.ext import commands
 
 from Helpers.database import DB, get_current_guild_data
-from Helpers.variables import HOME_GUILD_IDS, RAID_LOG_CHANNEL_ID
+from Helpers.variables import HOME_GUILD_IDS, RAID_LOG_CHANNEL_ID, NOTG_EMOJI, TCC_EMOJI, TNA_EMOJI, NOL_EMOJI, TWP_EMOJI
 
 RAID_NAMES = [
     "Nest of the Grootslangs",
@@ -29,11 +29,11 @@ RAID_SHORT = {
 RAID_SHORT_TO_FULL = {v: k for k, v in RAID_SHORT.items()}
 
 RAID_EMOJIS = {
-    "Nest of the Grootslangs": "<:notg:1316539942524031017>",
-    "The Canyon Colossus": "<:tcc:1316539938917060658>",
-    "The Nameless Anomaly": "<:tna:1316539936438222850>",
-    "Orphion's Nexus of Light": "<:nol:1316539940418621530>",
-    "The Wartorn Palace": "",
+    "Nest of the Grootslangs": NOTG_EMOJI,
+    "The Canyon Colossus": TCC_EMOJI,
+    "The Nameless Anomaly": TNA_EMOJI,
+    "Orphion's Nexus of Light": NOL_EMOJI,
+    "The Wartorn Palace": TWP_EMOJI,
 }
 
 
