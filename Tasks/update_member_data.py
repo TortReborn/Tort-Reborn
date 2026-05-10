@@ -56,7 +56,7 @@ GUILD_LOG = GUILD_LOG_CHANNEL_ID
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 100  # max calls per minute
-RAID_DETECTION_ENABLED = os.getenv("RAID_DETECTION_ENABLED", "true").lower() == "true"
+RAID_DETECTION_ENABLED = False
 
 RAID_EMOJIS = {
     "Nest of the Grootslangs": NOTG_EMOJI,
