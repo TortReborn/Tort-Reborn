@@ -1,6 +1,7 @@
 import asyncio
 import io
 import json
+import os
 import re
 import sys
 import discord
@@ -55,6 +56,7 @@ GUILD_LOG = GUILD_LOG_CHANNEL_ID
 GUILD_TTL = timedelta(minutes=10)
 CONTRIBUTION_THRESHOLD = 2_500_000_000
 RATE_LIMIT = 100  # max calls per minute
+RAID_DETECTION_ENABLED = os.getenv("RAID_DETECTION_ENABLED", "true").lower() == "true"
 
 RAID_EMOJIS = {
     "Nest of the Grootslangs": NOTG_EMOJI,
@@ -724,11 +726,11 @@ class UpdateMemberData(commands.Cog):
                 'contributed': contributed
             }
 
-            # Only detect “unvalidated” if:
+            # Only detect "unvalidated" if:
             #  - we have fresh data for this UID (we do),
             #  - we are not on cold start,
             #  - AND we have a previous baseline for this UID.
-            if not self.cold_start and uid in prev:
+            if RAID_DETECTION_ENABLED and not self.cold_start and uid in prev:
                 old_counts = prev.get(uid, {}).get('raids', {r: 0 for r in self.RAID_NAMES})
                 for raid in self.RAID_NAMES:
                     diff = counts[raid] - old_counts.get(raid, 0)
@@ -744,105 +746,106 @@ class UpdateMemberData(commands.Cog):
                         }
                         log(INFO, f"DETECT unvalidated {uname} in {raid}", context="update_member_data")
 
-        # --- 8: XP jumps (only consider fresh data + existing baseline) ---
-        xp_jumps = set()
-        for uid in fresh:
-            if uid not in prev:   # no baseline => skip
-                continue
-            old_c = prev[uid].get('contributed', 0)
-            new_c = new_data[uid].get('contributed', 0)
-            if new_c - old_c >= CONTRIBUTION_THRESHOLD:
-                xp_jumps.add(uid)
-                log(INFO, f"XP threshold met for {uid} (diff: {new_c-old_c} >= {CONTRIBUTION_THRESHOLD})", context="update_member_data")
-
-        # --- 9: Validate via XP jump ---
-        for raid, queues in self.raid_participants.items():
-            for uid in list(queues['unvalidated']):
-                if uid in xp_jumps:
-                    info = queues['unvalidated'].pop(uid)
-                    queues['validated'][uid] = info
-                    log(INFO, f"VALIDATED {info['name']} for {raid} via XP jump", context="update_member_data")
-
-        # --- 9b: Cross-validate — if a player entered unvalidated for a raid
-        #     but was already in xp_only from a previous tick, validate immediately ---
-        for raid, queues in self.raid_participants.items():
-            for uid in list(queues['unvalidated']):
-                if uid in self.xp_only_validated:
-                    info = queues['unvalidated'].pop(uid)
-                    queues['validated'][uid] = info
-                    self.xp_only_validated.pop(uid)
-                    log(INFO, f"CROSS-VALIDATED {info['name']} for {raid} (was in xp_only pool)", context="update_member_data")
-
-        # --- 10: Validate via contrib diff (only if we have fresh data this tick) ---
-        for raid, queues in self.raid_participants.items():
-            for uid, info in list(queues['unvalidated'].items()):
-                if uid not in fresh:
-                    # No fresh data for this UID this tick—don’t try to validate
-                    log(INFO, f"SKIP contrib validation for {uid}: no fresh data", context="update_member_data")
+        if RAID_DETECTION_ENABLED:
+            # --- 8: XP jumps (only consider fresh data + existing baseline) ---
+            xp_jumps = set()
+            for uid in fresh:
+                if uid not in prev:   # no baseline => skip
                     continue
-                base = info['baseline_contrib']
-                curr = new_data.get(uid, {}).get('contributed', 0)
-                if curr - base >= CONTRIBUTION_THRESHOLD:
-                    queues['validated'][uid] = info
-                    queues['unvalidated'].pop(uid)
-                    log(INFO, f"VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})", context="update_member_data")
+                old_c = prev[uid].get('contributed', 0)
+                new_c = new_data[uid].get('contributed', 0)
+                if new_c - old_c >= CONTRIBUTION_THRESHOLD:
+                    xp_jumps.add(uid)
+                    log(INFO, f"XP threshold met for {uid} (diff: {new_c-old_c} >= {CONTRIBUTION_THRESHOLD})", context="update_member_data")
 
-        # --- 10b: Add XP-jump players with no raid detection to xp_only pool ---
-        for uid in xp_jumps:
-            in_any_raid_queue = any(
-                uid in self.raid_participants[r]['unvalidated'] or uid in self.raid_participants[r]['validated']
-                for r in self.RAID_NAMES
-            )
-            if not in_any_raid_queue and uid not in self.xp_only_validated:
-                uname = name_map.get(uid, uid)
-                self.xp_only_validated[uid] = {
-                    "name": uname,
-                    "first_seen": now
-                }
-                log(INFO, f"XP-ONLY validated {uname} (no raid type detected)", context="update_member_data")
+            # --- 9: Validate via XP jump ---
+            for raid, queues in self.raid_participants.items():
+                for uid in list(queues['unvalidated']):
+                    if uid in xp_jumps:
+                        info = queues['unvalidated'].pop(uid)
+                        queues['validated'][uid] = info
+                        log(INFO, f"VALIDATED {info['name']} for {raid} via XP jump", context="update_member_data")
 
-        # --- 11: Announce raids (with xp_only backfill) ---
-        for raid in self.RAID_NAMES:
-            vals = self.raid_participants[raid]['validated']
-            raid_validated_count = len(vals)
+            # --- 9b: Cross-validate — if a player entered unvalidated for a raid
+            #     but was already in xp_only from a previous tick, validate immediately ---
+            for raid, queues in self.raid_participants.items():
+                for uid in list(queues['unvalidated']):
+                    if uid in self.xp_only_validated:
+                        info = queues['unvalidated'].pop(uid)
+                        queues['validated'][uid] = info
+                        self.xp_only_validated.pop(uid)
+                        log(INFO, f"CROSS-VALIDATED {info['name']} for {raid} (was in xp_only pool)", context="update_member_data")
 
-            if raid_validated_count == 0:
-                continue
+            # --- 10: Validate via contrib diff (only if we have fresh data this tick) ---
+            for raid, queues in self.raid_participants.items():
+                for uid, info in list(queues['unvalidated'].items()):
+                    if uid not in fresh:
+                        # No fresh data for this UID this tick—don't try to validate
+                        log(INFO, f"SKIP contrib validation for {uid}: no fresh data", context="update_member_data")
+                        continue
+                    base = info['baseline_contrib']
+                    curr = new_data.get(uid, {}).get('contributed', 0)
+                    if curr - base >= CONTRIBUTION_THRESHOLD:
+                        queues['validated'][uid] = info
+                        queues['unvalidated'].pop(uid)
+                        log(INFO, f"VALIDATED {info['name']} for {raid} (contrib diff: {curr-base} >= {CONTRIBUTION_THRESHOLD})", context="update_member_data")
 
-            needed = 4 - raid_validated_count
-            if needed <= 0:
-                # 4+ raid-specific validated — form group normally
-                group = set(list(vals)[:4])
-                await self._announce_raid(raid, group, guild)
-                for uid in group:
-                    vals.pop(uid)
-            elif len(self.xp_only_validated) >= needed:
-                # 1-3 raid-specific validated + enough xp_only to fill to 4
-                xp_only_uids = list(self.xp_only_validated.keys())[:needed]
+            # --- 10b: Add XP-jump players with no raid detection to xp_only pool ---
+            for uid in xp_jumps:
+                in_any_raid_queue = any(
+                    uid in self.raid_participants[r]['unvalidated'] or uid in self.raid_participants[r]['validated']
+                    for r in self.RAID_NAMES
+                )
+                if not in_any_raid_queue and uid not in self.xp_only_validated:
+                    uname = name_map.get(uid, uid)
+                    self.xp_only_validated[uid] = {
+                        "name": uname,
+                        "first_seen": now
+                    }
+                    log(INFO, f"XP-ONLY validated {uname} (no raid type detected)", context="update_member_data")
+
+            # --- 11: Announce raids (with xp_only backfill) ---
+            for raid in self.RAID_NAMES:
+                vals = self.raid_participants[raid]['validated']
+                raid_validated_count = len(vals)
+
+                if raid_validated_count == 0:
+                    continue
+
+                needed = 4 - raid_validated_count
+                if needed <= 0:
+                    # 4+ raid-specific validated — form group normally
+                    group = set(list(vals)[:4])
+                    await self._announce_raid(raid, group, guild)
+                    for uid in group:
+                        vals.pop(uid)
+                elif len(self.xp_only_validated) >= needed:
+                    # 1-3 raid-specific validated + enough xp_only to fill to 4
+                    xp_only_uids = list(self.xp_only_validated.keys())[:needed]
+                    for uid in xp_only_uids:
+                        info = self.xp_only_validated.pop(uid)
+                        vals[uid] = info
+                        log(INFO, f"BACKFILL {info['name']} from xp_only pool into {raid}", context="update_member_data")
+
+                    group = set(list(vals)[:4])
+                    await self._announce_raid(raid, group, guild)
+                    for uid in group:
+                        vals.pop(uid)
+
+            # --- 11b: All-private group (no raid type detected for anyone) ---
+            # Grace period: only announce xp_only players from previous ticks,
+            # giving raid-specific detection a chance to catch up next iteration.
+            eligible_xp_only = {uid: info for uid, info in self.xp_only_validated.items()
+                               if info['first_seen'] < now}
+            while len(eligible_xp_only) >= 4:
+                xp_only_uids = list(eligible_xp_only.keys())[:4]
+                group = set(xp_only_uids)
+                participant_names = {uid: self.xp_only_validated[uid]["name"] for uid in xp_only_uids}
                 for uid in xp_only_uids:
-                    info = self.xp_only_validated.pop(uid)
-                    vals[uid] = info
-                    log(INFO, f"BACKFILL {info['name']} from xp_only pool into {raid}", context="update_member_data")
-
-                group = set(list(vals)[:4])
-                await self._announce_raid(raid, group, guild)
-                for uid in group:
-                    vals.pop(uid)
-
-        # --- 11b: All-private group (no raid type detected for anyone) ---
-        # Grace period: only announce xp_only players from previous ticks,
-        # giving raid-specific detection a chance to catch up next iteration.
-        eligible_xp_only = {uid: info for uid, info in self.xp_only_validated.items()
-                           if info['first_seen'] < now}
-        while len(eligible_xp_only) >= 4:
-            xp_only_uids = list(eligible_xp_only.keys())[:4]
-            group = set(xp_only_uids)
-            participant_names = {uid: self.xp_only_validated[uid]["name"] for uid in xp_only_uids}
-            for uid in xp_only_uids:
-                self.xp_only_validated.pop(uid)
-                eligible_xp_only.pop(uid)
-            log(INFO, f"ALL-PRIVATE group formed: {participant_names}", context="update_member_data")
-            await self._announce_raid(None, group, guild, participant_names=participant_names)
+                    self.xp_only_validated.pop(uid)
+                    eligible_xp_only.pop(uid)
+                log(INFO, f"ALL-PRIVATE group formed: {participant_names}", context="update_member_data")
+                await self._announce_raid(None, group, guild, participant_names=participant_names)
 
         # --- 11c: Drain manually-logged raids queued by the website ---
         # Runs here so we share the freshly-fetched `guild` object (for the
