@@ -105,8 +105,10 @@ class Raids(commands.Cog):
             await ctx.followup.send(embed=embed, ephemeral=True)
             return
 
-        # 2) Fetch raw player data for raid stats ----------------------------------
-        player = await self._fetch_player(name)
+        # 2) Reuse the raw player payload loaded by PlayerStats for raid stats ------
+        player = getattr(player_stats, "player_data", None)
+        if not isinstance(player, dict):
+            player = await self._fetch_player(name)
         if player is None:
             embed = discord.Embed(
                 title=':no_entry: Player not found',
@@ -336,9 +338,10 @@ class Raids(commands.Cog):
             return
 
         gname = guild_info.get('name', '')
+        guild_data = getattr(player_stats, 'guild_data', None)
         # Derive a readable color from banner
         try:
-            banner = getData(gname)['banner']
+            banner = guild_data['banner'] if guild_data else getData(gname)['banner']
             base = banner.get('base')
             if base in ['BLACK', 'GRAY', 'BROWN']:
                 colour = next(layer['colour'] for layer in banner['layers'] if layer['colour'] not in ['BLACK', 'GRAY', 'BROWN'])
@@ -383,7 +386,7 @@ class Raids(commands.Cog):
 
         # Minecraft-style banner icon
         try:
-            bn = generate_banner(gname, 15, "2")
+            bn = generate_banner(gname, 15, "2", guild_data=guild_data)
             bn.thumbnail((157, 157))
             bn = bn.convert('RGBA')
         except Exception:

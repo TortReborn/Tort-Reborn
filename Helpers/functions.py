@@ -5,6 +5,7 @@ import os
 import json
 import re
 from io import BytesIO
+from urllib.parse import quote
 from uuid import UUID
 
 import certifi
@@ -51,6 +52,20 @@ def getPlayerDatav3(uuid, token=None):
         resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
         resp.raise_for_status()
         return resp.json()
+    except requests.RequestException:
+        return False
+
+
+def getPlayerProfileDatav3(player, token=None):
+    """Fetch a full player profile by username or UUID, preserving old fallbacks for ambiguous names."""
+    url = f'https://api.wynncraft.com/v3/player/{quote(str(player))}?fullResult'
+    try:
+        resp = requests.get(url, timeout=20, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
+        if resp.status_code == 300:
+            return False
+        resp.raise_for_status()
+        payload = resp.json()
+        return payload if payload.get('uuid') else False
     except requests.RequestException:
         return False
 
@@ -392,14 +407,16 @@ def round_corners(img, radius=25):
     return img
 
 
-def generate_banner(guild, scale, style=''):
-    url = f"https://api.wynncraft.com/v3/guild/{urlify(guild)}"
-    try:
-        resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
-        resp.raise_for_status()
-        data = resp.json()
-    except requests.RequestException:
-        return Image.open(f'images/banner{style}/base.png')
+def generate_banner(guild, scale, style='', guild_data=None):
+    data = guild_data
+    if data is None:
+        url = f"https://api.wynncraft.com/v3/guild/{urlify(guild)}"
+        try:
+            resp = requests.get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv('WYNN_TOKEN')}"})
+            resp.raise_for_status()
+            data = resp.json()
+        except requests.RequestException:
+            return Image.open(f'images/banner{style}/base.png')
 
     if data['banner']:
         banner = data['banner']

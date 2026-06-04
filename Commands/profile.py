@@ -16,7 +16,7 @@ from Helpers.functions import pretty_date, generate_rank_badge, generate_banner,
 from Helpers.logger import log, ERROR
 from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors
 from Helpers.rate_limiter import external_rate_limit
-from Helpers.storage import get_background
+from Helpers.storage import get_background, get_cached_avatar, save_cached_avatar
 
 
 class Profile(commands.Cog):
@@ -92,10 +92,19 @@ class Profile(commands.Cog):
 
         # Player Avatar
         try:
-            headers = {'User-Agent': os.getenv("visage_UA")}
-            url = f"https://visage.surgeplay.com/bust/500/{player.UUID}"
-            response = requests.get(url, headers=headers, timeout=6)
-            skin = Image.open(BytesIO(response.content))
+            cached = get_cached_avatar(player.UUID)
+            if cached:
+                skin = Image.open(BytesIO(cached))
+            else:
+                headers = {'User-Agent': os.getenv("visage_UA")}
+                url = f"https://visage.surgeplay.com/bust/500/{player.UUID}"
+                response = requests.get(url, headers=headers, timeout=6)
+                response.raise_for_status()
+                try:
+                    save_cached_avatar(player.UUID, response.content)
+                except Exception:
+                    pass
+                skin = Image.open(BytesIO(response.content))
         except Exception as e:
             log(ERROR, f"{e}", context="profile")
             skin = Image.open('images/profile/x-steve500.png')
@@ -111,7 +120,7 @@ class Profile(commands.Cog):
         if player.guild:
             # Get Guild Color
             try:
-                guild_banner = getData(player.guild)['banner']
+                guild_banner = player.guild_data['banner'] if player.guild_data else getData(player.guild)['banner']
                 if guild_banner['base'] in ['BLACK', 'GRAY', 'BROWN']:
                     for layer in guild_banner['layers']:
                         if layer['colour'] not in ['BLACK', 'GRAY', 'BROWN']:
@@ -149,7 +158,7 @@ class Profile(commands.Cog):
             card.paste(guild_rank_badge, (108, 667), guild_rank_badge)
 
             # Guild Banner
-            banner = generate_banner(player.guild, 15, "2")
+            banner = generate_banner(player.guild, 15, "2", guild_data=player.guild_data)
             banner.thumbnail((157, 157))
             card.paste(banner, (41, 562))
 

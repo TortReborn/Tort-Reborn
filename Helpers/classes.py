@@ -8,8 +8,12 @@ from dateutil import parser
 import discord
 from discord.ui import InputText, Modal
 
-from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline
-from Helpers.functions import getPlayerUUID, getPlayerDatav3, urlify, determine_starting_rank
+from Helpers.database import (
+    DB,
+    get_current_guild_data_with_db,
+    get_player_activity_baseline_with_db,
+)
+from Helpers.functions import getPlayerUUID, getPlayerDatav3, getPlayerProfileDatav3, urlify, determine_starting_rank
 from discord.ext.pages import Page as _Page
 
 from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID, discord_ranks
@@ -28,6 +32,7 @@ class Guild:
         resp.raise_for_status()
         guild_data = resp.json()
 
+        self.data = guild_data
         self.name = guild_data['name']
         self.prefix = guild_data['prefix']
         self.level = guild_data['level']
@@ -65,17 +70,24 @@ class PlayerStats:
         db = DB()
         db.connect()
         try:
-            player_data = getPlayerUUID(name)
-            if not player_data:
-                self.error = True
-                return
-            else:
+            pdata = getPlayerProfileDatav3(name)
+            if pdata:
                 self.error = False
-            self.UUID = player_data[1]
-            self.username = player_data[0]
-
-            # player data
-            pdata = getPlayerDatav3(self.UUID)
+                self.UUID = pdata['uuid']
+                self.username = pdata['username']
+            else:
+                player_data = getPlayerUUID(name)
+                if not player_data:
+                    self.error = True
+                    return
+                self.error = False
+                self.UUID = player_data[1]
+                self.username = player_data[0]
+                pdata = getPlayerDatav3(self.UUID)
+                if not pdata:
+                    self.error = True
+                    return
+            self.player_data = pdata
 
             # Track which fields are private/null
             test_last_joined = pdata.get('lastJoin')
@@ -138,17 +150,23 @@ class PlayerStats:
             self.total_level_is_private = raw_total_level is None
 
             # guild data
-            self.taq = self.isInTAq(self.UUID)
+            taq_gdata = Guild('The Aquarium')
+            taq_member_by_uuid = {member['uuid']: member for member in taq_gdata.all_members}
+            guild_stats = taq_member_by_uuid.get(self.UUID)
+
+            self.taq = guild_stats is not None
             self.guild = 'The Aquarium' if self.taq else pdata.get('guild')
             if self.guild is not None:
                 self.guild = 'The Aquarium' if self.taq else pdata.get('guild', {}).get('name')
-                gdata = Guild(self.guild)
-                for guildee in gdata.all_members:
-                    if guildee['uuid'] == self.UUID:
-                        guild_stats = guildee
-                        break
-                    else:
-                        pass
+                gdata = taq_gdata if self.taq else Guild(self.guild)
+                self.guild_data = gdata.data
+                if guild_stats is None:
+                    for guildee in gdata.all_members:
+                        if guildee['uuid'] == self.UUID:
+                            guild_stats = guildee
+                            break
+                    if guild_stats is None:
+                        guild_stats = {}
                 self.guild_rank = guild_stats.get('rank') if self.taq else pdata.get('guild', {}).get('rank')
 
                 # Guild contributed - track if null or missing
@@ -162,6 +180,7 @@ class PlayerStats:
                 self.in_guild_for = delta
             else:
                 self.guild = None
+                self.guild_data = None
                 self.guild_rank = None
                 self.guild_contributed = None
                 self.guild_contributed_is_private = False
@@ -206,7 +225,10 @@ class PlayerStats:
             # timed stats (using database for both current and baseline data)
             if self.taq:
                 # 1) Load NOW from database cache so profiles match the leaderboard exactly
-                cur = get_current_guild_data()
+                try:
+                    cur = get_current_guild_data_with_db(db)
+                except Exception:
+                    cur = {}
                 cur_map = {m['uuid']: m for m in cur.get('members', [])}
                 now_entry = cur_map.get(self.UUID)
 
@@ -235,15 +257,11 @@ class PlayerStats:
 
                 # 2) Bound the requested days for display (keep your UX constraints)
                 # Get number of available snapshots from database
-                db_temp = DB()
-                db_temp.connect()
                 try:
-                    db_temp.cursor.execute("SELECT COUNT(DISTINCT snapshot_date) FROM player_activity")
-                    num_snaps = db_temp.cursor.fetchone()[0] or 0
+                    db.cursor.execute("SELECT COUNT(DISTINCT snapshot_date) FROM player_activity")
+                    num_snaps = db.cursor.fetchone()[0] or 0
                 except Exception:
                     num_snaps = 0
-                finally:
-                    db_temp.close()
 
                 # Keep your original limits
                 if days > num_snaps:
@@ -257,10 +275,10 @@ class PlayerStats:
                 if self.in_guild_for.days >= 1:
                     # Get baseline values from database, filtered to current membership period
                     jd = self.guild_joined.date() if self.guild_joined else None
-                    base_pt, warn_pt = get_player_activity_baseline(self.UUID, 'playtime', days, joined_date=jd)
-                    base_wars, warn_wars = get_player_activity_baseline(self.UUID, 'wars', days, joined_date=jd)
-                    base_xp, warn_xp = get_player_activity_baseline(self.UUID, 'contributed', days, joined_date=jd)
-                    base_raids, warn_raids = get_player_activity_baseline(self.UUID, 'raids', days, joined_date=jd)
+                    base_pt, warn_pt = get_player_activity_baseline_with_db(db, self.UUID, 'playtime', days, joined_date=jd)
+                    base_wars, warn_wars = get_player_activity_baseline_with_db(db, self.UUID, 'wars', days, joined_date=jd)
+                    base_xp, warn_xp = get_player_activity_baseline_with_db(db, self.UUID, 'contributed', days, joined_date=jd)
+                    base_raids, warn_raids = get_player_activity_baseline_with_db(db, self.UUID, 'raids', days, joined_date=jd)
                     warn_flag = warn_pt or warn_wars or warn_xp or warn_raids
 
                     # 3) Compute inclusive deltas (clamped >= 0)

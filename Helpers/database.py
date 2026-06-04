@@ -75,18 +75,23 @@ def get_current_guild_data() -> dict:
     db = DB()
     db.connect()
     try:
-        db.cursor.execute(
-            "SELECT data FROM cache_entries WHERE cache_key = 'guildData'"
-        )
-        row = db.cursor.fetchone()
-        if row and row[0]:
-            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
-        return {}
+        return get_current_guild_data_with_db(db)
     except Exception as e:
         log(ERROR, f"Error: {e}", context="database")
         return {}
     finally:
         db.close()
+
+
+def get_current_guild_data_with_db(db: DB) -> dict:
+    """Load current guild member data using an existing DB connection."""
+    db.cursor.execute(
+        "SELECT data FROM cache_entries WHERE cache_key = 'guildData'"
+    )
+    row = db.cursor.fetchone()
+    if row and row[0]:
+        return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+    return {}
 
 
 def get_player_activity_baseline(uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
