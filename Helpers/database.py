@@ -94,6 +94,25 @@ def get_current_guild_data_with_db(db: DB) -> dict:
     return {}
 
 
+def get_current_guild_data_and_snapshot_count_with_db(db: DB) -> tuple[dict, int]:
+    """Load current guild data and the number of activity snapshots in one round trip."""
+    db.cursor.execute("""
+        SELECT
+            (SELECT data FROM cache_entries WHERE cache_key = 'guildData') AS guild_data,
+            (SELECT COUNT(DISTINCT snapshot_date) FROM player_activity) AS snapshot_count
+    """)
+    row = db.cursor.fetchone()
+    if not row:
+        return {}, 0
+
+    raw_guild_data, snapshot_count = row
+    if raw_guild_data:
+        guild_data = raw_guild_data if isinstance(raw_guild_data, dict) else json.loads(raw_guild_data)
+    else:
+        guild_data = {}
+    return guild_data, int(snapshot_count or 0)
+
+
 def get_player_activity_baseline(uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
     """Get baseline value for a player from N calendar days ago.
 
@@ -125,6 +144,19 @@ def get_player_activity_baseline_with_db(db: DB, uuid: str, key: str, days: int,
     except Exception as e:
         log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
         return (0, True)
+
+
+def get_player_activity_baselines_with_db(db: DB, uuid: str, keys: list[str], days: int, joined_date: datetime.date = None) -> dict:
+    """Get multiple baseline values with shared snapshot lookup work.
+
+    Returns {key: (value, warn_flag)} and preserves the single-key helper's
+    zero-value correction behavior per key.
+    """
+    try:
+        return _get_baselines_from_db(db, uuid, keys, days, joined_date=joined_date)
+    except Exception as e:
+        log(ERROR, f"Error for {uuid}/{keys}: {e}", context="database")
+        return {key: (0, True) for key in keys}
 
 
 def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
@@ -208,6 +240,74 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int, joined_date: d
 
     # 4. No snapshots at all (or none in current membership period)
     return (0, True)
+
+
+def _get_baselines_from_db(db: DB, uuid: str, keys: list[str], days: int, joined_date: datetime.date = None) -> dict:
+    ALLOWED_KEYS = {"playtime", "contributed", "wars", "raids", "shells"}
+    keys = [key for key in keys if key in ALLOWED_KEYS]
+    if not keys:
+        return {}
+
+    if days <= 0:
+        return {key: (0, False) for key in keys}
+
+    target_date = datetime.date.today() - timedelta(days=days)
+    join_filter = ""
+    join_params = ()
+    if joined_date is not None:
+        join_filter = "AND snapshot_date >= %s"
+        join_params = (joined_date,)
+        if target_date < joined_date:
+            target_date = joined_date
+
+    columns = ", ".join(keys)
+    db.cursor.execute(f"""
+        SELECT {columns}, snapshot_date FROM player_activity
+        WHERE uuid = %s AND snapshot_date <= %s {join_filter}
+        ORDER BY snapshot_date DESC LIMIT 1
+    """, (uuid, target_date) + join_params)
+    row = db.cursor.fetchone()
+
+    if row:
+        values = dict(zip(keys, row[:-1]))
+        snapshot_date = row[-1]
+        return _baseline_results_from_row(db, uuid, keys, values, snapshot_date, join_filter, join_params, warn_default=False)
+
+    db.cursor.execute(f"""
+        SELECT {columns}, snapshot_date FROM player_activity
+        WHERE uuid = %s {join_filter}
+        ORDER BY snapshot_date ASC LIMIT 1
+    """, (uuid,) + join_params)
+    earliest = db.cursor.fetchone()
+    if earliest:
+        values = dict(zip(keys, earliest[:-1]))
+        snapshot_date = earliest[-1]
+        return _baseline_results_from_row(db, uuid, keys, values, snapshot_date, join_filter, join_params, warn_default=True)
+
+    return {key: (0, True) for key in keys}
+
+
+def _baseline_results_from_row(db: DB, uuid: str, keys: list[str], values: dict, snapshot_date, join_filter: str, join_params: tuple, warn_default: bool) -> dict:
+    results = {}
+    for key in keys:
+        value = values.get(key)
+        if value is None:
+            results[key] = (0, True)
+            continue
+
+        if value == 0:
+            db.cursor.execute(f"""
+                SELECT {key} FROM player_activity
+                WHERE uuid = %s AND snapshot_date > %s AND {key} > 0 {join_filter}
+                ORDER BY snapshot_date ASC LIMIT 1
+            """, (uuid, snapshot_date) + join_params)
+            nonzero = db.cursor.fetchone()
+            if nonzero:
+                results[key] = (int(nonzero[0]), True)
+                continue
+
+        results[key] = (int(value), warn_default)
+    return results
 
 
 def get_last_online() -> dict:
