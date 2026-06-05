@@ -87,7 +87,7 @@ class Raids(commands.Cog):
 
         # 1) Fetch player data using PlayerStats (like profile.py) ----------------
         try:
-            player_stats = await asyncio.to_thread(PlayerStats, name, 7)  # 7 days for compatibility
+            player_stats = await asyncio.to_thread(PlayerStats, name, 7, False)
             if player_stats.error:
                 embed = discord.Embed(
                     title=':no_entry: Oops! Something did not go as intended.',

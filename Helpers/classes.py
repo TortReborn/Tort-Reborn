@@ -66,7 +66,7 @@ class Guild:
         return member_list
 
 class PlayerStats:
-    def __init__(self, name, days):
+    def __init__(self, name, days, load_timed_stats=True):
         db = DB()
         db.connect()
         try:
@@ -78,7 +78,10 @@ class PlayerStats:
             self._load_player_fields(pdata)
             self._load_guild_fields(pdata)
             self._load_profile_db_state(db)
-            self._load_timed_stats(db, days)
+            if load_timed_stats:
+                self._load_timed_stats(db, days)
+            else:
+                self._set_skipped_timed_defaults(days)
         finally:
             db.close()
 
@@ -345,6 +348,10 @@ class PlayerStats:
         self.real_xp_is_private = False
         self.real_raids_is_private = False
         self.stats_warn = False
+
+    def _set_skipped_timed_defaults(self, days):
+        self.stats_days = days
+        self._set_non_taq_timed_defaults()
 
     def isInTAq(self, uuid):
         guild_members = []

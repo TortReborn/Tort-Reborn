@@ -37,7 +37,7 @@ class ShellModalName(Modal):
         draw = ImageDraw.Draw(img); draw.fontmode = '1'
         font = ImageFont.truetype('images/profile/game.ttf', 19)
 
-        player = PlayerStats(self.children[0].value, 1)
+        player = PlayerStats(self.children[0].value, 1, False)
         try:
             url = f"https://visage.surgeplay.com/bust/75/{player.UUID}"
             skin = Image.open(BytesIO(requests.get(url).content))
