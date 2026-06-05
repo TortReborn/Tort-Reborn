@@ -1433,7 +1433,7 @@ class SnipeTracker(commands.Cog):
         # Fetch TAq rank badge info
         rank_text = rank_color = None
         try:
-            player = await asyncio.to_thread(PlayerStats, ign, 1)
+            player = await asyncio.to_thread(PlayerStats, ign, 1, False)
             if not player.error:
                 if player.taq and player.linked and player.rank in discord_ranks:
                     rank_text  = player.rank.upper()
@@ -1762,7 +1762,7 @@ class SnipeTracker(commands.Cog):
         # Fetch TAq rank badge info
         rank_text = rank_color = None
         try:
-            player = await asyncio.to_thread(PlayerStats, ign, 1)
+            player = await asyncio.to_thread(PlayerStats, ign, 1, False)
             if not player.error:
                 if player.taq and player.linked and player.rank in discord_ranks:
                     rank_text = player.rank.upper()

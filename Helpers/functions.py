@@ -4,6 +4,7 @@ import math
 import os
 import json
 import re
+from functools import lru_cache
 from io import BytesIO
 from urllib.parse import quote
 from uuid import UUID
@@ -14,6 +15,11 @@ from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps
 
 from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows, IS_TEST_MODE
 from Helpers.logger import log, WARN, ERROR
+
+
+@lru_cache(maxsize=64)
+def _cached_font(path, size):
+    return ImageFont.truetype(path, size)
 
 
 def isInCurrDay(data, uuid):
@@ -245,7 +251,7 @@ def generate_rank_old_badge(text, colour, scale=4):
     img = Image.new('RGBA', (img_width, 18), (255, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    font = ImageFont.truetype('images/profile/5x5.ttf', 20)
+    font = _cached_font('images/profile/5x5.ttf', 20)
 
     draw.rectangle([(2, 2), (img.width - 3, img.height - 3)], fill=color.hex)
     draw.rectangle([(2, img.height - 2), (img.width - 3, img.height)], fill=color.shadow)
@@ -277,7 +283,7 @@ def generate_rank_badge(text, colour, scale=4):
     img = Image.new('RGBA', (img_width, 18), (255, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    font = ImageFont.truetype('images/profile/5x5.ttf', 20)
+    font = _cached_font('images/profile/5x5.ttf', 20)
 
     draw.rectangle([(0, 1), (img.width, 14)], fill=color.light)
     draw.rectangle([(2, 3), (img.width - 3, 12)], fill=color.hex)
@@ -337,7 +343,7 @@ def generate_badge(text, base_color, scale=3):
 
     light, shadow, text_color = get_guild_badge_colors_with_text(base_color)
 
-    font = ImageFont.truetype('images/profile/5x5.ttf', 20)
+    font = _cached_font('images/profile/5x5.ttf', 20)
 
     img_height = 18
     text_bbox = font.getbbox(text)
@@ -387,15 +393,15 @@ def vertical_gradient(width=900, height=1180, main_color='#66ccff', secondary_co
             top_color = ImageColor.getrgb(color.shadow)
             bottom_color = ImageColor.getrgb(color.light)
 
-    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    strip = Image.new('RGBA', (1, height), (0, 0, 0, 0))
+    denom = max(height, 1)
     for y in range(height):
-        ratio = y / height
+        ratio = y / denom
         r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
         g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
         b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
-        for x in range(width):
-            img.putpixel((x, y), (r, g, b))
-    return img
+        strip.putpixel((0, y), (r, g, b, 255))
+    return strip.resize((width, height), Image.Resampling.NEAREST)
 
 
 def round_corners(img, radius=25):

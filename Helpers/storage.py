@@ -69,11 +69,14 @@ class S3Storage:
         if not self._is_configured:
             return None
         try:
-            head = self.client.head_object(Bucket=self._bucket, Key=key)
-            age = (datetime.now(timezone.utc) - head["LastModified"]).total_seconds()
+            resp = self.client.get_object(Bucket=self._bucket, Key=key)
+            age = (datetime.now(timezone.utc) - resp["LastModified"]).total_seconds()
             if age > max_age_seconds:
+                resp["Body"].close()
                 return None
-            return self.get_bytes(key)
+            data = resp["Body"].read()
+            resp["Body"].close()
+            return data
         except Exception:
             return None
 

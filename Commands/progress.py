@@ -33,7 +33,7 @@ class Progress(commands.Cog):
     @external_rate_limit()
     async def progress(self, message, name: discord.Option(str, require=True)):
         await message.defer()
-        playerdata = await asyncio.to_thread(PlayerStats, name, 7)
+        playerdata = await asyncio.to_thread(PlayerStats, name, 7, False)
 
         max_lvl = 1690
         max_combat = 106
