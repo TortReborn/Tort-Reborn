@@ -12,7 +12,7 @@ from discord import SlashCommandGroup
 from discord.ext import commands, pages
 
 from Helpers.classes import PlaceTemplate, Page
-from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline_with_db
+from Helpers.database import DB, BatchBaselineQueryError, get_current_guild_data_with_db, get_player_activity_baselines_for_members_with_db
 from Helpers.functions import addLine, expand_image, generate_rank_badge
 from Helpers.logger import log, ERROR
 from Helpers.variables import rank_map, discord_ranks, HOME_GUILD_IDS
@@ -43,24 +43,21 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
     # ---------------------------
     # Load current data from database
     # ---------------------------
-    current_data = get_current_guild_data()
-    if not current_data:
-        return pages.Paginator(pages=[Page(content='No current activity available.')])
-
-    if not isinstance(current_data, dict) or not current_data.get('members'):
-        return pages.Paginator(pages=[Page(content='No current activity members found.')])
-
-    # Current/live membership is source of truth for "who to list" and "names"
-    current_members = current_data.get('members', [])
-    current_by_uuid = {m['uuid']: m for m in current_members}
-
-    # ---------------------------
-    # DB connection for baseline lookups and discord ranks
-    # ---------------------------
     db = DB()
     db.connect()
 
     try:
+        current_data = get_current_guild_data_with_db(db)
+        if not current_data:
+            return pages.Paginator(pages=[Page(content='No current activity available.')])
+
+        if not isinstance(current_data, dict) or not current_data.get('members'):
+            return pages.Paginator(pages=[Page(content='No current activity members found.')])
+
+        # Current/live membership is source of truth for "who to list" and "names"
+        current_members = current_data.get('members', [])
+        current_by_uuid = {m['uuid']: m for m in current_members}
+
         # Check data availability — if requested days exceed our earliest snapshot, fall back to all-time
         if days > 0:
             db.cursor.execute("SELECT MIN(snapshot_date) FROM player_activity")
@@ -88,6 +85,23 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
         icon.thumbnail((16, 16))
         game_font = ImageFont.truetype('images/profile/game.ttf', 19)
 
+        joined_dates_by_uuid: Dict[str, date | None] = {}
+        for member in current_members:
+            raw_joined = member.get('joined')
+            try:
+                joined_dates_by_uuid[member['uuid']] = dateutil_parser.isoparse(raw_joined).date() if raw_joined else None
+            except Exception:
+                joined_dates_by_uuid[member['uuid']] = None
+
+        baseline_by_uuid = {}
+        if days > 0 and order_key in CUMULATIVE_KEYS:
+            baseline_by_uuid = get_player_activity_baselines_for_members_with_db(
+                db,
+                order_key,
+                days,
+                joined_dates_by_uuid,
+            )
+
         # ---------------------------
         # Helpers
         # ---------------------------
@@ -107,14 +121,6 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 return int(v) if isinstance(v, (int, float)) else int(v or 0), False
             except Exception:
                 return 0, False
-
-        def find_baseline_value_from_db(uuid: str, key: str, window_days: int, joined_date=None) -> tuple[int, bool]:
-            """
-            Get baseline value from player_activity database table.
-            Uses calendar-date-based lookup with corrupted-data handling.
-            Returns (baseline_value, warn_flag).
-            """
-            return get_player_activity_baseline_with_db(db, uuid, key, window_days, joined_date=joined_date)
 
         # ---------------------------
         # For all-time raids, use graid_logs as source of truth (consistent with /graid leaderboard)
@@ -154,23 +160,24 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             api_rank = m.get('rank', 'unknown')
             rank = uuid_to_discord_rank.get(uuid, api_rank)
 
-            # Parse member's current join date to filter out old membership snapshots
-            raw_joined = m.get('joined')
-            try:
-                member_joined_date = dateutil_parser.isoparse(raw_joined).date() if raw_joined else None
-            except Exception:
-                member_joined_date = None
-
             is_private = False  # Track if the relevant metric is private/null
 
-            # All-time raids: use graid_logs data (consistent with /graid leaderboard)
-            if order_key == 'raids' and days <= 0:
-                contributed = graid_totals.get(uuid, 0)
-                warn_flag = False
-                is_private = False
+            # All-time cumulative leaderboards show totals directly
+            # Raids are the only source exception: they come from graid_logs totals
+            if days <= 0 and order_key in CUMULATIVE_KEYS:
+                if order_key == 'raids':
+                    contributed = graid_totals.get(uuid, 0)
+                    warn_flag = False
+                    is_private = False
+                else:
+                    contributed, is_null = get_current_value(uuid, order_key)
+                    warn_flag = False
+                    is_private = is_null
+
+            # Time-windowed cumulative stats use snapshot deltas
             elif order_key in CUMULATIVE_KEYS:
                 curr_val, is_null = get_current_value(uuid, order_key)
-                base_val, warn_flag = find_baseline_value_from_db(uuid, order_key, days, joined_date=member_joined_date)
+                base_val, warn_flag = baseline_by_uuid.get(uuid, (0, True))
                 contributed = curr_val - base_val
                 if contributed < 0:
                     # In case of data resets or rollbacks, never show negatives
@@ -181,6 +188,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 if warn_flag and base_val == 0 and contributed == curr_val and curr_val > 0:
                     contributed = 0
                 is_private = is_null  # Mark as private if current value is null
+
             else:
                 # For non-cumulative keys, just use current value
                 contributed, is_null = get_current_value(uuid, order_key)
@@ -333,6 +341,8 @@ class Leaderboard(commands.Cog):
             resolved_days = _resolve_days(period, days)
             book = create_leaderboard('contributed', 'images/profile/xp.png', 'images/profile/guxp_title.png', days=resolved_days)
             await book.respond(message.interaction)
+        except BatchBaselineQueryError:
+            await message.respond("Activity data is temporarily unavailable. Please try again later.", ephemeral=True)
         except Exception as e:
             await message.respond("Something went wrong generating the XP leaderboard.", ephemeral=True)
             log(ERROR, f"Error in /xp: {e}", context="leaderboard")
@@ -347,6 +357,8 @@ class Leaderboard(commands.Cog):
             resolved_days = _resolve_days(period, days)
             book = create_leaderboard('wars', 'images/profile/wars.png', 'images/profile/wars_title.png', days=resolved_days)
             await book.respond(message.interaction)
+        except BatchBaselineQueryError:
+            await message.respond("Activity data is temporarily unavailable. Please try again later.", ephemeral=True)
         except Exception as e:
             await message.respond("Something went wrong generating the wars leaderboard.", ephemeral=True)
             log(ERROR, f"Error in /wars: {e}", context="leaderboard")
@@ -361,6 +373,8 @@ class Leaderboard(commands.Cog):
             resolved_days = _resolve_days(period, days)
             book = create_leaderboard('playtime', 'images/profile/playtime.png', 'images/profile/playtime_title.png', days=resolved_days)
             await book.respond(message.interaction)
+        except BatchBaselineQueryError:
+            await message.respond("Activity data is temporarily unavailable. Please try again later.", ephemeral=True)
         except Exception as e:
             await message.respond("Something went wrong generating the playtime leaderboard.", ephemeral=True)
             log(ERROR, f"Error in /playtime: {e}", context="leaderboard")
@@ -375,6 +389,8 @@ class Leaderboard(commands.Cog):
             resolved_days = _resolve_days(period, days)
             book = create_leaderboard('shells', 'images/profile/shells.png', 'images/profile/shell_leaderboard.png', days=resolved_days)
             await book.respond(message.interaction)
+        except BatchBaselineQueryError:
+            await message.respond("Activity data is temporarily unavailable. Please try again later.", ephemeral=True)
         except Exception as e:
             await message.respond("Something went wrong generating the shells leaderboard.", ephemeral=True)
             log(ERROR, f"Error in /shells: {e}", context="leaderboard")
@@ -390,6 +406,8 @@ class Leaderboard(commands.Cog):
             resolved_days = _resolve_days(period, days)
             book = create_leaderboard('raids', 'images/profile/raid_icon.png', 'images/profile/raids_title.png', days=resolved_days)
             await book.respond(message.interaction)
+        except BatchBaselineQueryError:
+            await message.respond("Activity data is temporarily unavailable. Please try again later.", ephemeral=True)
         except Exception as e:
             await message.respond("Something went wrong generating the raids leaderboard.", ephemeral=True)
             log(ERROR, f"Error in /raids: {e}", context="leaderboard")
