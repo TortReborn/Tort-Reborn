@@ -36,7 +36,7 @@ class Register(commands.Cog):
         ctx: ApplicationContext,
         user: discord.Member,
         ign: str,
-        guild: Option(str, 'Allied guild', choices=list(ALLY_GUILDS.keys()), default='Nerfuria'),
+        guild: Option(str, 'Allied guild', choices=list(ALLY_GUILDS.keys())),
     ):
         await ctx.defer(ephemeral=True)
 
