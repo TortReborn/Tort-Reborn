@@ -67,6 +67,10 @@ class DB:
             self.connection.close()
 
 
+class BatchBaselineQueryError(RuntimeError):
+    """Raised when a multi-member baseline query fails."""
+
+
 def get_current_guild_data() -> dict:
     """Load current guild member data from cache_entries table.
     Returns dict with 'time' and 'members' keys, or empty dict on error.
@@ -157,6 +161,19 @@ def get_player_activity_baselines_with_db(db: DB, uuid: str, keys: list[str], da
     except Exception as e:
         log(ERROR, f"Error for {uuid}/{keys}: {e}", context="database")
         return {key: (0, True) for key in keys}
+
+
+def get_player_activity_baselines_for_members_with_db(db: DB, key: str, days: int, joined_dates_by_uuid: dict[str, datetime.date | None]) -> dict[str, tuple[int, bool]]:
+    """Get one baseline key for many members in a single DB round trip.
+
+    Returns {uuid: (value, warn_flag)} and preserves the single-member helper's
+    zero-value correction behavior.
+    """
+    try:
+        return _get_member_baselines_from_db(db, key, days, joined_dates_by_uuid)
+    except Exception as e:
+        log(ERROR, f"Error for member baselines {key}: {e}", context="database")
+        raise BatchBaselineQueryError(f"Failed to load batched baselines for key={key}") from e
 
 
 def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
@@ -307,6 +324,91 @@ def _baseline_results_from_row(db: DB, uuid: str, keys: list[str], values: dict,
                 continue
 
         results[key] = (int(value), warn_default)
+    return results
+
+
+def _get_member_baselines_from_db(db: DB, key: str, days: int, joined_dates_by_uuid: dict[str, datetime.date | None]) -> dict[str, tuple[int, bool]]:
+    ALLOWED_KEYS = {"playtime", "contributed", "wars", "raids", "shells"}
+    if key not in ALLOWED_KEYS:
+        return {uuid: (0, True) for uuid in joined_dates_by_uuid}
+
+    if not joined_dates_by_uuid:
+        return {}
+
+    if days <= 0:
+        return {uuid: (0, False) for uuid in joined_dates_by_uuid}
+
+    target_date = datetime.date.today() - timedelta(days=days)
+    values_sql = []
+    params = []
+    for uuid, joined_date in joined_dates_by_uuid.items():
+        effective_target = joined_date if joined_date is not None and joined_date > target_date else target_date
+        values_sql.append("(%s::uuid, %s::date, %s::date)")
+        params.extend((uuid, joined_date, effective_target))
+
+    db.cursor.execute(f"""
+        WITH input(uuid, joined_date, target_date) AS (
+            VALUES {", ".join(values_sql)}
+        ),
+        selected AS (
+            SELECT
+                i.uuid,
+                i.joined_date,
+                COALESCE(nearest.value, earliest.value) AS value,
+                COALESCE(nearest.snapshot_date, earliest.snapshot_date) AS snapshot_date,
+                CASE
+                    WHEN nearest.snapshot_date IS NULL AND earliest.snapshot_date IS NOT NULL THEN TRUE
+                    ELSE FALSE
+                END AS warn_default
+            FROM input i
+            LEFT JOIN LATERAL (
+                SELECT pa.{key} AS value, pa.snapshot_date
+                FROM player_activity pa
+                WHERE pa.uuid = i.uuid
+                  AND pa.snapshot_date <= i.target_date
+                  AND (i.joined_date IS NULL OR pa.snapshot_date >= i.joined_date)
+                ORDER BY pa.snapshot_date DESC
+                LIMIT 1
+            ) nearest ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT pa.{key} AS value, pa.snapshot_date
+                FROM player_activity pa
+                WHERE pa.uuid = i.uuid
+                  AND (i.joined_date IS NULL OR pa.snapshot_date >= i.joined_date)
+                ORDER BY pa.snapshot_date ASC
+                LIMIT 1
+            ) earliest ON nearest.snapshot_date IS NULL
+        )
+        SELECT
+            selected.uuid,
+            selected.value,
+            selected.snapshot_date,
+            selected.warn_default,
+            nonzero.value AS nonzero_value
+        FROM selected
+        LEFT JOIN LATERAL (
+            SELECT pa.{key} AS value
+            FROM player_activity pa
+            WHERE pa.uuid = selected.uuid
+              AND selected.snapshot_date IS NOT NULL
+              AND pa.snapshot_date > selected.snapshot_date
+              AND pa.{key} > 0
+              AND (selected.joined_date IS NULL OR pa.snapshot_date >= selected.joined_date)
+            ORDER BY pa.snapshot_date ASC
+            LIMIT 1
+        ) nonzero ON selected.value = 0
+    """, tuple(params))
+
+    results = {uuid: (0, True) for uuid in joined_dates_by_uuid}
+    for uuid, value, snapshot_date, warn_default, nonzero_value in db.cursor.fetchall():
+        uuid_str = str(uuid)
+        if value is None or snapshot_date is None:
+            results[uuid_str] = (0, True)
+            continue
+        if value == 0 and nonzero_value is not None:
+            results[uuid_str] = (int(nonzero_value), True)
+            continue
+        results[uuid_str] = (int(value), bool(warn_default))
     return results
 
 

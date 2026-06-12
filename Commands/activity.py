@@ -11,8 +11,8 @@ from discord.ext import commands, pages
 from discord.commands import slash_command, Option
 from PIL import Image, ImageFont, ImageDraw
 
-from Helpers.classes import PlaceTemplate, Page, Guild
-from Helpers.database import DB, get_current_guild_data, get_player_activity_baseline_with_db
+from Helpers.classes import PlaceTemplate, Page
+from Helpers.database import DB, BatchBaselineQueryError, get_current_guild_data_with_db, get_player_activity_baselines_for_members_with_db
 from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge
 from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, HOME_GUILD_IDS
 
@@ -260,88 +260,102 @@ class Activity(commands.Cog):
         Slash command entrypoint. Loads data, sorts, and invokes paginator.
         """
         await ctx.interaction.response.defer()
-
-        uuid_to_rank = _load_discord_ranks()
-        current = get_current_guild_data()
-        current_members = current.get('members', []) if isinstance(current, dict) else []
-
-        taq_members = Guild('The Aquarium').all_members
-
-        # Open DB connection for baseline lookups
-        db = DB()
-        db.connect()
-
-        playerdata = []
-        now_dt = datetime.datetime.utcnow()
-
         try:
-            for member in current_members:
-                if not isinstance(member, dict):
-                    continue
+            db = DB()
+            db.connect()
 
-                uuid = member.get('uuid')
-                last_join_iso = member.get('lastJoin')
-                if not last_join_iso:
-                    # TAq creation date
-                    last_join_iso = "2020-03-22T11:11:17.810000Z"
+            playerdata = []
+            now_dt = datetime.datetime.utcnow()
 
-                try:
-                    days_since = date_diff(parser.isoparse(last_join_iso))
-                except Exception:
-                    days_since = 9999
-                days_since = max(0, days_since)
+            try:
+                current = get_current_guild_data_with_db(db)
+                current_members = current.get('members', []) if isinstance(current, dict) else []
 
-                raw_playtime = member.get('playtime')
-                playtime_is_private = raw_playtime is None  # Detect if playtime is actually null/private
-                playtime = raw_playtime if raw_playtime is not None else 0
-                uuid = member.get('uuid', '').lower()
+                db.cursor.execute("SELECT uuid, rank FROM discord_links")
+                uuid_to_rank = {u: r for u, r in db.cursor.fetchall()}
 
-                # Parse member's guild join date (needed for baseline filtering)
-                joined = next((p for p in taq_members if p.get('uuid') == uuid), {})
-                try:
-                    joined_dt = parser.isoparse(joined.get('joined'))
-                    if joined_dt.tzinfo:
-                        joined_dt = joined_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
-                    member_for = max(0, (now_dt - joined_dt).days)
-                    member_joined_date = joined_dt.date()
-                except Exception:
-                    member_for = 0
-                    member_joined_date = None
+                joined_dates_by_uuid = {}
+                joined_dt_by_uuid = {}
+                for member in current_members:
+                    raw_joined = member.get('joined')
+                    try:
+                        joined_dt = parser.isoparse(raw_joined) if raw_joined else None
+                        if joined_dt and joined_dt.tzinfo:
+                            joined_dt = joined_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+                    except Exception:
+                        joined_dt = None
+                    uuid = (member.get('uuid') or '').lower()
+                    joined_dt_by_uuid[uuid] = joined_dt
+                    joined_dates_by_uuid[uuid] = joined_dt.date() if joined_dt else None
 
-                # Get baseline playtime from database, filtered to current membership
-                baseline_pt = _get_baseline_playtime_from_db(db, uuid, days, joined_date=member_joined_date)
+                baseline_by_uuid = get_player_activity_baselines_for_members_with_db(
+                    db,
+                    'playtime',
+                    days,
+                    joined_dates_by_uuid,
+                )
 
-                # Compute actual playtime delta
-                real_pt = max(0, float(playtime) - float(baseline_pt))
+                for member in current_members:
+                    if not isinstance(member, dict):
+                        continue
 
-                # New members (joined within 1 day) have no reliable baseline
-                if member_for < 2:
-                    real_pt = 0
+                    uuid = member.get('uuid')
+                    last_join_iso = member.get('lastJoin')
+                    if not last_join_iso:
+                        # TAq creation date
+                        last_join_iso = "2020-03-22T11:11:17.810000Z"
 
-                discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
-                raw_stars = RANK_STARS_MAP.get((discord_rank or '').lower(), '')
-                star_count = raw_stars if isinstance(raw_stars, int) else (raw_stars.count('*') if isinstance(raw_stars, str) else 0)
+                    try:
+                        days_since = date_diff(parser.isoparse(last_join_iso))
+                    except Exception:
+                        days_since = 9999
+                    days_since = max(0, days_since)
 
-                # Detect if lastJoin is private/unavailable
-                last_join_is_private = member.get('lastJoin') is None
+                    raw_playtime = member.get('playtime')
+                    playtime_is_private = raw_playtime is None  # Detect if playtime is actually null/private
+                    playtime = raw_playtime if raw_playtime is not None else 0
+                    uuid = member.get('uuid', '').lower()
 
-                WEEKLY_REQUIREMENT = 5.0
-                below_threshold = real_pt < WEEKLY_REQUIREMENT
+                    joined_dt = joined_dt_by_uuid.get(uuid)
+                    if joined_dt:
+                        member_for = max(0, (now_dt - joined_dt).days)
+                    else:
+                        member_for = 0
 
-                playerdata.append({
-                    'uuid': uuid,
-                    'name': member.get('name', 'Unknown'),
-                    'playtime': real_pt,
-                    'last_join': days_since,
-                    'last_join_is_private': last_join_is_private,
-                    'member_for': member_for,
-                    'below_threshold': below_threshold,
-                    'game_rank': joined.get('rank', member.get('rank')),
-                    'discord_rank': discord_rank,
-                    'playtime_is_private': playtime_is_private,
-                })
-        finally:
-            db.close()
+                    baseline_pt, _ = baseline_by_uuid.get(uuid, (0, True))
+
+                    # Compute actual playtime delta
+                    real_pt = max(0, float(playtime) - float(baseline_pt))
+
+                    # New members (joined within 1 day) have no reliable baseline
+                    if member_for < 2:
+                        real_pt = 0
+
+                    discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
+
+                    # Detect if lastJoin is private/unavailable
+                    last_join_is_private = member.get('lastJoin') is None
+
+                    WEEKLY_REQUIREMENT = 5.0
+                    below_threshold = real_pt < WEEKLY_REQUIREMENT
+
+                    playerdata.append({
+                        'uuid': uuid,
+                        'name': member.get('name', 'Unknown'),
+                        'playtime': real_pt,
+                        'last_join': days_since,
+                        'last_join_is_private': last_join_is_private,
+                        'member_for': member_for,
+                        'below_threshold': below_threshold,
+                        'game_rank': member.get('rank'),
+                        'discord_rank': discord_rank,
+                        'playtime_is_private': playtime_is_private,
+                    })
+            finally:
+                db.close()
+        except BatchBaselineQueryError:
+            await ctx.followup.send("Activity data is temporarily unavailable. Please try again later.", ephemeral=True)
+            return
 
         if order_by == 'Playtime':
             # Private profiles at bottom, then by playtime descending
