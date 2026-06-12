@@ -207,6 +207,7 @@ extensions = [
     'Commands.top_wars',
     'Commands.agenda',
     'Commands.wave_promote',
+    'Commands.register',
     'Commands.app_commands',
     'Commands.kick_list',
 
