@@ -698,6 +698,40 @@ class Generate(commands.Cog):
                 ephemeral=True,
             )
 
+        rules_msg = None
+        info_msg = None
+        async for msg in ctx.channel.history(limit=100):
+            if msg.author.id != self.client.user.id:
+                continue
+
+            attachment_filenames = {attachment.filename for attachment in msg.attachments}
+            if rules_msg is None and GUILD_RULES_BANNER in attachment_filenames:
+                rules_msg = msg
+            if info_msg is None and GUILD_INFO_BANNER in attachment_filenames:
+                info_msg = msg
+            if rules_msg and info_msg:
+                break
+
+        if rules_msg and info_msg:
+            await rules_msg.edit(
+                embed=_build_guild_rules_embed(),
+                attachments=[],
+                files=[discord.File(str(rules_banner_path), filename=GUILD_RULES_BANNER)],
+                view=None,
+            )
+            await info_msg.edit(
+                embed=_build_guild_info_embed(),
+                attachments=[],
+                files=[discord.File(str(info_banner_path), filename=GUILD_INFO_BANNER)],
+                view=GuildInfoLinksView(),
+            )
+            return await ctx.followup.send("Updated the guild rules and info messages.", ephemeral=True)
+
+        if rules_msg:
+            await rules_msg.delete()
+        if info_msg:
+            await info_msg.delete()
+
         await ctx.channel.send(
             embed=_build_guild_rules_embed(),
             file=discord.File(str(rules_banner_path), filename=GUILD_RULES_BANNER),
