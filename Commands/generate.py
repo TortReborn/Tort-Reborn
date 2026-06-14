@@ -33,6 +33,8 @@ GUILD_INFO_ASSET_DIR = Path(__file__).parent.parent / "images" / "guild_info"
 GUILD_RULES_BANNER = "guild_rules_banner.png"
 GUILD_INFO_BANNER = "guild_info_banner.png"
 RAID_COLLECTING_BANNER = "raidcollectingbanner.png"
+TAQ_FAQ_BANNER = "taq_faq.png"
+APPLICATIONS_BANNER = "applications.png"
 
 
 def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
@@ -546,6 +548,200 @@ class ShellConfirmView(View):
             pass  # message may already be gone
 
 
+# ---- TAq FAQ embed builders ----
+
+def _build_taq_faq_embeds_page1() -> list[discord.Embed]:
+    c = GENERATE_EMBED_COLOR
+    return [
+        discord.Embed(
+            title="𓆉 What is TAq?",
+            description=(
+                "We are The Aquarium [TAq]! The awesome guild you just joined! \n"
+                "First guild to ever reach the effective max level at 130 and one of the most active community, "
+                "raiding and warring guilds out there with a heavy focus on being a cozy community for you to "
+                "call your own and feel welcomed by in Wynncraft!\n\n"
+                "Our Discord server offers lots of content to help you progress, whether you are a new player "
+                "or an experienced Wynncraft warrior. Feel free to ask any questions, game-related or not!\n\n"
+                "Some shortcuts for you:\n"
+                "<#752917987853467669>\n"
+                "<#1062062453137080462> \n"
+                "<#1152966582834827344> \n"
+                "<#736920151081091122> \n"
+                "<#1135510651981287424> \n"
+                "<#1280196125340602478> \n"
+                "<#846172145498980424>\n"
+                "<#729163031321509938>"
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 What are the rules?",
+            description=(
+                "These are guild-specific rules. You can find more rules for how to interact with and between "
+                "members of our community here: <#729162016505331765>\n"
+                "> 1. Recruiters, Captains, and Strategists must always get approval from a Chief (or higher) "
+                "before promoting, demoting, kicking, or inviting someone. No solo missions!\n"
+                "> 2. If we're in an alliance, Captains and Strategists must not attack ally territories, only "
+                "enemy or free-for-all (ffa) territories. Attacking allies on purpose is a big no-no.\n"
+                "> 3. Keep all warring talk inside our military channels. Don't leak our battle plans!\n"
+                "> 4. Consumables like food, scrolls, and potions in the guild bank are for wars only. Feel free "
+                "to use other items though -  teleport scrolls, dungeon keys, ability shards, etc. - knock yourself out."
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 How do ranks work?",
+            description=(
+                "Wynn has 6 official ranks: Recruit, Recruiter, Captain, Strategist, Chief, and Owner. We've added "
+                "our own custom ranks too — for better permissions and smoother promotions. Curious? You can read a "
+                "full breakdown right here <#752917987853467669>!\n\n"
+                "**Promotions** are based on your role in the guild and how you help it! We value all sorts of "
+                "contributions and try our best to give everyone a chance to rank up regardless of their interests and skills.\n\n"
+                ":clock8: **Passive contributions**\n"
+                "> • Being active in guild chat and/or on Discord\n"
+                "> • Joining voice calls\n"
+                "> • Playing with / helping other guild members\n"
+                "> • Giving recommendations, advice and feedback.\n\n"
+                ":wrench:‎ **Active contributions**\n"
+                "> • Joining the war effort <#1152966582834827344>\n"
+                "> • Completing guild raids <#1280196125340602478>\n"
+                "> • Starting up giveaways (DM any chief)\n"
+                "> • Recruiting new guild members\n"
+                "> • Donating ingredients or materials at <#1135510651981287424>\n\n"
+                "The first rank-ups are easy to achieve. To get promoted to Manatee (recruiter), even just regularly chatting is enough!\n"
+                "After reaching Angler, you can submit an [application](https://www.the-aquarium.com/login?redirect=/apply/hammerhead) "
+                "to become a part of our HR team."
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 How do I war?",
+            description=(
+                "Warring is one of the biggest parts of Guild life in Wynn, it's strategic, fun and engaging end-game content. \n"
+                "Everyone's welcome to join in! If you're new to it, check ⁠<#1152966582834827344> we'll get you ready in no time.\n"
+                "We also have war tickets you can open if you have *any* further questions here <#1287143628002558024>"
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 I wanna raid, how do I start?",
+            description=(
+                "Graids (Guild-Raids) are a great way to get good funds as well as the only way to get aspects "
+                "and one of 3 ways to receive shells.\n\n"
+                "Generally, we have roles for each raid that you can ping in <#1320140705602998282> "
+                "(also the channel for raid talk) to get people's attention.\n"
+                "Before you do that, try asking ingame if there's any party waiting for more people to join or "
+                "start your own by writing graid 1/4 for example\n"
+                "This tells all other people in chat what raid you are looking for and how many members you got ready. "
+                "If people are ingame and willing, they'll respond. \n\n"
+                "We are also allied with Nerfuria, so you can check out their discord linked [here](https://discord.com/channels/729147655875199017/1448040306057412769) to find more people to raid with!\n\n"
+                "And of course, the **Guild Raiders** Discord is linked in that same channel, a massive discord to search for graid parties"
+                "We also have our own set of custom, hand picked and kept up to date meta raid builds in "
+                "<#1504148856936599644> that you can go get to be a more reliable team partner."
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 What are guild tomes, aspect and emerald rewards?",
+            description=(
+                "Owning territories and completing graids earns us emeralds, aspectsand tomes. Chiefs hand these aspects and tomes out to "
+                "you based on your contribution and requests for them.\n\n"
+                "Emeralds usually go to GordLonner (our saving alt) to fund events and rewards.\n"
+                "Guild Tomes can't be traded but aren't soulbound either. They give bonus skill points or elemental boosts. "
+                "You can claim them in ⁠<#846172145498980424> for shells or war participation."
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 Someone's breaking the rules — what now?",
+            description=(
+                "If someone's causing trouble, DM a Hammerhead or above. They'll handle it. "
+                "Offenders might get a warning, permission or promotion freeze - repeat offenders risk getting kicked or banned."
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 Am I at risk of being kicked?",
+            description=(
+                "The guild is usually full and we tend to receive lots of recruits. \n"
+                "If you are going to be inactive, please fill the format in ⁠⁠<#729163031321509938>. \n"
+                "We are less likely to kick you if you have a valid reason to not play the game!\n"
+                "Not contributing to the guild also makes you more likely to get kicked if we need to make space for new members."
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 Do we have a cape and/or uniform?",
+            description=(
+                "We do! [Here's the uniform](https://www.minecraftskins.com/skin/15930127/taq-uniform-recruit-captain-4px-arm/)\n"
+                "And here's the cape: https://discord.com/channels/729147655875199017/729162124223447040/874339436555563008\n\n"
+                "You'll find that a lot of our members are using our cosmetics. If you need help putting either of those on "
+                "make sure to DM a Chief!\n"
+            ),
+            color=c,
+        ),
+    ]
+
+
+def _build_taq_faq_embeds_page2() -> list[discord.Embed]:
+    c = GENERATE_EMBED_COLOR
+    return [
+        discord.Embed(
+            title="𓆉 Vanity Roles",
+            description=(
+                "TAq distributes Vanity Roles for your War and Raid acomplishments every 2 weeks\n"
+                "These roles will be assigned each Sunday 00:00 UTC and are always based on your activity for the last 14 days.\n"
+                "Here's how to get them:\n"
+                "## War\n"
+                "<@&1401236653472743668> -> 120 Wars in 2 weeks\n"
+                "<@&1401236428368642243> -> 80 Wars in 2 weeks\n"
+                "<@&1401226770069590089> -> 40 Wars in 2 weeks\n"
+                "## Guild Raid\n"
+                "<@&1401281458164990022> -> 80 Raids in 2 weeks\n"
+                "<@&1401281504671305850> -> 50 Raids in 2 weeks\n"
+                "<@&1401281543699431566> -> 30 raids in 2 weeks"
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 Raid Tracking with TAq's own mod- **Verge**!",
+            description=(
+                "This is TAq's mod to more accurately track your **guild raid completions/stats-**\n"
+                "Just download it and put it into your mod folder- it's modrinth approved so no need to fear for a virus.\n"
+                "To submit raids, you need to log in via discord, fear not as discord will tell you exactly what you allow the mod to do and what not before you confirm\n\n"
+                "**Requirements**\n"
+                "• 1.21.11 as Minecraft version\n"
+                "• Fabric Loader 0.18.4 (minimum) *(should be default when you're playing modded 1.21.11)*\n\n"
+                "**Depends on**\n"
+                "• Wynntils\n"
+                "• ModMenu *(optional, config can also be opened via command and hotkey)*\n\n"
+                "https://modrinth.com/project/37mIxdyU\n\n"
+                "*Also if you have anything you want added in here you can tell me!*"
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 Suggestions!",
+            description=(
+                "TAq always strives towards being a better guild, if you have any suggestions, you can share them in "
+                "[this](https://docs.google.com/forms/d/e/1FAIpQLSd4gAK9dRK-zKebUVee8HxUSpLhWSpEEQAhq77kzqCxzoLYMA/viewform?usp=header) "
+                "form with us **completely anonymous**. Just fill it out with your idea and press send!"
+            ),
+            color=c,
+        ),
+        discord.Embed(
+            title="𓆉 I want to be a Hammerhead! Can I apply for that?",
+            description=(
+                "In order to apply for Hammerhead (active helper of the guild) you need to be at least Angler. \n"
+                "If you have any questions feel free to ask a chief! Joke applications lower your chances of future promotions.\n"
+                "Becoming a Hammerhead means actively helping shape the guild when it comes to management and important decisions, "
+                "if that is something you want to be a part of, [apply here](https://the-aquarium.com/login?redirect=/apply/hammerhead)!"
+            ),
+            color=c,
+        ),
+    ]
+
+
 # ---- Cog ----
 
 class Generate(commands.Cog):
@@ -566,6 +762,13 @@ class Generate(commands.Cog):
         activity_requirement: discord.Option(str, "Weekly activity requirement (e.g. '4 hours a week')", required=True),
     ):
         await ctx.defer(ephemeral=True)
+
+        banner_path = GUILD_INFO_ASSET_DIR / APPLICATIONS_BANNER
+        if not banner_path.exists():
+            return await ctx.followup.send(
+                f"Missing application header banner asset: {banner_path.relative_to(Path(__file__).parent.parent)}",
+                ephemeral=True,
+            )
 
         embed = discord.Embed(
             title="The Aquarium \u2014 Applications",
@@ -599,10 +802,19 @@ class Generate(commands.Cog):
                 break
 
         if existing_msg:
-            await existing_msg.edit(embed=embed, view=view)
+            await existing_msg.edit(
+                embed=embed,
+                attachments=[],
+                files=[discord.File(str(banner_path), filename=APPLICATIONS_BANNER)],
+                view=view,
+            )
             await ctx.followup.send("Application header updated!", ephemeral=True)
         else:
-            await ctx.channel.send(embed=embed, view=view)
+            await ctx.channel.send(
+                embed=embed,
+                file=discord.File(str(banner_path), filename=APPLICATIONS_BANNER),
+                view=view,
+            )
             await ctx.followup.send("Application header posted!", ephemeral=True)
 
     @generate.command(name="raid_collecting", description="ADMIN: Post the Raid Collecting panel")
@@ -842,6 +1054,52 @@ class Generate(commands.Cog):
         embed2 = discord.Embed(description=warring_description, color=GENERATE_EMBED_COLOR)
         await ctx.channel.send(embeds=[embed1, embed2])
         await ctx.followup.send("Posted the promotions info message.", ephemeral=True)
+
+    @generate.command(name="taq-faq", description="ADMIN: Post or update the TAq FAQ messages")
+    async def taq_faq(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        banner_path = GUILD_INFO_ASSET_DIR / TAQ_FAQ_BANNER
+        if not banner_path.exists():
+            return await ctx.followup.send(
+                f"Missing TAq FAQ banner asset: {banner_path.relative_to(Path(__file__).parent.parent)}",
+                ephemeral=True,
+            )
+
+        page1 = _build_taq_faq_embeds_page1()
+        page2 = _build_taq_faq_embeds_page2()
+
+        banner_msg = None
+        page2_msg = None
+        async for msg in ctx.channel.history(limit=100):
+            if msg.author.id != self.client.user.id:
+                continue
+            filenames = {a.filename for a in msg.attachments}
+            if banner_msg is None and TAQ_FAQ_BANNER in filenames:
+                banner_msg = msg
+            if page2_msg is None and msg.embeds and msg.embeds[0].title == "𓆉 Vanity Roles":
+                page2_msg = msg
+            if banner_msg and page2_msg:
+                break
+
+        if banner_msg:
+            await banner_msg.edit(
+                embeds=page1,
+                attachments=[],
+                files=[discord.File(str(banner_path), filename=TAQ_FAQ_BANNER)],
+            )
+            if page2_msg:
+                await page2_msg.edit(embeds=page2)
+            else:
+                await ctx.channel.send(embeds=page2)
+            return await ctx.followup.send("✅ Updated the TAq FAQ messages.", ephemeral=True)
+
+        await ctx.channel.send(
+            embeds=page1,
+            file=discord.File(str(banner_path), filename=TAQ_FAQ_BANNER),
+        )
+        await ctx.channel.send(embeds=page2)
+        await ctx.followup.send("✅ Posted the TAq FAQ messages.", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
