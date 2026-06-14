@@ -28,6 +28,87 @@ from Helpers.variables import (
 )
 
 APPLICATION_TOKEN_SECRET = os.getenv("APPLICATION_TOKEN_SECRET", "")
+GUILD_INFO_COLOR = 0x58B9FF
+GUILD_INFO_ASSET_DIR = Path(__file__).parent.parent / "images" / "guild_info"
+GUILD_RULES_BANNER = "guild_rules_banner.png"
+GUILD_INFO_BANNER = "guild_info_banner.png"
+
+
+def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
+    return discord.PartialEmoji(name=name, id=emoji_id)
+
+
+def _build_guild_rules_embed() -> discord.Embed:
+    embed = discord.Embed(color=GUILD_INFO_COLOR)
+    fields = (
+        (
+            "𓆉  1. Do not spam or flood chats",
+            "This includes repeatedly sending text, media or links outside of media-and-memes or any bot command channel. Sending a really long message just for the sake of annoying other users is also not allowed.",
+        ),
+        (
+            "𓆉  2. Be nice to other people",
+            "Harassment, bullying, racism, sexism, prejudice behaviour or any other expressions of harm towards others WILL NOT be tolerated. Showing support or encouraging others to such actions is also considered as violation of this rule. Swearing is allowed as long as it isn't used targeting others.",
+        ),
+        (
+            "𓆉  3. Avoid inappropriate topics",
+            "This includes but is not limited to NSFW content of any form, politics or religion.\nKeep the server PG-13",
+        ),
+        (
+            "𓆉  4. Do not advertise",
+            "Advertising other Discord servers or guilds is not allowed. You are allowed to share your social media, YouTube, twitch etc, as long as you don't actively try to get people to follow/subscribe to you.",
+        ),
+        (
+            "𓆉  5. Listen to Moderators",
+            "If a staff member tells you to stop doing something, stop doing it regardless of how the situation looks, you might be right, you might be wrong, but its important, especially in conflict situations, to slow down and then solve the issue. It's hard to add every single aspect to a rule in the list, so finding loopholes is also not allowed.",
+        ),
+    )
+    for name, value in fields:
+        embed.add_field(name=name, value=value, inline=False)
+    return embed
+
+
+def _build_guild_info_embed() -> discord.Embed:
+    embed = discord.Embed(color=GUILD_INFO_COLOR)
+    fields = (
+        (
+            "𓆉  Membership",
+            "You can apply for Guild or Community Membership in <#1476866917854609408>! Once you are either a guild or community member, you gain access to <#1386413126697877626> where you can find more info about the guild and <#752917987853467669> where you can assign roles for the server.",
+        ),
+        (
+            "𓆉  Permanent Discord Link",
+            "https://discord.gg/fVzZ8qvEv9",
+        ),
+        (
+            "𓆉  Ally Guild Raids",
+            "If you want to ally guild raid and want to recruit in our raid channels, apply for community member, then you can get the raid specific roles in <#752917987853467669> to be pinged by our members too or recruit members by pinging the respective roles in <#1320140705602998282>.",
+        ),
+    )
+    for name, value in fields:
+        embed.add_field(name=name, value=value, inline=False)
+    return embed
+
+
+class GuildInfoLinksView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(
+            label="Our website!",
+            style=discord.ButtonStyle.link,
+            url="https://www.the-aquarium.com",
+            emoji=_custom_emoji("tort", 919659913054130196),
+        ))
+        self.add_item(discord.ui.Button(
+            label="Forums Page",
+            style=discord.ButtonStyle.link,
+            url="https://forums.wynncraft.com/threads/join-the-aquarium-taq-first-guild-to-max-level-active-raiding-community-guild-lvl-100.322292/",
+            emoji=_custom_emoji("TAq", 744256840254226553),
+        ))
+        self.add_item(discord.ui.Button(
+            label="Wynncord Thread",
+            style=discord.ButtonStyle.link,
+            url="https://discord.com/channels/143852930036924417/1020187255480008724",
+            emoji=_custom_emoji("Tome", 1482743136143806584),
+        ))
 
 
 # ---- Application button helpers ----
@@ -599,6 +680,34 @@ class Generate(commands.Cog):
 
         await ctx.channel.send(embed=embed, view=view)
         await ctx.followup.send("Posted the shell conversion panel.", ephemeral=True)
+
+    @generate.command(name="guild_info", description="ADMIN: Post the guild rules/info embeds with banners")
+    async def guild_info(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+
+        rules_banner_path = GUILD_INFO_ASSET_DIR / GUILD_RULES_BANNER
+        info_banner_path = GUILD_INFO_ASSET_DIR / GUILD_INFO_BANNER
+        missing_assets = [
+            str(path.relative_to(Path(__file__).parent.parent))
+            for path in (rules_banner_path, info_banner_path)
+            if not path.exists()
+        ]
+        if missing_assets:
+            return await ctx.followup.send(
+                f"Missing guild info banner asset(s): {', '.join(missing_assets)}",
+                ephemeral=True,
+            )
+
+        await ctx.channel.send(
+            embed=_build_guild_rules_embed(),
+            file=discord.File(str(rules_banner_path), filename=GUILD_RULES_BANNER),
+        )
+        await ctx.channel.send(
+            embed=_build_guild_info_embed(),
+            file=discord.File(str(info_banner_path), filename=GUILD_INFO_BANNER),
+            view=GuildInfoLinksView(),
+        )
+        await ctx.followup.send("Posted the guild rules and info messages.", ephemeral=True)
 
     @generate.command(name="promotions", description="ADMIN: Post the promotions / rank-up info message")
     async def promotions(self, ctx: discord.ApplicationContext):
