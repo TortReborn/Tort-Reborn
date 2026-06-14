@@ -34,6 +34,7 @@ GUILD_RULES_BANNER = "guild_rules_banner.png"
 GUILD_INFO_BANNER = "guild_info_banner.png"
 RAID_COLLECTING_BANNER = "raidcollectingbanner.png"
 TAQ_FAQ_BANNER = "taq_faq.png"
+APPLICATIONS_BANNER = "applications.png"
 
 
 def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
@@ -762,6 +763,13 @@ class Generate(commands.Cog):
     ):
         await ctx.defer(ephemeral=True)
 
+        banner_path = GUILD_INFO_ASSET_DIR / APPLICATIONS_BANNER
+        if not banner_path.exists():
+            return await ctx.followup.send(
+                f"Missing application header banner asset: {banner_path.relative_to(Path(__file__).parent.parent)}",
+                ephemeral=True,
+            )
+
         embed = discord.Embed(
             title="The Aquarium \u2014 Applications",
             description=(
@@ -794,10 +802,19 @@ class Generate(commands.Cog):
                 break
 
         if existing_msg:
-            await existing_msg.edit(embed=embed, view=view)
+            await existing_msg.edit(
+                embed=embed,
+                attachments=[],
+                files=[discord.File(str(banner_path), filename=APPLICATIONS_BANNER)],
+                view=view,
+            )
             await ctx.followup.send("Application header updated!", ephemeral=True)
         else:
-            await ctx.channel.send(embed=embed, view=view)
+            await ctx.channel.send(
+                embed=embed,
+                file=discord.File(str(banner_path), filename=APPLICATIONS_BANNER),
+                view=view,
+            )
             await ctx.followup.send("Application header posted!", ephemeral=True)
 
     @generate.command(name="raid_collecting", description="ADMIN: Post the Raid Collecting panel")
