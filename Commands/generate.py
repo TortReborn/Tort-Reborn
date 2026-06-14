@@ -660,23 +660,29 @@ class Generate(commands.Cog):
             attachment_filenames = {attachment.filename for attachment in msg.attachments}
             if RAID_COLLECTING_BANNER in attachment_filenames:
                 banner_msg = msg
-                if index > 0:
-                    panel_msg = bot_messages[index - 1]
+                if not msg.embeds and index > 0:
+                    panel_candidate = bot_messages[index - 1]
+                    panel_description = panel_candidate.embeds[0].description if panel_candidate.embeds else ""
+                    if "How to Claim Your Raid Rewards" in panel_description:
+                        panel_msg = panel_candidate
                 break
 
-        if banner_msg and panel_msg:
+        if banner_msg:
             await banner_msg.edit(
+                embed=embed,
                 attachments=[],
                 files=[discord.File(str(banner_path), filename=RAID_COLLECTING_BANNER)],
+                view=view,
             )
-            await panel_msg.edit(embed=embed, view=view)
+            if panel_msg:
+                await panel_msg.delete()
             return await ctx.followup.send("✅ Updated the raid-collecting message.", ephemeral=True)
 
-        if banner_msg:
-            await banner_msg.delete()
-
-        await channel.send(file=discord.File(str(banner_path), filename=RAID_COLLECTING_BANNER))
-        await channel.send(embed=embed, view=view)
+        await channel.send(
+            embed=embed,
+            file=discord.File(str(banner_path), filename=RAID_COLLECTING_BANNER),
+            view=view,
+        )
 
         await ctx.followup.send("✅ Posted the raid-collecting message.", ephemeral=True)
 
