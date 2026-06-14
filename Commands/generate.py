@@ -28,10 +28,11 @@ from Helpers.variables import (
 )
 
 APPLICATION_TOKEN_SECRET = os.getenv("APPLICATION_TOKEN_SECRET", "")
-GUILD_INFO_COLOR = 0x58B9FF
+GENERATE_EMBED_COLOR = 0x94C1FF
 GUILD_INFO_ASSET_DIR = Path(__file__).parent.parent / "images" / "guild_info"
 GUILD_RULES_BANNER = "guild_rules_banner.png"
 GUILD_INFO_BANNER = "guild_info_banner.png"
+RAID_COLLECTING_BANNER = "raidcollectingbanner.png"
 
 
 def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
@@ -39,7 +40,7 @@ def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
 
 
 def _build_guild_rules_embed() -> discord.Embed:
-    embed = discord.Embed(color=GUILD_INFO_COLOR)
+    embed = discord.Embed(color=GENERATE_EMBED_COLOR)
     fields = (
         (
             "𓆉  1. Do not spam or flood chats",
@@ -68,7 +69,7 @@ def _build_guild_rules_embed() -> discord.Embed:
 
 
 def _build_guild_info_embed() -> discord.Embed:
-    embed = discord.Embed(color=GUILD_INFO_COLOR)
+    embed = discord.Embed(color=GENERATE_EMBED_COLOR)
     fields = (
         (
             "𓆉  Membership",
@@ -171,7 +172,7 @@ class ApplicationButtonView(discord.ui.View):
                 f"**[Open Application Form]({url})**\n\n"
                 f"This link expires in **30 minutes** and is unique to your Discord account."
             ),
-            color=0x5865F2,
+            color=GENERATE_EMBED_COLOR,
         )
         embed.set_footer(text="Do not share this link with anyone else.")
 
@@ -449,7 +450,7 @@ class ShellsToAspectsModal(discord.ui.Modal):
         remaining = self.balance - cost
 
         # Preview embed with conversion breakdown -- user must confirm
-        embed = discord.Embed(title="Confirm Conversion", color=discord.Color.blurple())
+        embed = discord.Embed(title="Confirm Conversion", color=GENERATE_EMBED_COLOR)
         embed.add_field(name="Current Shells", value=f"{self.balance} {SHELL_EMOJI}", inline=False)
         embed.add_field(name="Cost", value=f"{cost} {SHELL_EMOJI} ({amount} {ASPECT_EMOJI})", inline=False)
         embed.add_field(name="Remaining Shells", value=f"{remaining} {SHELL_EMOJI}", inline=False)
@@ -578,7 +579,7 @@ class Generate(commands.Cog):
                 "Become part of our community without joining the in-game guild. "
                 "Hang out, chat, and participate in events!"
             ),
-            color=0x2B82D4,
+            color=GENERATE_EMBED_COLOR,
         )
         embed.set_footer(text="Click a button below to begin your application.")
 
@@ -615,15 +616,17 @@ class Generate(commands.Cog):
                 ephemeral=True
             )
 
-        banner_path = Path(__file__).parent.parent / "Images" / "raids" / "raidcollectingbanner.png"
-        banner_file = discord.File(str(banner_path), filename="raidcollectingbanner.png")
-        await channel.send(file=banner_file)
+        banner_path = Path(__file__).parent.parent / "images" / "raids" / RAID_COLLECTING_BANNER
+        if not banner_path.exists():
+            return await ctx.followup.send(
+                f"Missing raid collecting banner asset: {banner_path.relative_to(Path(__file__).parent.parent)}",
+                ephemeral=True,
+            )
 
         view = ClaimView()
         self.client.add_view(view)
 
-        embed = discord.Embed(color=discord.Color.blurple())
-        embed.set_image(url="attachment://raidcollectingbanner.png")
+        embed = discord.Embed(color=GENERATE_EMBED_COLOR)
         embed.description = dedent(f"""
             ❓ **How to Claim Your Raid Rewards**
 
@@ -644,6 +647,35 @@ class Generate(commands.Cog):
 
             _Complete more raids to earn more rewards!_
             """)
+
+        bot_messages = []
+        async for msg in channel.history(limit=100):
+            if msg.author.id != self.client.user.id:
+                continue
+            bot_messages.append(msg)
+
+        banner_msg = None
+        panel_msg = None
+        for index, msg in enumerate(bot_messages):
+            attachment_filenames = {attachment.filename for attachment in msg.attachments}
+            if RAID_COLLECTING_BANNER in attachment_filenames:
+                banner_msg = msg
+                if index > 0:
+                    panel_msg = bot_messages[index - 1]
+                break
+
+        if banner_msg and panel_msg:
+            await banner_msg.edit(
+                attachments=[],
+                files=[discord.File(str(banner_path), filename=RAID_COLLECTING_BANNER)],
+            )
+            await panel_msg.edit(embed=embed, view=view)
+            return await ctx.followup.send("✅ Updated the raid-collecting message.", ephemeral=True)
+
+        if banner_msg:
+            await banner_msg.delete()
+
+        await channel.send(file=discord.File(str(banner_path), filename=RAID_COLLECTING_BANNER))
         await channel.send(embed=embed, view=view)
 
         await ctx.followup.send("✅ Posted the raid-collecting message.", ephemeral=True)
@@ -656,7 +688,7 @@ class Generate(commands.Cog):
         self.client.add_view(view)
 
         # Embed styled to match the raid collecting panel
-        embed = discord.Embed(color=discord.Color.blurple())
+        embed = discord.Embed(color=GENERATE_EMBED_COLOR)
         embed.description = dedent(f"""
             {SHELL_EMOJI} **Convert Shells into Aspects**
 
@@ -800,8 +832,8 @@ class Generate(commands.Cog):
             "We are always looking for new warrers, so do not hesitate to ask for information!"
         )
 
-        embed1 = discord.Embed(description=description, color=0xA198E1)
-        embed2 = discord.Embed(description=warring_description, color=0xA198E1)
+        embed1 = discord.Embed(description=description, color=GENERATE_EMBED_COLOR)
+        embed2 = discord.Embed(description=warring_description, color=GENERATE_EMBED_COLOR)
         await ctx.channel.send(embeds=[embed1, embed2])
         await ctx.followup.send("Posted the promotions info message.", ephemeral=True)
 
