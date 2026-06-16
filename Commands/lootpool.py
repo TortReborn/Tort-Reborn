@@ -4,10 +4,10 @@ import discord
 import requests
 from discord.ext import commands
 from discord.commands import SlashCommandGroup
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from Helpers.variables import mythics
+from Helpers.variables import mythics, WYNNVENTORY_API_KEY
 from Helpers.rate_limiter import external_rate_limit
 from Helpers.functions import wrap_text, get_multiline_text_size
 from Helpers.database import DB
@@ -19,9 +19,7 @@ import re
 from pathlib import Path
 
 
-# Ward items are raid drops that don't have a real item icon — they're just
-# colored "wards" / tokens. We render them as generated colored swatches
-# instead of using a misleading chestplate icon.
+# Ward items have no real icon — render as colored swatches.
 WARD_COLORS = {
     "Pink Ward":   (255, 105, 180, 255),
     "Orange Ward": (255, 140,   0, 255),
@@ -73,14 +71,48 @@ class LootPool(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    # nori.fish uses NOG for NOTG and TWP for WTP
+    # NOG and TWP differ from their image filenames — RAID_ICON_MAP bridges them
     RAID_DISPLAY_ORDER = ["TNA", "TCC", "NOL", "NOG", "TWP"]
-    # Map nori.fish abbreviations to local image filename prefixes
+    # internal key → image filename override
     RAID_ICON_MAP = {"NOG": "NOTG", "TWP": "WTP"}
     LOOTRUN_REGION_ORDER = ["SE", "Corkus", "Sky", "Molten", "Canyon", "FrumaEast", "FrumaWest"]
     WARD_ICON_DIR = Path("images/wards")
     MYTHIC_ICON_DIR = Path("images/mythics")
     ASPECT_ICON_DIR = Path("images/raids")
+
+    WYNNVENTORY_BASE_URL = "https://wynnventory.com"
+
+    WYNNVENTORY_RAID_MAP = {
+        "The Nameless Anomaly":    "TNA",
+        "The Canyon Colossus":     "TCC",
+        "Orphion's Nexus of Light": "NOL",
+        "Nest of the Grootslangs": "NOG",
+        "The Wartorn Palace":      "TWP",
+    }
+
+    WYNNVENTORY_REGION_MAP = {
+        "Silent Expanse":     "SE",
+        "Corkus":             "Corkus",
+        "Sky Islands":        "Sky",
+        "Molten Heights":     "Molten",
+        "Canyon of the Lost": "Canyon",
+        "Fruma Foray (East)": "FrumaEast",
+        "Fruma Foray (West)": "FrumaWest",
+    }
+
+    WYNNVENTORY_ASPECT_CLASS_MAP = {
+        "ArcherAspect":   "archer",
+        "MageAspect":     "mage",
+        "WarriorAspect":  "warrior",
+        "AssassinAspect": "assassin",
+        "ShamanAspect":   "shaman",
+    }
+
+    # Friday resets: loot 19:00 UTC, raids/aspects 18:00 UTC
+    LOOT_RESET_WEEKDAY = 4
+    LOOT_RESET_HOUR_UTC = 19
+    RAID_RESET_WEEKDAY = 4
+    RAID_RESET_HOUR_UTC = 18
 
     def _format_list(self, items):
         return "\n".join(items) if items else "None"
@@ -294,16 +326,14 @@ class LootPool(commands.Cog):
         try:
             db = DB()
             db.connect()
-            
             # Set expiration to epoch time (January 1, 1970)
             epoch_time = datetime.fromtimestamp(0, tz=timezone.utc)
-            
             # Use ON CONFLICT to either insert or update the cache entry
             db.cursor.execute("""
                 INSERT INTO cache_entries (cache_key, data, expires_at, fetch_count)
                 VALUES (%s, %s, %s, 1)
-                ON CONFLICT (cache_key) 
-                DO UPDATE SET 
+                ON CONFLICT (cache_key)
+                DO UPDATE SET
                     data = EXCLUDED.data,
                     created_at = NOW(),
                     expires_at = EXCLUDED.expires_at,
@@ -311,10 +341,8 @@ class LootPool(commands.Cog):
                     last_error = NULL,
                     error_count = 0
             """, (cache_key, json.dumps(data), epoch_time))
-            
             db.connection.commit()
             db.close()
-            
         except Exception as e:
             log(ERROR, f"Failed to save {cache_key} to cache: {e}", context="lootpool")
             # Don't let database errors prevent the command from working
@@ -324,6 +352,121 @@ class LootPool(commands.Cog):
             except:
                 pass
 
+    @property
+    def _wynnventory_headers(self) -> dict:
+        return {"Authorization": f"Api-Key {WYNNVENTORY_API_KEY}"}
+
+    def _next_reset(self, weekday: int, hour: int) -> datetime:
+        now = datetime.now(timezone.utc)
+        days_ahead = (weekday - now.weekday()) % 7
+        candidate = (now + timedelta(days=days_ahead)).replace(
+            hour=hour, minute=0, second=0, microsecond=0
+        )
+        if candidate <= now:
+            candidate += timedelta(days=7)
+        return candidate
+
+    def _format_countdown(self, target: datetime) -> str:
+        delta = target - datetime.now(timezone.utc)
+        total_sec = max(0, int(delta.total_seconds()))
+        days, rem = divmod(total_sec, 86400)
+        hours, rem = divmod(rem, 3600)
+        minutes = rem // 60
+        if days > 0:
+            return f"Resets in {days}d {hours}h {minutes}m"
+        if hours > 0:
+            return f"Resets in {hours}h {minutes}m"
+        return f"Resets in {minutes}m"
+
+    def _extract_wynnventory_lootruns(self, data: list) -> dict:
+        if not isinstance(data, list) or not data:
+            return {}
+
+        loot: dict = {}
+
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue
+            region_name = entry.get("region", "")
+            region_key = self.WYNNVENTORY_REGION_MAP.get(region_name, region_name)
+
+            mythic_items: list[str] = []
+            shiny_item: str | None = None
+            shiny_tracker: str = ""
+
+            for group_data in self._as_list(entry.get("region_items")):
+                if not isinstance(group_data, dict):
+                    continue
+                group = group_data.get("group", "")
+                items = self._as_list(group_data.get("loot_items"))
+                if group == "Mythic":
+                    mythic_items = [item["name"] for item in items if isinstance(item, dict) and "name" in item]
+                elif group == "Shiny" and items:
+                    first = items[0] if isinstance(items[0], dict) else {}
+                    shiny_item = first.get("name")
+                    shiny_stat = first.get("shinyStat")
+                    if isinstance(shiny_stat, dict):
+                        stat_type = shiny_stat.get("statType")
+                        display_name = stat_type.get("displayName", "") if isinstance(stat_type, dict) else ""
+                        if display_name:
+                            shiny_tracker = display_name
+
+            loot[region_key] = {
+                "Mythic": mythic_items,
+                "Shiny": {"Item": shiny_item, "Tracker": shiny_tracker} if shiny_item else {},
+            }
+
+        return loot
+
+    def _extract_wynnventory_aspects(self, data: list) -> tuple[dict, dict]:
+        if not isinstance(data, list) or not data:
+            return {}, {}
+
+        aspects: dict = {}
+        aspect_to_class: dict[str, str] = {}
+
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue
+            region_name = entry.get("region", "")
+            raid_key = self.WYNNVENTORY_RAID_MAP.get(region_name, region_name)
+
+            raid_aspects: dict = {"Mythic": [], "Fabled": [], "Legendary": []}
+
+            for group_data in self._as_list(entry.get("group_items")):
+                if not isinstance(group_data, dict) or group_data.get("group") != "Aspects":
+                    continue
+                for item in self._as_list(group_data.get("loot_items")):
+                    if not isinstance(item, dict):
+                        continue
+                    rarity = item.get("rarity", "")
+                    name = item.get("name", "")
+                    if not name:
+                        continue
+                    if rarity in raid_aspects:
+                        raid_aspects[rarity].append(name)
+                    cls = self.WYNNVENTORY_ASPECT_CLASS_MAP.get(item.get("type", ""))
+                    if cls:
+                        aspect_to_class[name] = cls
+
+            aspects[raid_key] = raid_aspects
+
+        return aspects, aspect_to_class
+
+    def _extract_wynnventory_gambits(self, data: dict) -> list[dict]:
+        if not isinstance(data, dict):
+            return []
+        strip_codes = lambda s: re.sub(r'§.', '', s)
+        result = []
+        for gambit in self._as_list(data.get("gambits")):
+            if not isinstance(gambit, dict):
+                continue
+            name = strip_codes(str(gambit.get("name", "Unknown")))
+            desc_lines = self._as_list(gambit.get("description"))
+            description = strip_codes(" ".join(str(line) for line in desc_lines))
+            result.append({"name": name.strip(), "description": description.strip()})
+        return result
+
     @lootpool.command(
         name="aspects",
         description="Provides weekly aspects data as an image"
@@ -332,25 +475,18 @@ class LootPool(commands.Cog):
     async def aspects(self, ctx: discord.ApplicationContext):
         await ctx.defer()
 
-        data = None
-        last_error = None
         gambit_entries = []
-        for url in ("https://nori.fish/api/raids", "https://nori.fish/api/aspects"):
-            try:
-                resp = await asyncio.to_thread(requests.get, url, timeout=15)
-                resp.raise_for_status()
-                candidate = resp.json()
-                loot, timestamp = self._extract_aspect_payload(candidate)
-                if loot:
-                    data = candidate
-                    self._cache_data('aspectData', candidate)
-                    break
-            except Exception as e:
-                last_error = e
-
-        if data is None:
-            if last_error:
-                log(ERROR, f"Failed to fetch aspects data: {last_error}", context="lootpool")
+        try:
+            resp = await asyncio.to_thread(
+                requests.get,
+                f"{self.WYNNVENTORY_BASE_URL}/api/raidpool/items",
+                headers=self._wynnventory_headers,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            raw_data = resp.json()
+        except Exception as e:
+            log(ERROR, f"Failed to fetch aspects data: {e}", context="lootpool")
             embed = discord.Embed(
                 title=":no_entry: Error",
                 description="Failed to fetch aspects data. Please try again later.",
@@ -359,30 +495,39 @@ class LootPool(commands.Cog):
             await ctx.followup.send(embed=embed)
             return
 
+        self._cache_data('aspectData', raw_data if isinstance(raw_data, dict) else {"data": raw_data})
+
         try:
-            gambits_resp = await asyncio.to_thread(requests.get, "https://nori.fish/api/gambits", timeout=15)
+            gambits_resp = await asyncio.to_thread(
+                requests.get,
+                f"{self.WYNNVENTORY_BASE_URL}/api/raidpool/gambits/current",
+                headers=self._wynnventory_headers,
+                timeout=15,
+            )
             gambits_resp.raise_for_status()
-            gambit_entries = self._extract_gambits_payload(gambits_resp.json())
+            gambit_entries = self._extract_wynnventory_gambits(gambits_resp.json())
         except Exception as e:
             log(ERROR, f"Failed to fetch gambits data: {e}", context="lootpool")
 
-        loot, timestamp = self._extract_aspect_payload(data)
+        loot, api_aspect_to_class = self._extract_wynnventory_aspects(raw_data)
         raids = self._ordered_keys(loot, self.RAID_DISPLAY_ORDER)
         if not raids:
             embed = discord.Embed(
                 title=":no_entry: Error",
-                description="Nori returned no raid aspect data.",
+                description="Failed to retrieve raid aspect data.",
                 color=0xe33232
             )
             await ctx.followup.send(embed=embed)
             return
 
+        # JSON file as fallback, API data takes precedence
         try:
             with open('data/aspect_class_map.json', 'r') as f:
                 class_map = json.load(f)
         except Exception:
             class_map = {}
         aspect_to_class = {name: cls for cls, names in class_map.items() for name in names}
+        aspect_to_class.update(api_aspect_to_class)
 
         # Layout settings
         cols = len(raids)
@@ -523,7 +668,7 @@ class LootPool(commands.Cog):
                 width=2,
             )
 
-            # Raid icon -- resolve nori.fish key to local filename
+            # Raid icon -- resolve internal key to local filename
             icon_name = self.RAID_ICON_MAP.get(raid, raid)
             raid_path = f"images/raids/{icon_name}.png"
             icon_slot_y = column_y0 + reward_column_text_inset
@@ -642,29 +787,30 @@ class LootPool(commands.Cog):
 
                 entry_y += row_h + gambit_entry_gap
 
-        # Try to pull a timestamp from the API (fallback to now if missing)
-        ts = timestamp
-        next_rot = ts + 604800  # one week in seconds
+        countdown = self._format_countdown(self._next_reset(self.RAID_RESET_WEEKDAY, self.RAID_RESET_HOUR_UTC))
+        pill_font = ImageFont.truetype("images/profile/game.ttf", 18)
+        pad_x, pad_y = 22, 7
+        tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), countdown, font=pill_font)
+        pill_w, pill_h = tb[2] - tb[0] + pad_x * 2, tb[3] - tb[1] + pad_y * 2
+        strip_h = pill_h + pad_y * 2
+        out = Image.new("RGBA", (img.width, img.height + strip_h), (0, 0, 0, 0))
+        out.paste(img, (0, 0))
+        fd = ImageDraw.Draw(out)
+        pill_x = (out.width - pill_w) // 2
+        pill_y = img.height + (strip_h - pill_h) // 2
+        fd.rounded_rectangle(
+            (pill_x, pill_y, pill_x + pill_w, pill_y + pill_h),
+            radius=pill_h // 2,
+            fill=(14, 10, 25, 255),
+            outline=(76, 30, 122, 255),
+            width=2,
+        )
+        fd.text((pill_x + pad_x, pill_y + pad_y), countdown, font=pill_font, fill=(255, 215, 90, 255))
 
-        # Prepare the image file
         with BytesIO() as buf:
-            img.save(buf, format="PNG")
+            out.save(buf, format="PNG")
             buf.seek(0)
-            file = discord.File(buf, filename="aspects.png")
-
-            # Build the embed
-            embed = discord.Embed(
-                title="Weekly Raid Aspects",
-                color=0x7a187a  # match your lootruns color
-            )
-            embed.add_field(
-                name=":arrows_counterclockwise: Next rotation:",
-                value=f"<t:{next_rot}:f>"  # full datetime format
-            )
-            embed.set_image(url="attachment://aspects.png")
-
-            # Send embed + image together
-            await ctx.followup.send(embed=embed, file=file)
+            await ctx.followup.send(file=discord.File(buf, filename="aspects.png"))
 
     @lootpool.command(
         name="lootruns",
@@ -674,14 +820,17 @@ class LootPool(commands.Cog):
     async def lootruns(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         try:
-            resp = await asyncio.to_thread(requests.get, "https://nori.fish/api/lootpool", timeout=15)
+            resp = await asyncio.to_thread(
+                requests.get,
+                f"{self.WYNNVENTORY_BASE_URL}/api/lootpool/items",
+                headers=self._wynnventory_headers,
+                timeout=15,
+            )
             resp.raise_for_status()
-            data = resp.json()
-            
-            # Cache the lootpool data
-            self._cache_data('lootpoolData', data)
-            
-        except Exception:
+            raw_data = resp.json()
+            self._cache_data('lootpoolData', raw_data if isinstance(raw_data, dict) else {"data": raw_data})
+        except Exception as e:
+            log(ERROR, f"Failed to fetch loot run data: {e}", context="lootpool")
             embed = discord.Embed(
                 title=":no_entry: Error",
                 description="Failed to fetch loot run data. Please try again later.",
@@ -690,21 +839,15 @@ class LootPool(commands.Cog):
             await ctx.followup.send(embed=embed)
             return
 
-        embed = discord.Embed(
-            title="Weekly Mythic Lootpool",
-            color=0x7a187a,
-        )
-        loot, timestamp = self._extract_lootrun_payload(data)
+        loot = self._extract_wynnventory_lootruns(raw_data)
         if not loot:
             embed = discord.Embed(
                 title=":no_entry: Error",
-                description="Nori returned no lootrun pool data.",
+                description="Failed to retrieve lootrun pool data.",
                 color=0xe33232
             )
             await ctx.followup.send(embed=embed)
             return
-
-        embed.add_field(name=":arrows_counterclockwise: Next rotation:", value=f'<t:{timestamp + 604800}:f>')
 
         region_order = self._ordered_keys(loot, self.LOOTRUN_REGION_ORDER)
         region_widths = []
@@ -834,14 +977,30 @@ class LootPool(commands.Cog):
                 anchor="mt",
             )
 
-        with BytesIO() as file:
-            lr_lp.save(file, format="PNG")
-            file.seek(0)
-            t = int(time.time())
-            lr_lootpool = discord.File(file, filename=f"lootpool{t}.png")
-            embed.set_image(url=f"attachment://lootpool{t}.png")
+        countdown = self._format_countdown(self._next_reset(self.LOOT_RESET_WEEKDAY, self.LOOT_RESET_HOUR_UTC))
+        pill_font = ImageFont.truetype("images/profile/game.ttf", 18)
+        pad_x, pad_y = 22, 7
+        tb = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), countdown, font=pill_font)
+        pill_w, pill_h = tb[2] - tb[0] + pad_x * 2, tb[3] - tb[1] + pad_y * 2
+        strip_h = pill_h + pad_y * 2
+        out = Image.new("RGBA", (lr_lp.width, lr_lp.height + strip_h), (0, 0, 0, 0))
+        out.paste(lr_lp, (0, 0))
+        fd = ImageDraw.Draw(out)
+        pill_x = (out.width - pill_w) // 2
+        pill_y = lr_lp.height + (strip_h - pill_h) // 2
+        fd.rounded_rectangle(
+            (pill_x, pill_y, pill_x + pill_w, pill_y + pill_h),
+            radius=pill_h // 2,
+            fill=(14, 10, 25, 255),
+            outline=(76, 30, 122, 255),
+            width=2,
+        )
+        fd.text((pill_x + pad_x, pill_y + pad_y), countdown, font=pill_font, fill=(255, 215, 90, 255))
 
-        await ctx.followup.send(embed=embed, file=lr_lootpool)
+        with BytesIO() as file:
+            out.save(file, format="PNG")
+            file.seek(0)
+            await ctx.followup.send(file=discord.File(file, filename="lootpool.png"))
 
     @commands.Cog.listener()
     async def on_ready(self):
