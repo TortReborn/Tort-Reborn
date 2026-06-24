@@ -226,6 +226,7 @@ extensions = [
     # Events
     'Events.on_guild_channel_update',
     'Events.on_raw_reaction_add',
+    'Events.on_member_join',
     'Events.on_member_update',
     'Events.on_guild_join',
 
