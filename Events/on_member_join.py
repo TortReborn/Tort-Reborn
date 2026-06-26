@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from Helpers.variables import GENERAL_CHANNEL_ID, MEMBER_APP_CHANNEL_ID, RULES_CHANNEL_ID, TAQ_GUILD_ID
+from Helpers.variables import GENERAL_CHANNEL_ID, RULES_CHANNEL_ID, TAQ_GUILD_ID
 from Helpers.logger import log, INFO
 
 WELCOME_COLOR = 0x94C1FF
@@ -24,7 +24,7 @@ class OnMemberJoin(commands.Cog):
 
         await ch.send(
             f"Welcome to TAq {member.mention}! <:TAq:744256840254226553>\n"
-            f"If you want to apply, head to <#{MEMBER_APP_CHANNEL_ID}> and choose your application type.\n"
+            f"If you want to apply, head to <#1476866917854609408> and choose your application type.\n"
             f"Read <#{RULES_CHANNEL_ID}> for any immediate questions or concerns (like ally raiding) and have a wonderful stay within The Aquarium! <:partytort:975138500150165594>"
         )
 
