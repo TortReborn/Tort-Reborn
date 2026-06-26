@@ -4,6 +4,8 @@ from discord.ext import commands
 from Helpers.variables import GENERAL_CHANNEL_ID, MEMBER_APP_CHANNEL_ID, RULES_CHANNEL_ID, TAQ_GUILD_ID
 from Helpers.logger import log, INFO
 
+WELCOME_COLOR = 0x94C1FF
+
 
 class OnMemberJoin(commands.Cog):
     def __init__(self, client):
@@ -21,8 +23,9 @@ class OnMemberJoin(commands.Cog):
             return
 
         await ch.send(
-            f"Welcome {member.mention}! If you want to apply, head to <#{MEMBER_APP_CHANNEL_ID}> and choose your application type. "
-            f"Read <#{RULES_CHANNEL_ID}> for any questions regarding our rules or procedures and have a wonderful stay within The Aquarium!"
+            f"Welcome to TAq {member.mention}! <:TAq:744256840254226553>\n"
+            f"If you want to apply, head to <#{MEMBER_APP_CHANNEL_ID}> and choose your application type.\n"
+            f"Read <#{RULES_CHANNEL_ID}> for any immediate questions or concerns (like ally raiding) and have a wonderful stay within The Aquarium! <:partytort:975138500150165594>"
         )
 
 
