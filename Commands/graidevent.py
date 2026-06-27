@@ -3,6 +3,7 @@ import asyncio
 import datetime
 import math
 import time
+from decimal import Decimal, InvalidOperation
 from datetime import timezone
 from io import BytesIO
 from typing import Optional
@@ -159,6 +160,22 @@ def _format_stx_le(total_le: int) -> str:
     return f"{le} LE"
 
 
+def _format_points(value) -> str:
+    return f"{float(value):.2f}".rstrip("0").rstrip(".")
+
+
+def _parse_raid_point(value, label: str) -> float:
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError(f"{label} must be a number.") from exc
+    if parsed < 0:
+        raise ValueError(f"{label} cannot be negative.")
+    if -parsed.as_tuple().exponent > 2:
+        raise ValueError(f"{label} can have at most 2 decimal places.")
+    return float(parsed)
+
+
 def _format_bonus_details(details: list[str]) -> str:
     return f" [{', '.join(details)}]" if details else ""
 
@@ -200,7 +217,7 @@ def _draw_currency_payout(
         cursor_x += icon.width + 10
 
 
-def _default_raid_points() -> dict[str, int]:
+def _default_raid_points() -> dict[str, float]:
     return {raid_name: 0 for raid_name in RAID_NAMES}
 
 
@@ -250,7 +267,7 @@ def _load_event_config(cur, *, event_id: int | None = None, title: str | None = 
     )
     for raid_type, points in cur.fetchall():
         if raid_type in event["raid_points"]:
-            event["raid_points"][raid_type] = int(points or 0)
+            event["raid_points"][raid_type] = float(points or 0)
 
     cur.execute(
         """
@@ -317,7 +334,7 @@ def _load_event_contributions(cur, event_id: int) -> list[dict]:
 
 def build_reward_rows(
     contributions: list[dict],
-    raid_points: dict[str, int],
+    raid_points: dict[str, float],
     milestones: list[tuple[int, int]],
     placement_bonuses: dict[int, int],
     min_points: int,
@@ -337,7 +354,7 @@ def build_reward_rows(
     )
 
     for item in ordered_contributions:
-        points = int(raid_points.get(item.get("raid_type"), 0) or 0)
+        points = float(raid_points.get(item.get("raid_type"), 0) or 0)
         if points <= 0:
             continue
 
@@ -356,7 +373,7 @@ def build_reward_rows(
             player["display_name"] = item["display_name"]
         if item.get("discord_id"):
             player["discord_id"] = item["discord_id"]
-        player["ranking_points"] += points
+        player["ranking_points"] = round(player["ranking_points"] + points, 2)
         player["reached_at"] = item.get("completed_at")
 
     rows = [p for p in players.values() if include_below_threshold or p["ranking_points"] >= min_points]
@@ -374,13 +391,13 @@ def build_reward_rows(
         if placement_bonus > 0:
             bonus_details.append(f"+{placement_bonus} from {_ordinal(index)} place")
 
-        reward_points = row["ranking_points"] + milestone_bonus + placement_bonus
+        reward_points = round(row["ranking_points"] + milestone_bonus + placement_bonus, 2)
         row["placement"] = index
         row["milestone_bonus_points"] = milestone_bonus
         row["placement_bonus_points"] = placement_bonus
         row["bonus_details"] = bonus_details
         row["reward_points"] = reward_points
-        row["total_le"] = reward_points * int(le_per_point)
+        row["total_le"] = math.ceil(reward_points * int(le_per_point))
         row["payout"] = _format_stx_le(row["total_le"])
 
     return rows
@@ -396,12 +413,12 @@ def _reward_line(row: dict) -> str:
     medal = MEDALS.get(row["placement"], "")
     prefix = f"{medal} " if medal else ""
     details = _format_bonus_details(row.get("bonus_details", []))
-    return f"- {prefix}{_mention(row)} - {row['ranking_points']} points{details} - {row['payout']}"
+    return f"- {prefix}{_mention(row)} - {_format_points(row['ranking_points'])} points{details} - {row['payout']}"
 
 
 def _event_rules_text(event: dict) -> str:
     raid_parts = [
-        f"{RAID_SHORT[raid]}={event['raid_points'].get(raid, 0)}"
+        f"{RAID_SHORT[raid]}={_format_points(event['raid_points'].get(raid, 0))}"
         for raid in RAID_NAMES
     ]
     lines = [
@@ -479,7 +496,7 @@ def _create_event_leaderboard(event: dict, rows: list[dict]) -> pages.Paginator:
             img.paste(bg_color.divider, (left_pad + 133, y), bg_color.divider)
             addLine(f"&f{player['display_name']}", draw, game_font, left_pad + 143, row_top + 11)
 
-            value_str = f"{player['ranking_points']:,} pts"
+            value_str = f"{_format_points(player['ranking_points'])} pts"
             addLine(f"&f{value_str}", draw, game_font, 480, row_top + 11)
             img.paste(icon, (455, row_top + 13), icon)
             img.paste(bg_color.divider, (445, y), bg_color.divider)
@@ -487,7 +504,7 @@ def _create_event_leaderboard(event: dict, rows: list[dict]) -> pages.Paginator:
             if player["ranking_points"] >= event["min_points"]:
                 _draw_currency_payout(img, draw, small_font, 585, row_top + 12, player["total_le"], stx_icon, le_icon)
             else:
-                reward_str = f"{event['min_points'] - player['ranking_points']} pts to qualify"
+                reward_str = f"{_format_points(event['min_points'] - player['ranking_points'])} pts to qualify"
                 addLine(f"&f{reward_str}", draw, small_font, 585, row_top + 12)
             img.paste(bg_color.divider, (570, y), bg_color.divider)
             rank_counter += 1
@@ -547,11 +564,11 @@ class GraidEvent(commands.Cog):
         end_date_iso: str,
         min_points: Option(int, "Minimum ranking points required for rewards", min_value=0),
         le_per_point: Option(int, "LE paid per final reward point", min_value=1),
-        notg_points: Option(int, "Points for Nest of the Grootslangs", min_value=0),
-        tcc_points: Option(int, "Points for The Canyon Colossus", min_value=0),
-        tna_points: Option(int, "Points for The Nameless Anomaly", min_value=0),
-        nol_points: Option(int, "Points for Orphion's Nexus of Light", min_value=0),
-        wtp_points: Option(int, "Points for The Wartorn Palace", min_value=0),
+        notg_points: Option(float, "Points for Nest of the Grootslangs", min_value=0),
+        tcc_points: Option(float, "Points for The Canyon Colossus", min_value=0),
+        tna_points: Option(float, "Points for The Nameless Anomaly", min_value=0),
+        nol_points: Option(float, "Points for Orphion's Nexus of Light", min_value=0),
+        wtp_points: Option(float, "Points for The Wartorn Palace", min_value=0),
         milestones: Option(str, "Optional: 50=64,100=128", required=False, default=None),
         placement_bonuses: Option(str, "Optional: 1=192,2=128,3=64", required=False, default=None),
     ):
@@ -562,17 +579,16 @@ class GraidEvent(commands.Cog):
             end_ts = _parse_end_date(end_date_iso)
             parsed_milestones = _parse_bonus_config(milestones, "milestones")
             parsed_placements = _parse_bonus_config(placement_bonuses, "placement_bonuses")
+            raid_points = {
+                RAID_SHORT_TO_FULL["NOTG"]: _parse_raid_point(notg_points, "NOTG points"),
+                RAID_SHORT_TO_FULL["TCC"]: _parse_raid_point(tcc_points, "TCC points"),
+                RAID_SHORT_TO_FULL["TNA"]: _parse_raid_point(tna_points, "TNA points"),
+                RAID_SHORT_TO_FULL["NOL"]: _parse_raid_point(nol_points, "NOL points"),
+                RAID_SHORT_TO_FULL["WTP"]: _parse_raid_point(wtp_points, "WTP points"),
+            }
         except Exception as exc:
             await ctx.respond(f"Invalid GRAID event config: {exc}", ephemeral=True)
             return
-
-        raid_points = {
-            RAID_SHORT_TO_FULL["NOTG"]: int(notg_points),
-            RAID_SHORT_TO_FULL["TCC"]: int(tcc_points),
-            RAID_SHORT_TO_FULL["TNA"]: int(tna_points),
-            RAID_SHORT_TO_FULL["NOL"]: int(nol_points),
-            RAID_SHORT_TO_FULL["WTP"]: int(wtp_points),
-        }
 
         db = _db()
         try:
@@ -665,7 +681,7 @@ class GraidEvent(commands.Cog):
             db.connection.commit()
 
             lines = [
-                f"`{row['placement']:>2}.` **{row['display_name']}** - {row['ranking_points']} points"
+                f"`{row['placement']:>2}.` **{row['display_name']}** - {_format_points(row['ranking_points'])} points"
                 for row in rows[:10]
             ]
             desc = "\n".join(lines) if lines else "_No qualifying participants._"
@@ -691,7 +707,7 @@ class GraidEvent(commands.Cog):
 
             rows = _load_reward_rows(cur, event, include_below_threshold=True)
             lines = [
-                f"`{row['placement']:>2}.` **{row['display_name']}** - {row['ranking_points']} points"
+                f"`{row['placement']:>2}.` **{row['display_name']}** - {_format_points(row['ranking_points'])} points"
                 for row in rows[:5]
             ]
             desc = "\n".join(lines) if lines else "_No one on the board yet._"
