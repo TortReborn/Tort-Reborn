@@ -175,9 +175,27 @@ CREATE TABLE IF NOT EXISTS graid_event_raid_rewards (
 CREATE TABLE IF NOT EXISTS graid_event_raid_points (
   event_id  BIGINT      NOT NULL REFERENCES graid_events(id) ON DELETE CASCADE,
   raid_type VARCHAR(40) NOT NULL,
-  points    INT         NOT NULL DEFAULT 0,
+  points    NUMERIC     NOT NULL DEFAULT 0 CONSTRAINT graid_event_raid_points_points_decimal_check CHECK (points >= 0 AND points = ROUND(points, 2)),
   PRIMARY KEY (event_id, raid_type)
 );
+
+DO $$
+BEGIN
+  ALTER TABLE graid_event_raid_points
+    ALTER COLUMN points TYPE NUMERIC USING points::numeric,
+    ALTER COLUMN points SET DEFAULT 0;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'graid_event_raid_points_points_decimal_check'
+      AND conrelid = 'graid_event_raid_points'::regclass
+  ) THEN
+    ALTER TABLE graid_event_raid_points
+      ADD CONSTRAINT graid_event_raid_points_points_decimal_check
+      CHECK (points >= 0 AND points = ROUND(points, 2));
+  END IF;
+END$$;
 
 -- Cumulative reward point bonuses unlocked by reaching ranking point thresholds.
 CREATE TABLE IF NOT EXISTS graid_event_milestones (
