@@ -112,12 +112,24 @@ CREATE TABLE IF NOT EXISTS graid_events (
   min_completions    INT         NOT NULL,
   bonus_threshold    INT,
   bonus_amount       INT,
+  min_points          INT         NOT NULL DEFAULT 0,
+  le_per_point        INT         NOT NULL DEFAULT 1,
   created_by_discord BIGINT,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_graid_events_active ON graid_events(active);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'graid_events' AND column_name = 'min_points') THEN
+    ALTER TABLE graid_events ADD COLUMN min_points INT NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'graid_events' AND column_name = 'le_per_point') THEN
+    ALTER TABLE graid_events ADD COLUMN le_per_point INT NOT NULL DEFAULT 1;
+  END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS graid_event_totals (
   event_id     BIGINT      NOT NULL REFERENCES graid_events(id) ON DELETE CASCADE,
@@ -150,13 +162,37 @@ CREATE TABLE IF NOT EXISTS graid_log_participants (
 CREATE INDEX IF NOT EXISTS idx_graid_log_participants_uuid ON graid_log_participants(uuid);
 CREATE INDEX IF NOT EXISTS idx_graid_log_participants_ign  ON graid_log_participants(ign);
 
--- Optional per-raid-type reward overrides for graid events
+-- Legacy per-raid-type reward overrides for old graid events.
 CREATE TABLE IF NOT EXISTS graid_event_raid_rewards (
   event_id         BIGINT      NOT NULL REFERENCES graid_events(id) ON DELETE CASCADE,
   raid_type        VARCHAR(40) NOT NULL,
   low_rank_reward  INT         NOT NULL,
   high_rank_reward INT         NOT NULL,
   PRIMARY KEY (event_id, raid_type)
+);
+
+-- Per-event point values for each raid type.
+CREATE TABLE IF NOT EXISTS graid_event_raid_points (
+  event_id  BIGINT      NOT NULL REFERENCES graid_events(id) ON DELETE CASCADE,
+  raid_type VARCHAR(40) NOT NULL,
+  points    INT         NOT NULL DEFAULT 0,
+  PRIMARY KEY (event_id, raid_type)
+);
+
+-- Cumulative reward point bonuses unlocked by reaching ranking point thresholds.
+CREATE TABLE IF NOT EXISTS graid_event_milestones (
+  event_id         BIGINT NOT NULL REFERENCES graid_events(id) ON DELETE CASCADE,
+  threshold_points INT    NOT NULL,
+  bonus_points     INT    NOT NULL DEFAULT 0,
+  PRIMARY KEY (event_id, threshold_points)
+);
+
+-- Final placement reward point bonuses. These do not affect ranking.
+CREATE TABLE IF NOT EXISTS graid_event_placement_bonuses (
+  event_id     BIGINT NOT NULL REFERENCES graid_events(id) ON DELETE CASCADE,
+  placement    INT    NOT NULL,
+  bonus_points INT    NOT NULL DEFAULT 0,
+  PRIMARY KEY (event_id, placement)
 );
 
 -- Per-UUID raid offsets for raids missed during bot downtime
