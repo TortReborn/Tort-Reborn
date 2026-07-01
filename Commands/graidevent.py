@@ -751,7 +751,7 @@ class GraidEvent(commands.Cog):
     ):
         if not await _require_manage_roles(ctx):
             return
-        await ctx.defer(ephemeral=True)
+        await ctx.defer()
 
         db = _db()
         try:
@@ -781,7 +781,7 @@ class GraidEvent(commands.Cog):
             chunks.append(current)
 
         for idx, chunk in enumerate(chunks):
-            await ctx.followup.send(chunk, ephemeral=True)
+            await ctx.followup.send(chunk)
 
     @graid_event.command(name="set", description="ADMIN: Activate an existing GRAID by title")
     async def graid_set(
