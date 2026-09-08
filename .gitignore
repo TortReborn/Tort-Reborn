@@ -17,6 +17,7 @@ __pycache__/
 CLAUDE.md
 .mcp.json
 .claude/
+.playwright-mcp/
 
 .vscode/
 
