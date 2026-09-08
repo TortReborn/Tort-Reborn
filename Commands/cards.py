@@ -871,11 +871,6 @@ class Cards(commands.Cog):
             else:
                 state = "Not minted yet — still out there to be reeled"
             embed.add_field(name="Status", value=state, inline=False)
-        else:
-            embed.add_field(name="Dialogue", value=f"{card['lines']:,} lines")
-            embed.add_field(
-                name="Drop chance",
-                value=f"{cardlib.TIER_WEIGHTS[card['tier']]}% for the tier")
 
         embed.set_footer(text=_credit(
             card,
@@ -940,6 +935,49 @@ class Cards(commands.Cog):
         paginator = pages.Paginator(pages=page_list)
         add_paginator_buttons(paginator)
         await paginator.respond(ctx.interaction)
+
+    @pool.command(name="rates", description="Drop chances for every tier")
+    async def pool_rates(self, ctx: discord.ApplicationContext):
+        await ctx.defer()
+        counts = cardlib.tier_counts()
+        entries = await asyncio.to_thread(cardlib.db_get_pool)
+        unminted = sum(1 for p in entries if not p["minted"])
+
+        rows = []
+        for tier in cardlib.TIER_ORDER:
+            weight = cardlib.TIER_WEIGHTS[tier]
+            if tier == "member":
+                label, pool = "Member 1/1", unminted
+            else:
+                label, pool = _tier_label(tier), counts.get(tier, 0)
+            # Chance of a *named* card: the tier has to land, then that one
+            # card has to be the pick inside it.
+            named = f"1 in {round(pool / (weight / 100)):,}" if pool else "\u2014"
+            rows.append(f"{label:<11}{weight:>7.2f}%{pool:>7}{named:>15}")
+
+        table = ("`" + f"{'Tier':<11}{'Chance':>8}{'Cards':>7}{'One specific':>15}"
+                 + "`\n```\n" + "\n".join(rows) + "\n```")
+
+        per_day = cardlib.REELS_PER_WINDOW * (24 * 3600 // cardlib.WINDOW_SECONDS)
+        embed = discord.Embed(
+            title="Drop rates",
+            description=table,
+            color=0x38C9BD)
+        embed.add_field(
+            name="Reading it",
+            value=("**Chance** is per reel. **One specific** is the odds of a named "
+                   "card — the tier has to land, then that card has to be "
+                   "the one drawn from it."),
+            inline=False)
+        embed.add_field(
+            name="At {} reels a day".format(per_day),
+            value=(f"An epic about weekly, a legendary about monthly, and a "
+                   f"1-in-4 shot at a member 1/1 over a month."),
+            inline=False)
+        embed.set_footer(
+            text=f"{unminted} of {len(entries)} member 1/1s are still unminted, "
+                 "so those odds shift as they are claimed")
+        await ctx.followup.send(embed=embed)
 
     # ── /wishlist ────────────────────────────────────────────────────────────
 
