@@ -150,6 +150,28 @@ async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
     return sorted(names)[:25]
 
 
+# Card art and dialogue come from the Wynncraft Wiki, credited by a link
+# directly above the card. Member 1/1s are rendered from Minecraft skins
+# instead, so they carry no link.
+
+
+def _wiki_line(card: dict) -> str | None:
+    """The source, as a link sitting immediately above the card image.
+
+    A footer would put it below the art but Discord does not render links
+    there, so the description is the closest spot that stays clickable.
+    """
+    url = card.get("wiki_url")
+    if not url or card.get("member"):
+        return None
+    return f"[Wiki Page]({url})"
+
+
+def _credit(card: dict, *bits) -> str:
+    """Footer text — what the command wants to report, nothing more."""
+    return " · ".join(b for b in bits if b)
+
+
 def _card_color(card: dict) -> int:
     if card.get("member"):
         return cardlib.TIER_COLORS["member"]
@@ -158,20 +180,18 @@ def _card_color(card: dict) -> int:
 
 def _card_embed(card: dict, copies: int, remaining: int, filename: str,
                 who: str, stars: int = 1, gained: int = 0) -> discord.Embed:
-    embed = discord.Embed(
-        title=f"{card['name']} {_stars(stars)}".strip(),
-        description=("1/1 · " if card.get("member") else "")
-                    + _tier_label(card["tier"]),
-        color=_card_color(card),
-        url=card.get("wiki_url") or None,
-    )
+    # The card art already prints the name, the tier or rank, the star level
+    # and the 1/1 badge, so the embed adds nothing but what the art cannot
+    # show: who rolled it, and what it means for your collection.
+    embed = discord.Embed(color=_card_color(card),
+                          description=_wiki_line(card))
     embed.set_author(name=f"{who}'s reel")
     embed.set_image(url=f"attachment://{filename}")
-    bits = ["New to your tank" if copies == 1 else f"Copy #{copies}"]
-    if gained:
-        bits.append(f"+{gained:,} pearls")
-    bits.append(f"{remaining} reel{'' if remaining == 1 else 's'} left")
-    embed.set_footer(text=" · ".join(bits))
+    embed.set_footer(text=_credit(
+        card,
+        "New to your tank" if copies == 1 else f"Copy #{copies}",
+        f"+{gained:,} pearls" if gained else None,
+        f"{remaining} reel{'' if remaining == 1 else 's'} left"))
     return embed
 
 
@@ -261,8 +281,8 @@ class ReelView(discord.ui.View):
         self.owner_id = owner_id
         self.owner_name = owner_name
         self.message = None
-        self.current = card       # shown on the card image right now
         self.history = []         # everything rerolled past this session
+        self.current = card       # shown on the card image right now
         self.set_exhausted(exhausted)
 
     def set_exhausted(self, exhausted: bool):
@@ -480,17 +500,13 @@ class Cards(commands.Cog):
 
         stars = entry["stars"]
         file = await asyncio.to_thread(card_file, match, None, stars)
-        embed = discord.Embed(
-            title=f"{match['name']} {_stars(stars)}".strip(),
-            description=("1/1 · " if match.get("member") else "")
-                        + _tier_label(match["tier"]),
-            color=_card_color(match),
-            url=match.get("wiki_url") or None,
-        )
+        embed = discord.Embed(color=_card_color(match),
+                              description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
-        embed.set_footer(
-            text=f"{entry['count']} cop{'y' if entry['count'] == 1 else 'ies'}"
-                 + (f" · {stars}★" if stars > 1 else ""))
+        embed.set_footer(text=_credit(
+            match,
+            f"{entry['count']} cop{'y' if entry['count'] == 1 else 'ies'}",
+            f"{stars}★" if stars > 1 else None))
         await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank list ───────────────────────────────────────────────────────────
@@ -724,15 +740,18 @@ class Cards(commands.Cog):
                 ephemeral=True)
 
         file = await asyncio.to_thread(card_file, match, None, to_star)
+        summary = (f"Spent {copies} copies and {pearls:,} pearls · "
+                   f"{result['pearls']:,} pearls left")
+        line = _wiki_line(match)
         embed = discord.Embed(
             title=f"{match['name']} is now {to_star}★",
-            description=(f"Spent {copies} copies and {pearls:,} pearls · "
-                         f"{result['pearls']:,} pearls left"),
+            description=f"{summary}\n{line}" if line else summary,
             color=cardlib.TIER_COLORS[match["tier"]])
         embed.set_image(url=f"attachment://{file.filename}")
-        embed.set_footer(
-            text=f"{result['count']} cop"
-                 f"{'y' if result['count'] == 1 else 'ies'} remaining")
+        embed.set_footer(text=_credit(
+            match,
+            f"{result['count']} cop"
+            f"{'y' if result['count'] == 1 else 'ies'} remaining"))
         await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank trade ──────────────────────────────────────────────────────────
@@ -839,12 +858,8 @@ class Cards(commands.Cog):
         stars = entry["stars"] if entry else 1
         file = await asyncio.to_thread(card_file, card, None, stars)
 
-        embed = discord.Embed(
-            title=f"{card['name']} {_stars(stars)}".strip(),
-            description=(f"1/1 · {card['rank']}" if member
-                         else _tier_label(card["tier"])),
-            color=_card_color(card),
-            url=card.get("wiki_url") or None)
+        embed = discord.Embed(color=_card_color(card),
+                              description=_wiki_line(card))
         embed.set_image(url=f"attachment://{file.filename}")
 
         if member:
@@ -862,10 +877,11 @@ class Cards(commands.Cog):
                 name="Drop chance",
                 value=f"{cardlib.TIER_WEIGHTS[card['tier']]}% for the tier")
 
-        embed.set_footer(
-            text=f"You own {entry['count']} cop"
-                 f"{'y' if entry['count'] == 1 else 'ies'}" if entry
-                 else "Not in your tank yet")
+        embed.set_footer(text=_credit(
+            card,
+            f"You own {entry['count']} cop"
+            f"{'y' if entry['count'] == 1 else 'ies'}" if entry
+            else "Not in your tank yet"))
         await ctx.followup.send(embed=embed, file=file)
 
     @pool.command(name="list", description="Everything that can drop")
