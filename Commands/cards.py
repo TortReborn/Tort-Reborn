@@ -70,6 +70,15 @@ def _stars(n: int) -> str:
     return "★" * n if n > 1 else ""
 
 
+def _find_card(name: str) -> dict | None:
+    """A card from the set by display name. Ignores member 1/1s."""
+    wanted = name.strip().lower()
+    for c in cardlib.load_card_set()["cards"]:
+        if c["name"].lower() == wanted:
+            return c
+    return None
+
+
 def _resolve(name: str) -> dict | None:
     """Find a card by display name across the set and the minted 1/1s."""
     wanted = name.strip().lower()
@@ -100,6 +109,14 @@ async def _autocomplete_owned(ctx: discord.AutocompleteContext):
         card = cardlib.get_card(slug) or members.get(slug)
         if card and typed in card["name"].lower():
             names.append(card["name"])
+    return sorted(names)[:25]
+
+
+async def _autocomplete_any_card(ctx: discord.AutocompleteContext):
+    """Every card in the set, owned or not."""
+    typed = (ctx.value or "").lower()
+    names = [c["name"] for c in cardlib.load_card_set()["cards"]
+             if typed in c["name"].lower()]
     return sorted(names)[:25]
 
 
@@ -351,7 +368,7 @@ class Cards(commands.Cog):
     wish = SlashCommandGroup(name="wishlist", description="Aim your luck",
                              guild_ids=EXEC_GUILD_IDS)
     pool = SlashCommandGroup(name="pool",
-                             description="The 1/1 member card pool",
+                             description="Guild members whose 1/1 card can drop",
                              guild_ids=EXEC_GUILD_IDS)
 
     def __init__(self, client):
@@ -400,6 +417,44 @@ class Cards(commands.Cog):
             content=_history_content([]),
             embed=embed, file=file, view=view, wait=True)
         await _announce_and_reward(ctx.channel, ctx.author, card)
+
+    # ── /card ────────────────────────────────────────────────────────────────
+
+    @slash_command(name="card",
+                   description="Look up any Wynncraft card, owned or not",
+                   guild_ids=EXEC_GUILD_IDS)
+    async def card_lookup(
+        self, ctx: discord.ApplicationContext,
+        name: discord.Option(str, description="Any character in the set",
+                             autocomplete=_autocomplete_any_card),
+    ):
+        await ctx.defer()
+        match = _find_card(name)
+        if match is None:
+            return await ctx.followup.send(
+                f"No card called **{name}**. Use `/pool view` for a guild "
+                "member's 1/1 card.", ephemeral=True)
+
+        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
+                                        match["slug"])
+        stars = entry["stars"] if entry else 1
+        file = await asyncio.to_thread(card_file, match, None, stars)
+
+        embed = discord.Embed(
+            title=f"{match['name']} {_stars(stars)}".strip(),
+            description=_tier_label(match["tier"]),
+            color=_card_color(match),
+            url=match.get("wiki_url") or None)
+        embed.set_image(url=f"attachment://{file.filename}")
+        embed.add_field(name="Dialogue", value=f"{match['lines']:,} lines")
+        embed.add_field(
+            name="Drop chance",
+            value=f"{cardlib.TIER_WEIGHTS[match['tier']]}% for the tier")
+        embed.set_footer(
+            text=f"You own {entry['count']} cop"
+                 f"{'y' if entry['count'] == 1 else 'ies'}" if entry
+                 else "Not in your tank yet")
+        await ctx.followup.send(embed=embed, file=file)
 
     # ── /bait ────────────────────────────────────────────────────────────────
 
@@ -786,10 +841,12 @@ class Cards(commands.Cog):
 
     # ── /pool ────────────────────────────────────────────────────────────────
 
-    @pool.command(name="view", description="Preview one member's 1/1 card")
+    @pool.command(name="view",
+                  description="Preview a guild member's 1/1 card")
     async def pool_view(
         self, ctx: discord.ApplicationContext,
-        name: discord.Option(str, description="Member name",
+        name: discord.Option(str,
+                             description="Guild member (Swordfish and above)",
                              autocomplete=_autocomplete_pool),
     ):
         await ctx.defer()
@@ -797,9 +854,17 @@ class Cards(commands.Cog):
         wanted = name.strip().lower()
         member = next((p for p in entries if p["name"].lower() == wanted), None)
         if member is None:
+            # Almost always someone reaching for a Wynncraft character here,
+            # since /pool only ever lists guild members.
+            if _find_card(name) is not None:
+                return await ctx.followup.send(
+                    f"**{name}** is a Wynncraft card, not a guild member — "
+                    f"try `/card {name}`. `/pool` only covers the guild's own "
+                    "1/1 cards.", ephemeral=True)
             return await ctx.followup.send(
-                f"**{name}** isn't in the 1/1 pool. Only Swordfish and above "
-                "with a linked account are eligible.", ephemeral=True)
+                f"**{name}** isn't in the 1/1 pool. Only guild members at "
+                "Swordfish and above with a linked account are eligible.",
+                ephemeral=True)
 
         file = await asyncio.to_thread(card_file, member)
         embed = discord.Embed(
@@ -817,7 +882,8 @@ class Cards(commands.Cog):
         embed.add_field(name="Status", value=state)
         await ctx.followup.send(embed=embed, file=file)
 
-    @pool.command(name="list", description="Every member whose 1/1 can drop")
+    @pool.command(name="list",
+                  description="Every guild member whose 1/1 can drop")
     async def pool_list(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         entries = await asyncio.to_thread(cardlib.db_get_pool)
