@@ -1015,3 +1015,70 @@ CREATE OR REPLACE VIEW guild_activity_events AS
   FROM snipe_logs s
   LEFT JOIN snipe_participants sp ON sp.snipe_id = s.id
   GROUP BY s.id, s.sniped_at, s.hq;
+
+-- =============================================================================
+-- Card Collection (executive guild only)
+-- =============================================================================
+
+-- Reel budget. Refreshed lazily on read rather than by a scheduled task:
+-- window_idx is floor(epoch / 21600), so a wallet catches up whenever it is
+-- touched. Unused reels bank to twice a window's worth.
+-- pearls are the card economy's own currency and never convert to or from
+-- shells. last_trickle is advanced in whole hours as passive pearls are paid
+-- out, the same lazy catch-up used for reels.
+CREATE TABLE IF NOT EXISTS card_wallet (
+    "user"       BIGINT      PRIMARY KEY,
+    reels        SMALLINT    NOT NULL DEFAULT 3,
+    window_idx   BIGINT      NOT NULL DEFAULT 0,
+    total_reeled INT         NOT NULL DEFAULT 0,
+    pearls       BIGINT      NOT NULL DEFAULT 0,
+    tank_tier    SMALLINT    NOT NULL DEFAULT 1,
+    streak       INT         NOT NULL DEFAULT 0,
+    last_daily   DATE,
+    last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- One row per user per card, with a copy count, since duplicates are kept
+-- rather than discarded. card references the slug in data/cards.json, or a
+-- card_members slug for a 1/1. stars is the fusion level (1-5).
+CREATE TABLE IF NOT EXISTS card_collection (
+    "user"   BIGINT      NOT NULL,
+    card     VARCHAR(64) NOT NULL,
+    count    INT         NOT NULL DEFAULT 1,
+    stars    SMALLINT    NOT NULL DEFAULT 1,
+    first_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY ("user", card)
+);
+
+-- Wishes bias which card lands inside a tier, never the tier odds themselves.
+-- Only epics and legendaries may be wished for.
+CREATE TABLE IF NOT EXISTS card_wishlist (
+    "user"   BIGINT      NOT NULL,
+    card     VARCHAR(64) NOT NULL,
+    added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY ("user", card)
+);
+
+-- 1/1 cards of Swordfish+ members, created the moment one is minted. The
+-- unique constraint on discord_id is what guarantees "one copy, ever";
+-- retired marks a holder who has left or dropped below the rank.
+CREATE TABLE IF NOT EXISTS card_members (
+    slug       VARCHAR(64) PRIMARY KEY,
+    discord_id BIGINT      NOT NULL UNIQUE,
+    uuid       UUID,
+    ign        VARCHAR(64) NOT NULL,
+    rank       VARCHAR(32) NOT NULL,
+    owner      BIGINT      NOT NULL,
+    retired    BOOLEAN     NOT NULL DEFAULT FALSE,
+    minted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- One-time milestone payouts, so a completed tier can never pay twice.
+CREATE TABLE IF NOT EXISTS card_awards (
+    "user"     BIGINT      NOT NULL,
+    award      VARCHAR(64) NOT NULL,
+    pearls     INT         NOT NULL,
+    awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY ("user", award)
+);

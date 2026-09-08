@@ -28,3 +28,6 @@ images/profile_backgrounds/
 
 # Windows reserved names
 nul
+
+# Card art cache (downloaded from the wiki at runtime)
+images/cards/
