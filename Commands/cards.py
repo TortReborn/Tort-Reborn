@@ -18,6 +18,7 @@ from Helpers.pagination import add_paginator_buttons
 from Helpers.variables import EXEC_GUILD_IDS
 
 CARDS_PER_PAGE = 20
+POOL_PER_PAGE = 15
 
 # /tank set-channel is deliberately exempt from the channel check. It is the
 # command that fixes a wrong setting, so gating it behind the setting would
@@ -100,6 +101,15 @@ async def _autocomplete_owned(ctx: discord.AutocompleteContext):
         if card and typed in card["name"].lower():
             names.append(card["name"])
     return sorted(names)[:25]
+
+
+async def _autocomplete_pool(ctx: discord.AutocompleteContext):
+    try:
+        pool = await asyncio.to_thread(cardlib.db_get_pool)
+    except Exception:
+        return []
+    typed = (ctx.value or "").lower()
+    return [p["name"] for p in pool if typed in p["name"].lower()][:25]
 
 
 async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
@@ -339,6 +349,9 @@ class Cards(commands.Cog):
     tank = SlashCommandGroup(name="tank", description="Your card collection",
                              guild_ids=EXEC_GUILD_IDS)
     wish = SlashCommandGroup(name="wishlist", description="Aim your luck",
+                             guild_ids=EXEC_GUILD_IDS)
+    pool = SlashCommandGroup(name="pool",
+                             description="The 1/1 member card pool",
                              guild_ids=EXEC_GUILD_IDS)
 
     def __init__(self, client):
@@ -749,6 +762,78 @@ class Cards(commands.Cog):
             f"Card commands are now limited to {channel.mention}. "
             "`/tank set-channel` itself still works anywhere, so you can "
             "always move or clear it.")
+
+    # ── /pool ────────────────────────────────────────────────────────────────
+
+    @pool.command(name="view", description="Preview one member's 1/1 card")
+    async def pool_view(
+        self, ctx: discord.ApplicationContext,
+        name: discord.Option(str, description="Member name",
+                             autocomplete=_autocomplete_pool),
+    ):
+        await ctx.defer()
+        entries = await asyncio.to_thread(cardlib.db_get_pool)
+        wanted = name.strip().lower()
+        member = next((p for p in entries if p["name"].lower() == wanted), None)
+        if member is None:
+            return await ctx.followup.send(
+                f"**{name}** isn't in the 1/1 pool. Only Swordfish and above "
+                "with a linked account are eligible.", ephemeral=True)
+
+        file = await asyncio.to_thread(card_file, member)
+        embed = discord.Embed(
+            title=member["name"],
+            description=f"1/1 · {member['rank']}",
+            color=cardlib.TIER_COLORS["member"])
+        embed.set_image(url=f"attachment://{file.filename}")
+
+        if member["retired"]:
+            state = "Retired — the holder has left, and no copy will be minted again"
+        elif member["minted"]:
+            state = f"Already minted — held by <@{member['owner']}>"
+        else:
+            state = "Not minted yet — still out there to be reeled"
+        embed.add_field(name="Status", value=state)
+        await ctx.followup.send(embed=embed, file=file)
+
+    @pool.command(name="list", description="Every member whose 1/1 can drop")
+    async def pool_list(self, ctx: discord.ApplicationContext):
+        await ctx.defer()
+        entries = await asyncio.to_thread(cardlib.db_get_pool)
+        if not entries:
+            return await ctx.followup.send(
+                "Nobody is eligible for a 1/1 yet.", ephemeral=True)
+
+        minted = sum(1 for p in entries if p["minted"])
+        header = (f"**{len(entries)}** eligible · **{len(entries) - minted}** "
+                  f"still unminted · ranked highest first")
+
+        page_list = []
+        for i in range(0, len(entries), POOL_PER_PAGE):
+            lines = []
+            for p in entries[i:i + POOL_PER_PAGE]:
+                if p["retired"]:
+                    tail = "retired"
+                elif p["minted"]:
+                    tail = f"held by <@{p['owner']}>"
+                else:
+                    tail = "available"
+                lines.append(f"`{p['rank']:11}` **{p['name']}** — {tail}")
+            embed = discord.Embed(
+                title="The 1/1 Pool",
+                description=header + "\n\n" + "\n".join(lines),
+                color=cardlib.TIER_COLORS["member"])
+            embed.set_footer(
+                text=f"Page {i // POOL_PER_PAGE + 1} of "
+                     f"{(len(entries) - 1) // POOL_PER_PAGE + 1} · "
+                     f"/pool view to see a card")
+            page_list.append(pages.Page(embeds=[embed]))
+
+        if len(page_list) == 1:
+            return await ctx.followup.send(embed=page_list[0].embeds[0])
+        paginator = pages.Paginator(pages=page_list)
+        add_paginator_buttons(paginator)
+        await paginator.respond(ctx.interaction)
 
     # ── /wishlist ────────────────────────────────────────────────────────────
 
