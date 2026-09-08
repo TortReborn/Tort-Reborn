@@ -222,6 +222,12 @@ async def on_application_command_error(
     if isinstance(error, RateLimitExceeded):
         return
 
+    # Using a card command in the wrong channel is a user mistake the cog has
+    # already answered, not a fault worth logging and paging over.
+    from Commands.cards import WrongCardChannel
+    if isinstance(error, WrongCardChannel):
+        return
+
     options = ''
     traceback_string = ''
     tb_list = traceback.format_exception(error)

@@ -183,6 +183,10 @@ SCHEMA = [
 
 _CARD_SET = None
 
+# guild id -> channel id (or None when unrestricted). Cached because the check
+# runs on every card command; db_set_card_channel invalidates it.
+_CHANNEL_CACHE = {}
+
 
 # =============================================================================
 # Card set
@@ -324,6 +328,50 @@ def db_ensure_tables():
         db.connection.commit()
     finally:
         db.close()
+
+
+# =============================================================================
+# DB — card channel
+# =============================================================================
+
+def _channel_key(guild_id: int) -> str:
+    return f"card_channel_{guild_id}"
+
+
+def db_get_card_channel(guild_id: int) -> int | None:
+    """Channel the card commands are confined to, or None for anywhere."""
+    if guild_id in _CHANNEL_CACHE:
+        return _CHANNEL_CACHE[guild_id]
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT value FROM bot_settings WHERE key = %s",
+                          (_channel_key(guild_id),))
+        row = db.cursor.fetchone()
+    finally:
+        db.close()
+    value = int(row[0]) if row and str(row[0]).isdigit() else None
+    _CHANNEL_CACHE[guild_id] = value
+    return value
+
+
+def db_set_card_channel(guild_id: int, channel_id: int | None):
+    """Pin the card commands to a channel, or clear the restriction."""
+    db = DB()
+    db.connect()
+    try:
+        if channel_id is None:
+            db.cursor.execute("DELETE FROM bot_settings WHERE key = %s",
+                              (_channel_key(guild_id),))
+        else:
+            db.cursor.execute(
+                "INSERT INTO bot_settings (key, value) VALUES (%s, %s) "
+                "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+                (_channel_key(guild_id), str(channel_id)))
+        db.connection.commit()
+    finally:
+        db.close()
+    _CHANNEL_CACHE[guild_id] = channel_id
 
 
 # =============================================================================
