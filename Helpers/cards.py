@@ -102,14 +102,15 @@ DAILY_STREAK_CAP = 10        # bonus stops growing here
 DAILY_REELS = 2
 
 # ── Wishlist ─────────────────────────────────────────────────────────────────
-# Wishes never touch tier odds. Once a tier is chosen, this is the chance the
-# card is drawn from the user's wishes in that tier instead of uniformly.
+# Wishes never touch tier odds, only which card is drawn once a tier has
+# landed. That is what keeps them safe for the economy: pearls are paid per
+# tier, so steering the pick inside a tier cannot change what a reel earns, no
+# matter what is wished or how often it changes.
 #
-# Only the chase tiers are wishable. Commons through rares already turn up
-# several times a day, so steering them would be busywork; epics and
-# legendaries are the ones worth aiming at.
-WISH_REDIRECT_CHANCE = 0.30
-WISHABLE_TIERS = ("epic", "legendary")
+# Every rarity can be wished for. Member 1/1s cannot — a single-copy card of a
+# named person should never be targetable.
+WISH_REDIRECT_CHANCE = 0.25
+WISHABLE_TIERS = tuple(CARD_TIERS)
 
 # ── Member 1/1 cards ─────────────────────────────────────────────────────────
 MEMBER_ELIGIBLE_RANKS = ["Swordfish", "Hammerhead", "Sailfish", "Dolphin",
@@ -743,7 +744,9 @@ def db_get_wishes(user_id: int) -> list:
 
 
 def is_wishable(card: dict | None) -> bool:
-    return bool(card) and card.get("tier") in WISHABLE_TIERS
+    if not card or card.get("member"):
+        return False
+    return card.get("tier") in WISHABLE_TIERS
 
 
 def db_add_wish(user_id: int, slug: str, limit: int) -> str:
