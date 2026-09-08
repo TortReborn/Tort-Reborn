@@ -143,7 +143,7 @@ def _pool_entries(tier: str | None) -> list:
 
 
 async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
-    """Only epics and legendaries can be wished for."""
+    """Any card in the set. Member 1/1s are never wishable."""
     typed = (ctx.value or "").lower()
     names = [c["name"] for c in cardlib.load_card_set()["cards"]
              if c["tier"] in cardlib.WISHABLE_TIERS and typed in c["name"].lower()]
@@ -969,6 +969,14 @@ class Cards(commands.Cog):
                    "card — the tier has to land, then that card has to be "
                    "the one drawn from it."),
             inline=False)
+        pct = int(cardlib.WISH_REDIRECT_CHANCE * 100)
+        embed.add_field(
+            name="Wishlist",
+            value=(f"A wished card takes **{pct}%** of that tier's pulls. It "
+                   "never changes how often a tier lands, so it cannot change "
+                   "what you earn — only which card you get. Member 1/1s "
+                   "can't be wished for."),
+            inline=False)
         embed.add_field(
             name="At {} reels a day".format(per_day),
             value=(f"An epic about weekly, a legendary about monthly, and a "
@@ -981,10 +989,12 @@ class Cards(commands.Cog):
 
     # ── /wishlist ────────────────────────────────────────────────────────────
 
-    @wish.command(name="add", description="Wish for an epic or legendary")
+    @wish.command(
+        name="add",
+        description="Wish for a card — 25% of that tier's pulls go to it")
     async def wish_add(
         self, ctx: discord.ApplicationContext,
-        card: discord.Option(str, description="Epic or legendary card",
+        card: discord.Option(str, description="Any card except a member 1/1",
                              autocomplete=_autocomplete_wishable),
     ):
         await ctx.defer(ephemeral=True)
@@ -993,8 +1003,8 @@ class Cards(commands.Cog):
             return await ctx.followup.send(f"No card called **{card}** exists.")
         if not cardlib.is_wishable(match):
             return await ctx.followup.send(
-                "Only epics and legendaries can be wished for — everything "
-                "below turns up often enough on its own.")
+                "Member 1/1s can't be wished for. There is only one of each, "
+                "so nobody gets to aim at a particular person's card.")
 
         wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
         limit = cardlib.wish_slots(wallet["tank_tier"])
@@ -1007,9 +1017,11 @@ class Cards(commands.Cog):
             return await ctx.followup.send(
                 f"You've used all {limit} wish slot"
                 f"{'' if limit == 1 else 's'}. Remove one, or upgrade your tank.")
+        pct = int(cardlib.WISH_REDIRECT_CHANCE * 100)
         await ctx.followup.send(
-            f"Wishing for **{match['name']}**. Your reels now lean toward it "
-            f"whenever an {match['tier']} lands.")
+            f"Wishing for **{match['name']}**. When a "
+            f"{_tier_label(match['tier']).lower()} lands, there's a {pct}% "
+            "chance it's this one.")
 
     @wish.command(name="remove", description="Stop wishing for a card")
     async def wish_remove(
@@ -1042,10 +1054,11 @@ class Cards(commands.Cog):
             c = cardlib.get_card(slug)
             if c:
                 lines.append(f"`{_tier_label(c['tier']):9}` {c['name']}")
+        pct = int(cardlib.WISH_REDIRECT_CHANCE * 100)
         await ctx.followup.send(
             f"**Wishlist ({len(wishes)}/{limit})**\n" + "\n".join(lines)
-            + f"\n-# {int(cardlib.WISH_REDIRECT_CHANCE * 100)}% of epic and "
-              "legendary pulls are steered toward these.")
+            + f"\n-# When one of these tiers lands, there's a {pct}% chance "
+              "the card is one you wished for. Tier odds are untouched.")
 
 
 class CardsDev(commands.Cog):
