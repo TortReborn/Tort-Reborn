@@ -857,6 +857,43 @@ def db_mint_member_card(owner_id: int) -> dict | None:
         db.close()
 
 
+def pool_entry(ign: str, uuid: str, rank: str, discord_id: int,
+               owner: int | None, retired: bool) -> dict:
+    """A pool member shaped like a card so the renderer can draw them."""
+    slug = "member-" + "".join(
+        ch if ch.isalnum() else "-" for ch in ign.lower())[:50]
+    return {
+        "slug": slug, "name": ign, "tier": rank, "rank": rank,
+        "member": True, "retired": bool(retired),
+        "discord_id": discord_id, "owner": owner,
+        "minted": owner is not None,
+        "wiki_url": "",
+        "image_url": VISAGE_URL.format(uuid=uuid) if uuid else "",
+    }
+
+
+def db_get_pool() -> list:
+    """Everyone eligible for a 1/1, ranked highest first.
+
+    Left joins the minted cards so the list can show which are still up for
+    grabs and who holds the rest.
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'SELECT dl.ign, dl.uuid::text, dl.rank, dl.discord_id, '
+            '       cm.owner, COALESCE(cm.retired, FALSE) '
+            'FROM discord_links dl '
+            'LEFT JOIN card_members cm ON cm.discord_id = dl.discord_id '
+            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'ORDER BY array_position(%s::text[], dl.rank) DESC, lower(dl.ign)',
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ELIGIBLE_RANKS))
+        return [pool_entry(*r) for r in db.cursor.fetchall()]
+    finally:
+        db.close()
+
+
 def db_count_eligible_members() -> tuple[int, int]:
     """(minted, eligible) — how much of the 1/1 pool is already out there."""
     db = DB()
