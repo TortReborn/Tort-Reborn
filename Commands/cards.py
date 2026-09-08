@@ -18,7 +18,47 @@ from Helpers.pagination import add_paginator_buttons
 from Helpers.variables import EXEC_GUILD_IDS
 
 CARDS_PER_PAGE = 20
+
+# /tank set-channel is deliberately exempt from the channel check. It is the
+# command that fixes a wrong setting, so gating it behind the setting would
+# lock the guild out of its own configuration.
+CHANNEL_EXEMPT = {"set-channel"}
 HISTORY_LINES = 12   # session pulls listed above the current card
+
+
+class WrongCardChannel(discord.CheckFailure):
+    """Raised when a card command is used outside the configured channel."""
+
+    def __init__(self, channel_id: int):
+        self.channel_id = channel_id
+        super().__init__(f"Card commands are limited to <#{channel_id}>.")
+
+
+async def _channel_allowed(ctx: discord.ApplicationContext) -> bool:
+    """Card commands run in one channel per guild, once one is configured."""
+    if ctx.guild is None:
+        return True
+    if ctx.command is not None and ctx.command.name in CHANNEL_EXEMPT:
+        return True
+    wanted = await asyncio.to_thread(cardlib.db_get_card_channel, ctx.guild.id)
+    if wanted is None or ctx.channel_id == wanted:
+        return True
+    raise WrongCardChannel(wanted)
+
+
+async def _channel_error(ctx: discord.ApplicationContext, error: Exception):
+    """Answer a wrong-channel attempt quietly instead of as a crash."""
+    if not isinstance(error, WrongCardChannel):
+        raise error
+    msg = (f"Card commands only work in <#{error.channel_id}> "
+           "— keeps the rest of the server clear.")
+    try:
+        if ctx.response.is_done():
+            await ctx.followup.send(msg, ephemeral=True)
+        else:
+            await ctx.respond(msg, ephemeral=True)
+    except discord.HTTPException:
+        pass
 
 
 def _tier_label(tier: str) -> str:
@@ -303,6 +343,13 @@ class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+
+    async def cog_check(self, ctx: discord.ApplicationContext) -> bool:
+        return await _channel_allowed(ctx)
+
+    async def cog_command_error(self, ctx: discord.ApplicationContext,
+                                error: Exception):
+        await _channel_error(ctx, error)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -679,6 +726,30 @@ class Cards(commands.Cog):
         view.message = await ctx.followup.send(
             content=member.mention, embed=embed, view=view, wait=True)
 
+    # ── /tank set-channel ────────────────────────────────────────────────────
+
+    @tank.command(name="set-channel",
+                  description="[Admin] Confine card commands to one channel")
+    @commands.has_permissions(administrator=True)
+    async def tank_set_channel(
+        self, ctx: discord.ApplicationContext,
+        channel: discord.Option(
+            discord.TextChannel,
+            description="Leave empty to allow every channel again",
+            required=False, default=None),
+    ):
+        await ctx.defer(ephemeral=True)
+        await asyncio.to_thread(cardlib.db_set_card_channel, ctx.guild.id,
+                                channel.id if channel else None)
+        if channel is None:
+            return await ctx.followup.send(
+                "Card commands are no longer restricted — they work in every "
+                "channel again.")
+        await ctx.followup.send(
+            f"Card commands are now limited to {channel.mention}. "
+            "`/tank set-channel` itself still works anywhere, so you can "
+            "always move or clear it.")
+
     # ── /wishlist ────────────────────────────────────────────────────────────
 
     @wish.command(name="add", description="Wish for an epic or legendary")
@@ -753,6 +824,13 @@ class CardsDev(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+
+    async def cog_check(self, ctx: discord.ApplicationContext) -> bool:
+        return await _channel_allowed(ctx)
+
+    async def cog_command_error(self, ctx: discord.ApplicationContext,
+                                error: Exception):
+        await _channel_error(ctx, error)
 
     @slash_command(name="reset-reels",
                    description="[Dev] Refill everyone's reels for testing",
