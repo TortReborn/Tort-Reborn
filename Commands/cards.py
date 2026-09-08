@@ -465,14 +465,31 @@ class Cards(commands.Cog):
 
     # ── /tank list ───────────────────────────────────────────────────────────
 
-    @tank.command(name="list", description="List every card in your tank")
-    async def tank_list(self, ctx: discord.ApplicationContext):
+    @tank.command(name="list", description="List every card in a tank")
+    async def tank_list(
+        self, ctx: discord.ApplicationContext,
+        member: discord.Option(
+            discord.Member,
+            description="Whose tank to look through (defaults to you)",
+            required=False, default=None),
+    ):
         await ctx.defer()
-        owned = await asyncio.to_thread(cardlib.db_get_collection, ctx.author.id)
-        wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
+        target = member or ctx.author
+        mine = target.id == ctx.author.id
+
+        owned = await asyncio.to_thread(cardlib.db_get_collection, target.id)
         cs = cardlib.load_card_set()
+        # Only read a wallet for the viewer. db_get_wallet creates the row it
+        # reads, so asking for someone else's would open a tank they may never
+        # have played, and their pearls are not the viewer's business anyway.
+        wallet = (await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
+                  if mine else None)
 
         if not owned:
+            if not mine:
+                return await ctx.followup.send(
+                    f"{target.display_name} hasn't reeled anything yet.",
+                    ephemeral=True)
             return await ctx.followup.send(
                 f"Your tank is empty. You have {wallet['reels']} reel"
                 f"{'' if wallet['reels'] == 1 else 's'} — try `/reel`.",
@@ -496,9 +513,13 @@ class Cards(commands.Cog):
         rows.sort(key=sort_key)
 
         total_copies = sum(e["count"] for _, e in rows)
-        header = (f"**{len(rows)}** of {len(cs['cards'])} cards · "
-                  f"{total_copies} total · {wallet['pearls']:,} pearls · "
-                  f"{wallet['reels']} reel{'' if wallet['reels'] == 1 else 's'}")
+        header = f"**{len(rows)}** of {len(cs['cards'])} cards · {total_copies} total"
+        if mine:
+            header += (f" · {wallet['pearls']:,} pearls · {wallet['reels']} reel"
+                       f"{'' if wallet['reels'] == 1 else 's'}")
+        else:
+            spares = sum(e["count"] - 1 for _, e in rows if e["count"] > 1)
+            header += f" · {spares} spare{'' if spares == 1 else 's'} to trade"
 
         page_list = []
         for i in range(0, len(rows), CARDS_PER_PAGE):
@@ -510,7 +531,7 @@ class Cards(commands.Cog):
                 lines.append(
                     f"`{tier:9}` {c['name']}{dupe} {_stars(e['stars'])}".rstrip())
             embed = discord.Embed(
-                title=f"{ctx.author.display_name}'s Tank",
+                title=f"{target.display_name}'s Tank",
                 description=header + "\n\n" + "\n".join(lines),
                 color=_card_color(chunk[0][0]))
             embed.set_footer(text=f"Page {i // CARDS_PER_PAGE + 1} of "
