@@ -150,6 +150,48 @@ async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
     return sorted(names)[:25]
 
 
+# Card art and dialogue come from the Wynncraft Wiki under CC BY-NC-SA 4.0,
+# which asks that the source and licence travel with the work. A link button
+# says where it came from; the footer names the licence. Member 1/1s are
+# rendered from Minecraft skins instead, so neither applies to them.
+WIKI_CREDIT = "Wynncraft Wiki · CC BY-NC-SA 4.0"
+
+
+def _wiki_button(card: dict) -> discord.ui.Button | None:
+    url = card.get("wiki_url")
+    if not url or card.get("member"):
+        return None
+    return discord.ui.Button(style=discord.ButtonStyle.link,
+                             label="Wynncraft Wiki", url=url,
+                             emoji="\N{OPEN BOOK}")
+
+
+def _wiki_view(card: dict) -> discord.ui.View | None:
+    """A view holding nothing but the source link, for plain card sends."""
+    button = _wiki_button(card)
+    if button is None:
+        return None
+    view = discord.ui.View(timeout=None)   # link buttons never need handling
+    view.add_item(button)
+    return view
+
+
+def _credit(card: dict, *bits) -> str:
+    """Footer text, with the licence appended for wiki-sourced cards."""
+    parts = [b for b in bits if b]
+    if card.get("wiki_url") and not card.get("member"):
+        parts.append(WIKI_CREDIT)
+    return " · ".join(parts)
+
+
+async def _send_card(ctx, embed, file, card):
+    view = _wiki_view(card)
+    kwargs = {"embed": embed, "file": file}
+    if view is not None:
+        kwargs["view"] = view
+    return await ctx.followup.send(**kwargs)
+
+
 def _card_color(card: dict) -> int:
     if card.get("member"):
         return cardlib.TIER_COLORS["member"]
@@ -167,11 +209,11 @@ def _card_embed(card: dict, copies: int, remaining: int, filename: str,
     )
     embed.set_author(name=f"{who}'s reel")
     embed.set_image(url=f"attachment://{filename}")
-    bits = ["New to your tank" if copies == 1 else f"Copy #{copies}"]
-    if gained:
-        bits.append(f"+{gained:,} pearls")
-    bits.append(f"{remaining} reel{'' if remaining == 1 else 's'} left")
-    embed.set_footer(text=" · ".join(bits))
+    embed.set_footer(text=_credit(
+        card,
+        "New to your tank" if copies == 1 else f"Copy #{copies}",
+        f"+{gained:,} pearls" if gained else None,
+        f"{remaining} reel{'' if remaining == 1 else 's'} left"))
     return embed
 
 
@@ -261,9 +303,22 @@ class ReelView(discord.ui.View):
         self.owner_id = owner_id
         self.owner_name = owner_name
         self.message = None
-        self.current = card       # shown on the card image right now
         self.history = []         # everything rerolled past this session
+        self._wiki = None
+        self.current = None
+        self.set_card(card)       # shown on the card image right now
         self.set_exhausted(exhausted)
+
+    def set_card(self, card: dict):
+        """Point the view at a card, swapping the wiki link to match."""
+        self.current = card
+        if self._wiki is not None:
+            self.remove_item(self._wiki)
+            self._wiki = None
+        button = _wiki_button(card)
+        if button is not None:
+            self.add_item(button)
+            self._wiki = button
 
     def set_exhausted(self, exhausted: bool):
         self.reel_again.disabled = exhausted
@@ -307,7 +362,7 @@ class ReelView(discord.ui.View):
         # The card being replaced becomes part of the session log above it.
         if self.current is not None:
             self.history.append(self.current)
-        self.current = card
+        self.set_card(card)
 
         self.set_exhausted(info == 0)
         # attachments=[] drops the previous card image; the new file replaces it.
@@ -488,10 +543,11 @@ class Cards(commands.Cog):
             url=match.get("wiki_url") or None,
         )
         embed.set_image(url=f"attachment://{file.filename}")
-        embed.set_footer(
-            text=f"{entry['count']} cop{'y' if entry['count'] == 1 else 'ies'}"
-                 + (f" · {stars}★" if stars > 1 else ""))
-        await ctx.followup.send(embed=embed, file=file)
+        embed.set_footer(text=_credit(
+            match,
+            f"{entry['count']} cop{'y' if entry['count'] == 1 else 'ies'}",
+            f"{stars}★" if stars > 1 else None))
+        await _send_card(ctx, embed, file, match)
 
     # ── /tank list ───────────────────────────────────────────────────────────
 
@@ -730,10 +786,11 @@ class Cards(commands.Cog):
                          f"{result['pearls']:,} pearls left"),
             color=cardlib.TIER_COLORS[match["tier"]])
         embed.set_image(url=f"attachment://{file.filename}")
-        embed.set_footer(
-            text=f"{result['count']} cop"
-                 f"{'y' if result['count'] == 1 else 'ies'} remaining")
-        await ctx.followup.send(embed=embed, file=file)
+        embed.set_footer(text=_credit(
+            match,
+            f"{result['count']} cop"
+            f"{'y' if result['count'] == 1 else 'ies'} remaining"))
+        await _send_card(ctx, embed, file, match)
 
     # ── /tank trade ──────────────────────────────────────────────────────────
 
@@ -862,11 +919,12 @@ class Cards(commands.Cog):
                 name="Drop chance",
                 value=f"{cardlib.TIER_WEIGHTS[card['tier']]}% for the tier")
 
-        embed.set_footer(
-            text=f"You own {entry['count']} cop"
-                 f"{'y' if entry['count'] == 1 else 'ies'}" if entry
-                 else "Not in your tank yet")
-        await ctx.followup.send(embed=embed, file=file)
+        embed.set_footer(text=_credit(
+            card,
+            f"You own {entry['count']} cop"
+            f"{'y' if entry['count'] == 1 else 'ies'}" if entry
+            else "Not in your tank yet"))
+        await _send_card(ctx, embed, file, card)
 
     @pool.command(name="list", description="Everything that can drop")
     async def pool_list(
