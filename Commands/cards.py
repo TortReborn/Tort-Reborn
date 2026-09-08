@@ -204,12 +204,11 @@ def _card_color(card: dict) -> int:
 
 def _card_embed(card: dict, copies: int, remaining: int, filename: str,
                 who: str, stars: int = 1, gained: int = 0) -> discord.Embed:
-    # Name, tier and stars are all drawn on the card itself, so repeating
-    # them in the embed just doubles up.
+    # The card art already prints the name, the tier or rank, the star level
+    # and the 1/1 badge, so the embed adds nothing but what the art cannot
+    # show: who rolled it, and what it means for your collection.
     embed = discord.Embed(color=_card_color(card))
     embed.set_author(name=f"{who}'s reel")
-    if card.get("member"):
-        embed.description = f"**1/1** · {card['rank']}"
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(text=_credit(
         card,
@@ -538,8 +537,6 @@ class Cards(commands.Cog):
         stars = entry["stars"]
         file = await asyncio.to_thread(card_file, match, None, stars)
         embed = discord.Embed(color=_card_color(match))
-        if match.get("member"):
-            embed.description = f"**1/1** · {match['rank']}"
         embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(text=_credit(
             match,
@@ -895,8 +892,6 @@ class Cards(commands.Cog):
         file = await asyncio.to_thread(card_file, card, None, stars)
 
         embed = discord.Embed(color=_card_color(card))
-        if member:
-            embed.description = f"**1/1** · {card['rank']}"
         embed.set_image(url=f"attachment://{file.filename}")
 
         if member:
