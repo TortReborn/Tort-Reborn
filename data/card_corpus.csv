@@ -1,509 +1,691 @@
-﻿name,tier,lines,quests,aliases,removed_content_only,wiki_url,image_url,appears_in
-Tasim,legendary,839,11,Sovereign Tasim,False,https://wynncraft.wiki.gg/wiki/Tasim,https://wynncraft.wiki.gg/images/Tasim%28InfestedPlants%29.png?fbd363,A Hunter's Calling | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | King's Recruit | King's Recruit (1.18) | Overture to Despair | Queen's Recruit | Recover the Past | Recover the Past (2.2.2) | True Colours
-Sui,legendary,812,11,,False,https://wynncraft.wiki.gg/wiki/Sui,https://wynncraft.wiki.gg/images/Sui%28Revelations_in_Fall_stage_7%29.png?752aac,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Overture to Despair | Revelations in Fall | Shrouded in Mist | Solidarity of Steel | The Cursed One | The Price of Ingenuity | True Colours
-Ava,legendary,703,2,,False,https://wynncraft.wiki.gg/wiki/Ava,https://wynncraft.wiki.gg/images/Ava.png?54d7d7,The Feathers Fly Part I | The Feathers Fly Part II
-Rex,legendary,586,10,,False,https://wynncraft.wiki.gg/wiki/Rex,https://wynncraft.wiki.gg/images/Rex%28Echoes_of_Change_stage_10%29.png?ab9a2c,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | One Thousand Meters Under | Overture to Despair | Revelations in Fall | Solidarity of Steel | The Cursed One | The Price of Ingenuity
-Zeph,legendary,548,9,,False,https://wynncraft.wiki.gg/wiki/Zeph,https://wynncraft.wiki.gg/images/ZephPortraitNeutral.png?b76c84,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Overture to Despair | Revelations in Fall | Solidarity of Steel | The Cursed One | The Price of Ingenuity
-Syndra,legendary,393,7,,False,https://wynncraft.wiki.gg/wiki/Syndra,https://wynncraft.wiki.gg/images/Syndra.png?8ce777,A New Beginning | Echoes of Change | Revelations in Fall | Solidarity of Steel | The Cursed One | The Missing Piece | The Price of Ingenuity
-Lari,legendary,350,10,,False,https://wynncraft.wiki.gg/wiki/Lari,https://wynncraft.wiki.gg/images/Lari.png?a4c818,A Dividing Force | A Headless History | Aldorei's Secret Part II | Death Whistle (Quest) | Finding the Light | Memory Paranoia | Rise of the Quartron | Taproot | The Realm of Light (Quest) | The Worm Holes
-Yusanu,legendary,299,7,,False,,,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Shrouded in Mist | Solidarity of Steel | The Price of Ingenuity | True Colours
-Yuman,legendary,272,5,,False,https://wynncraft.wiki.gg/wiki/Yuman,https://wynncraft.wiki.gg/images/YumanSmilingPortrait.png?64558f,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
-Elise,legendary,246,1,,False,https://wynncraft.wiki.gg/wiki/Elise,https://wynncraft.wiki.gg/images/ElisePortraitNeutral.png?33b8fe,The Missing Piece
-Olon,epic,244,1,,False,https://wynncraft.wiki.gg/wiki/Olon,https://wynncraft.wiki.gg/images/Olon.png?7548f3,Aldorei's Secret Part II
-Rurie,epic,244,4,,False,,,Apotheosis (Quest) | Ensemble of Hope | Shrouded in Mist | True Colours
-Efena,epic,223,1,,False,https://wynncraft.wiki.gg/wiki/Efena,https://wynncraft.wiki.gg/images/Efena.png?e1e4ed,The Feathers Fly Part II
-Aledar,epic,214,7,,False,https://wynncraft.wiki.gg/wiki/Aledar,https://wynncraft.wiki.gg/images/Aledar.png?eacfe7,A Hunter's Calling | A Journey Beyond | A Journey Further | King's Recruit | King's Recruit (1.18) | Recover the Past | Recover the Past (2.2.2)
-Maxie,epic,212,5,,False,https://wynncraft.wiki.gg/wiki/Maxie,https://wynncraft.wiki.gg/images/Maxie%28Hostile%2CAHunter%27sCalling%29.png?13f9cb,A Hunter's Calling | The Breaking Point | The Envoy Part I | The Envoy Part II | The Feathers Fly Part II
-Death,epic,211,2,,False,https://wynncraft.wiki.gg/wiki/Death,https://wynncraft.wiki.gg/images/Death.png?650731,Beyond the Grave | Beyond the Grave (1.20)
-Dr. Picard,epic,205,4,,False,https://wynncraft.wiki.gg/wiki/Dr._Picard,https://wynncraft.wiki.gg/images/Dr.Picard.png?f91eb7,Queen's Recruit | Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
-Sovereign Zhiraok,epic,203,10,Zhiraok,False,https://wynncraft.wiki.gg/wiki/Sovereign_Zhiraok,https://wynncraft.wiki.gg/images/SovereignZhiraok.png?5a93a0,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Queen's Recruit | Revelations in Fall | Solace in Pain | Solidarity of Steel | The Cursed One | The Price of Ingenuity
-Her Majesty,epic,200,7,,False,https://wynncraft.wiki.gg/wiki/Her_Majesty,https://wynncraft.wiki.gg/images/QueenOfFruma.png?fcfc1e,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Overture to Despair | Queen's Recruit | The Cursed One | The Price of Ingenuity
-Mora,epic,189,7,,False,https://wynncraft.wiki.gg/wiki/Mora,https://wynncraft.wiki.gg/images/Mora%28GuardUniform%29.png?2db8a8,A Journey Home | A New Beginning | Echoes of Change | Revelations in Fall | Solidarity of Steel | The Cursed One | The Price of Ingenuity
-Fichu,epic,171,1,,False,,https://wynncraft.wiki.gg/images/Fichu.png?d184a8,Through the Pipes
-Quill,epic,158,5,,False,https://wynncraft.wiki.gg/wiki/Quill,,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
-Drale,epic,150,3,,False,https://wynncraft.wiki.gg/wiki/Drale,https://wynncraft.wiki.gg/images/Drale%28Cowfusion%29.png?318a09,A Confused Farmer | Cowfusion | Cowfusion (1.20)
-Axelus,epic,147,4,,False,https://wynncraft.wiki.gg/wiki/Axelus,https://wynncraft.wiki.gg/images/Axelus.png?287e39,Dwarves and Doguns Part I | Dwarves and Doguns Part II | Dwarves and Doguns Part IV | From the Mountains
-Yulie,epic,146,5,,False,,,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
-Teacher,epic,144,1,,False,,,The Order of the Grook
-Jofash Resident,epic,136,1,,False,,https://wynncraft.wiki.gg/images/JofashResident.png?57c672,Fantastic Voyage
-Sovereign Majin,epic,130,5,,False,https://wynncraft.wiki.gg/wiki/Sovereign_Majin,https://wynncraft.wiki.gg/images/SovereignMajin.png?49cb7b,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair | Queen's Recruit | The Strong Survive
-Reynauld,epic,130,4,Scout Reynauld,False,https://wynncraft.wiki.gg/wiki/Reynauld,https://wynncraft.wiki.gg/images/ScoutReynauld.png?fc65ba,Queen's Recruit | Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
-Arnol,epic,127,2,,False,,,Ensemble of Hope | The Strong Survive
-Sovereign Two,epic,125,3,,False,https://wynncraft.wiki.gg/wiki/Sovereign_Two,https://wynncraft.wiki.gg/images/SovereignTwo%28Queen%27sRecruit%29.png?88f4af,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair
-Canary,epic,125,1,,False,,,The Canary Calls
-Relend,epic,122,2,,False,https://wynncraft.wiki.gg/wiki/Relend,https://wynncraft.wiki.gg/images/Relend.png?de69d2,Fantastic Voyage | Fantastic Voyage (1.20)
-Maury,epic,119,1,,False,,,Off the Rails
-Maddison,epic,113,1,,False,,,Off the Rails
-Demma,epic,107,1,,False,,https://wynncraft.wiki.gg/images/Demma.png?f03c61,Off the Rails
-Caid,epic,102,3,Sailor Caid,False,https://wynncraft.wiki.gg/wiki/Caid,https://wynncraft.wiki.gg/images/SailorCaid.png?17b2fb,Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
-Siegfried,epic,100,1,,False,https://wynncraft.wiki.gg/wiki/Siegfried,https://wynncraft.wiki.gg/images/MonumenttoSiegfried.png?d937ab,The Hero of Gavel
-Arris,epic,99,1,,False,,,Celebrations in Smoke
-Receptionist,epic,97,3,,False,,https://wynncraft.wiki.gg/images/Receptionist.png?16646e,Cowfusion | Overture to Despair | The Feathers Fly Part II
-Burick,epic,97,1,,False,,,Celebrations in Smoke
-King Draani,epic,97,3,King of Rodoroc,False,https://wynncraft.wiki.gg/wiki/King_Draani,https://wynncraft.wiki.gg/images/KingDraani.png?6c09fa,Dwarves and Doguns Part II | Dwarves and Doguns Part IV | The Breaking Point
-Honip,epic,93,1,,False,https://wynncraft.wiki.gg/wiki/Honip,https://wynncraft.wiki.gg/images/Honip%28Nemract%29.png?9b38f2,Misadventure on the Sea
-Malic,epic,93,1,,False,,,Off the Rails
-Telati,epic,91,1,,False,,,Off the Rails
-Elphaba,epic,90,2,,False,https://wynncraft.wiki.gg/wiki/Elphaba,https://wynncraft.wiki.gg/images/Elphaba%28AJourneyBeyond%29.png?50cbf5,A Journey Beyond | Reclaiming the House
-Sovereign Soosu,epic,86,5,Soosu,False,https://wynncraft.wiki.gg/wiki/Sovereign_Soosu,https://wynncraft.wiki.gg/images/SovereignSoosu.png?1633cb,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
-Corkus Citizen,epic,84,3,,False,,https://wynncraft.wiki.gg/images/CorkusCitizen.png?2fb5b1,A Hunter's Calling | The Envoy Part I | The Feathers Fly Part II
-Master Azael,epic,84,5,Azael,False,https://wynncraft.wiki.gg/wiki/Master_Azael,https://wynncraft.wiki.gg/images/AzaelPortraitSmiling.png?cd28f2,Apotheosis (Quest) | Ensemble of Hope | First Wicker's Spark | Shrouded in Mist | True Colours
-Captain Fuhue,epic,81,4,Fuhue,False,https://wynncraft.wiki.gg/wiki/Captain_Fuhue,https://wynncraft.wiki.gg/images/FuhuePortrait.png?ee2889,Apotheosis (Quest) | Ensemble of Hope | Shrouded in Mist | True Colours
-Lecade,epic,81,2,,False,,,General's Orders | General's Orders (1.20)
-Garvan,rare,80,1,,False,https://wynncraft.wiki.gg/wiki/Garvan,https://wynncraft.wiki.gg/images/Garvan%28Past%29.png?4eddf6,Hollow Serenity
-Abramod,rare,78,1,,False,,https://wynncraft.wiki.gg/images/Abramod.png?68b575,Burning Bonds
-Cemor,rare,74,1,,False,,https://wynncraft.wiki.gg/images/Cemor.png?ed852f,Off the Rails
-Trials Overseer,rare,74,2,,False,https://wynncraft.wiki.gg/wiki/Trials_Overseer,,Royal Trials | Royal Trials (1.20)
-Maripe,rare,73,1,,False,,,The Scarred Springs
-Postmaster,rare,73,1,,False,,,The Missing Piece
-Commander Ferreo,rare,71,1,,False,https://wynncraft.wiki.gg/wiki/Commander_Ferreo,https://wynncraft.wiki.gg/images/CommanderFerreo_%28post-duel_challenge_2%29.png?43d20d,The Strong Survive
-Festival Organizer,rare,70,1,,False,,https://wynncraft.wiki.gg/images/FestivalOrganizer.png?1d94a7,Celebrations in Smoke
-Elder Birch,rare,68,1,,False,,https://wynncraft.wiki.gg/images/ElderBirch.png?72afce,Aldorei's Secret Part II
-Cerisa,rare,68,1,,False,,,Celebrations in Smoke
-Flinn,rare,68,1,,False,,,Off the Rails
-Gardener,rare,67,3,,False,https://wynncraft.wiki.gg/wiki/Gardener,https://wynncraft.wiki.gg/images/Gardener.png?6098aa,Finding The Light (1.19) | Solace in Pain | The Feathers Fly Part II
-Dodegar,rare,62,2,,False,https://wynncraft.wiki.gg/wiki/Dodegar,https://wynncraft.wiki.gg/images/Dodegar%28FestivaloftheBonfire%29.png?3b0915,The Ultimate Weapon | The Ultimate Weapon (1.20)
-Caissop,rare,61,2,,False,https://wynncraft.wiki.gg/wiki/Caissop,https://wynncraft.wiki.gg/images/Caissop.png?a48c7d,Master Piece | Master Piece (1.19)
-Manager Nasea,rare,61,2,Nasea,False,https://wynncraft.wiki.gg/wiki/Manager_Nasea,https://wynncraft.wiki.gg/images/ManagerNasea.png?197e72,Rise of the Quartron | Rise of the Quartron (1.19)
-Dullahan,rare,60,2,,False,https://wynncraft.wiki.gg/wiki/Dullahan,https://wynncraft.wiki.gg/images/Dullahan.png?c0f58c,"A Headless History | Headless, Not Homeless"
-Inspector,rare,59,1,,False,,,The Missing Piece
-Festival Attendee,rare,58,1,,False,,,Celebrations in Smoke
-Bak'al,rare,57,5,,False,https://wynncraft.wiki.gg/wiki/Bak%27al,https://wynncraft.wiki.gg/images/Bak%27al.png?53b127,A Hunter's Calling | Bak'al's Destruction 2 | Bak'al's Destruction 3 | Silent Expanse's Secret | The Realm of Light (Quest)
-Captain Ackbar,rare,57,2,,False,https://wynncraft.wiki.gg/wiki/Captain_Ackbar,https://wynncraft.wiki.gg/images/Captainackbar.png?85d4c9,Flight in Distress | Flight in Distress (1.20)
-Farmer Cevalus,rare,57,2,Farmer Kelri,False,https://wynncraft.wiki.gg/wiki/Farmer_Cevalus,https://wynncraft.wiki.gg/images/FarmerCevalus.png?d52139,Dearly Departed | Thieving Rodents
-Harvin,rare,56,1,,False,,,Off the Rails
-Korzim,rare,55,4,,False,https://wynncraft.wiki.gg/wiki/Korzim,https://wynncraft.wiki.gg/images/Korzim.png?dec656,Dwarves and Doguns Part I | Dwarves and Doguns Part III | Dwarves and Doguns Part IV | The Breaking Point
-Worker,rare,54,4,,False,,https://wynncraft.wiki.gg/images/Worker.png?541252,Brothers Return | Cowfusion | The Missing Piece | The Worm Holes
-Elder Oak,rare,54,1,,False,,https://wynncraft.wiki.gg/images/ElderOak.png?bb55f5,Aldorei's Secret Part II
-Eppo,rare,54,1,,False,https://wynncraft.wiki.gg/wiki/Eppo,https://wynncraft.wiki.gg/images/Eppo.png?955079,Frost Bite
-Seluc,rare,54,2,,False,https://wynncraft.wiki.gg/wiki/Seluc,https://wynncraft.wiki.gg/images/Seluc%28Mob%29.png?8d8529,The Canyon Guides | The Canyon Guides (1.20)
-Chief Clight,rare,54,1,,False,,https://wynncraft.wiki.gg/images/ChiefClight.png?6b4286,The Canary Calls
-Secretary,rare,54,1,,False,,https://wynncraft.wiki.gg/images/Secretary.png?482d1f,The Strong Survive
-Aldwin,rare,54,1,,False,,,Aldwell Library
-Kaio,rare,53,5,,False,https://wynncraft.wiki.gg/wiki/Kaio,https://wynncraft.wiki.gg/images/KaioPortraitNeutral.png?569c96,A Journey Home | A New Beginning | Ensemble of Hope | Revelations in Fall | The Cursed One
-Katarin,rare,52,1,,False,,,Hollow Serenity
-Nick,rare,52,1,,False,https://wynncraft.wiki.gg/wiki/Nick,https://wynncraft.wiki.gg/images/Nick.png?9207a6,Meaningful Holiday
-Ragni's King,rare,50,4,King of Ragni,False,https://wynncraft.wiki.gg/wiki/Ragni%27s_King,https://wynncraft.wiki.gg/images/Ragni%27sKing.png?278ac2,A Journey Home | King's Recruit | Queen's Recruit | WynnExcavation Site D
-Captain Cileon,rare,50,4,Cileon,False,https://wynncraft.wiki.gg/wiki/Captain_Cileon,https://wynncraft.wiki.gg/images/CileonPortrait.png?ca9e12,Apotheosis (Quest) | Ensemble of Hope | Shrouded in Mist | True Colours
-Captain Kymer,rare,49,3,,False,https://wynncraft.wiki.gg/wiki/Captain_Kymer,https://wynncraft.wiki.gg/images/CaptainKymer.png?a81976,Clearing the Camps | Clearing the Camps (1.19) | Queen's Recruit
-Rhay,rare,49,1,,False,https://wynncraft.wiki.gg/wiki/Rhay,https://wynncraft.wiki.gg/images/Rhay.png?27bf6d,The Breaking Point
-Fia,rare,49,1,,False,,https://wynncraft.wiki.gg/images/Fia.png?7120c2,A Croaking Cryptid
-Doan,rare,48,2,,False,https://wynncraft.wiki.gg/wiki/Doan,https://wynncraft.wiki.gg/images/Doan.png?98782f,Acquiring Credentials | Acquiring Credentials (1.19)
-Amber,rare,47,1,,False,,https://wynncraft.wiki.gg/images/Amber.png?ebabf8,Aldorei's Secret Part II
-Anast,rare,47,3,,False,https://wynncraft.wiki.gg/wiki/Anast,https://wynncraft.wiki.gg/images/Anast.png?d44b53,A Hunter's Calling | Crop Failure | Crop Failure (1.19)
-?̵̗̀?̴̭͑?̵̳̫͘?̷̲̳̌̊?̵̆ͅ?̵͔͎́,rare,47,1,,False,,,The Missing Piece
-Yansur,rare,46,1,,False,https://wynncraft.wiki.gg/wiki/Yansur,https://wynncraft.wiki.gg/images/Yansur.png?3d5b81,The Qira Hive (Quest)
-Arrai-Veretel,rare,45,1,,False,https://wynncraft.wiki.gg/wiki/Arrai-Veretel,https://wynncraft.wiki.gg/images/Arrai-Veretel.png?7d1a14,All Roads to Peace
-Bleeding Rose,rare,45,3,,False,,,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair
-Llevigar Archivist,rare,45,1,,False,https://wynncraft.wiki.gg/wiki/Llevigar_Archivist,https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1,Llevigar's Secret Library
-Zuett,rare,44,1,,False,https://wynncraft.wiki.gg/wiki/Zuett,https://wynncraft.wiki.gg/images/Zuett.png?13546b,All Roads to Peace
-Sensei Miyagi,rare,43,2,,False,https://wynncraft.wiki.gg/wiki/Sensei_Miyagi,https://wynncraft.wiki.gg/images/SenseiMiyagi.png?b90315,Enter the Dojo | Enter the Dojo (1.20)
-Ariodo,rare,43,2,,False,https://wynncraft.wiki.gg/wiki/Ariodo,https://wynncraft.wiki.gg/images/Ariodo.png?cb3a34,Out of My Mind (1.15) | Out of my Mind
-Farcor,rare,43,2,,False,https://wynncraft.wiki.gg/wiki/Farcor,https://wynncraft.wiki.gg/images/Farcor%28Portrait%29.png?d0715f,Far Above the Clouds | The Fortuneteller
-Croaquin,rare,43,1,,False,https://wynncraft.wiki.gg/wiki/Croaquin,https://wynncraft.wiki.gg/images/Croaquin.png?d267a3,A Croaking Cryptid
-Military Instructor,rare,43,1,,False,,,The Strong Survive
-Detective Jackson,rare,41,2,,False,https://wynncraft.wiki.gg/wiki/Detective_Jackson,https://wynncraft.wiki.gg/images/DetectiveJackson.png?4a5973,Blazing Retribution | Green Skinned Trouble
-Jitak,rare,41,2,,False,https://wynncraft.wiki.gg/wiki/Jitak,https://wynncraft.wiki.gg/images/Jitak.png?6baf1c,Hunger of the Gerts Part I | The Hunger of Gerts Part 1 (1.20)
-Recruiter Effal,rare,41,1,,False,,,The Strong Survive
-Gert Guard,rare,40,1,,False,,https://wynncraft.wiki.gg/images/GertGuard.png?b7d53c,Hunger of the Gerts Part I
-Sovereign Gikyo,rare,40,2,Gikyo,False,https://wynncraft.wiki.gg/wiki/Sovereign_Gikyo,https://wynncraft.wiki.gg/images/SovereignGikyo.png?1052e0,First Wicker's Spark | True Colours
-Avos Chieftain,rare,39,2,,False,,,A Hunter's Calling | The Feathers Fly Part I
-Stall Attendant,rare,39,1,,False,,,Celebrations in Smoke
-Jofash Clairvoyant,rare,39,1,,False,,https://wynncraft.wiki.gg/images/JofashClairvoyant.png?77586c,Fantastic Voyage
-Cikal,rare,39,3,,False,https://wynncraft.wiki.gg/wiki/Cikal,https://wynncraft.wiki.gg/images/Cikal.png?b09890,Hunger of the Gerts Part I | Hunger of the Gerts Part II | The Hunger of Gerts Part 1 (1.20)
-Tom,rare,38,1,Old Tom; Tommy,True,https://wynncraft.wiki.gg/wiki/Tom,https://wynncraft.wiki.gg/images/Tom.png?9759db,Craftmas Chaos
-Voer,rare,37,2,,False,https://wynncraft.wiki.gg/wiki/Voer,https://wynncraft.wiki.gg/images/Voer.png?5b224b,Death Whistle (1.19) | Death Whistle (Quest)
-Inquisitor,rare,37,2,,False,,,Recover the Past | The Missing Piece
-Malo,rare,37,2,,False,https://wynncraft.wiki.gg/wiki/Malo,https://wynncraft.wiki.gg/images/Malo.png?3c0f1f,The Worm Holes | The Worm Holes (1.19)
-Sybil,rare,36,1,,False,https://wynncraft.wiki.gg/wiki/Sybil,https://wynncraft.wiki.gg/images/Sybil%28Detlas%29.png?2c9c5d,The Feathers Fly Part II
-Aihan,rare,36,1,,False,,,Solidarity of Steel
-Girazh,rare,36,1,,False,,https://wynncraft.wiki.gg/images/Girazh.png?461e30,A People's Sovereign
-Soldier,rare,35,5,,False,https://wynncraft.wiki.gg/wiki/Soldier,https://wynncraft.wiki.gg/images/Regular_Soldier.png?3cb51c,A Journey Home | All Roads to Peace | Dwarves and Doguns Part IV | King's Recruit | Reclaiming the House
-Citizen,rare,35,3,,False,https://wynncraft.wiki.gg/wiki/Citizen,https://wynncraft.wiki.gg/images/AlekinCitizen%28NPC1%29.png?44649a,A Hunter's Calling | Echoes of Change | Pottery Wheel
-Chieftain Paku,rare,35,4,Dogun Chieftain,False,https://wynncraft.wiki.gg/wiki/Chieftain_Paku,https://wynncraft.wiki.gg/images/DogunChieftain.png?a4b47e,Dwarves and Doguns Part II | Dwarves and Doguns Part III | Dwarves and Doguns Part IV | The Breaking Point
-Rohem,rare,35,2,,False,https://wynncraft.wiki.gg/wiki/Rohem,https://wynncraft.wiki.gg/images/Rohem.png?920d67,Murder Mystery | Murder Mystery (1.20)
-Ineos,rare,35,1,,False,,https://wynncraft.wiki.gg/images/Ineos.png?4ac722,The Breaking Point
-Tiek,rare,35,1,,True,https://wynncraft.wiki.gg/wiki/Tiek,https://wynncraft.wiki.gg/images/Sorceress_Tiek.png?d01463,Taproot (Quest) (1.19)
-Adder,rare,35,1,,False,,https://wynncraft.wiki.gg/images/Adder.png?fffb26,The Strong Survive
-Espren Guard,rare,35,1,,False,,,Solace in Pain
-Arnod,rare,34,2,Anrod,False,https://wynncraft.wiki.gg/wiki/Arnod,https://wynncraft.wiki.gg/images/Arnod.png?2a4992,From the Mountains | From the Mountains (1.19)
-Seaskipper Captain,rare,34,2,,False,https://wynncraft.wiki.gg/wiki/Seaskipper_Captain,https://wynncraft.wiki.gg/images/SeaskipperCaptain.png?cb27ed,Misadventure on the Sea | Queen's Recruit
-Linton,rare,34,1,,False,https://wynncraft.wiki.gg/wiki/Linton,https://wynncraft.wiki.gg/images/MinerLinton.png?c558e5,Queen's Recruit
-Sherk,rare,34,2,,False,https://wynncraft.wiki.gg/wiki/Sherk,https://wynncraft.wiki.gg/images/Sherk.png?54f82e,The Maiden Tower | The Maiden Tower (1.19)
-Mané,rare,33,1,,False,,https://wynncraft.wiki.gg/images/Man%C3%A9.png?bacdae,Aldorei's Secret Part II
-Kreimu,rare,33,1,,False,https://wynncraft.wiki.gg/wiki/Kreimu,https://wynncraft.wiki.gg/images/Kreimu.png?625bea,All Roads to Peace
-Gawrick,rare,33,2,,False,https://wynncraft.wiki.gg/wiki/Gawrick,https://wynncraft.wiki.gg/images/Gawrick.png?d7e337,Fallen Delivery | Fallen Delivery (1.20)
-Corkus City Citizen,rare,33,1,,False,https://wynncraft.wiki.gg/wiki/Corkus_City_Citizen,https://wynncraft.wiki.gg/images/CorkusCityCitizen%28Aqueduct%29.png?2395a8,Mixed Feelings
-Mel,rare,33,1,,False,https://wynncraft.wiki.gg/wiki/Mel,https://wynncraft.wiki.gg/images/Mel.png?272dfc,Queen's Recruit
-Lucio,rare,32,1,,False,https://wynncraft.wiki.gg/wiki/Lucio,https://wynncraft.wiki.gg/images/LucioCropped.png?accdb4,A Journey Beyond
-Orikal,rare,32,1,,False,https://wynncraft.wiki.gg/wiki/Orikal,https://wynncraft.wiki.gg/images/Orikal.png?52ce14,The Corrupted Village
-Hyloch Citizen,rare,30,2,,False,,https://wynncraft.wiki.gg/images/HylochCitizen.png?21bb09,Apotheosis (Quest) | Overture to Despair
-Drucksh,rare,30,1,,False,https://wynncraft.wiki.gg/wiki/Drucksh,https://wynncraft.wiki.gg/images/Drucksh.png?b45f97,Brothers Return
-Guardian of The Forest,rare,30,2,Guardian of the Forest,False,https://wynncraft.wiki.gg/wiki/Guardian_of_The_Forest,https://wynncraft.wiki.gg/images/GuardianofTheForest.png?3d47fd,Finding The Light (1.19) | Finding the Light
-Elrund,rare,29,2,,True,https://wynncraft.wiki.gg/wiki/Elrund,https://wynncraft.wiki.gg/images/Elrund.png?e5d11d,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
-Santa,rare,29,3,,False,https://wynncraft.wiki.gg/wiki/Santa,https://wynncraft.wiki.gg/images/Santa%28CraftmasChaos%29.png?b0eee0,Craftmas Chaos | Craftmas Quest | Meaningful Holiday
-Mona,rare,29,1,,False,,https://wynncraft.wiki.gg/images/Mona.png?f84ad2,Aldorei's Secret Part II
-Referick,rare,29,2,,False,https://wynncraft.wiki.gg/wiki/Referick,https://wynncraft.wiki.gg/images/Referick.png?723413,A Headless History | The Headless Hunt
-Nodise,rare,29,2,,False,,,The Breaking Point | The Feathers Fly Part II
-Dr. Urelix,rare,28,3,,False,https://wynncraft.wiki.gg/wiki/Dr._Urelix,https://wynncraft.wiki.gg/images/Dr.Urelix%28AnIronHeartPartII%2CFactory%29.png?ff1153,An Iron Heart Part II | An Iron Heart Part II (1.19) | Taproot
-Irlok,rare,28,2,,False,https://wynncraft.wiki.gg/wiki/Irlok,https://wynncraft.wiki.gg/images/Irlok.png?86bca7,Beyond the Grave | Beyond the Grave (1.20)
-Theorick Twain,rare,28,5,Theorick,False,https://wynncraft.wiki.gg/wiki/Theorick_Twain,https://wynncraft.wiki.gg/images/TheorickTwain.png?306363,A Hunter's Calling | Fate of the Fallen | Pottery Wheel | The Twains' Downfall | Torn in Twain
-Bory,rare,28,1,,False,,,Hunger of the Gerts Part II
-Engineer Eric,rare,28,2,,False,https://wynncraft.wiki.gg/wiki/Engineer_Eric,https://wynncraft.wiki.gg/images/EngineerEric.png?ebdb5a,Flight in Distress | Flight in Distress (1.20)
-Grandon,rare,28,1,,False,https://wynncraft.wiki.gg/wiki/Grandon,https://wynncraft.wiki.gg/images/Grandon.png?2363e2,Lost Soles
-The Assistant,rare,28,2,,False,https://wynncraft.wiki.gg/wiki/The_Assistant,https://wynncraft.wiki.gg/images/TheAssistant.png?88ebf9,Potion Making | Potion Making (1.14)
-Gurix,rare,28,1,,False,https://wynncraft.wiki.gg/wiki/Gurix,https://wynncraft.wiki.gg/images/Gurix.png?bc0fa3,The Hero of Gavel
-Togak,uncommon,27,2,,True,https://wynncraft.wiki.gg/wiki/Togak,https://wynncraft.wiki.gg/images/Togak.png?44c235,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
-Mechanic,uncommon,27,1,,False,,,Acquiring Credentials
-Corkus Delegate,uncommon,27,2,,False,https://wynncraft.wiki.gg/wiki/Corkus_Delegate,https://wynncraft.wiki.gg/images/CorkusDelegate.png?5f6c85,The Envoy Part I | The Envoy Part II
-Enkser,uncommon,27,2,,False,https://wynncraft.wiki.gg/wiki/Enkser,https://wynncraft.wiki.gg/images/Enkser.png?3acd5e,Stable Story | Stable Story (1.14)
-Chef Hamsey,uncommon,27,1,,True,https://wynncraft.wiki.gg/wiki/Chef_Hamsey,https://wynncraft.wiki.gg/images/ChefHamsey.png?d49238,Recipe For Disaster (1.20)
-Obsessor,uncommon,26,1,,False,https://wynncraft.wiki.gg/wiki/Obsessor,https://wynncraft.wiki.gg/images/Obsessor%28Fake%29.png?94d052,A Journey Beyond
-Lutho Citizen,uncommon,26,1,,False,https://wynncraft.wiki.gg/wiki/Lutho_Citizen,https://wynncraft.wiki.gg/images/LuthoCitizen.png?892870,Point of No Return
-Dwice,uncommon,26,1,,False,,,The Feathers Fly Part II
-Captain Enduyn,uncommon,25,1,Enduyn,True,https://wynncraft.wiki.gg/wiki/Captain_Enduyn,https://wynncraft.wiki.gg/images/CaptainEnduyn.png?e812cf,Arachnids' Ascent (2.0.2)
-Doubiss,uncommon,25,2,,False,https://wynncraft.wiki.gg/wiki/Doubiss,https://wynncraft.wiki.gg/images/Doubiss.png?7c8ef9,Crop Failure | Crop Failure (1.19)
-Prison Guard,uncommon,25,2,,False,https://wynncraft.wiki.gg/wiki/Prison_Guard,https://wynncraft.wiki.gg/images/PrisonGuard.png?ede81e,Forbidden Prison (Quest) | Forbidden Prison (Quest) (1.19)
-Rismor,uncommon,25,1,,True,https://wynncraft.wiki.gg/wiki/Rismor,https://wynncraft.wiki.gg/images/Rismor.png?ba635f,Eye of the Storm
-Dado,uncommon,25,2,,False,https://wynncraft.wiki.gg/wiki/Dado,https://wynncraft.wiki.gg/images/Dado.png?dd822a,Rise of the Quartron | Rise of the Quartron (1.19)
-Coulmis,uncommon,25,1,,False,,https://wynncraft.wiki.gg/images/Coulmis.png?cf5736,The Thanos Depository
-Nakoba,uncommon,24,2,,False,https://wynncraft.wiki.gg/wiki/Nakoba,https://wynncraft.wiki.gg/images/Naboka.png?3e12ed,From the Bottom | From the Bottom (1.20)
-Old Siwel,uncommon,24,1,,False,https://wynncraft.wiki.gg/wiki/Old_Siwel,https://wynncraft.wiki.gg/images/OldSiwel.png?95ffcd,Haven Antiquity
-Gendarme Soldier,uncommon,24,2,,False,,,Ensemble of Hope | Queen's Recruit
-Dejol,uncommon,24,2,,False,https://wynncraft.wiki.gg/wiki/Dejol,https://wynncraft.wiki.gg/images/Dejol.png?45bc77,The Lost | The Lost (1.20)
-Tolem,uncommon,24,1,,True,https://wynncraft.wiki.gg/wiki/Tolem,https://wynncraft.wiki.gg/images/Tolem.png?2a4713,The Shadow of the Beast (1.19)
-Barkeep Romu,uncommon,24,1,,False,,https://wynncraft.wiki.gg/images/BarkeepRomu.png?917322,Undersupply
-Military Recruiter,uncommon,24,1,,False,,,The Strong Survive
-Darnes,uncommon,23,1,,True,https://wynncraft.wiki.gg/wiki/Darnes,https://wynncraft.wiki.gg/images/Darnes.png?736945,A Fighting Species
-Detective Hart,uncommon,23,2,,False,https://wynncraft.wiki.gg/wiki/Detective_Hart,https://wynncraft.wiki.gg/images/Detective_Hart.png?31dfef,An Iron Heart Part II | An Iron Heart Part II (1.19)
-Daxe,uncommon,23,2,,False,https://wynncraft.wiki.gg/wiki/Daxe,https://wynncraft.wiki.gg/images/Daxe.png?e5fd70,An Iron Heart Part II | An Iron Heart Part II (1.19)
-Elder Prometheus,uncommon,23,1,,False,https://wynncraft.wiki.gg/wiki/Elder_Prometheus,https://wynncraft.wiki.gg/images/ElderPrometheus.png?8e642c,Aldorei's Secret Part II
-Hans,uncommon,23,1,,False,https://wynncraft.wiki.gg/wiki/Hans,https://wynncraft.wiki.gg/images/Hans.png?251aa6,A Headless History
-Villager,uncommon,23,2,,False,,,Hollow Serenity | The Fallen Protector
-Mei,uncommon,23,1,,False,,,The Feathers Fly Part II
-Heliorion,uncommon,23,1,,True,https://wynncraft.wiki.gg/wiki/Heliorion,https://wynncraft.wiki.gg/images/Heliorion2.png?98b253,The Realm of Light (Quest) (1.19)
-Fredris,uncommon,23,2,,False,https://wynncraft.wiki.gg/wiki/Fredris,https://wynncraft.wiki.gg/images/Fredris.png?9328d1,Underice | Underice (1.14)
-Mother Aris,uncommon,23,1,,False,,https://wynncraft.wiki.gg/images/MotherAris.png?977ffb,Undersupply
-Merchant Risch,uncommon,23,1,,False,,https://wynncraft.wiki.gg/images/MerchantRisch.png?8fee13,Undersupply
-Duvale,uncommon,22,2,,False,https://wynncraft.wiki.gg/wiki/Duvale,https://wynncraft.wiki.gg/images/Duvale.png?121553,An Iron Heart Part I | An Iron Heart Part I (1.19)
-Guard,uncommon,22,5,,False,,,A Hunter's Calling | A Journey Home | Aldorei's Secret Part I | King's Recruit | Rise of the Quartron
-Captain Ragon,uncommon,22,1,Ragon,True,https://wynncraft.wiki.gg/wiki/Captain_Ragon,https://wynncraft.wiki.gg/images/CaptainRagon.png?42ee7e,Elemental Exercise (2.0.2)
-Prisoner,uncommon,22,1,,False,,https://wynncraft.wiki.gg/images/Prisoner.png?449d05,Forbidden Prison (Quest)
-The Warden,uncommon,22,1,,False,,https://wynncraft.wiki.gg/images/TheWarden.png?158d10,Forbidden Prison (Quest)
-Harker,uncommon,22,1,,True,https://wynncraft.wiki.gg/wiki/Harker,https://wynncraft.wiki.gg/images/Harker.png?9fce8a,Eye of the Storm
-Vera,uncommon,22,1,,False,https://wynncraft.wiki.gg/wiki/Vera,https://wynncraft.wiki.gg/images/Vera.png?e66ffa,Hollow Serenity
-Detective Lorias,uncommon,22,2,Captain Lorias,False,https://wynncraft.wiki.gg/wiki/Detective_Lorias,https://wynncraft.wiki.gg/images/DetectiveLorias.png?d053b1,Murder Mystery | Murder Mystery (1.20)
-Korun,uncommon,22,1,,True,https://wynncraft.wiki.gg/wiki/Korun,https://wynncraft.wiki.gg/images/Korun.png?4105da,Purple and Blue (1.20)
-Ooni,uncommon,22,2,,True,,,Prison Story | Prison Story (1.14)
-Worid,uncommon,22,1,,False,https://wynncraft.wiki.gg/wiki/Worid,https://wynncraft.wiki.gg/images/Worid%28Iboju%29.png?f69226,Jungle Fever
-Captain Olof,uncommon,22,1,,False,https://wynncraft.wiki.gg/wiki/Captain_Olof,https://wynncraft.wiki.gg/images/CaptainOlof.png?47e1e9,One Thousand Meters Under
-Buendo,uncommon,22,1,,True,https://wynncraft.wiki.gg/wiki/Buendo,https://wynncraft.wiki.gg/images/Buendo.png?9082e8,Out of My Mind (1.15)
-Edwin,uncommon,22,3,,False,,https://wynncraft.wiki.gg/images/Edwin.png?e43f1d,Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
-Suspicious Cow,uncommon,21,1,,False,,https://wynncraft.wiki.gg/images/SuspiciousCow.png?ee441d,Cowfusion
-Wedyf,uncommon,21,1,,False,https://wynncraft.wiki.gg/wiki/Wedyf,https://wynncraft.wiki.gg/images/Wedyf.png?4c5b13,Bob's Lost Soul
-Bylvis,uncommon,21,1,,True,https://wynncraft.wiki.gg/wiki/Bylvis,https://wynncraft.wiki.gg/images/Bylvis.png?a639c3,A Confused Farmer
-Dusk Garden,uncommon,21,3,,False,,,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair
-Elderly Woman,uncommon,21,1,,False,,,Celebrations in Smoke
-Tavern Owner,uncommon,21,1,,False,,https://wynncraft.wiki.gg/images/TavernOwner.png?401ade,Fantastic Voyage
-Alein,uncommon,21,1,,True,,https://wynncraft.wiki.gg/images/Alein.png?f0eb60,Frost Bitten
-Newspaper Merchant,uncommon,21,2,,False,,,Ensemble of Hope | Overture to Despair
-Colonel Gailard,uncommon,21,1,,False,https://wynncraft.wiki.gg/wiki/Colonel_Gailard,https://wynncraft.wiki.gg/images/ColonelGailard.png?aab11a,Lava Springs
-Scientist Ynnos,uncommon,21,1,,False,https://wynncraft.wiki.gg/wiki/Scientist_Ynnos,https://wynncraft.wiki.gg/images/Ynnos.png?cea9fe,One Thousand Meters Under
-Jenprest,uncommon,21,1,,False,https://wynncraft.wiki.gg/wiki/Jenprest,https://wynncraft.wiki.gg/images/Jenprest.png?bd2b3f,Queen's Recruit
-Likeru,uncommon,21,2,,False,https://wynncraft.wiki.gg/wiki/Likeru,https://wynncraft.wiki.gg/images/Likeru.png?a5158e,Shattered Minds | Shattered Minds (1.19)
-Professor Eih,uncommon,21,1,,False,,,Shattered Minds
-Batelu,uncommon,21,1,,False,https://wynncraft.wiki.gg/wiki/Batelu,https://wynncraft.wiki.gg/images/Batelu.png?a933f5,Reincarnation
-Marseled,uncommon,21,1,,False,,,The Scarred Springs
-Robboss,uncommon,21,1,,False,,https://wynncraft.wiki.gg/images/Robboss.png?9fd1ee,A People's Sovereign
-Elder Alder,uncommon,20,1,,False,,https://wynncraft.wiki.gg/images/ElderAlder.png?28b343,Aldorei's Secret Part II
-Captain Goruca,uncommon,20,1,,False,https://wynncraft.wiki.gg/wiki/Captain_Goruca,https://wynncraft.wiki.gg/images/CaptainGoruca.png?7d3b06,All Roads to Peace
-Onluk,uncommon,20,1,,False,https://wynncraft.wiki.gg/wiki/Onluk,https://wynncraft.wiki.gg/images/Onluk.png?543743,All Roads to Peace
-Durbeo,uncommon,20,1,,False,https://wynncraft.wiki.gg/wiki/Durbeo,https://wynncraft.wiki.gg/images/Durbeo.png?c80682,All Roads to Peace
-Old Man,uncommon,20,2,,False,https://wynncraft.wiki.gg/wiki/Old_Man,https://wynncraft.wiki.gg/images/OldMan%28HollowSerenity%29.png?8941d3,Hollow Serenity | King's Recruit (1.18)
-Rynver,uncommon,20,1,,True,https://wynncraft.wiki.gg/wiki/Rynver,https://wynncraft.wiki.gg/images/Rynver.png?d7650a,From the Mountains (1.19)
-Jiro,uncommon,20,4,,False,https://wynncraft.wiki.gg/wiki/Jiro,https://wynncraft.wiki.gg/images/JiroPortraitNeutral.png?d43ee6,Echoes of Change | Solidarity of Steel | The Cursed One | The Price of Ingenuity
-Weaponsmith,uncommon,20,1,,False,,https://wynncraft.wiki.gg/images/Weaponsmith.png?433f91,The Feathers Fly Part II
-Niren,uncommon,20,1,,False,,https://wynncraft.wiki.gg/images/Niren.png?f696fe,The Strong Survive
-Fisherman,uncommon,20,1,,False,,,Teachings of Old
-Ranol,uncommon,19,2,,False,https://wynncraft.wiki.gg/wiki/Ranol,https://wynncraft.wiki.gg/images/Ranol.png?52435b,Cowfusion | Cowfusion (1.20)
-Norsten,uncommon,19,1,,True,https://wynncraft.wiki.gg/wiki/Norsten,https://wynncraft.wiki.gg/images/Norsten.png?8af759,A Marauder's Dues (1.20)
-Javier,uncommon,19,1,,False,https://wynncraft.wiki.gg/wiki/Javier,https://wynncraft.wiki.gg/images/Javier.png?31767b,Beneath the Depths
-Caravan Driver,uncommon,19,2,,False,https://wynncraft.wiki.gg/wiki/Caravan_Driver,https://wynncraft.wiki.gg/images/CaravanDriver.png?143534,A Journey Home | King's Recruit
-Sanba,uncommon,19,1,,False,https://wynncraft.wiki.gg/wiki/Sanba,https://wynncraft.wiki.gg/images/Sanba.png?9f18da,Dwarves and Doguns Part III
-Elder,uncommon,19,1,,False,,https://wynncraft.wiki.gg/images/Elder.png?de7181,Finding the Light
-Phinas,uncommon,19,1,,False,https://wynncraft.wiki.gg/wiki/Phinas,https://wynncraft.wiki.gg/images/Phinas.png?dba4d1,Desperate Metal
-Atisun,uncommon,19,1,,False,https://wynncraft.wiki.gg/wiki/Atisun,https://wynncraft.wiki.gg/images/Atisun.png?5feb5c,Memory Paranoia
-Gana,uncommon,19,2,,False,https://wynncraft.wiki.gg/wiki/Gana,https://wynncraft.wiki.gg/images/Gana.png?5a6c97,The Canyon Guides | The Canyon Guides (1.20)
-Admiral Amerigo,uncommon,19,1,Amerigo,True,https://wynncraft.wiki.gg/wiki/Admiral_Amerigo,https://wynncraft.wiki.gg/images/AdmiralAmerigo.png?e8d3d8,The Mercenary (2.0.4)
-Tarod,uncommon,18,1,,False,https://wynncraft.wiki.gg/wiki/Tarod,https://wynncraft.wiki.gg/images/Tarod.png?6c20f6,Bob's Lost Soul
-Bishop Kaideus,uncommon,18,1,,False,https://wynncraft.wiki.gg/wiki/Bishop_Kaideus,https://wynncraft.wiki.gg/images/BishopKaideus.png?ff9b82,Brothers Return
-Ollie,uncommon,18,1,,True,https://wynncraft.wiki.gg/wiki/Ollie,https://wynncraft.wiki.gg/images/Ollie%28discovery%29.png?be9808,Finding The Light (1.19)
-Timasca Soldier,uncommon,18,2,,False,,,Echoes of Change | Solidarity of Steel
-Yahya,uncommon,18,1,,True,https://wynncraft.wiki.gg/wiki/Yahya,https://wynncraft.wiki.gg/images/Yahya%28NivlaHouse%29.png?bd5ec1,Mushroom Man (2.0.2)
-Lanu,uncommon,18,1,,False,https://wynncraft.wiki.gg/wiki/Lanu,https://wynncraft.wiki.gg/images/Lanu.png?c958c9,Queen's Recruit
-Alchemist,uncommon,18,2,,True,,https://wynncraft.wiki.gg/images/Alchemist.png?83bba8,Recover the Past (2.0.2) | Recover the Past (2.2.2)
-Psilo,uncommon,18,1,,False,https://wynncraft.wiki.gg/wiki/Psilo,https://wynncraft.wiki.gg/images/Psilo.png?a49f9c,The Bigger Picture
-Ildan,uncommon,18,1,,False,https://wynncraft.wiki.gg/wiki/Ildan,https://wynncraft.wiki.gg/images/Ildan.png?14f380,The Passage (Quest)
-Relic Hunter,uncommon,18,1,,True,,,The Relic Shrines
-Blacksmith Dren,uncommon,17,1,Dren,False,https://wynncraft.wiki.gg/wiki/Blacksmith_Dren,https://wynncraft.wiki.gg/images/BlacksmithDren.png?22be25,A Journey Beyond
-Representative Ernold,uncommon,17,2,,False,,https://wynncraft.wiki.gg/images/RepresentativeErnold.png?aac980,Fallen Delivery | Fallen Delivery (1.20)
-Runo,uncommon,17,1,,False,https://wynncraft.wiki.gg/wiki/Runo,https://wynncraft.wiki.gg/images/Runo.png?d0dcc1,Hollow Serenity
-General Elix,uncommon,17,1,,False,https://wynncraft.wiki.gg/wiki/General_Elix,https://wynncraft.wiki.gg/images/GeneralElix.png?6cc279,The Breaking Point
-Elder Astal,uncommon,17,1,,False,https://wynncraft.wiki.gg/wiki/Elder_Astal,https://wynncraft.wiki.gg/images/ElderAstal%28Frozen%29.png?943e2f,The Breaking Point
-Imperial Guard,uncommon,17,1,,True,,https://wynncraft.wiki.gg/images/ImperialGuard.png?9458fd,Recover the Past (2.0.2)
-"""Carl""",uncommon,17,1,Carl,False,https://wynncraft.wiki.gg/wiki/%22Carl%22,https://wynncraft.wiki.gg/images/Carl.png?7642aa,The Feathers Fly Part II
-Ankou,uncommon,17,1,,False,https://wynncraft.wiki.gg/wiki/Ankou,https://wynncraft.wiki.gg/images/Ankou.png?24dcbd,Tower of Ascension (Quest)
-Headmaster,uncommon,17,1,,False,,,The Order of the Grook
-Gordon,uncommon,17,1,,False,,https://wynncraft.wiki.gg/images/Gordon.png?262f4b,The Lost
-Military Guard,uncommon,17,1,,False,,,The Strong Survive
-Kansard,uncommon,16,2,,True,https://wynncraft.wiki.gg/wiki/Kansard,https://wynncraft.wiki.gg/images/KansardAd1.png?1b627c,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
-Corak,uncommon,16,2,,True,https://wynncraft.wiki.gg/wiki/Corak,https://wynncraft.wiki.gg/images/Corak.png?fbd683,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
-Nunexetor,uncommon,16,1,,False,https://wynncraft.wiki.gg/wiki/Nunexetor,https://wynncraft.wiki.gg/images/Nunexetor.png?4493ce,All Roads to Peace
-Gelibord Citizen,uncommon,16,2,,False,,https://wynncraft.wiki.gg/images/GelibordCitizen.png?9e4f30,A Headless History | Forbidden Prison (Quest)
-Korben,uncommon,16,1,,False,,,Aldorei's Secret Part I
-Paxon,uncommon,16,1,,False,,,A Journey Home
-Aldwell Guard,uncommon,16,1,,False,,https://wynncraft.wiki.gg/images/AldwellGuard.png?1735b4,Celebrations in Smoke
-Racing Expert,uncommon,16,1,,False,,,Celebrations in Smoke
-Pastor Arwes,uncommon,16,1,Arwes,True,https://wynncraft.wiki.gg/wiki/Pastor_Arwes,https://wynncraft.wiki.gg/images/PastorArwes.png?cf8994,Eye of the Storm
-Bip,uncommon,16,1,,False,https://wynncraft.wiki.gg/wiki/Bip,https://wynncraft.wiki.gg/images/Bip.png?e0f668,Hollow Serenity
-Valimare,uncommon,16,2,,False,https://wynncraft.wiki.gg/wiki/Valimare,https://wynncraft.wiki.gg/images/Valimare.png?f45d69,Murder Mystery | Murder Mystery (1.20)
-Rensa,uncommon,16,1,,False,https://wynncraft.wiki.gg/wiki/Rensa,https://wynncraft.wiki.gg/images/Rensa.png?d4e011,Mixed Feelings
-Burtur,uncommon,16,1,,True,https://wynncraft.wiki.gg/wiki/Burtur,https://wynncraft.wiki.gg/images/Burtur.png?3b7f93,Lazarus Pit (1.19)
-Ticket Collector,uncommon,16,1,,False,,,Off the Rails
-Royal Captain,uncommon,16,1,,False,,,Recover the Past
-Corkus Jeweler,uncommon,16,1,,False,,https://wynncraft.wiki.gg/images/CorkusJeweler.png?fe4ac8,The Feathers Fly Part II
-Traitor Amadel,uncommon,16,2,,False,,https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a,WynnExcavation Site C | WynnExcavation Site D
-Squidward,uncommon,16,2,,False,https://wynncraft.wiki.gg/wiki/Squidward,https://wynncraft.wiki.gg/images/Squidward.png?f18db3,Underice | Underice (1.14)
-Master Oshman,uncommon,16,1,,False,,https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb,Undersupply
-Lynn,uncommon,16,2,,False,,,An Unexpected Departure | The Strong Survive
-Kyren,uncommon,16,1,,False,,,The Strong Survive
-Bassow,uncommon,16,1,,False,,https://wynncraft.wiki.gg/images/Bassow.png?3740ad,A People's Sovereign
-Nawild,uncommon,16,1,,False,,https://wynncraft.wiki.gg/images/Nawild.png?50a49b,A People's Sovereign
-Avos Chief,uncommon,15,2,,False,https://wynncraft.wiki.gg/wiki/Avos_Chief,https://wynncraft.wiki.gg/images/AvosChief.png?5d464c,A Hunter's Calling | The Feathers Fly Part I
-Winie,uncommon,15,1,,False,,https://wynncraft.wiki.gg/images/Winie.png?df4239,Hunger of the Gerts Part II
-Captured Prisoner,uncommon,15,2,,False,https://wynncraft.wiki.gg/wiki/Captured_Prisoner,https://wynncraft.wiki.gg/images/CapturedPrisoner.png?75bb90,Flight in Distress | Flight in Distress (1.20)
-Ceyquin,uncommon,15,1,,True,https://wynncraft.wiki.gg/wiki/Ceyquin,https://wynncraft.wiki.gg/images/Ceyquin.png?2a3aff,Eye of the Storm
-Businessman,uncommon,15,1,,False,,,Off the Rails
-Clothes Merchant,uncommon,15,1,,False,,,Overture to Despair
-Harnort,uncommon,15,1,,False,,,Rise of the Quartron
-Brie,uncommon,15,1,,True,https://wynncraft.wiki.gg/wiki/Brie,https://wynncraft.wiki.gg/images/Brie.png?c6e4fa,Recipe For Disaster (1.20)
-Kale,uncommon,15,1,,True,https://wynncraft.wiki.gg/wiki/Kale,https://wynncraft.wiki.gg/images/Kale.png?c78239,Recipe For Disaster (1.20)
-Frank,uncommon,15,1,,True,https://wynncraft.wiki.gg/wiki/Frank,https://wynncraft.wiki.gg/images/Frank.png?a0277a,Recipe For Disaster (1.20)
-Excavator Placardus,uncommon,15,1,,False,https://wynncraft.wiki.gg/wiki/Excavator_Placardus,https://wynncraft.wiki.gg/images/ExcavatorPlacardus.png?9aa4ab,WynnExcavation Site C
-Zhight,uncommon,15,1,,False,https://wynncraft.wiki.gg/wiki/Zhight,https://wynncraft.wiki.gg/images/Zhight.png?7796f4,Zhight Island (Quest)
-"Qira, Mistress of the Hive",uncommon,15,1,Qira,False,https://wynncraft.wiki.gg/wiki/Qira%2C_Mistress_of_the_Hive,https://wynncraft.wiki.gg/images/Qira%2CMistressoftheHive%28Phase1%29.png?28d3e1,The Qira Hive (Quest)
-Espren Citizen,uncommon,15,1,,False,,https://wynncraft.wiki.gg/images/EsprenCitizen.png?db7897,Solace in Pain
-Veekhat,uncommon,14,1,,True,https://wynncraft.wiki.gg/wiki/Veekhat,https://wynncraft.wiki.gg/images/VeekhattheMinotaur.png?ff5fc1,Cowfusion (1.20)
-Yunelsu,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Yunelsu,https://wynncraft.wiki.gg/images/Yunelsu.png?6dabdd,All Roads to Peace
-Piere,uncommon,14,2,,False,https://wynncraft.wiki.gg/wiki/Piere,https://wynncraft.wiki.gg/images/Piere.png?ed8af6,Blazing Retribution | Green Skinned Trouble
-Fiona,uncommon,14,1,,False,,,Aldorei's Secret Part I
-Private Tylas,uncommon,14,2,Tylas,False,https://wynncraft.wiki.gg/wiki/Private_Tylas,https://wynncraft.wiki.gg/images/PrivateTylas.png?38c728,General's Orders | General's Orders (1.20)
-Marden,uncommon,14,2,,False,https://wynncraft.wiki.gg/wiki/Marden,https://wynncraft.wiki.gg/images/Marden.png?43514f,Fallen Delivery | Fallen Delivery (1.20)
-Aunoa,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Aunoa,https://wynncraft.wiki.gg/images/Aunoa.png?2debdd,Hollow Serenity
-Ferndor,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Ferndor,https://wynncraft.wiki.gg/images/Ferndor.png?9e98a1,Lost Soles
-Javen,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Javen,https://wynncraft.wiki.gg/images/Javen.png?58561b,Mixed Feelings
-Espren Tourist,uncommon,14,1,,False,,,Overture to Despair
-Marston,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Marston,https://wynncraft.wiki.gg/images/Marston.png?dee48e,Redbeard's Booty
-Ahmas,uncommon,14,1,,True,https://wynncraft.wiki.gg/wiki/Ahmas,https://wynncraft.wiki.gg/images/Ahmas.png?f09824,Reclaiming the House (1.19)
-King Burtan,uncommon,14,1,,True,https://wynncraft.wiki.gg/wiki/King_Burtan,https://wynncraft.wiki.gg/images/KingBurtan.png?f2312f,The Belly of the Beast
-Imperial Captain,uncommon,14,1,,True,,,Recover the Past (2.2.2)
-Dolem,uncommon,14,1,,True,https://wynncraft.wiki.gg/wiki/Dolem,https://wynncraft.wiki.gg/images/Dolem.png?f7f40d,The Thanos Vaults
-Excavator Vade,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Excavator_Vade,https://wynncraft.wiki.gg/images/ExcavatorVade.png?6977b6,WynnExcavation Site A
-Narder,uncommon,14,1,,False,https://wynncraft.wiki.gg/wiki/Narder,https://wynncraft.wiki.gg/images/Narder.png?c32443,The Hidden City
-Legolus,common,13,1,,True,https://wynncraft.wiki.gg/wiki/Legolus,https://wynncraft.wiki.gg/images/Legulus114.png?3419a0,Aldorei's Secret Part II (1.20)
-Dalben,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Dalben,https://wynncraft.wiki.gg/images/Dalben.png?47f5b9,Beneath the Depths
-Damys,common,13,1,,False,,,Aldorei's Secret Part I
-Scientist Urelix,common,13,1,,False,,,A Hunter's Calling
-Document Merchant,common,13,1,,True,https://wynncraft.wiki.gg/wiki/Document_Merchant,https://wynncraft.wiki.gg/images/DocumentMerchant.png?3aa803,Acquiring Credentials (1.19)
-Thomas,common,13,1,,True,https://wynncraft.wiki.gg/wiki/Thomas,https://wynncraft.wiki.gg/images/Thomas.png?dd6648,Creeper Infiltration (1.15)
-Sayleros,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Sayleros,https://wynncraft.wiki.gg/images/Sayleros.png?e231a8,Brothers Return
-Edula,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Edula,https://wynncraft.wiki.gg/images/Edula.png?9dda9b,Dwarves and Doguns Part III
-Bricot,common,13,2,,False,https://wynncraft.wiki.gg/wiki/Bricot,https://wynncraft.wiki.gg/images/Bricot.png?adf208,Fallen Delivery | Fallen Delivery (1.20)
-Sasha The Apothecary,common,13,1,Sasha,True,https://wynncraft.wiki.gg/wiki/Sasha_The_Apothecary,https://wynncraft.wiki.gg/images/SashaTheApothecary%28Appearance1%29.png?e78329,Finding The Light (1.19)
-Ann,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Ann,https://wynncraft.wiki.gg/images/Ann.png?9be532,Hollow Serenity
-Mysterious Leader,common,13,1,,False,,https://wynncraft.wiki.gg/images/MysteriousLeader.png?47de73,Hollow Serenity
-Adigard,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Adigard,https://wynncraft.wiki.gg/images/Adigard.png?5f87fe,Ice Nations
-Celuuse,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Celuuse,https://wynncraft.wiki.gg/images/Celuuse.png?97cd31,One Thousand Meters Under
-Scavenger Hunt Collector,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Scavenger_Hunt_Collector,https://wynncraft.wiki.gg/images/ScavengerHuntCollector.png?3c1c03,The Hero of Gavel
-Asher,common,13,1,,True,https://wynncraft.wiki.gg/wiki/Asher,https://wynncraft.wiki.gg/images/Asher.png?aebea9,Suspended Flowers
-Egpla,common,13,1,,False,https://wynncraft.wiki.gg/wiki/Egpla,https://wynncraft.wiki.gg/images/Egpla.png?b8f9d4,Royal Trials
-Clomius,common,13,1,,False,,,The Feathers Fly Part II
-Trunan,common,13,1,,True,https://wynncraft.wiki.gg/wiki/Trunan,https://wynncraft.wiki.gg/images/Trunan.png?c81cf0,Star Thief (1.17)
-Alcohol Stand Merchant,common,13,1,,False,,,The Cursed One
-Imperial Inquisitor,common,13,1,,True,,https://wynncraft.wiki.gg/images/RoyalInquisitor.png?ca6b00,Recover the Past (2.2.2)
-Tinemild,common,13,1,,True,,https://wynncraft.wiki.gg/images/Tinemild.png?ca57bd,The Tower of Amnesia (Quest)
-Dereg,common,13,1,,True,https://wynncraft.wiki.gg/wiki/Dereg,https://wynncraft.wiki.gg/images/Dereg.png?7b862c,The Shadow of the Beast (1.19)
-Elder Willow,common,12,1,,False,,https://wynncraft.wiki.gg/images/ElderWillow.png?603051,Aldorei's Secret Part II
-The Blacksmith,common,12,1,,False,https://wynncraft.wiki.gg/wiki/The_Blacksmith,https://wynncraft.wiki.gg/images/TheBlacksmith.png?fa0ba2,Bob's Lost Soul
-Mehme,common,12,2,,False,https://wynncraft.wiki.gg/wiki/Mehme,https://wynncraft.wiki.gg/images/Mehme.png?8f7a48,??? | ??? (1.14)
-Dorroc,common,12,2,,False,https://wynncraft.wiki.gg/wiki/Dorroc,https://wynncraft.wiki.gg/images/Dorroc.png?954665,From the Bottom | From the Bottom (1.20)
-Lodog,common,12,2,,False,https://wynncraft.wiki.gg/wiki/Lodog,https://wynncraft.wiki.gg/images/Lodog.png?869cbd,From the Bottom | From the Bottom (1.20)
-Mastro,common,12,1,,False,https://wynncraft.wiki.gg/wiki/Mastro,https://wynncraft.wiki.gg/images/Mastro.png?f3464a,From the Bottom
-Lecade 2,common,12,1,,False,,,General's Orders
-Marock,common,12,1,,False,,,Dwarves and Doguns Part I
-Lalorie,common,12,1,,True,,,Hollow Sirene
-Siwel,common,12,1,,False,https://wynncraft.wiki.gg/wiki/Siwel,https://wynncraft.wiki.gg/images/Siwel.png?f299d1,Haven Antiquity
-Blackjack Dealer,common,12,1,,False,,https://wynncraft.wiki.gg/images/BlackjackDealer.png?e7d518,Murder Mystery
-Mr. Caritat,common,12,1,,False,https://wynncraft.wiki.gg/wiki/Mr._Caritat,https://wynncraft.wiki.gg/images/Mr.Caritat.png?228b97,Memory Paranoia
-Pirate,common,12,1,,False,,,Misadventure on the Sea
-Jill,common,12,1,,True,https://wynncraft.wiki.gg/wiki/Jill,https://wynncraft.wiki.gg/images/Jill.png?3703ad,The Fortuneteller
-Mayor,common,12,2,,False,,,Shadowy Dealings | Taproot
-Lacrona,common,12,1,,True,,,Suspended Flowers
-Lekal,common,12,1,,True,https://wynncraft.wiki.gg/wiki/Lekal,https://wynncraft.wiki.gg/images/Lekal.png?560700,The Angry Village
-Pottur,common,12,1,,True,https://wynncraft.wiki.gg/wiki/Pottur,https://wynncraft.wiki.gg/images/Pottur.png?aab03d,Studying the Corrupt
-Tea Stand Merchant,common,12,1,,False,,,The Cursed One
-Zoo Keeper,common,12,1,,False,,,The Cursed One
-Comor,common,12,1,,True,https://wynncraft.wiki.gg/wiki/Comor,https://wynncraft.wiki.gg/images/Comor.png?83fa24,The Hunger of Gerts Part 1 (1.20)
-Seasum,common,12,1,,False,https://wynncraft.wiki.gg/wiki/Seasum,https://wynncraft.wiki.gg/images/Seasum.png?28aed7,The Order of the Grook
-Czytash,common,12,1,,False,https://wynncraft.wiki.gg/wiki/Czytash,https://wynncraft.wiki.gg/images/Czytash.png?3e3aa3,Zhight Island (Quest)
-Butler Hayn,common,12,1,,False,,https://wynncraft.wiki.gg/images/ButlerHayn.png?6c0eaa,Undersupply
-Yvonne,common,12,1,,False,,,The Strong Survive
-Effal,common,12,1,,False,,,The Strong Survive
-Markus,common,12,1,,False,,,An Unexpected Departure
-Phoenix Poacher,common,12,1,,False,,,Maex Black Market
-Xoeinbor,common,11,1,,False,https://wynncraft.wiki.gg/wiki/Xoeinbor,https://wynncraft.wiki.gg/images/Xoeinbor.png?e8c057,All Roads to Peace
-Jixy,common,11,1,,False,https://wynncraft.wiki.gg/wiki/Jixy,https://wynncraft.wiki.gg/images/Jixy.png?eee4dd,All Roads to Peace
-Lieutenant Tolv,common,11,1,,False,,,A Journey Home
-Clan Member,common,11,2,,False,,,Celebrations in Smoke | First Wicker's Spark
-Dobile,common,11,2,,False,https://wynncraft.wiki.gg/wiki/Dobile,https://wynncraft.wiki.gg/images/Dobile.png?39c740,From the Bottom | From the Bottom (1.20)
-Yobon,common,11,2,,False,https://wynncraft.wiki.gg/wiki/Yobon,https://wynncraft.wiki.gg/images/Yobon.png?f6e350,From the Bottom | From the Bottom (1.20)
-Cabac,common,11,1,,True,,,Frost Bitten
-Wilted Camellia,common,11,2,,False,,,Ensemble of Hope | Overture to Despair
-Gendarme Commander,common,11,2,,False,,,Ensemble of Hope | Queen's Recruit
-Construction Worker,common,11,1,,False,,https://wynncraft.wiki.gg/images/ConstructionWorker.png?cc161f,Echoes of Change
-Vesdar,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Vesdar,https://wynncraft.wiki.gg/images/Vesdar.png?bcf0d6,Lazarus Pit (1.19)
-Damiral,common,11,1,,False,https://wynncraft.wiki.gg/wiki/Damiral,https://wynncraft.wiki.gg/images/Damiral.png?8e275e,Pirate's Trove
-Nedlom,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Nedlom,https://wynncraft.wiki.gg/images/Nedlom.png?5d8621,Purple and Blue (1.20)
-Aelumia Guard,common,11,1,,False,,,Queen's Recruit
-Representative,common,11,1,,False,,,Queen's Recruit
-Thesead Miner,common,11,1,,False,,https://wynncraft.wiki.gg/images/TheseadMiner.png?e03dcc,The Canary Calls
-Adventuring Mage,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Adventuring_Mage,https://wynncraft.wiki.gg/images/AdventuringMage.png?fad99b,Studying the Corrupt
-Shopkeeper,common,11,2,,False,,https://wynncraft.wiki.gg/images/Shopkeeper.png?983585,Maex Black Market | The Feathers Fly Part I
-Grenot,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Grenot,https://wynncraft.wiki.gg/images/Grenot.png?717080,The Canary Calls (1.20)
-Xao,common,11,2,,False,,,Revelations in Fall | The Cursed One
-Food Stand Merchant,common,11,1,,False,,,The Cursed One
-Excavator Lykron,common,11,1,,False,https://wynncraft.wiki.gg/wiki/Excavator_Lykron,https://wynncraft.wiki.gg/images/ExcavatorLykron.png?d91da2,WynnExcavation Site B
-Calamaro,common,11,2,,False,https://wynncraft.wiki.gg/wiki/Calamaro,https://wynncraft.wiki.gg/images/Calamaro.png?6d2d41,Underice | Underice (1.14)
-Gerten Chief Lobo,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Gerten_Chief_Lobo,https://wynncraft.wiki.gg/images/GertenChiefLobo.png?884acf,The Hunger of Gerts Part 2 (1.20)
-Big Butch,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Big_Butch,https://wynncraft.wiki.gg/images/BigButch.png?9c89b0,The Hunger of Gerts Part 2 (1.20)
-Omango,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Omango,https://wynncraft.wiki.gg/images/Omango.png?1ffe5d,Underwater (1.19)
-Kroac,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Kroac,https://wynncraft.wiki.gg/images/Kroac.png?692a63,The Shadow of the Beast (1.19)
-Rileen,common,11,1,,True,https://wynncraft.wiki.gg/wiki/Rileen,https://wynncraft.wiki.gg/images/Rileen.png?2e0554,The Shadow of the Beast (1.19)
-Shaman Inrekei,common,11,1,Inrekei,False,https://wynncraft.wiki.gg/wiki/Shaman_Inrekei,https://wynncraft.wiki.gg/images/ShamanInrekei.png?71ae88,Troubled Tribesmen
-Cousullo,common,11,1,,False,,,The Scarred Springs
-Halbe,common,11,1,,False,,,The Strong Survive
-Fort Hegea Archer,common,11,1,,False,,,First Wicker's Spark
-Mael Twain,common,10,2,Mael,False,https://wynncraft.wiki.gg/wiki/Mael_Twain,https://wynncraft.wiki.gg/images/Mael.png?79812b,A Grave Mistake | The Twains' Downfall
-Ibele,common,10,1,,True,https://wynncraft.wiki.gg/wiki/Ibele,https://wynncraft.wiki.gg/images/Ibele.png?9fbe8d,Cowfusion (1.20)
-Teiren,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Teiren,https://wynncraft.wiki.gg/images/Teiren.png?848c28,All Roads to Peace
-Grapes,common,10,1,,False,,,All Roads to Peace
-Peculiar Old Man,common,10,1,,True,https://wynncraft.wiki.gg/wiki/Peculiar_Old_Man,https://wynncraft.wiki.gg/images/Peculiar_old_man.png?8f1561,Acquiring Credentials (1.19)
-Fruman Recruit,common,10,1,,False,,,A Journey Home
-Missing Child,common,10,2,,False,https://wynncraft.wiki.gg/wiki/Missing_Child,https://wynncraft.wiki.gg/images/MissingChild.png?4cea35,Flight in Distress | Flight in Distress (1.20)
-Mafia Prisoner,common,10,1,,False,,https://wynncraft.wiki.gg/images/MafiaPrisoner.png?4742d2,Forbidden Prison (Quest)
-Syni,common,10,2,,False,https://wynncraft.wiki.gg/wiki/Syni,https://wynncraft.wiki.gg/images/Syni.png?4bffc1,From the Bottom | From the Bottom (1.20)
-Zenam,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Zenam,https://wynncraft.wiki.gg/images/Zenam.png?2b2f91,Heart of Llevigar
-Head Engineer,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Head_Engineer,https://wynncraft.wiki.gg/images/Head_Engineer.png?44aa3b,Heart of Llevigar
-Damien,common,10,1,,True,https://wynncraft.wiki.gg/wiki/Damien,https://wynncraft.wiki.gg/images/Damien.png?f04daf,Finding The Light (1.19)
-Dogun,common,10,3,,False,,,Dwarves and Doguns Part I | Sealed in Ice | The Doguns' Defeat
-Pastor Nitram,common,10,1,Nitram,True,https://wynncraft.wiki.gg/wiki/Pastor_Nitram,https://wynncraft.wiki.gg/images/PastorNitram.png?389345,Hollow Sirene
-Cinfras,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Cinfras,https://wynncraft.wiki.gg/images/Cinfras%28NPC%29.png?776671,Haven Antiquity
-Violent Heather,common,10,2,,False,,,Ensemble of Hope | Overture to Despair
-Yavlis,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Yavlis,https://wynncraft.wiki.gg/images/Yavlis.png?b4c3f9,Lost Royalty
-Mercenary Leader,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Mercenary_Leader,https://wynncraft.wiki.gg/images/MercenaryLeader.png?851578,Lost Royalty
-Siegfried Fan,common,10,1,,False,,,The Hero of Gavel
-Elder Berusia,common,10,2,,False,https://wynncraft.wiki.gg/wiki/Elder_Berusia,https://wynncraft.wiki.gg/images/ElderBerusia.png?a79f54,Shattered Minds | Shattered Minds (1.19)
-Karkun,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Karkun,https://wynncraft.wiki.gg/images/Karkun.png?55cea9,Redbeard's Booty
-Rinire,common,10,1,,True,https://wynncraft.wiki.gg/wiki/Rinire,https://wynncraft.wiki.gg/images/Rinire.png?564722,Rise of the Quartron (1.19)
-Hrona,common,10,2,,False,https://wynncraft.wiki.gg/wiki/Hrona,https://wynncraft.wiki.gg/images/Hrona.png?d3c1a1,Royal Trials | Royal Trials (1.20)
-Grant,common,10,1,,False,,,The Feathers Fly Part II
-Jamie,common,10,1,,False,,https://wynncraft.wiki.gg/images/Jamie.png?c8d09b,Shrouded in Mist
-Caras,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Caras,https://wynncraft.wiki.gg/images/Caras.png?a6017e,Tribal Aggression
-Favian,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Favian,https://wynncraft.wiki.gg/images/Favian.png?2fcbfa,Tribal Aggression
-Ghost Guide,common,10,1,,False,,,The Order of the Grook
-Yuge,common,10,2,,False,https://wynncraft.wiki.gg/wiki/Yuge,https://wynncraft.wiki.gg/images/Yuge.png?e56b4c,The Lost | The Lost (1.20)
-Ka L'argwit,common,10,1,,False,https://wynncraft.wiki.gg/wiki/Ka_L%27argwit,https://wynncraft.wiki.gg/images/KaL%27argwit.png?98a33a,Troubled Tribesmen
-Priscilla,common,10,1,,False,,,The Strong Survive
-Recruiter Strumon,common,10,1,,False,,,The Strong Survive
-????,common,9,2,,False,,,A Marauder's Dues (1.20) | The Qira Hive (Quest)
-Volmor,common,9,1,,True,,,A Marauder's Dues (1.20)
-Ureietun,common,9,1,,False,,https://wynncraft.wiki.gg/images/Ureietun.png?e5b735,All Roads to Peace
-Lomoster,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Lomoster,https://wynncraft.wiki.gg/images/Lomoster.png?b7f462,All Roads to Peace
-Miliyus,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Miliyus,https://wynncraft.wiki.gg/images/Miliyus.png?c45268,All Roads to Peace
-Etemitoro,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Etemitoro,https://wynncraft.wiki.gg/images/Etemitoro.png?ea5951,All Roads to Peace
-Soway,common,9,1,,True,https://wynncraft.wiki.gg/wiki/Soway,https://wynncraft.wiki.gg/images/Soway.png?f44e1b,Aldorei's Secret Part II (1.20)
-Employee,common,9,1,,False,,,A Hunter's Calling
-Espren Border Guard,common,9,1,,False,,https://wynncraft.wiki.gg/images/EsprenBorderGuard.png?53ca28,A New Beginning
-Espren Guard Captain,common,9,1,,False,,,A New Beginning
-Dohstaj,common,9,2,,False,https://wynncraft.wiki.gg/wiki/Dohstaj,https://wynncraft.wiki.gg/images/Dohstaj.png?661b15,From the Bottom | From the Bottom (1.20)
-Charlie,common,9,1,,True,https://wynncraft.wiki.gg/wiki/Charlie,https://wynncraft.wiki.gg/images/Charlie.png?4a6da5,Finding The Light (1.19)
-Qunit,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Qunit,https://wynncraft.wiki.gg/images/Qunit.png?fac5c5,Hollow Serenity
-Mask Salesman,common,9,1,,True,https://wynncraft.wiki.gg/wiki/Mask_Salesman,https://wynncraft.wiki.gg/images/MaskSalesman.png?568a17,Macabre Masquerade ''Hallowynn 2014''
-The Mayor,common,9,1,,False,https://wynncraft.wiki.gg/wiki/The_Mayor,,Lexdale Witch Trials
-Mister Caritat,common,9,1,,False,,,Memory Paranoia
-Hallfred,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Hallfred,https://wynncraft.wiki.gg/images/Hallfred.png?45fe25,Ice Nations
-Royal Advisor Carlos,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Royal_Advisor_Carlos,https://wynncraft.wiki.gg/images/RoyalAdvisorCarlos.png?6ef5fd,WynnExcavation Site D
-King of Troms,common,9,1,,False,https://wynncraft.wiki.gg/wiki/King_of_Troms,https://wynncraft.wiki.gg/images/KingofTroms.png?c3f160,WynnExcavation Site D
-Traitor Thomas,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Traitor_Thomas,https://wynncraft.wiki.gg/images/TraitorThomas.png?c5be18,WynnExcavation Site D
-Phief,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Phief,https://wynncraft.wiki.gg/images/Phief.png?f26a5e,Zhight Island (Quest)
-Tirt,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Tirt,https://wynncraft.wiki.gg/images/Tirt.png?2bc49e,Zhight Island (Quest)
-Fetu,common,9,1,,False,,https://wynncraft.wiki.gg/images/Fetu.png?7d453f,The Lost
-Constable,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Constable,,The Missing Piece
-Uniform Tailor,common,9,1,,False,,,The Strong Survive
-Matilda,common,9,1,,False,,,The Strong Survive
-Wilton,common,9,1,,False,,,The Strong Survive
-Saldin,common,9,1,,False,,,The Strong Survive
-General Algard,common,9,1,,False,,,The Doguns' Defeat
-Mysterious Figure,common,9,1,,False,https://wynncraft.wiki.gg/wiki/Mysterious_Figure,https://wynncraft.wiki.gg/images/MysteriousFigure.png?2fa8b0,Shadowy Dealings
-Xanthos,common,9,1,,False,,,Remains of the Cursed
-Elio,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Elio,https://wynncraft.wiki.gg/images/Elio.png?970793,An Iron Heart Part II (1.19)
-Creinu,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Creinu,https://wynncraft.wiki.gg/images/Creinu.png?6916e7,All Roads to Peace
-Mango,common,8,1,,False,,,All Roads to Peace
-Markque The Wizard,common,8,1,,False,,,Bob's Lost Soul
-Waiter,common,8,2,,False,,,Acquiring Credentials | Overture to Despair
-Amadel,common,8,2,,False,https://wynncraft.wiki.gg/wiki/Amadel,https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a,A Hunter's Calling | WynnExcavation Site D
-Barkeep,common,8,1,,False,,,Brothers Return
-Alfe,common,8,1,,False,,,Brothers Return
-Calo,common,8,2,,False,https://wynncraft.wiki.gg/wiki/Calo,https://wynncraft.wiki.gg/images/Calo%28Detlas%29.png?839451,Flight in Distress | Flight in Distress (1.20)
-Nettik,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Nettik,https://wynncraft.wiki.gg/images/Nettik.png?ccc510,Desperate Metal
-Office Manager,common,8,2,,False,https://wynncraft.wiki.gg/wiki/Office_Manager,https://wynncraft.wiki.gg/images/OfficeManager.png?3fec26,Fallen Delivery | Fallen Delivery (1.20)
-Gerten Chief Snaga,common,8,2,,False,https://wynncraft.wiki.gg/wiki/Gerten_Chief_Snaga,https://wynncraft.wiki.gg/images/GertenChiefSnaga.png?4b1004,Hunger of the Gerts Part I | The Hunger of Gerts Part 1 (1.20)
-Gert,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Gert,https://wynncraft.wiki.gg/images/Gert.png?cb171b,Hunger of the Gerts Part I
-Barden,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Barden,https://wynncraft.wiki.gg/images/Barden.png?4553e4,Dwarves and Doguns Part I
-Plario,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Plario,https://wynncraft.wiki.gg/images/Plario.png?74d927,Dwarves and Doguns Part I
-Keibon,common,8,1,,True,,https://wynncraft.wiki.gg/images/Keibon.png?d7595c,Frost Bitten
-Flodur,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Flodur,https://wynncraft.wiki.gg/images/Flodur.png?e3a0dc,Meaningful Holiday
-Amira,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Amira,https://wynncraft.wiki.gg/images/Amira.png?41521a,Lexdale Witch Trials
-Sesad,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Sesad,https://wynncraft.wiki.gg/images/Sesad.png?7a6dde,Lazarus Pit (1.19)
-Ope,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Ope,https://wynncraft.wiki.gg/images/Ope.png?f0bb93,Infested Plants (2.0.2)
-Prentiss,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Prentiss,https://wynncraft.wiki.gg/images/Prentiss.png?992ae6,Out of my Mind
-Todd,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Todd,https://wynncraft.wiki.gg/images/Todd.png?261f59,Out of my Mind
-Caritat Senior,common,8,1,,False,,,Memory Paranoia
-Nami The Healer,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Nami_The_Healer,https://wynncraft.wiki.gg/images/NamiTheHealer.png?844e41,Lava Springs
-Rontaid,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Rontaid,https://wynncraft.wiki.gg/images/Rontaid.png?c04293,One Thousand Meters Under
-Lieutenant,common,8,1,,False,,https://wynncraft.wiki.gg/images/Lieutenant.png?f25dc6,King's Recruit
-Grandmaster Shaman,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Grandmaster_Shaman,https://wynncraft.wiki.gg/images/GrandmasterShaman.png?bf8b81,The Envoy Part II
-Martim,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Martim,https://wynncraft.wiki.gg/images/Martim.png?1cda03,Redbeard's Booty
-Bob,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Bob,https://wynncraft.wiki.gg/images/Bob.png?230166,Reincarnation
-Thesead Coal Miner,common,8,1,,False,,https://wynncraft.wiki.gg/images/TheseadCoalMiner.png?465cf6,The Canary Calls
-Skyraider Guard,common,8,2,,False,https://wynncraft.wiki.gg/wiki/Skyraider_Guard,https://wynncraft.wiki.gg/images/SkyraiderGuard.png?6b75f0,Royal Trials | Royal Trials (1.20)
-Tasha,common,8,1,,False,,,The Feathers Fly Part II
-C.S.S Wavebreaker Captain,common,8,1,,False,https://wynncraft.wiki.gg/wiki/C.S.S_Wavebreaker_Captain,https://wynncraft.wiki.gg/images/CSSWavebreakerCaptain.png?5b0a25,The Envoy Part I
-Kabo,common,8,1,,False,,,The Cursed One
-Red Fox Owner,common,8,1,,False,,,Revelations in Fall
-Excavator Admin Uci,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci,https://wynncraft.wiki.gg/images/ExcavatorAdminUci.png?757c6e,WynnExcavation Site D
-WynnExcavation Leader Amadel,common,8,1,,False,,,WynnExcavation Site D
-Amadel's Assistant,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant,https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c,WynnExcavation Site D
-Aluxander,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Aluxander,https://wynncraft.wiki.gg/images/Aluxander2.png?68d4c6,The Realm of Light (Quest) (1.19)
-Regulux,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Regulux,https://wynncraft.wiki.gg/images/Regulux.png?b82f0b,The Realm of Light (Quest) (1.19)
-Gernald,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Gernald,https://wynncraft.wiki.gg/images/Gernald.png?978331,Underice
-Mylo,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Mylo,https://wynncraft.wiki.gg/images/Mylo.png?d8fc53,The Mercenary (2.0.4)
-Tesha,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Tesha,https://wynncraft.wiki.gg/images/Tesha.png?580e50,WynnExcavation Site A
-Mayor Eoric,common,8,1,Eoric,False,https://wynncraft.wiki.gg/wiki/Mayor_Eoric,https://wynncraft.wiki.gg/images/Mayor_Eoric.png?ad23e4,The Hidden City
-Boat Captain,common,8,1,,False,https://wynncraft.wiki.gg/wiki/Boat_Captain,https://wynncraft.wiki.gg/images/BoatCaptain.png?b165b8,The Order of the Grook
-Maiden,common,8,1,,False,,,The Maiden Tower
-Atila,common,8,1,,False,,https://wynncraft.wiki.gg/images/Atila.png?f11f12,The Thanos Depository
-Sayrr,common,8,1,,True,https://wynncraft.wiki.gg/wiki/Sayrr,https://wynncraft.wiki.gg/images/Sayrr.png?35c75e,Underwater (1.19)
-Vagabond,common,8,1,,False,,,The Missing Piece
-Robyn,common,8,1,,False,,,The Strong Survive
-Clan Members,common,8,1,,False,,,First Wicker's Spark
+﻿name,tier,lines,quests,aliases,removed_content_only,formats,wiki_url,image_url,appears_in
+Tasim,legendary,1138,20,Sovereign Tasim,False,"quest,template",https://wynncraft.wiki.gg/wiki/Tasim,https://wynncraft.wiki.gg/images/Tasim%28InfestedPlants%29.png?fbd363,A Hunter's Calling | Apotheosis (Quest) | Arachnids' Ascent | Echoes of Change | Elemental Exercise | Ensemble of Hope | Infested Pit | Infested Plants | King's Recruit | King's Recruit (1.18) | King's Recruit (2.1) | Mushroom Man
+Sui,legendary,812,11,,False,quest,https://wynncraft.wiki.gg/wiki/Sui,https://wynncraft.wiki.gg/images/Sui%28Revelations_in_Fall_stage_7%29.png?752aac,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Overture to Despair | Revelations in Fall | Shrouded in Mist | Solidarity of Steel | The Cursed One | The Price of Ingenuity | True Colours
+Ava,legendary,790,4,,False,quest,https://wynncraft.wiki.gg/wiki/Ava,https://wynncraft.wiki.gg/images/Ava.png?54d7d7,Ava | Maxie | The Feathers Fly Part I | The Feathers Fly Part II
+Rex,legendary,586,10,,False,quest,https://wynncraft.wiki.gg/wiki/Rex,https://wynncraft.wiki.gg/images/Rex%28Echoes_of_Change_stage_10%29.png?ab9a2c,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | One Thousand Meters Under | Overture to Despair | Revelations in Fall | Solidarity of Steel | The Cursed One | The Price of Ingenuity
+Zeph,legendary,548,9,,False,quest,https://wynncraft.wiki.gg/wiki/Zeph,https://wynncraft.wiki.gg/images/ZephPortraitNeutral.png?b76c84,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Overture to Despair | Revelations in Fall | Solidarity of Steel | The Cursed One | The Price of Ingenuity
+Syndra,legendary,393,7,,False,quest,https://wynncraft.wiki.gg/wiki/Syndra,https://wynncraft.wiki.gg/images/Syndra.png?8ce777,A New Beginning | Echoes of Change | Revelations in Fall | Solidarity of Steel | The Cursed One | The Missing Piece | The Price of Ingenuity
+Aster,legendary,385,6,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Aster,https://wynncraft.wiki.gg/images/Aster.png?682f3c,Aster | Charm of Twilight | Emblem of the Heroes | Hero's Mask | Minstrel's Tuner | The Traveler
+Aledar,legendary,373,14,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Aledar,https://wynncraft.wiki.gg/images/Aledar.png?eacfe7,A Hunter's Calling | A Journey Beyond | A Journey Further | Aledar | Arachnids' Ascent | Infested Pit | King's Recruit | King's Recruit (1.18) | King's Recruit (2.1) | Mushroom Man | Recover the Past | Recover the Past (2.2.2)
+Bonfire Keeper,legendary,369,13,Bonfire Tender,False,"quest,template",https://wynncraft.wiki.gg/wiki/Bonfire_Keeper,https://wynncraft.wiki.gg/images/BonfireKeeper%28BattlefortheBonfire%29.png?3c2cbe,Aster | Bonfire Keeper | Corkian Firecrackers | Hearthflame Stave | Rune of Acceleration | Rune of Stamina | Rune of the Mountains | Rune of the Rainfall | Rune of the Storms | Rune of the Sunrise | Rune of the Winds | Sunlit Copper Coin
+The Traveler,legendary,368,5,,False,template,https://wynncraft.wiki.gg/wiki/The_Traveler,https://wynncraft.wiki.gg/images/TheTraveler.png?f4d766,Aster | Emblem of the Bonfire | Emblem of the Spirits | Stormcaller | The Traveler
+Seaskipper Captain,legendary,363,3,,False,quest,https://wynncraft.wiki.gg/wiki/Seaskipper_Captain,https://wynncraft.wiki.gg/images/SeaskipperCaptain.png?cb27ed,Misadventure on the Sea | Queen's Recruit | Seaskipper Captain
+Lari,legendary,361,11,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Lari,https://wynncraft.wiki.gg/images/Lari.png?a4c818,A Dividing Force | A Headless History | Aldorei's Secret Part II | At the Edge of Decay | Death Whistle (Quest) | Finding the Light | Memory Paranoia | Rise of the Quartron | Taproot | The Realm of Light (Quest) | The Worm Holes
+Efena,legendary,301,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Efena,https://wynncraft.wiki.gg/images/Efena.png?e1e4ed,Citizen | Efena | Non-Quest NPCs | The Feathers Fly Part II
+Yusanu,legendary,299,7,,False,quest,https://wynncraft.wiki.gg/wiki/Yusanu,,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Shrouded in Mist | Solidarity of Steel | The Price of Ingenuity | True Colours
+Olon,epic,287,2,,False,quest,https://wynncraft.wiki.gg/wiki/Olon,https://wynncraft.wiki.gg/images/Olon.png?7548f3,Aldorei's Secret Part II | Olon
+Yuman,epic,272,5,,False,quest,https://wynncraft.wiki.gg/wiki/Yuman,https://wynncraft.wiki.gg/images/YumanSmilingPortrait.png?64558f,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
+Maxie,epic,262,7,,False,quest,https://wynncraft.wiki.gg/wiki/Maxie,https://wynncraft.wiki.gg/images/Maxie%28Hostile%2CAHunter%27sCalling%29.png?13f9cb,A Hunter's Calling | Maxie | Rhay | The Breaking Point | The Envoy Part I | The Envoy Part II | The Feathers Fly Part II
+Dr. Picard,epic,249,5,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dr._Picard,https://wynncraft.wiki.gg/images/Dr.Picard.png?f91eb7,Dr. Picard | Queen's Recruit | Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
+Elise,epic,246,1,,False,quest,https://wynncraft.wiki.gg/wiki/Elise,https://wynncraft.wiki.gg/images/ElisePortraitNeutral.png?33b8fe,The Missing Piece
+Rurie,epic,244,4,,False,quest,,,Apotheosis (Quest) | Ensemble of Hope | Shrouded in Mist | True Colours
+Death,epic,211,2,,False,quest,https://wynncraft.wiki.gg/wiki/Death,https://wynncraft.wiki.gg/images/Death.png?650731,Beyond the Grave | Beyond the Grave (1.20)
+Sovereign Zhiraok,epic,203,10,Zhiraok,False,quest,https://wynncraft.wiki.gg/wiki/Sovereign_Zhiraok,https://wynncraft.wiki.gg/images/SovereignZhiraok.png?5a93a0,A New Beginning | Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Queen's Recruit | Revelations in Fall | Solace in Pain | Solidarity of Steel | The Cursed One | The Price of Ingenuity
+Her Majesty,epic,200,7,,False,quest,https://wynncraft.wiki.gg/wiki/Her_Majesty,https://wynncraft.wiki.gg/images/QueenOfFruma.png?fcfc1e,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Overture to Despair | Queen's Recruit | The Cursed One | The Price of Ingenuity
+Drale,epic,196,5,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Drale,https://wynncraft.wiki.gg/images/Drale%28Cowfusion%29.png?318a09,A Confused Farmer | Cowfusion | Cowfusion (1.20) | Drale | Tunnel Trouble
+Mora,epic,189,7,,False,quest,https://wynncraft.wiki.gg/wiki/Mora,https://wynncraft.wiki.gg/images/Mora%28GuardUniform%29.png?2db8a8,A Journey Home | A New Beginning | Echoes of Change | Revelations in Fall | Solidarity of Steel | The Cursed One | The Price of Ingenuity
+Siegfried,epic,180,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Siegfried,https://wynncraft.wiki.gg/images/MonumenttoSiegfried.png?d937ab,Aster | Siegfried (Festival of the Heroes) | The Hero of Gavel
+Fichu,epic,171,1,,False,quest,,https://wynncraft.wiki.gg/images/Fichu.png?d184a8,Through the Pipes
+Quill,epic,158,5,,False,quest,https://wynncraft.wiki.gg/wiki/Quill,,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
+Sybil,epic,157,4,,False,quest,https://wynncraft.wiki.gg/wiki/Sybil,https://wynncraft.wiki.gg/images/Sybil%28Detlas%29.png?2c9c5d,Citizen | Non-Quest NPCs | Sybil | The Feathers Fly Part II
+Kelight,epic,149,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Kelight,https://wynncraft.wiki.gg/images/Kelight.png?317768,Kelight | Temple of the Legends (Quest)
+Axelus,epic,147,4,,False,quest,https://wynncraft.wiki.gg/wiki/Axelus,https://wynncraft.wiki.gg/images/Axelus.png?287e39,Dwarves and Doguns Part I | Dwarves and Doguns Part II | Dwarves and Doguns Part IV | From the Mountains
+Yulie,epic,146,5,,False,quest,https://wynncraft.wiki.gg/wiki/Yulie,,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
+Teacher,epic,144,1,,False,quest,,,The Order of the Grook
+The Guide,epic,140,4,,False,template,https://wynncraft.wiki.gg/wiki/The_Guide,https://wynncraft.wiki.gg/images/TheGuide.png?9310b4,Emblem of the Spirits | Festival of the Spirits Mystery (2025) | The Envoy | The Guide
+Honip,epic,138,2,,False,quest,https://wynncraft.wiki.gg/wiki/Honip,https://wynncraft.wiki.gg/images/Honip%28Nemract%29.png?9b38f2,Honip | Misadventure on the Sea
+Afelis,epic,136,1,,False,template,https://wynncraft.wiki.gg/wiki/Afelis,https://wynncraft.wiki.gg/images/Afelis%28Ragni%29.png?739991,Afelis
+Jofash Resident,epic,136,1,,False,quest,,https://wynncraft.wiki.gg/images/JofashResident.png?57c672,Fantastic Voyage
+Reynauld,epic,136,5,Scout Reynauld,False,quest,https://wynncraft.wiki.gg/wiki/Reynauld,https://wynncraft.wiki.gg/images/ScoutReynauld.png?fc65ba,Queen's Recruit | Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2) | Reynauld
+Ope,epic,131,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Ope,https://wynncraft.wiki.gg/images/Ope.png?f0bb93,Infested Plants | Infested Plants (2.0.2) | Ope | Supply and Delivery
+Sovereign Majin,epic,130,5,,False,quest,https://wynncraft.wiki.gg/wiki/Sovereign_Majin,https://wynncraft.wiki.gg/images/SovereignMajin.png?49cb7b,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair | Queen's Recruit | The Strong Survive
+Zuett,epic,129,2,,False,quest,https://wynncraft.wiki.gg/wiki/Zuett,https://wynncraft.wiki.gg/images/Zuett.png?13546b,All Roads to Peace | Zuett
+Arnol,epic,127,2,,False,quest,,,Ensemble of Hope | The Strong Survive
+Sovereign Two,epic,125,3,,False,quest,https://wynncraft.wiki.gg/wiki/Sovereign_Two,https://wynncraft.wiki.gg/images/SovereignTwo%28Queen%27sRecruit%29.png?88f4af,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair
+Canary,epic,125,1,,False,quest,,,The Canary Calls
+Relend,epic,123,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Relend,https://wynncraft.wiki.gg/images/Relend.png?de69d2,Fantastic Voyage | Fantastic Voyage (1.20) | Relend
+Santa,epic,120,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Santa,https://wynncraft.wiki.gg/images/Santa%28CraftmasChaos%29.png?b0eee0,Craftmas Chaos | Craftmas Quest | Meaningful Holiday | Santa
+Dodegar,epic,119,3,,False,quest,https://wynncraft.wiki.gg/wiki/Dodegar,https://wynncraft.wiki.gg/images/Dodegar%28FestivaloftheBonfire%29.png?3b0915,Dodegar | The Ultimate Weapon | The Ultimate Weapon (1.20)
+Maury,epic,119,1,,False,quest,,,Off the Rails
+Hive Servant,epic,118,2,,False,quest,,https://wynncraft.wiki.gg/images/Hive_Servant.png?9fdfe1,Citizen | Hive Servant (NPC)
+Asher,epic,114,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Asher,https://wynncraft.wiki.gg/images/Asher.png?aebea9,Asher | Deja Vu | Suspended Flowers
+Caid,epic,113,4,Sailor Caid,False,quest,https://wynncraft.wiki.gg/wiki/Caid,https://wynncraft.wiki.gg/images/SailorCaid.png?17b2fb,Caid | Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
+Nohno,epic,113,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Nohno,https://wynncraft.wiki.gg/images/Nohno.png?fd33ca,Cluck Cluck | Nohno | Nohno Wife
+Maddison,epic,113,1,,False,quest,,,Off the Rails
+Corkus Citizen,epic,107,5,,False,"quest,template",,https://wynncraft.wiki.gg/images/CorkusCitizen.png?2fb5b1,A Hunter's Calling | Citizen | Corkus Citizen (NPC) | The Envoy Part I | The Feathers Fly Part II
+Demma,epic,107,1,,False,quest,,https://wynncraft.wiki.gg/images/Demma.png?f03c61,Off the Rails
+Receptionist,epic,103,5,,False,"quest,template",,https://wynncraft.wiki.gg/images/Receptionist.png?16646e,Citizen | Cowfusion | Llevigar Receptionist | Overture to Despair | The Feathers Fly Part II
+King Draani,epic,102,4,King of Rodoroc,False,quest,https://wynncraft.wiki.gg/wiki/King_Draani,https://wynncraft.wiki.gg/images/KingDraani.png?6c09fa,Dwarves and Doguns Part II | Dwarves and Doguns Part IV | King Draani | The Breaking Point
+Jaspur,epic,102,1,,False,quest,https://wynncraft.wiki.gg/wiki/Jaspur,https://wynncraft.wiki.gg/images/Jaspur.png?e9f099,Jaspur
+Gale,epic,101,3,,False,quest,https://wynncraft.wiki.gg/wiki/Gale,https://wynncraft.wiki.gg/images/SpiritofGale.png?bea6ba,Gale | Orja | The Qira Hive (Quest)
+Arris,epic,99,1,,False,quest,,,Celebrations in Smoke
+Korzim,epic,98,5,,False,quest,https://wynncraft.wiki.gg/wiki/Korzim,https://wynncraft.wiki.gg/images/Korzim.png?dec656,Dwarves and Doguns Part I | Dwarves and Doguns Part III | Dwarves and Doguns Part IV | Korzim | The Breaking Point
+Enzan,epic,98,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Enzan,https://wynncraft.wiki.gg/images/Enzan.png?3f33ce,Enzan | Enzan's Brother | Enzan's Brother (1.19) | Therck
+Burick,epic,97,1,,False,quest,,,Celebrations in Smoke
+Orja,epic,93,1,,False,quest,https://wynncraft.wiki.gg/wiki/Orja,https://wynncraft.wiki.gg/images/Orja.png?c72a96,Orja
+Malic,epic,93,1,,False,quest,,,Off the Rails
+Elphaba,epic,92,3,,False,quest,https://wynncraft.wiki.gg/wiki/Elphaba,https://wynncraft.wiki.gg/images/Elphaba%28AJourneyBeyond%29.png?50cbf5,A Journey Beyond | Elphaba | Reclaiming the House
+Telati,epic,91,1,,False,quest,,,Off the Rails
+Llevigar Archivist,epic,90,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Llevigar_Archivist,https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1,Llevigar Archivist | Llevigar's Secret Library
+Caissop,epic,89,3,,False,quest,https://wynncraft.wiki.gg/wiki/Caissop,https://wynncraft.wiki.gg/images/Caissop.png?a48c7d,Caissop | Master Piece | Master Piece (1.19)
+Drucksh,epic,89,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Drucksh,https://wynncraft.wiki.gg/images/Drucksh.png?b45f97,Brothers Return | Drucksh | Grave Digger | Sayleros
+Chef Hamsey,rare,88,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Chef_Hamsey,https://wynncraft.wiki.gg/images/ChefHamsey.png?d49238,Chef Hamsey | Recipe For Disaster | Recipe For Disaster (1.20)
+Dr. Legendary,rare,87,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dr._Legendary,https://wynncraft.wiki.gg/images/DrLegendary.png?17e606,Citizen | Dr. Legendary | Legendary Island
+Sovereign Soosu,rare,86,5,Soosu,False,quest,https://wynncraft.wiki.gg/wiki/Sovereign_Soosu,https://wynncraft.wiki.gg/images/SovereignSoosu.png?1633cb,Apotheosis (Quest) | Echoes of Change | Ensemble of Hope | Solidarity of Steel | The Price of Ingenuity
+Dogun,rare,86,7,,False,quest,,https://wynncraft.wiki.gg/images/Dogun.png?1893be,Blacksmith Dwarf | Dogun (Blacksmith) | Dwarves and Doguns Part I | Sealed in Ice | The Doguns' Defeat | Tirack | World Encounters
+Korun,rare,86,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Korun,https://wynncraft.wiki.gg/images/Korun.png?4105da,Korun | Purple and Blue | Purple and Blue (1.20)
+Rhay,rare,86,2,,False,quest,https://wynncraft.wiki.gg/wiki/Rhay,https://wynncraft.wiki.gg/images/Rhay.png?27bf6d,Rhay | The Breaking Point
+Mask Salesman,rare,85,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Mask_Salesman,https://wynncraft.wiki.gg/images/MaskSalesman.png?568a17,Haunted Mask | Macabre Masquerade ''Hallowynn 2014'' | Mask Salesman
+Nick,rare,85,2,,False,quest,https://wynncraft.wiki.gg/wiki/Nick,https://wynncraft.wiki.gg/images/Nick.png?9207a6,Meaningful Holiday | Nick
+Doan,rare,84,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Doan,https://wynncraft.wiki.gg/images/Doan.png?98782f,Acquiring Credentials | Acquiring Credentials (1.19) | Doan
+Master Azael,rare,84,5,Azael,False,quest,https://wynncraft.wiki.gg/wiki/Master_Azael,https://wynncraft.wiki.gg/images/AzaelPortraitSmiling.png?cd28f2,Apotheosis (Quest) | Ensemble of Hope | First Wicker's Spark | Shrouded in Mist | True Colours
+Ragni's King,rare,83,8,King of Ragni,False,"quest,template",https://wynncraft.wiki.gg/wiki/Ragni%27s_King,https://wynncraft.wiki.gg/images/Ragni%27sKing.png?278ac2,A Journey Home | King's Recruit | King's Recruit (1.17) | King's Recruit (1.18) | King's Recruit (2.1) | Queen's Recruit | Ragni's King | WynnExcavation Site D
+Admiral Aegis,rare,82,4,,False,template,https://wynncraft.wiki.gg/wiki/Admiral_Aegis,https://wynncraft.wiki.gg/images/AdmiralAegis.png?8cbcad,Admiral Aegis | Arachnids' Ascent | Elemental Exercise | Mushroom Man
+Angie,rare,82,1,,False,quest,https://wynncraft.wiki.gg/wiki/Angie,https://wynncraft.wiki.gg/images/Angie%28AuburnForest%29.png?33c4bd,Angie
+Captain Fuhue,rare,81,4,Fuhue,False,quest,https://wynncraft.wiki.gg/wiki/Captain_Fuhue,https://wynncraft.wiki.gg/images/FuhuePortrait.png?ee2889,Apotheosis (Quest) | Ensemble of Hope | Shrouded in Mist | True Colours
+Worker,rare,81,5,,False,quest,,https://wynncraft.wiki.gg/images/Worker.png?541252,Brothers Return | Citizen | Cowfusion | The Missing Piece | The Worm Holes
+Festival Worker,rare,81,1,,False,template,https://wynncraft.wiki.gg/wiki/Festival_Worker,https://wynncraft.wiki.gg/images/FestivalWorker%28Performances%29.png?694cfa,Festival Worker
+Lecade,rare,81,2,,False,quest,,,General's Orders | General's Orders (1.20)
+Garvan,rare,80,1,,False,quest,https://wynncraft.wiki.gg/wiki/Garvan,https://wynncraft.wiki.gg/images/Garvan%28Past%29.png?4eddf6,Hollow Serenity
+Old Man,rare,79,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Old_Man,https://wynncraft.wiki.gg/images/OldMan%28HollowSerenity%29.png?8941d3,Hollow Serenity | King's Recruit (1.18) | Old Man | World Encounters
+Yahya,rare,78,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Yahya,https://wynncraft.wiki.gg/images/Yahya%28NivlaHouse%29.png?bd5ec1,Arachnids' Ascent | Mushroom Man | Mushroom Man (2.0.2) | Yahya
+Abramod,rare,78,1,,False,quest,,https://wynncraft.wiki.gg/images/Abramod.png?68b575,Burning Bonds
+Farcor,rare,77,3,,False,quest,https://wynncraft.wiki.gg/wiki/Farcor,https://wynncraft.wiki.gg/images/Farcor%28Portrait%29.png?d0715f,Far Above the Clouds | Farcor | The Fortuneteller
+Guard,rare,75,7,,False,"quest,template",,,A Hunter's Calling | A Journey Home | Aldorei's Secret Part I | King's Recruit | King's Recruit (1.18) | King's Recruit (2.1) | Rise of the Quartron
+Mastro,rare,75,2,,False,quest,https://wynncraft.wiki.gg/wiki/Mastro,https://wynncraft.wiki.gg/images/Mastro.png?f3464a,From the Bottom | Mastro
+Linton,rare,75,3,Miner Linton,False,"quest,template",https://wynncraft.wiki.gg/wiki/Linton,https://wynncraft.wiki.gg/images/MinerLinton.png?c558e5,Queen's Recruit | The Mercenary | Tunnel Trouble
+Cemor,rare,74,1,,False,quest,,https://wynncraft.wiki.gg/images/Cemor.png?ed852f,Off the Rails
+Trials Overseer,rare,74,2,,False,quest,https://wynncraft.wiki.gg/wiki/Trials_Overseer,,Royal Trials | Royal Trials (1.20)
+The Envoy,rare,73,9,,False,template,https://wynncraft.wiki.gg/wiki/The_Envoy,https://wynncraft.wiki.gg/images/TheEnvoy.png?47bfb4,Aster | Bag of Tricks | Bottled Spirits | Drawing of the Spirits (Item) | Emblem of the Bonfire | Festival of the Spirits Mystery (2025) | Mask of the Spirits | The Envoy | The Traveler
+Maripe,rare,73,1,,False,quest,,,The Scarred Springs
+Postmaster,rare,73,1,,False,quest,,,The Missing Piece
+Garull,rare,71,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Garull,https://wynncraft.wiki.gg/images/Garull.png?85ee6c,Garull | Temple of the Legends (Quest)
+Orikal,rare,71,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Orikal,https://wynncraft.wiki.gg/images/Orikal.png?52ce14,Orikal | The Corrupted Village
+Commander Ferreo,rare,71,1,,False,quest,https://wynncraft.wiki.gg/wiki/Commander_Ferreo,https://wynncraft.wiki.gg/images/CommanderFerreo_%28post-duel_challenge_2%29.png?43d20d,The Strong Survive
+Festival Organizer,rare,70,1,,False,quest,,https://wynncraft.wiki.gg/images/FestivalOrganizer.png?1d94a7,Celebrations in Smoke
+Juggler,rare,69,1,,False,template,https://wynncraft.wiki.gg/wiki/Juggler,https://wynncraft.wiki.gg/images/Juggler.png?b9518b,Juggler
+Elder Birch,rare,68,1,,False,quest,,https://wynncraft.wiki.gg/images/ElderBirch.png?72afce,Aldorei's Secret Part II
+Nodise,rare,68,4,,False,quest,,,Citizen | Non-Quest NPCs | The Breaking Point | The Feathers Fly Part II
+Cerisa,rare,68,1,,False,quest,,,Celebrations in Smoke
+Farmer Cevalus,rare,68,3,Farmer Kelri,False,"quest,template",https://wynncraft.wiki.gg/wiki/Farmer_Cevalus,https://wynncraft.wiki.gg/images/FarmerCevalus.png?d52139,Dearly Departed | Poisoning the Pest | Thieving Rodents
+Flinn,rare,68,1,,False,quest,,,Off the Rails
+Gardener,rare,67,3,,False,quest,https://wynncraft.wiki.gg/wiki/Gardener,https://wynncraft.wiki.gg/images/Gardener.png?6098aa,Finding The Light (1.19) | Solace in Pain | The Feathers Fly Part II
+Detlas Soldier,rare,66,4,,False,"quest,template",,https://wynncraft.wiki.gg/images/Detlas_Soldier.png?961519,Citizen | Detlas Soldier (NPC) | Festival Goer | Taking the Tower
+Junes,rare,66,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Junes,https://wynncraft.wiki.gg/images/Junes.png?704a91,Junes | Kingdom of Sand
+Sayleros,rare,65,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Sayleros,https://wynncraft.wiki.gg/images/Sayleros.png?e231a8,Brothers Return | Drucksh | Grave Digger | Sayleros
+Manager Nasea,rare,61,2,Nasea,False,quest,https://wynncraft.wiki.gg/wiki/Manager_Nasea,https://wynncraft.wiki.gg/images/ManagerNasea.png?197e72,Rise of the Quartron | Rise of the Quartron (1.19)
+Dullahan,rare,60,2,,False,quest,https://wynncraft.wiki.gg/wiki/Dullahan,https://wynncraft.wiki.gg/images/Dullahan.png?c0f58c,"A Headless History | Headless, Not Homeless"
+The Scavenger,rare,59,2,,False,template,https://wynncraft.wiki.gg/wiki/The_Scavenger,https://wynncraft.wiki.gg/images/TheScavenger.png?ad36ba,Archaic Writing | The Scavenger
+Confectionery Merchant,rare,59,1,,False,quest,https://wynncraft.wiki.gg/wiki/Confectionery_Merchant,https://wynncraft.wiki.gg/images/ConfectioneryMerchant.png?baec99,Confectionery Merchant
+Inspector,rare,59,1,,False,quest,,,The Missing Piece
+Bak'al,rare,58,6,,False,quest,https://wynncraft.wiki.gg/wiki/Bak%27al,https://wynncraft.wiki.gg/images/Bak%27al.png?53b127,A Hunter's Calling | Bak'al's Destruction 2 | Bak'al's Destruction 3 | Silent Expanse's Secret | The Realm of Light (Quest) | Theorick Twain
+Theorick Twain,rare,58,5,Theorick,False,"quest,template",https://wynncraft.wiki.gg/wiki/Theorick_Twain,https://wynncraft.wiki.gg/images/TheorickTwain.png?306363,A Hunter's Calling | Fate of the Fallen | Pottery Wheel | The Twains' Downfall | Torn in Twain
+Lutho Citizen,rare,58,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Lutho_Citizen,https://wynncraft.wiki.gg/images/LuthoCitizen.png?892870,Citizen | Lutho Citizen (NPC) | Lutho Citizen (Point of No Return) | Point of No Return
+Festival Attendee,rare,58,1,,False,quest,,,Celebrations in Smoke
+Festival Goer,rare,58,2,Balloon Man,False,"quest,template",https://wynncraft.wiki.gg/wiki/Festival_Goer,https://wynncraft.wiki.gg/images/FestivalGoer%28Friendly%29.png?eb7f5d,Festival Goer | The Cursed One
+Ildan,rare,58,2,,False,quest,https://wynncraft.wiki.gg/wiki/Ildan,https://wynncraft.wiki.gg/images/Ildan.png?14f380,Ildan | The Passage (Quest)
+Souvenir T-Shirt Merchant,rare,58,1,Souvenir Sweater Merchant,False,quest,https://wynncraft.wiki.gg/wiki/Souvenir_T-Shirt_Merchant,https://wynncraft.wiki.gg/images/SouvenirT-ShirtMerchant.png?ea091d,Souvenir T-Shirt Merchant
+Troll,rare,58,1,,False,quest,https://wynncraft.wiki.gg/wiki/Troll,https://wynncraft.wiki.gg/images/Troll_Savage.png?663fc5,Troll (NPC)
+Silverbull Worker,rare,57,1,,False,quest,,https://wynncraft.wiki.gg/images/SilverbullWorker%281%29.png?6812d3,Citizen
+Captain Ackbar,rare,57,2,,False,quest,https://wynncraft.wiki.gg/wiki/Captain_Ackbar,https://wynncraft.wiki.gg/images/Captainackbar.png?85d4c9,Flight in Distress | Flight in Distress (1.20)
+Worid,rare,57,2,,False,quest,https://wynncraft.wiki.gg/wiki/Worid,https://wynncraft.wiki.gg/images/Worid%28Iboju%29.png?f69226,Jungle Fever | Worid
+Captain Ragon,rare,56,4,Ragon,False,"quest,template",https://wynncraft.wiki.gg/wiki/Captain_Ragon,https://wynncraft.wiki.gg/images/CaptainRagon.png?42ee7e,Captain Ragon | Elemental Exercise | Elemental Exercise (2.0.2) | Mushroom Man
+Harvin,rare,56,1,,False,quest,,,Off the Rails
+Yansur,rare,55,2,,False,quest,https://wynncraft.wiki.gg/wiki/Yansur,https://wynncraft.wiki.gg/images/Yansur.png?3d5b81,The Qira Hive (Quest) | Yansur
+Elder Oak,rare,54,1,,False,quest,,https://wynncraft.wiki.gg/images/ElderOak.png?bb55f5,Aldorei's Secret Part II
+Aldwin,rare,54,1,,False,quest,,,Aldwell Library
+Olux Citizen,rare,54,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/OluxCitizen.png?a91192,Citizen | Olux Citizen (NPC)
+Cinfras Citizen,rare,54,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/CinfrasCitizen.png?fd6811,Cinfras Citizen (NPC) | Citizen
+Tool Merchant,rare,54,1,,False,template,https://wynncraft.wiki.gg/wiki/Tool_Merchant,,Devastated Tool Merchant
+Eppo,rare,54,1,,False,quest,https://wynncraft.wiki.gg/wiki/Eppo,https://wynncraft.wiki.gg/images/Eppo.png?955079,Frost Bite
+Seluc,rare,54,2,,False,quest,https://wynncraft.wiki.gg/wiki/Seluc,https://wynncraft.wiki.gg/images/Seluc%28Mob%29.png?8d8529,The Canyon Guides | The Canyon Guides (1.20)
+Chief Clight,rare,54,1,,False,quest,,https://wynncraft.wiki.gg/images/ChiefClight.png?6b4286,The Canary Calls
+The Seer,rare,54,1,,False,"quest,template",https://wynncraft.wiki.gg/wiki/The_Seer,https://wynncraft.wiki.gg/images/TheSeer%28Appearance1%29.png?8b4705,The Seer
+Secretary,rare,54,1,,False,quest,,https://wynncraft.wiki.gg/images/Secretary.png?482d1f,The Strong Survive
+Kaio,rare,53,5,,False,quest,https://wynncraft.wiki.gg/wiki/Kaio,https://wynncraft.wiki.gg/images/KaioPortraitNeutral.png?569c96,A Journey Home | A New Beginning | Ensemble of Hope | Revelations in Fall | The Cursed One
+The Cook,rare,53,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/The_Cook,https://wynncraft.wiki.gg/images/TheCook.png?9d1d43,Cook Assistant | Cook Assistant (2.1.1) | The Cook
+Svin,rare,53,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Svin,https://wynncraft.wiki.gg/images/Svin.png?66196d,Canyon Condor | Svin
+Thomas,rare,53,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Thomas,https://wynncraft.wiki.gg/images/Thomas.png?dd6648,Creeper Infiltration | Creeper Infiltration (1.15) | Thomas
+Therck,rare,52,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Therck,https://wynncraft.wiki.gg/images/Therck.png?359a98,Enzan | Enzan's Brother | Enzan's Brother (1.19) | Therck
+Katarin,rare,52,1,,False,quest,,,Hollow Serenity
+Tolem,rare,52,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Tolem,https://wynncraft.wiki.gg/images/Tolem.png?2a4713,The Shadow of the Beast | The Shadow of the Beast (1.19) | Tolem
+Avos Chieftain,rare,51,3,,False,quest,,,A Hunter's Calling | Avos Chief | The Feathers Fly Part I
+Captain Kymer,rare,51,4,,False,quest,https://wynncraft.wiki.gg/wiki/Captain_Kymer,https://wynncraft.wiki.gg/images/CaptainKymer.png?a81976,Captain Kymer | Clearing the Camps | Clearing the Camps (1.19) | Queen's Recruit
+Soldier,rare,50,9,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Soldier,https://wynncraft.wiki.gg/images/Regular_Soldier.png?3cb51c,A Journey Home | All Roads to Peace | Dwarves and Doguns Part IV | King's Recruit | King's Recruit (1.17) | King's Recruit (1.18) | King's Recruit (2.1) | Reclaiming the House | The Dark Descent
+Captain Cileon,rare,50,4,Cileon,False,quest,https://wynncraft.wiki.gg/wiki/Captain_Cileon,https://wynncraft.wiki.gg/images/CileonPortrait.png?ca9e12,Apotheosis (Quest) | Ensemble of Hope | Shrouded in Mist | True Colours
+Lanu,rare,50,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Lanu,https://wynncraft.wiki.gg/images/Lanu.png?c958c9,Corrupted Betrayal | Queen's Recruit | The Mercenary
+General Graken,rare,50,2,,False,template,https://wynncraft.wiki.gg/wiki/General_Graken,https://wynncraft.wiki.gg/images/GeneralGraken.png?e18281,General Graken | The Dark Descent
+Psilo,rare,50,2,,False,quest,https://wynncraft.wiki.gg/wiki/Psilo,https://wynncraft.wiki.gg/images/Psilo.png?a49f9c,Psilo | The Bigger Picture
+"Qira, Mistress of the Hive",rare,50,2,Qira,False,"quest,template",https://wynncraft.wiki.gg/wiki/Qira%2C_Mistress_of_the_Hive,https://wynncraft.wiki.gg/images/Qira%2CMistressoftheHive%28Phase1%29.png?28d3e1,"Qira, Mistress of the Hive | The Qira Hive (Quest)"
+Fia,rare,49,1,,False,quest,,https://wynncraft.wiki.gg/images/Fia.png?7120c2,A Croaking Cryptid
+Pastor Arwes,rare,49,2,Arwes,False,"quest,template",https://wynncraft.wiki.gg/wiki/Pastor_Arwes,https://wynncraft.wiki.gg/images/PastorArwes.png?cf8994,Eye of the Storm | Pastor Arwes
+Anast,rare,48,4,,False,quest,https://wynncraft.wiki.gg/wiki/Anast,https://wynncraft.wiki.gg/images/Anast.png?d44b53,A Hunter's Calling | Anast | Crop Failure | Crop Failure (1.19)
+Amber,rare,47,1,,False,quest,,https://wynncraft.wiki.gg/images/Amber.png?ebabf8,Aldorei's Secret Part II
+?̵̗̀?̴̭͑?̵̳̫͘?̷̲̳̌̊?̵̆ͅ?̵͔͎́,rare,47,1,,False,quest,,,The Missing Piece
+Gawrick,rare,46,3,,False,quest,https://wynncraft.wiki.gg/wiki/Gawrick,https://wynncraft.wiki.gg/images/Gawrick.png?d7e337,Fallen Delivery | Fallen Delivery (1.20) | Gawrick
+Jenprest,rare,46,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Jenprest,https://wynncraft.wiki.gg/images/Jenprest.png?bd2b3f,Queen's Recruit | The Sewers of Ragni
+Captain Enduyn,rare,45,3,Enduyn,False,"quest,template",https://wynncraft.wiki.gg/wiki/Captain_Enduyn,https://wynncraft.wiki.gg/images/CaptainEnduyn.png?e812cf,Arachnids' Ascent | Arachnids' Ascent (2.0.2) | Captain Enduyn
+Arrai-Veretel,rare,45,1,,False,quest,https://wynncraft.wiki.gg/wiki/Arrai-Veretel,https://wynncraft.wiki.gg/images/Arrai-Veretel.png?7d1a14,All Roads to Peace
+Bleeding Rose,rare,45,3,,False,quest,,,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair
+Rusty Bartender,rare,44,4,,False,quest,https://wynncraft.wiki.gg/wiki/Rusty_Bartender,https://wynncraft.wiki.gg/images/RustyBartender.png?a802d9,A Journey Beyond | Dodegar | Junes | Rusty Bartender
+Sensei Miyagi,rare,44,3,,False,quest,https://wynncraft.wiki.gg/wiki/Sensei_Miyagi,https://wynncraft.wiki.gg/images/SenseiMiyagi.png?b90315,Enter the Dojo | Enter the Dojo (1.20) | Sensei Miyagi
+Galippe,rare,44,1,,False,template,https://wynncraft.wiki.gg/wiki/Galippe,https://wynncraft.wiki.gg/images/Galippe.png?64fbac,Galippe
+Vera,rare,44,2,,False,quest,https://wynncraft.wiki.gg/wiki/Vera,https://wynncraft.wiki.gg/images/Vera.png?e66ffa,Hollow Serenity | Vera
+Lighthouse Keeper,rare,44,1,,False,template,https://wynncraft.wiki.gg/wiki/Lighthouse_Keeper,https://wynncraft.wiki.gg/images/LighthouseKeeper.png?bbd115,Lighthouse Keeper
+The Hoarder,rare,44,1,,False,template,https://wynncraft.wiki.gg/wiki/The_Hoarder,https://wynncraft.wiki.gg/images/TheHoarder.png?86242d,The Hoarder
+Croaquin,rare,43,1,,False,quest,https://wynncraft.wiki.gg/wiki/Croaquin,https://wynncraft.wiki.gg/images/Croaquin.png?d267a3,A Croaking Cryptid
+Villager,rare,43,3,,False,quest,,https://wynncraft.wiki.gg/images/Villager.png?4a0135,Hollow Serenity | The Fallen Protector | Villager (Hollow Serenity)
+Ariodo,rare,43,2,,False,quest,https://wynncraft.wiki.gg/wiki/Ariodo,https://wynncraft.wiki.gg/images/Ariodo.png?cb3a34,Out of My Mind (1.15) | Out of my Mind
+Mel,rare,43,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Mel,https://wynncraft.wiki.gg/images/Mel.png?272dfc,Queen's Recruit | The Mercenary
+Military Instructor,rare,43,1,,False,quest,,,The Strong Survive
+Burtur,rare,42,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Burtur,https://wynncraft.wiki.gg/images/Burtur.png?3b7f93,Burtur | Lazarus Pit (1.19) | Lazarus Pit (Quest)
+Island Worker,rare,42,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Island_Worker,https://wynncraft.wiki.gg/images/IslandWorker%28NPC%29.png?185cb5,Citizen | Island Worker | Island Worker (NPC)
+Llevigar Citizen,rare,42,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/LlevigarCitizen.png?b5833b,Citizen | Llevigar Citizen (NPC)
+Old Man Martyn,rare,42,2,,False,template,https://wynncraft.wiki.gg/wiki/Old_Man_Martyn,https://wynncraft.wiki.gg/images/OldManMartyn.png?4ec37a,Deja Vu | Tempo Town Trouble
+Silverbull Beacon Expert,rare,42,1,,False,template,https://wynncraft.wiki.gg/wiki/Silverbull_Beacon_Expert,https://wynncraft.wiki.gg/images/SilverbullBeaconExpert.png?961d7a,Silverbull Beacon Expert
+Detective Jackson,rare,41,2,,False,quest,https://wynncraft.wiki.gg/wiki/Detective_Jackson,https://wynncraft.wiki.gg/images/DetectiveJackson.png?4a5973,Blazing Retribution | Green Skinned Trouble
+Jitak,rare,41,2,,False,quest,https://wynncraft.wiki.gg/wiki/Jitak,https://wynncraft.wiki.gg/images/Jitak.png?6baf1c,Hunger of the Gerts Part I | The Hunger of Gerts Part 1 (1.20)
+Recruiter Effal,rare,41,1,,False,quest,,,The Strong Survive
+Corkus Jeweler,rare,40,3,,False,"quest,template",,https://wynncraft.wiki.gg/images/CorkusJeweler.png?fe4ac8,Citizen | Corkian Jeweler | The Feathers Fly Part II
+Sovereign Gikyo,rare,40,2,Gikyo,False,quest,https://wynncraft.wiki.gg/wiki/Sovereign_Gikyo,https://wynncraft.wiki.gg/images/SovereignGikyo.png?1052e0,First Wicker's Spark | True Colours
+Gert Guard,rare,40,1,,False,quest,,https://wynncraft.wiki.gg/images/GertGuard.png?b7d53c,Hunger of the Gerts Part I
+Yavlis,rare,40,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Yavlis,https://wynncraft.wiki.gg/images/Yavlis.png?b4c3f9,Lost Royalty | Prince of Troms | Yavlis
+Durbeo,rare,39,2,,False,quest,https://wynncraft.wiki.gg/wiki/Durbeo,https://wynncraft.wiki.gg/images/Durbeo.png?c80682,All Roads to Peace | Durbeo
+Ann,rare,39,3,,False,quest,https://wynncraft.wiki.gg/wiki/Ann,https://wynncraft.wiki.gg/images/Ann.png?9be532,Ann | Hollow Serenity | Qunit
+Stall Attendant,rare,39,1,,False,quest,,,Celebrations in Smoke
+Jofash Clairvoyant,rare,39,1,,False,quest,,https://wynncraft.wiki.gg/images/JofashClairvoyant.png?77586c,Fantastic Voyage
+Cikal,rare,39,3,,False,quest,https://wynncraft.wiki.gg/wiki/Cikal,https://wynncraft.wiki.gg/images/Cikal.png?b09890,Hunger of the Gerts Part I | Hunger of the Gerts Part II | The Hunger of Gerts Part 1 (1.20)
+Mayor Alvin,rare,39,5,Alvin,False,"quest,template",https://wynncraft.wiki.gg/wiki/Mayor_Alvin,https://wynncraft.wiki.gg/images/MayorAlvin.png?d49c8a,Infested Plants | Mayor Alvin | Mushroom Man | Non-Quest NPCs | Supply and Delivery
+Bulbo,rare,38,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Bulbo,https://wynncraft.wiki.gg/images/Bulbo%28FestivaloftheBonfire%29.png?326e3f,Bulbo | Lord of the Clock
+Tom,rare,38,1,Old Tom; Tommy,True,quest,https://wynncraft.wiki.gg/wiki/Tom,https://wynncraft.wiki.gg/images/Tom.png?9759db,Craftmas Chaos
+Sanba,rare,38,2,,False,quest,https://wynncraft.wiki.gg/wiki/Sanba,https://wynncraft.wiki.gg/images/Sanba.png?9f18da,Dwarves and Doguns Part III | Sanba
+Hans,rare,37,2,,False,quest,https://wynncraft.wiki.gg/wiki/Hans,https://wynncraft.wiki.gg/images/Hans.png?251aa6,A Headless History | Hans (Wynnter Fair)
+Voer,rare,37,2,,False,quest,https://wynncraft.wiki.gg/wiki/Voer,https://wynncraft.wiki.gg/images/Voer.png?5b224b,Death Whistle (1.19) | Death Whistle (Quest)
+Prince Sain,rare,37,1,,False,template,,,Prince of Troms
+Inquisitor,rare,37,2,,False,quest,,,Recover the Past | The Missing Piece
+Sherk,rare,37,3,,False,quest,https://wynncraft.wiki.gg/wiki/Sherk,https://wynncraft.wiki.gg/images/Sherk.png?54f82e,Sherk | The Maiden Tower | The Maiden Tower (1.19)
+Malo,rare,37,2,,False,quest,https://wynncraft.wiki.gg/wiki/Malo,https://wynncraft.wiki.gg/images/Malo.png?3c0f1f,The Worm Holes | The Worm Holes (1.19)
+Alem,rare,36,2,,False,quest,https://wynncraft.wiki.gg/wiki/Alem,https://wynncraft.wiki.gg/images/Alem.png?3ea316,A Grave Mistake | Alem
+Norsten,rare,36,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Norsten,https://wynncraft.wiki.gg/images/Norsten.png?8af759,A Marauder's Dues | A Marauder's Dues (1.20)
+Girazh,rare,36,1,,False,quest,,https://wynncraft.wiki.gg/images/Girazh.png?461e30,A People's Sovereign
+Aihan,rare,36,1,,False,quest,,,Solidarity of Steel
+Admiral Amerigo,rare,36,2,Amerigo,False,"quest,template",https://wynncraft.wiki.gg/wiki/Admiral_Amerigo,https://wynncraft.wiki.gg/images/AdmiralAmerigo.png?e8d3d8,The Mercenary | The Mercenary (2.0.4)
+Citizen,uncommon,35,3,,False,quest,https://wynncraft.wiki.gg/wiki/Citizen,https://wynncraft.wiki.gg/images/AlekinCitizen%28NPC1%29.png?44649a,A Hunter's Calling | Echoes of Change | Pottery Wheel
+"""Carl""",uncommon,35,2,Carl,False,"quest,template",https://wynncraft.wiki.gg/wiki/%22Carl%22,https://wynncraft.wiki.gg/images/Carl.png?7642aa,"""Carl"" | The Feathers Fly Part II"
+Caravan Driver,uncommon,35,6,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Caravan_Driver,https://wynncraft.wiki.gg/images/CaravanDriver.png?143534,A Journey Home | King's Recruit | King's Recruit (1.13) | King's Recruit (1.17) | King's Recruit (1.18) | King's Recruit (2.1)
+Legendary Attendant,uncommon,35,2,,False,"quest,template",,,Citizen | Legendary Attendant (NPC)
+Chieftain Paku,uncommon,35,4,Dogun Chieftain,False,quest,https://wynncraft.wiki.gg/wiki/Chieftain_Paku,https://wynncraft.wiki.gg/images/DogunChieftain.png?a4b47e,Dwarves and Doguns Part II | Dwarves and Doguns Part III | Dwarves and Doguns Part IV | The Breaking Point
+Rohem,uncommon,35,2,,False,quest,https://wynncraft.wiki.gg/wiki/Rohem,https://wynncraft.wiki.gg/images/Rohem.png?920d67,Murder Mystery | Murder Mystery (1.20)
+Tiek,uncommon,35,1,,True,quest,https://wynncraft.wiki.gg/wiki/Tiek,https://wynncraft.wiki.gg/images/Sorceress_Tiek.png?d01463,Taproot (Quest) (1.19)
+Espren Guard,uncommon,35,1,,False,quest,,,Solace in Pain
+Ineos,uncommon,35,1,,False,quest,,https://wynncraft.wiki.gg/images/Ineos.png?4ac722,The Breaking Point
+Adder,uncommon,35,1,,False,quest,,https://wynncraft.wiki.gg/images/Adder.png?fffb26,The Strong Survive
+Arnod,uncommon,34,2,Anrod,False,quest,https://wynncraft.wiki.gg/wiki/Arnod,https://wynncraft.wiki.gg/images/Arnod.png?2a4992,From the Mountains | From the Mountains (1.19)
+Runo,uncommon,34,2,,False,quest,https://wynncraft.wiki.gg/wiki/Runo,https://wynncraft.wiki.gg/images/Runo.png?d0dcc1,Hollow Serenity | Runo
+Leif Pyle,uncommon,34,1,,False,quest,https://wynncraft.wiki.gg/wiki/Leif_Pyle,https://wynncraft.wiki.gg/images/LeifPyle.png?b08a4b,Leif Pyle
+The Assistant,uncommon,34,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/The_Assistant,https://wynncraft.wiki.gg/images/TheAssistant.png?88ebf9,Potion Making | Potion Making (1.14) | The Assistant
+Obsessor,uncommon,33,2,,False,quest,https://wynncraft.wiki.gg/wiki/Obsessor,https://wynncraft.wiki.gg/images/Obsessor%28Fake%29.png?94d052,A Journey Beyond | Obsessor
+Mané,uncommon,33,1,,False,quest,,https://wynncraft.wiki.gg/images/Man%C3%A9.png?bacdae,Aldorei's Secret Part II
+Kreimu,uncommon,33,1,,False,quest,https://wynncraft.wiki.gg/wiki/Kreimu,https://wynncraft.wiki.gg/images/Kreimu.png?625bea,All Roads to Peace
+Customs Clerk,uncommon,33,1,,False,quest,https://wynncraft.wiki.gg/wiki/Customs_Clerk,https://wynncraft.wiki.gg/images/CustomsClerk.png?9791e4,Customs Clerk
+Frank,uncommon,33,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Frank,https://wynncraft.wiki.gg/images/Frank.png?a0277a,Frank | Recipe For Disaster | Recipe For Disaster (1.20)
+Mercenary Leader,uncommon,33,2,Franza,False,quest,https://wynncraft.wiki.gg/wiki/Mercenary_Leader,https://wynncraft.wiki.gg/images/MercenaryLeader.png?851578,Lost Royalty | Mercenary Leader
+Corkus City Citizen,uncommon,33,1,,False,quest,https://wynncraft.wiki.gg/wiki/Corkus_City_Citizen,https://wynncraft.wiki.gg/images/CorkusCityCitizen%28Aqueduct%29.png?2395a8,Mixed Feelings
+Lucio,uncommon,32,1,,False,quest,https://wynncraft.wiki.gg/wiki/Lucio,https://wynncraft.wiki.gg/images/LucioCropped.png?accdb4,A Journey Beyond
+Gelibord Citizen,uncommon,32,4,,False,"quest,template",,https://wynncraft.wiki.gg/images/GelibordCitizen.png?9e4f30,A Headless History | Citizen | Forbidden Prison (Quest) | Gelibord Citizen (NPC)
+Bip,uncommon,32,2,,False,quest,https://wynncraft.wiki.gg/wiki/Bip,https://wynncraft.wiki.gg/images/Bip.png?e0f668,Bip | Hollow Serenity
+Brie,uncommon,32,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Brie,https://wynncraft.wiki.gg/images/Brie.png?c6e4fa,Brie | Recipe For Disaster | Recipe For Disaster (1.20)
+Kale,uncommon,32,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Kale,https://wynncraft.wiki.gg/images/Kale.png?c78239,Kale | Recipe For Disaster | Recipe For Disaster (1.20)
+Kroac,uncommon,31,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Kroac,https://wynncraft.wiki.gg/images/Kroac.png?692a63,Kroac | The Shadow of the Beast | The Shadow of the Beast (1.19)
+Hyloch Citizen,uncommon,30,2,,False,quest,,https://wynncraft.wiki.gg/images/HylochCitizen.png?21bb09,Apotheosis (Quest) | Overture to Despair
+Selchar Citizen,uncommon,30,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/SelcharCitizen.png?a32600,Citizen | Selchar Citizen (NPC)
+Herbert,uncommon,30,1,,False,quest,,https://wynncraft.wiki.gg/images/Herbert.png?12f55a,Dr. Legendary
+Guardian of The Forest,uncommon,30,2,Guardian of the Forest,False,quest,https://wynncraft.wiki.gg/wiki/Guardian_of_The_Forest,https://wynncraft.wiki.gg/images/GuardianofTheForest.png?3d47fd,Finding The Light (1.19) | Finding the Light
+Nakoba,uncommon,30,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Nakoba,https://wynncraft.wiki.gg/images/Naboka.png?3e12ed,From the Bottom | From the Bottom (1.20) | Nakoba
+Rileen,uncommon,30,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Rileen,https://wynncraft.wiki.gg/images/Rileen.png?2e0554,Rileen | The Shadow of the Beast | The Shadow of the Beast (1.19)
+Elrund,uncommon,29,2,,True,quest,https://wynncraft.wiki.gg/wiki/Elrund,https://wynncraft.wiki.gg/images/Elrund.png?e5d11d,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
+Mona,uncommon,29,1,,False,quest,,https://wynncraft.wiki.gg/images/Mona.png?f84ad2,Aldorei's Secret Part II
+Referick,uncommon,29,2,,False,quest,https://wynncraft.wiki.gg/wiki/Referick,https://wynncraft.wiki.gg/images/Referick.png?723413,A Headless History | The Headless Hunt
+Dereg,uncommon,29,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dereg,https://wynncraft.wiki.gg/images/Dereg.png?7b862c,Dereg | The Shadow of the Beast | The Shadow of the Beast (1.19)
+Enkser,uncommon,29,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Enkser,https://wynncraft.wiki.gg/images/Enkser.png?3acd5e,Enkser | Stable Story | Stable Story (1.14)
+Old Mage,uncommon,29,1,,False,template,https://wynncraft.wiki.gg/wiki/Old_Mage,https://wynncraft.wiki.gg/images/OldMage.png?aa8156,Old Mage
+Ormrod,uncommon,29,2,,False,template,https://wynncraft.wiki.gg/wiki/Ormrod,https://wynncraft.wiki.gg/images/Ormrod.png?455cce,Ormrod | Wrath of the Mummy
+Talking Mushroom,uncommon,28,9,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Talking_Mushroom,https://wynncraft.wiki.gg/images/Talking_mushroom_log1.png?963b91,A Croaking Cryptid | C.S.S. Sunrise Captain | Far Above the Clouds | Gerald the Yeti | Jaspur | Recipe For Disaster | Seaskipper Captain | The Envoy | World Encounters
+Aunoa,uncommon,28,2,,False,quest,https://wynncraft.wiki.gg/wiki/Aunoa,https://wynncraft.wiki.gg/images/Aunoa.png?2debdd,Aunoa | Hollow Serenity
+Dr. Urelix,uncommon,28,3,,False,quest,https://wynncraft.wiki.gg/wiki/Dr._Urelix,https://wynncraft.wiki.gg/images/Dr.Urelix%28AnIronHeartPartII%2CFactory%29.png?ff1153,An Iron Heart Part II | An Iron Heart Part II (1.19) | Taproot
+Irlok,uncommon,28,2,,False,quest,https://wynncraft.wiki.gg/wiki/Irlok,https://wynncraft.wiki.gg/images/Irlok.png?86bca7,Beyond the Grave | Beyond the Grave (1.20)
+Thanos Dwarf,uncommon,28,1,,False,quest,,https://wynncraft.wiki.gg/images/ThanosDwarf%281%29.png?2f93e3,Citizen
+Elder Astal,uncommon,28,2,,False,quest,https://wynncraft.wiki.gg/wiki/Elder_Astal,https://wynncraft.wiki.gg/images/ElderAstal%28Frozen%29.png?943e2f,Elder Astal | The Breaking Point
+Edula,uncommon,28,2,,False,quest,https://wynncraft.wiki.gg/wiki/Edula,https://wynncraft.wiki.gg/images/Edula.png?9dda9b,Dwarves and Doguns Part III | Edula
+Engineer Eric,uncommon,28,2,,False,quest,https://wynncraft.wiki.gg/wiki/Engineer_Eric,https://wynncraft.wiki.gg/images/EngineerEric.png?ebdb5a,Flight in Distress | Flight in Distress (1.20)
+Forve,uncommon,28,1,,True,quest,https://wynncraft.wiki.gg/wiki/Forve,https://wynncraft.wiki.gg/images/Forve%28Mission%2CDefendingtheGate%29.png?7e8c49,Forve
+Espren Citizen,uncommon,28,2,,False,quest,,https://wynncraft.wiki.gg/images/EsprenCitizen.png?db7897,Espren Citizen (NPC) | Solace in Pain
+Bory,uncommon,28,1,,False,quest,,,Hunger of the Gerts Part II
+Grandon,uncommon,28,1,,False,quest,https://wynncraft.wiki.gg/wiki/Grandon,https://wynncraft.wiki.gg/images/Grandon.png?2363e2,Lost Soles
+Nikoler,uncommon,28,1,,False,template,,https://wynncraft.wiki.gg/images/Nikoler%28Stage7_1%29.png?3cb0d2,Purple and Blue
+Skyraider Admirer,uncommon,28,1,,False,quest,https://wynncraft.wiki.gg/wiki/Skyraider_Admirer,https://wynncraft.wiki.gg/images/SkyraiderAdmirer.png?d19948,Skyraider Admirer
+Gurix,uncommon,28,1,,False,quest,https://wynncraft.wiki.gg/wiki/Gurix,https://wynncraft.wiki.gg/images/Gurix.png?bc0fa3,The Hero of Gavel
+Togak,uncommon,27,2,,True,quest,https://wynncraft.wiki.gg/wiki/Togak,https://wynncraft.wiki.gg/images/Togak.png?44c235,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
+Mechanic,uncommon,27,1,,False,quest,,,Acquiring Credentials
+Qunit,uncommon,27,3,,False,quest,https://wynncraft.wiki.gg/wiki/Qunit,https://wynncraft.wiki.gg/images/Qunit.png?fac5c5,Ann | Hollow Serenity | Qunit
+C.S.S. Sunrise Captain,uncommon,27,1,,False,quest,https://wynncraft.wiki.gg/wiki/C.S.S._Sunrise_Captain,https://wynncraft.wiki.gg/images/CSSSunriseCaptain.png?40a059,C.S.S. Sunrise Captain
+Doubiss,uncommon,27,3,,False,quest,https://wynncraft.wiki.gg/wiki/Doubiss,https://wynncraft.wiki.gg/images/Doubiss.png?7c8ef9,Crop Failure | Crop Failure (1.19) | Doubiss
+Silverbull Rank Expert,uncommon,27,1,,False,quest,https://wynncraft.wiki.gg/wiki/Silverbull_Rank_Expert,https://wynncraft.wiki.gg/images/SilverbullRankExpert.png?5a693f,Silverbull Rank Expert
+Corkus Delegate,uncommon,27,2,,False,quest,https://wynncraft.wiki.gg/wiki/Corkus_Delegate,https://wynncraft.wiki.gg/images/CorkusDelegate.png?5f6c85,The Envoy Part I | The Envoy Part II
+Almuj Bank Guard,uncommon,26,2,,False,template,https://wynncraft.wiki.gg/wiki/Almuj_Bank_Guard,https://wynncraft.wiki.gg/images/AlmujBankGuard.png?f62ff2,A Sandy Scandal | Almuj Bank Guard
+Dalben,uncommon,26,2,,False,quest,https://wynncraft.wiki.gg/wiki/Dalben,https://wynncraft.wiki.gg/images/Dalben.png?47f5b9,Beneath the Depths | Dalben
+Rymek Citizen,uncommon,26,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/RymekCitizen%28NPC%29.png?c79a18,Citizen | Rymek Citizen (NPC)
+Homeless Mayor,uncommon,26,2,,False,template,https://wynncraft.wiki.gg/wiki/Homeless_Mayor,https://wynncraft.wiki.gg/images/HomelessMayor.png?47fda1,Homeless Mayor | Tempo Town Trouble
+Dwice,uncommon,26,1,,False,quest,,,The Feathers Fly Part II
+Bandit,uncommon,25,4,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Bandit,https://wynncraft.wiki.gg/images/Bandit%28Removed%29.png?26416f,A Sandy Scandal | Bandit (NPC) | Kingdom of Sand | Wrath of the Mummy
+Thesead Citizen,uncommon,25,1,,False,quest,,https://wynncraft.wiki.gg/images/TheseadCitizen.png?55da7a,Citizen
+Barkeep Romu,uncommon,25,2,,False,quest,,https://wynncraft.wiki.gg/images/BarkeepRomu.png?917322,Citizen | Undersupply
+Merchant Risch,uncommon,25,2,,False,quest,,https://wynncraft.wiki.gg/images/MerchantRisch.png?8fee13,Citizen | Undersupply
+Elderly Woman,uncommon,25,2,,False,quest,,,Celebrations in Smoke | Espren Citizen (NPC)
+Czytash,uncommon,25,2,,False,quest,https://wynncraft.wiki.gg/wiki/Czytash,https://wynncraft.wiki.gg/images/Czytash.png?3e3aa3,Czytash | Zhight Island (Quest)
+Prison Guard,uncommon,25,2,,False,quest,https://wynncraft.wiki.gg/wiki/Prison_Guard,https://wynncraft.wiki.gg/images/PrisonGuard.png?ede81e,Forbidden Prison (Quest) | Forbidden Prison (Quest) (1.19)
+Rismor,uncommon,25,1,,True,quest,https://wynncraft.wiki.gg/wiki/Rismor,https://wynncraft.wiki.gg/images/Rismor.png?ba635f,Eye of the Storm
+Old Siwel,uncommon,25,2,,False,quest,https://wynncraft.wiki.gg/wiki/Old_Siwel,https://wynncraft.wiki.gg/images/OldSiwel.png?95ffcd,Haven Antiquity | Old Siwel
+Dado,uncommon,25,2,,False,quest,https://wynncraft.wiki.gg/wiki/Dado,https://wynncraft.wiki.gg/images/Dado.png?dd822a,Rise of the Quartron | Rise of the Quartron (1.19)
+Fisherman,uncommon,25,2,,False,quest,,https://wynncraft.wiki.gg/images/FishyZombie.png?8a1f62,Teachings of Old | World Encounters
+Coulmis,uncommon,25,1,,False,quest,,https://wynncraft.wiki.gg/images/Coulmis.png?cf5736,The Thanos Depository
+Bandit Leader,uncommon,24,3,,False,template,,https://wynncraft.wiki.gg/images/BanditLeader%28NPC%29.png?5e7503,A Sandy Scandal | Kingdom of Sand | Rymek Thief
+Bylvis,uncommon,24,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Bylvis,https://wynncraft.wiki.gg/images/Bylvis.png?a639c3,A Confused Farmer | Tunnel Trouble
+Bishop Kaideus,uncommon,24,3,The Priest,False,"quest,template",https://wynncraft.wiki.gg/wiki/Bishop_Kaideus,https://wynncraft.wiki.gg/images/BishopKaideus.png?ff9b82,Bishop Kaideus | Brothers Return | Grave Digger
+List of Passive Mobs,uncommon,24,2,Troms Citizen,False,"quest,template",https://wynncraft.wiki.gg/wiki/List_of_Passive_Mobs,,Citizen | Troms Citizen (NPC)
+Ahmsord Citizen,uncommon,24,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/AhmsordCitizen.png?d17ade,Citizen | Ragni Ball
+Gendarme Soldier,uncommon,24,2,,False,quest,,,Ensemble of Hope | Queen's Recruit
+Omango,uncommon,24,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Omango,https://wynncraft.wiki.gg/images/Omango.png?1ffe5d,Omango | Underwater | Underwater (1.19)
+Dejol,uncommon,24,2,,False,quest,https://wynncraft.wiki.gg/wiki/Dejol,https://wynncraft.wiki.gg/images/Dejol.png?45bc77,The Lost | The Lost (1.20)
+Military Recruiter,uncommon,24,1,,False,quest,,,The Strong Survive
+Darnes,uncommon,23,1,,True,quest,https://wynncraft.wiki.gg/wiki/Darnes,https://wynncraft.wiki.gg/images/Darnes.png?736945,A Fighting Species
+Elder Prometheus,uncommon,23,1,,False,quest,https://wynncraft.wiki.gg/wiki/Elder_Prometheus,https://wynncraft.wiki.gg/images/ElderPrometheus.png?8e642c,Aldorei's Secret Part II
+Detective Hart,uncommon,23,2,,False,quest,https://wynncraft.wiki.gg/wiki/Detective_Hart,https://wynncraft.wiki.gg/images/Detective_Hart.png?31dfef,An Iron Heart Part II | An Iron Heart Part II (1.19)
+Daxe,uncommon,23,2,,False,quest,https://wynncraft.wiki.gg/wiki/Daxe,https://wynncraft.wiki.gg/images/Daxe.png?e5fd70,An Iron Heart Part II | An Iron Heart Part II (1.19)
+Lodog,uncommon,23,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Lodog,https://wynncraft.wiki.gg/images/Lodog.png?869cbd,From the Bottom | From the Bottom (1.20) | Lodog
+Lieutenant Van,uncommon,23,3,Vagrant Van,False,"quest,template",https://wynncraft.wiki.gg/wiki/Lieutenant_Van,https://wynncraft.wiki.gg/images/LieutenantVan.png?38f5f8,Lieutenant Van | Non-Quest NPCs | Taking the Tower
+Mei,uncommon,23,1,,False,quest,,,The Feathers Fly Part II
+Heliorion,uncommon,23,1,,True,quest,https://wynncraft.wiki.gg/wiki/Heliorion,https://wynncraft.wiki.gg/images/Heliorion2.png?98b253,The Realm of Light (Quest) (1.19)
+Fredris,uncommon,23,2,,False,quest,https://wynncraft.wiki.gg/wiki/Fredris,https://wynncraft.wiki.gg/images/Fredris.png?9328d1,Underice | Underice (1.14)
+Mother Aris,uncommon,23,1,,False,quest,,https://wynncraft.wiki.gg/images/MotherAris.png?977ffb,Undersupply
+Almuj Citizen (A Sandy Scandal),uncommon,22,4,Almuj Citizen,False,"quest,template",https://wynncraft.wiki.gg/wiki/Almuj_Citizen_%28A_Sandy_Scandal%29,https://wynncraft.wiki.gg/images/AlmujCitizen%28QuestNPC%29.png?a841ab,A Sandy Scandal | Almuj Citizen (A Sandy Scandal) | Almuj Citizen (NPC) | Citizen
+Duvale,uncommon,22,2,,False,quest,https://wynncraft.wiki.gg/wiki/Duvale,https://wynncraft.wiki.gg/images/Duvale.png?121553,An Iron Heart Part I | An Iron Heart Part I (1.19)
+Big Butch,uncommon,22,2,,True,quest,https://wynncraft.wiki.gg/wiki/Big_Butch,https://wynncraft.wiki.gg/images/BigButch.png?9c89b0,Big Butch | The Hunger of Gerts Part 2 (1.20)
+Colonel Gailard,uncommon,22,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Colonel_Gailard,https://wynncraft.wiki.gg/images/ColonelGailard.png?aab11a,Colonel Gailard | Lava Springs
+Slykaar,uncommon,22,3,,False,template,https://wynncraft.wiki.gg/wiki/Slykaar,https://wynncraft.wiki.gg/images/Slykaar%28Phase1%29.png?623693,Corrupted Betrayal | Slykaar | Undergrowth Ruins
+Private,uncommon,22,3,,False,quest,,https://wynncraft.wiki.gg/images/Private.png?ed16e9,Citizen | General's Orders | General's Orders (1.20)
+Dohstaj,uncommon,22,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dohstaj,https://wynncraft.wiki.gg/images/Dohstaj.png?661b15,Dohstaj | From the Bottom | From the Bottom (1.20)
+Prisoner,uncommon,22,1,,False,quest,,https://wynncraft.wiki.gg/images/Prisoner.png?449d05,Forbidden Prison (Quest)
+The Warden,uncommon,22,1,,False,quest,,https://wynncraft.wiki.gg/images/TheWarden.png?158d10,Forbidden Prison (Quest)
+Harker,uncommon,22,1,,True,quest,https://wynncraft.wiki.gg/wiki/Harker,https://wynncraft.wiki.gg/images/Harker.png?9fce8a,Eye of the Storm
+Yodbon,uncommon,22,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Yodbon,https://wynncraft.wiki.gg/images/Yodbon.png?3d5c3e,Green Gloop | Yodbon
+General Elix,uncommon,22,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/General_Elix,https://wynncraft.wiki.gg/images/GeneralElix.png?6cc279,General Elix | The Breaking Point
+Jared Kids,uncommon,22,2,Jared,False,quest,https://wynncraft.wiki.gg/wiki/Jared_Kids,,Jared (Avalanche) | World Encounters
+Detective Lorias,uncommon,22,2,Captain Lorias,False,quest,https://wynncraft.wiki.gg/wiki/Detective_Lorias,https://wynncraft.wiki.gg/images/DetectiveLorias.png?d053b1,Murder Mystery | Murder Mystery (1.20)
+Captain Olof,uncommon,22,1,,False,quest,https://wynncraft.wiki.gg/wiki/Captain_Olof,https://wynncraft.wiki.gg/images/CaptainOlof.png?47e1e9,One Thousand Meters Under
+Ooni,uncommon,22,2,,True,quest,,,Prison Story | Prison Story (1.14)
+Buendo,uncommon,22,1,,True,quest,https://wynncraft.wiki.gg/wiki/Buendo,https://wynncraft.wiki.gg/images/Buendo.png?9082e8,Out of My Mind (1.15)
+Edwin,uncommon,22,3,,False,quest,,https://wynncraft.wiki.gg/images/Edwin.png?e43f1d,Recover the Past | Recover the Past (2.0.2) | Recover the Past (2.2.2)
+Volmor,uncommon,21,2,Dramele,False,"quest,template",,https://wynncraft.wiki.gg/images/Volmor.png?95cb49,A Marauder's Dues | A Marauder's Dues (1.20)
+Robboss,uncommon,21,1,,False,quest,,https://wynncraft.wiki.gg/images/Robboss.png?9fd1ee,A People's Sovereign
+Captain Goruca,uncommon,21,2,,False,quest,https://wynncraft.wiki.gg/wiki/Captain_Goruca,https://wynncraft.wiki.gg/images/CaptainGoruca.png?7d3b06,All Roads to Peace | Captain Goruca
+Dusk Garden,uncommon,21,3,,False,quest,,,Apotheosis (Quest) | Ensemble of Hope | Overture to Despair
+Wedyf,uncommon,21,1,,False,quest,https://wynncraft.wiki.gg/wiki/Wedyf,https://wynncraft.wiki.gg/images/Wedyf.png?4c5b13,Bob's Lost Soul
+Takan,uncommon,21,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Takan,https://wynncraft.wiki.gg/images/Takan.png?e1c3e8,Beyond the Grave | The Mercenary | The Mercenary (2.0.4)
+Suspicious Cow,uncommon,21,1,,False,quest,,https://wynncraft.wiki.gg/images/SuspiciousCow.png?ee441d,Cowfusion
+Tavern Owner,uncommon,21,1,,False,quest,,https://wynncraft.wiki.gg/images/TavernOwner.png?401ade,Fantastic Voyage
+Telvu,uncommon,21,1,,False,template,https://wynncraft.wiki.gg/wiki/Telvu,https://wynncraft.wiki.gg/images/Telvu.png?9c0d9f,Fate of the Fallen
+Newspaper Merchant,uncommon,21,2,,False,quest,,,Ensemble of Hope | Overture to Despair
+Alein,uncommon,21,1,,True,quest,,https://wynncraft.wiki.gg/images/Alein.png?f0eb60,Frost Bitten
+Scientist Ynnos,uncommon,21,1,,False,quest,https://wynncraft.wiki.gg/wiki/Scientist_Ynnos,https://wynncraft.wiki.gg/images/Ynnos.png?cea9fe,One Thousand Meters Under
+Batelu,uncommon,21,1,,False,quest,https://wynncraft.wiki.gg/wiki/Batelu,https://wynncraft.wiki.gg/images/Batelu.png?a933f5,Reincarnation
+Roughworks Citizen,uncommon,21,1,,False,template,https://wynncraft.wiki.gg/wiki/Roughworks_Citizen,,Roughworks Citizen
+Likeru,uncommon,21,2,,False,quest,https://wynncraft.wiki.gg/wiki/Likeru,https://wynncraft.wiki.gg/images/Likeru.png?a5158e,Shattered Minds | Shattered Minds (1.19)
+Professor Eih,uncommon,21,1,,False,quest,,,Shattered Minds
+Skyraider Elie,uncommon,21,1,Elie,False,quest,https://wynncraft.wiki.gg/wiki/Skyraider_Elie,https://wynncraft.wiki.gg/images/SkyraiderElie.png?16ba2e,Skyraider Elie
+Military Scout,uncommon,21,1,,False,template,,,The Mercenary
+Marseled,uncommon,21,1,,False,quest,,,The Scarred Springs
+Elder Alder,uncommon,20,1,,False,quest,,https://wynncraft.wiki.gg/images/ElderAlder.png?28b343,Aldorei's Secret Part II
+Onluk,uncommon,20,1,,False,quest,https://wynncraft.wiki.gg/wiki/Onluk,https://wynncraft.wiki.gg/images/Onluk.png?543743,All Roads to Peace
+Cheese Merchant,uncommon,20,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Cheese_Merchant,https://wynncraft.wiki.gg/images/CheeseMerchant.png?fcebb0,Cheese Merchant | World Encounters
+Nemract Citizen,uncommon,20,2,,False,"quest,template",,,Citizen | Nemract Citizen (NPC)
+Karoc Miner,uncommon,20,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Karoc_Miner,https://wynncraft.wiki.gg/images/KarocMiner.png?a771e1,Citizen | Karoc Miner
+Dobile,uncommon,20,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dobile,https://wynncraft.wiki.gg/images/Dobile.png?39c740,Dobile | From the Bottom | From the Bottom (1.20)
+Dorroc,uncommon,20,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dorroc,https://wynncraft.wiki.gg/images/Dorroc.png?954665,Dorroc | From the Bottom | From the Bottom (1.20)
+Eluzterp,uncommon,20,2,,False,template,https://wynncraft.wiki.gg/wiki/Eluzterp,https://wynncraft.wiki.gg/images/Eluzterp.png?9e1507,Eluzterp | Green Gloop
+Jiro,uncommon,20,4,,False,quest,https://wynncraft.wiki.gg/wiki/Jiro,https://wynncraft.wiki.gg/images/JiroPortraitNeutral.png?d43ee6,Echoes of Change | Solidarity of Steel | The Cursed One | The Price of Ingenuity
+Syni,uncommon,20,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Syni,https://wynncraft.wiki.gg/images/Syni.png?4bffc1,From the Bottom | From the Bottom (1.20) | Syni
+Rynver,uncommon,20,1,,True,quest,https://wynncraft.wiki.gg/wiki/Rynver,https://wynncraft.wiki.gg/images/Rynver.png?d7650a,From the Mountains (1.19)
+Orphion,uncommon,20,1,,False,template,https://wynncraft.wiki.gg/wiki/Orphion,https://wynncraft.wiki.gg/images/Orphion%2CLightIncarnate.png?4920da,Orphion's Nexus of Light
+Weaponsmith,uncommon,20,1,,False,quest,,https://wynncraft.wiki.gg/images/Weaponsmith.png?433f91,The Feathers Fly Part II
+Niren,uncommon,20,1,,False,quest,,https://wynncraft.wiki.gg/images/Niren.png?f696fe,The Strong Survive
+Child,uncommon,19,5,,False,"quest,template",,https://wynncraft.wiki.gg/images/Child.png?89a5f8,Afelis | Citizen | Maltic's Well | Murder Mystery | Ragni Ball
+Tarod,uncommon,19,2,,False,quest,https://wynncraft.wiki.gg/wiki/Tarod,https://wynncraft.wiki.gg/images/Tarod.png?6c20f6,Bob's Lost Soul | Tarod
+Javier,uncommon,19,1,,False,quest,https://wynncraft.wiki.gg/wiki/Javier,https://wynncraft.wiki.gg/images/Javier.png?31767b,Beneath the Depths
+Ranol,uncommon,19,2,,False,quest,https://wynncraft.wiki.gg/wiki/Ranol,https://wynncraft.wiki.gg/images/Ranol.png?52435b,Cowfusion | Cowfusion (1.20)
+Phinas,uncommon,19,1,,False,quest,https://wynncraft.wiki.gg/wiki/Phinas,https://wynncraft.wiki.gg/images/Phinas.png?dba4d1,Desperate Metal
+Dwarf Salesman,uncommon,19,1,,False,quest,https://wynncraft.wiki.gg/wiki/Dwarf_Salesman,https://wynncraft.wiki.gg/images/DwarfSalesman.png?45387b,Dwarf Salesman
+Elder,uncommon,19,1,,False,quest,,https://wynncraft.wiki.gg/images/Elder.png?de7181,Finding the Light
+Atisun,uncommon,19,1,,False,quest,https://wynncraft.wiki.gg/wiki/Atisun,https://wynncraft.wiki.gg/images/Atisun.png?5feb5c,Memory Paranoia
+Gana,uncommon,19,2,,False,quest,https://wynncraft.wiki.gg/wiki/Gana,https://wynncraft.wiki.gg/images/Gana.png?5a6c97,The Canyon Guides | The Canyon Guides (1.20)
+Corkus Guard,uncommon,18,3,,False,"quest,template",,https://wynncraft.wiki.gg/images/CorkusGuard.png?ec45d6,A Hunter's Calling | Citizen | Corkus Guard (NPC)
+Private Cob,uncommon,18,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Private_Cob,https://wynncraft.wiki.gg/images/PrivateCob.png?b4ec3b,Arachnids' Ascent | Arachnids' Ascent (2.0.2) | Private Cob
+Troms Guard,uncommon,18,4,,False,"quest,template",,https://wynncraft.wiki.gg/images/TromsGuard%28WynnExcavationSiteD%29.png?843086,Citizen | Corrupted Betrayal | Troms Guard (Slykaar's Residence) | WynnExcavation Site D
+Pirate,uncommon,18,3,,False,"quest,template",,https://wynncraft.wiki.gg/images/Pirate.png?799038,Citizen | Misadventure on the Sea | Pirate (NPC)
+Timasca Soldier,uncommon,18,2,,False,quest,,,Echoes of Change | Solidarity of Steel
+Ollie,uncommon,18,1,,True,quest,https://wynncraft.wiki.gg/wiki/Ollie,https://wynncraft.wiki.gg/images/Ollie%28discovery%29.png?be9808,Finding The Light (1.19)
+Sain,uncommon,18,1,,False,template,,,Prince of Troms
+Reddy,uncommon,18,1,,True,quest,https://wynncraft.wiki.gg/wiki/Reddy,https://wynncraft.wiki.gg/images/Reddy.png?174188,Reddy
+Alchemist,uncommon,18,2,,True,quest,,https://wynncraft.wiki.gg/images/Alchemist.png?83bba8,Recover the Past (2.0.2) | Recover the Past (2.2.2)
+Roughworks Labourer,uncommon,18,1,,False,template,https://wynncraft.wiki.gg/wiki/Roughworks_Labourer,,Roughworks Labourer
+Skyraider Mercenary,uncommon,18,1,,False,quest,https://wynncraft.wiki.gg/wiki/Skyraider_Mercenary,https://wynncraft.wiki.gg/images/SkyraiderMercenary.png?42486d,Skyraider Mercenary
+Skyraider Lookout,uncommon,18,1,,False,quest,https://wynncraft.wiki.gg/wiki/Skyraider_Lookout,https://wynncraft.wiki.gg/images/SkyraiderLookout.png?922d3f,Skyraider Lookout
+Relic Hunter,uncommon,18,1,,True,quest,,,The Relic Shrines
+????,uncommon,17,5,,False,"quest,template",,,A Marauder's Dues (1.20) | Gale | The Qira Hive (Quest) | Unknown Area | Yansur
+Blacksmith Dren,uncommon,17,1,Dren,False,quest,https://wynncraft.wiki.gg/wiki/Blacksmith_Dren,https://wynncraft.wiki.gg/images/BlacksmithDren.png?22be25,A Journey Beyond
+Representative Ernold,uncommon,17,2,,False,quest,,https://wynncraft.wiki.gg/images/RepresentativeErnold.png?aac980,Fallen Delivery | Fallen Delivery (1.20)
+Gracen,uncommon,17,1,,False,template,https://wynncraft.wiki.gg/wiki/Gracen,https://wynncraft.wiki.gg/images/Gracen.png?3abed2,Lost in the Jungle
+Old Fisherman,uncommon,17,1,,False,quest,https://wynncraft.wiki.gg/wiki/Old_Fisherman,https://wynncraft.wiki.gg/images/OldFisherman.png?1b9e98,Old Fisherman
+Imperial Guard,uncommon,17,1,,True,quest,,https://wynncraft.wiki.gg/images/ImperialGuard.png?9458fd,Recover the Past (2.0.2)
+Gordon,uncommon,17,1,,False,quest,,https://wynncraft.wiki.gg/images/Gordon.png?262f4b,The Lost
+Tesha,uncommon,17,2,,False,quest,https://wynncraft.wiki.gg/wiki/Tesha,https://wynncraft.wiki.gg/images/Tesha.png?580e50,Tesha | WynnExcavation Site A
+Headmaster,uncommon,17,1,,False,quest,,,The Order of the Grook
+Military Guard,uncommon,17,1,,False,quest,,,The Strong Survive
+Ankou,uncommon,17,1,,False,quest,https://wynncraft.wiki.gg/wiki/Ankou,https://wynncraft.wiki.gg/images/Ankou.png?24dcbd,Tower of Ascension (Quest)
+Kansard,uncommon,16,2,,True,quest,https://wynncraft.wiki.gg/wiki/Kansard,https://wynncraft.wiki.gg/images/KansardAd1.png?1b627c,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
+Corak,uncommon,16,2,,True,quest,https://wynncraft.wiki.gg/wiki/Corak,https://wynncraft.wiki.gg/images/Corak.png?fbd683,Aldorei's Secret Part I (1.19) | Aldorei's Secret Part II (1.20)
+Korben,uncommon,16,1,,False,quest,,,Aldorei's Secret Part I
+Ahmas,uncommon,16,2,,True,quest,https://wynncraft.wiki.gg/wiki/Ahmas,https://wynncraft.wiki.gg/images/Ahmas.png?f09824,Ahmas | Reclaiming the House (1.19)
+Paxon,uncommon,16,1,,False,quest,,,A Journey Home
+Bassow,uncommon,16,1,,False,quest,,https://wynncraft.wiki.gg/images/Bassow.png?3740ad,A People's Sovereign
+Nawild,uncommon,16,1,,False,quest,,https://wynncraft.wiki.gg/images/Nawild.png?50a49b,A People's Sovereign
+Nunexetor,uncommon,16,1,,False,quest,https://wynncraft.wiki.gg/wiki/Nunexetor,https://wynncraft.wiki.gg/images/Nunexetor.png?4493ce,All Roads to Peace
+Alekin Citizen,uncommon,16,2,,False,"quest,template",,,Alekin Citizen (NPC) | Citizen
+Lynn,uncommon,16,2,,False,quest,,,An Unexpected Departure | The Strong Survive
+Boat Captain,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Boat_Captain,https://wynncraft.wiki.gg/images/BoatCaptain.png?b165b8,Boat Captain | The Order of the Grook
+Zhight Tour Guide,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Zhight_Tour_Guide,https://wynncraft.wiki.gg/images/Zhight_Tour_Guide.png?df5534,Citizen | Zhight Tour Guide
+Scavenger Hunt Participant,uncommon,16,3,,False,"quest,template",,,Cinfras Citizen (NPC) | Citizen | Llevigar Citizen (NPC)
+Aldwell Guard,uncommon,16,1,,False,quest,,https://wynncraft.wiki.gg/images/AldwellGuard.png?1735b4,Celebrations in Smoke
+Racing Expert,uncommon,16,1,,False,quest,,,Celebrations in Smoke
+Missing Child,uncommon,16,3,,False,quest,https://wynncraft.wiki.gg/wiki/Missing_Child,https://wynncraft.wiki.gg/images/MissingChild.png?4cea35,Flight in Distress | Flight in Distress (1.20) | Missing Child
+Excavator Placardus,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Excavator_Placardus,https://wynncraft.wiki.gg/images/ExcavatorPlacardus.png?9aa4ab,Excavator Placardus | WynnExcavation Site C
+Ferndor,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Ferndor,https://wynncraft.wiki.gg/images/Ferndor.png?9e98a1,Ferndor | Lost Soles
+Valimare,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Valimare,https://wynncraft.wiki.gg/images/Valimare.png?f45d69,Murder Mystery | Murder Mystery (1.20)
+Rensa,uncommon,16,1,,False,quest,https://wynncraft.wiki.gg/wiki/Rensa,https://wynncraft.wiki.gg/images/Rensa.png?d4e011,Mixed Feelings
+Mysterious Figure,uncommon,16,4,,False,quest,https://wynncraft.wiki.gg/wiki/Mysterious_Figure,https://wynncraft.wiki.gg/images/MysteriousFigure.png?2fa8b0,Mysterious Figure | Non-Quest NPCs | Shadowy Dealings | Siegfried (Festival of the Heroes)
+Ticket Collector,uncommon,16,1,,False,quest,,,Off the Rails
+Royal Captain,uncommon,16,1,,False,quest,,,Recover the Past
+Disguised King,uncommon,16,1,,False,quest,,,Ragni's King
+Kyren,uncommon,16,1,,False,quest,,,The Strong Survive
+Squidward,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Squidward,https://wynncraft.wiki.gg/images/Squidward.png?f18db3,Underice | Underice (1.14)
+Sayrr,uncommon,16,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Sayrr,https://wynncraft.wiki.gg/images/Sayrr.png?35c75e,Underwater | Underwater (1.19)
+Master Oshman,uncommon,16,1,,False,quest,,https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb,Undersupply
+Traitor Amadel,uncommon,16,2,,False,quest,,https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a,WynnExcavation Site C | WynnExcavation Site D
+Avos Chief,common,15,2,,False,quest,https://wynncraft.wiki.gg/wiki/Avos_Chief,https://wynncraft.wiki.gg/images/AvosChief.png?5d464c,A Hunter's Calling | The Feathers Fly Part I
+Librarian,common,15,3,,False,"quest,template",,,"Citizen | Librarian (NPC, Llevigar) | The Grand Archive"
+Leucsaa,common,15,2,,False,template,https://wynncraft.wiki.gg/wiki/Leucsaa,https://wynncraft.wiki.gg/images/Leucsaa.png?dd6382,Dwelling Walls | Leucsaa
+Egpla,common,15,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Egpla,https://wynncraft.wiki.gg/images/Egpla.png?b8f9d4,Egpla | Royal Trials
+Captured Prisoner,common,15,2,,False,quest,https://wynncraft.wiki.gg/wiki/Captured_Prisoner,https://wynncraft.wiki.gg/images/CapturedPrisoner.png?75bb90,Flight in Distress | Flight in Distress (1.20)
+Ceyquin,common,15,1,,True,quest,https://wynncraft.wiki.gg/wiki/Ceyquin,https://wynncraft.wiki.gg/images/Ceyquin.png?2a3aff,Eye of the Storm
+Winie,common,15,1,,False,quest,,https://wynncraft.wiki.gg/images/Winie.png?df4239,Hunger of the Gerts Part II
+Tirack,common,15,3,,False,quest,https://wynncraft.wiki.gg/wiki/Tirack,,Jaspur | Tirack | World Encounters
+Laen,common,15,3,,False,template,https://wynncraft.wiki.gg/wiki/Laen,https://wynncraft.wiki.gg/images/Laen.png?83d50f,Laen | Lost Tower | Lost Tower (1.11.2)
+Businessman,common,15,1,,False,quest,,,Off the Rails
+Clothes Merchant,common,15,1,,False,quest,,,Overture to Despair
+Harnort,common,15,1,,False,quest,,,Rise of the Quartron
+Scavenger Hunt Collector,common,15,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Scavenger_Hunt_Collector,https://wynncraft.wiki.gg/images/ScavengerHuntCollector.png?3c1c03,Scavenger Hunt Collector | The Hero of Gavel
+Rayshyroth,common,15,1,,False,template,https://wynncraft.wiki.gg/wiki/Rayshyroth,https://wynncraft.wiki.gg/images/Rayshyroth.png?d7f010,Temple of the Legends (Quest)
+Zhight,common,15,1,,False,quest,https://wynncraft.wiki.gg/wiki/Zhight,https://wynncraft.wiki.gg/images/Zhight.png?7796f4,Zhight Island (Quest)
+Achper,common,14,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Achper,https://wynncraft.wiki.gg/images/Achper.png?3696f4,Achper | Wrath of the Mummy
+Fiona,common,14,1,,False,quest,,,Aldorei's Secret Part I
+Yunelsu,common,14,1,,False,quest,https://wynncraft.wiki.gg/wiki/Yunelsu,https://wynncraft.wiki.gg/images/Yunelsu.png?6dabdd,All Roads to Peace
+Piere,common,14,2,,False,quest,https://wynncraft.wiki.gg/wiki/Piere,https://wynncraft.wiki.gg/images/Piere.png?ed8af6,Blazing Retribution | Green Skinned Trouble
+Hermit,common,14,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Hermit,https://wynncraft.wiki.gg/images/Hermit.png?ee1504,Canyon Condor | Hermit
+Detlas Citizen,common,14,1,,False,quest,,https://wynncraft.wiki.gg/images/DetlasCitizen.png?2dcfca,Citizen
+Maltic Citizen,common,14,2,,False,"quest,template",,,Citizen | Maltic Citizen (NPC)
+Lusuco Citizen,common,14,3,,False,"quest,template",,https://wynncraft.wiki.gg/images/LusucoCitizen.png?83975d,Citizen | Lost NPCs | Lusuco Citizen (NPC)
+Veekhat,common,14,1,,True,quest,https://wynncraft.wiki.gg/wiki/Veekhat,https://wynncraft.wiki.gg/images/VeekhattheMinotaur.png?ff5fc1,Cowfusion (1.20)
+Eltom Guard,common,14,2,,False,quest,https://wynncraft.wiki.gg/wiki/Eltom_Guard,https://wynncraft.wiki.gg/images/EltomGuard.png?7b0089,Eltom Guard | The Hidden City
+Elder Desint,common,14,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Elder_Desint,https://wynncraft.wiki.gg/images/ElderDesint%28Frozen%29.png?8785b7,Elder Desint | The Breaking Point
+Marden,common,14,2,,False,quest,https://wynncraft.wiki.gg/wiki/Marden,https://wynncraft.wiki.gg/images/Marden.png?43514f,Fallen Delivery | Fallen Delivery (1.20)
+Event Airship Pilot,common,14,1,,False,template,https://wynncraft.wiki.gg/wiki/Event_Airship_Pilot,https://wynncraft.wiki.gg/images/EventAirshipPilot.png?b488aa,Event Airship Pilot
+Private Tylas,common,14,2,Tylas,False,quest,https://wynncraft.wiki.gg/wiki/Private_Tylas,https://wynncraft.wiki.gg/images/PrivateTylas.png?38c728,General's Orders | General's Orders (1.20)
+Yobon,common,14,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Yobon,https://wynncraft.wiki.gg/images/Yobon.png?f6e350,From the Bottom | From the Bottom (1.20) | Yobon
+Javen,common,14,1,,False,quest,https://wynncraft.wiki.gg/wiki/Javen,https://wynncraft.wiki.gg/images/Javen.png?58561b,Mixed Feelings
+Espren Tourist,common,14,1,,False,quest,,,Overture to Despair
+Marston,common,14,1,,False,quest,https://wynncraft.wiki.gg/wiki/Marston,https://wynncraft.wiki.gg/images/Marston.png?dee48e,Redbeard's Booty
+Imperial Captain,common,14,1,,True,quest,,,Recover the Past (2.2.2)
+Narder,common,14,1,,False,quest,https://wynncraft.wiki.gg/wiki/Narder,https://wynncraft.wiki.gg/images/Narder.png?c32443,The Hidden City
+King Burtan,common,14,1,,True,quest,https://wynncraft.wiki.gg/wiki/King_Burtan,https://wynncraft.wiki.gg/images/KingBurtan.png?f2312f,The Belly of the Beast
+Dolem,common,14,1,,True,quest,https://wynncraft.wiki.gg/wiki/Dolem,https://wynncraft.wiki.gg/images/Dolem.png?f7f40d,The Thanos Vaults
+Excavator Vade,common,14,1,,False,quest,https://wynncraft.wiki.gg/wiki/Excavator_Vade,https://wynncraft.wiki.gg/images/ExcavatorVade.png?6977b6,WynnExcavation Site A
+Legolus,common,13,1,,True,quest,https://wynncraft.wiki.gg/wiki/Legolus,https://wynncraft.wiki.gg/images/Legulus114.png?3419a0,Aldorei's Secret Part II (1.20)
+Damys,common,13,1,,False,quest,,,Aldorei's Secret Part I
+Scientist Urelix,common,13,1,,False,quest,,,A Hunter's Calling
+Document Merchant,common,13,1,,True,quest,https://wynncraft.wiki.gg/wiki/Document_Merchant,https://wynncraft.wiki.gg/images/DocumentMerchant.png?3aa803,Acquiring Credentials (1.19)
+Lieutenant,common,13,2,,False,quest,,https://wynncraft.wiki.gg/images/Lieutenant.png?f25dc6,Citizen | King's Recruit
+Witch,common,13,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/Witch.png?3b3c66,Death Whistle (Quest) | Maltic's Well
+Bricot,common,13,2,,False,quest,https://wynncraft.wiki.gg/wiki/Bricot,https://wynncraft.wiki.gg/images/Bricot.png?adf208,Fallen Delivery | Fallen Delivery (1.20)
+Sasha The Apothecary,common,13,1,Sasha,True,quest,https://wynncraft.wiki.gg/wiki/Sasha_The_Apothecary,https://wynncraft.wiki.gg/images/SashaTheApothecary%28Appearance1%29.png?e78329,Finding The Light (1.19)
+Mysterious Leader,common,13,1,,False,quest,,https://wynncraft.wiki.gg/images/MysteriousLeader.png?47de73,Hollow Serenity
+Adigard,common,13,1,,False,quest,https://wynncraft.wiki.gg/wiki/Adigard,https://wynncraft.wiki.gg/images/Adigard.png?5f87fe,Ice Nations
+Lazing Dogun,common,13,1,,False,quest,https://wynncraft.wiki.gg/wiki/Lazing_Dogun,https://wynncraft.wiki.gg/images/LazingDogun.png?3e73cc,Lazing Dogun
+Lumilda,common,13,2,,False,quest,https://wynncraft.wiki.gg/wiki/Lumilda,https://wynncraft.wiki.gg/images/Lumilda.png?1578a4,Lumilda | The Hidden City
+Shopkeeper,common,13,3,,False,"quest,template",,https://wynncraft.wiki.gg/images/Shopkeeper.png?983585,Maex Black Market | Rymek Thief | The Feathers Fly Part I
+Celuuse,common,13,1,,False,quest,https://wynncraft.wiki.gg/wiki/Celuuse,https://wynncraft.wiki.gg/images/Celuuse.png?97cd31,One Thousand Meters Under
+Otenu,common,13,1,,False,template,https://wynncraft.wiki.gg/wiki/Otenu,https://wynncraft.wiki.gg/images/Otenu.png?76ad88,Otenu
+Imperial Inquisitor,common,13,1,,True,quest,,https://wynncraft.wiki.gg/images/RoyalInquisitor.png?ca6b00,Recover the Past (2.2.2)
+Jorkin,common,13,1,,False,template,https://wynncraft.wiki.gg/wiki/Jorkin,https://wynncraft.wiki.gg/images/Jorkin.png?1a3b57,Temple of the Legends (Quest)
+Trunan,common,13,1,,True,quest,https://wynncraft.wiki.gg/wiki/Trunan,https://wynncraft.wiki.gg/images/Trunan.png?c81cf0,Star Thief (1.17)
+Clomius,common,13,1,,False,quest,,,The Feathers Fly Part II
+Tyko,common,13,2,,False,template,https://wynncraft.wiki.gg/wiki/Tyko,https://wynncraft.wiki.gg/images/Tyko.png?b34ea6,Tempo Town Trouble | Tyko
+Alcohol Stand Merchant,common,13,1,,False,quest,,,The Cursed One
+Tinemild,common,13,1,,True,quest,,https://wynncraft.wiki.gg/images/Tinemild.png?ca57bd,The Tower of Amnesia (Quest)
+Elder Willow,common,12,1,,False,quest,,https://wynncraft.wiki.gg/images/ElderWillow.png?603051,Aldorei's Secret Part II
+Agent,common,12,2,,False,template,https://wynncraft.wiki.gg/wiki/Agent,https://wynncraft.wiki.gg/images/Agent.png?449b74,Agent | Star Thief
+Mehme,common,12,2,,False,quest,https://wynncraft.wiki.gg/wiki/Mehme,https://wynncraft.wiki.gg/images/Mehme.png?8f7a48,??? | ??? (1.14)
+Peli,common,12,1,,False,template,,https://wynncraft.wiki.gg/images/Peli.png?367160,A Marauder's Dues
+Avos Shaman,common,12,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Avos_Shaman,https://wynncraft.wiki.gg/images/AvosShaman.png?ec5541,Avos Shaman (NPC) | Citizen | The Envoy Part II
+Markus,common,12,1,,False,quest,,,An Unexpected Departure
+Banker,common,12,2,The Banker,False,quest,https://wynncraft.wiki.gg/wiki/Banker,https://wynncraft.wiki.gg/images/TheBanker.png?daad6d,Banker | Jungle Fever
+The Blacksmith,common,12,1,,False,quest,https://wynncraft.wiki.gg/wiki/The_Blacksmith,https://wynncraft.wiki.gg/images/TheBlacksmith.png?fa0ba2,Bob's Lost Soul
+Bucie Citizen,common,12,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/BucieCitizen.png?14de0a,Bucie Citizen (NPC) | Citizen
+Nesaak Citizen,common,12,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/NesaakCitizen.png?b76080,Citizen | Nesaak Citizen (NPC)
+Legendary Messenger,common,12,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Legendary_Messenger,https://wynncraft.wiki.gg/images/LegendaryMessenger.png?fdbabd,Citizen | Legendary Messenger
+Hot Air Balloon Captain,common,12,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Hot_Air_Balloon_Captain,https://wynncraft.wiki.gg/images/HotAirBalloonCaptain.png?67f523,Citizen | Fast Travel | Hot Air Balloon Captain
+Relos Citizen,common,12,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/RelosCitizen.png?97aaab,Citizen | Relos Citizen (NPC)
+Marock,common,12,1,,False,quest,,,Dwarves and Doguns Part I
+C.S.S Wavebreaker Captain,common,12,2,,False,quest,https://wynncraft.wiki.gg/wiki/C.S.S_Wavebreaker_Captain,https://wynncraft.wiki.gg/images/CSSWavebreakerCaptain.png?5b0a25,Fast Travel | The Envoy Part I
+Lecade 2,common,12,1,,False,quest,,,General's Orders
+Lalorie,common,12,1,,True,quest,,,Hollow Sirene
+Hrona,common,12,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Hrona,https://wynncraft.wiki.gg/images/Hrona.png?d3c1a1,Hrona | Royal Trials | Royal Trials (1.20)
+Siwel,common,12,1,,False,quest,https://wynncraft.wiki.gg/wiki/Siwel,https://wynncraft.wiki.gg/images/Siwel.png?f299d1,Haven Antiquity
+Minigame Expert,common,12,1,,False,quest,https://wynncraft.wiki.gg/wiki/Minigame_Expert,https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5,Minigame Expert
+Phoenix Poacher,common,12,1,,False,quest,,,Maex Black Market
+Mr. Caritat,common,12,1,,False,quest,https://wynncraft.wiki.gg/wiki/Mr._Caritat,https://wynncraft.wiki.gg/images/Mr.Caritat.png?228b97,Memory Paranoia
+Blackjack Dealer,common,12,1,,False,quest,,https://wynncraft.wiki.gg/images/BlackjackDealer.png?e7d518,Murder Mystery
+Ostentatious Envoy,common,12,1,,False,template,https://wynncraft.wiki.gg/wiki/Ostentatious_Envoy,https://wynncraft.wiki.gg/images/OstentatiousEnvoy.png?eecdaa,Ostentatious Envoy
+Mayor,common,12,2,,False,quest,,,Shadowy Dealings | Taproot
+Lacrona,common,12,1,,True,quest,,,Suspended Flowers
+Pottur,common,12,1,,True,quest,https://wynncraft.wiki.gg/wiki/Pottur,https://wynncraft.wiki.gg/images/Pottur.png?aab03d,Studying the Corrupt
+Jill,common,12,1,,True,quest,https://wynncraft.wiki.gg/wiki/Jill,https://wynncraft.wiki.gg/images/Jill.png?3703ad,The Fortuneteller
+Twendle,common,12,1,,False,template,https://wynncraft.wiki.gg/wiki/Twendle,https://wynncraft.wiki.gg/images/Twendle.png?1a30b9,The House of Twain (Quest)
+Comor,common,12,1,,True,quest,https://wynncraft.wiki.gg/wiki/Comor,https://wynncraft.wiki.gg/images/Comor.png?83fa24,The Hunger of Gerts Part 1 (1.20)
+Lekal,common,12,1,,True,quest,https://wynncraft.wiki.gg/wiki/Lekal,https://wynncraft.wiki.gg/images/Lekal.png?560700,The Angry Village
+Tea Stand Merchant,common,12,1,,False,quest,,,The Cursed One
+Zoo Keeper,common,12,1,,False,quest,,,The Cursed One
+Seasum,common,12,1,,False,quest,https://wynncraft.wiki.gg/wiki/Seasum,https://wynncraft.wiki.gg/images/Seasum.png?28aed7,The Order of the Grook
+Yvonne,common,12,1,,False,quest,,,The Strong Survive
+Effal,common,12,1,,False,quest,,,The Strong Survive
+Butler Hayn,common,12,1,,False,quest,,https://wynncraft.wiki.gg/images/ButlerHayn.png?6c0eaa,Undersupply
+Airbase Attendant,common,11,1,,False,quest,https://wynncraft.wiki.gg/wiki/Airbase_Attendant,https://wynncraft.wiki.gg/images/AirbaseAttendant.png?8c9241,Airbase Attendant
+Lieutenant Tolv,common,11,1,,False,quest,,,A Journey Home
+Xoeinbor,common,11,1,,False,quest,https://wynncraft.wiki.gg/wiki/Xoeinbor,https://wynncraft.wiki.gg/images/Xoeinbor.png?e8c057,All Roads to Peace
+Jixy,common,11,1,,False,quest,https://wynncraft.wiki.gg/wiki/Jixy,https://wynncraft.wiki.gg/images/Jixy.png?eee4dd,All Roads to Peace
+Grapes,common,11,2,,False,quest,,https://wynncraft.wiki.gg/images/Grapes.png?e6202c,All Roads to Peace | Nunexetor
+Clan Member,common,11,2,,False,quest,,,Celebrations in Smoke | First Wicker's Spark
+Ibele,common,11,2,,False,quest,https://wynncraft.wiki.gg/wiki/Ibele,https://wynncraft.wiki.gg/images/Ibele.png?9fbe8d,Cowfusion (1.20) | Ibele
+Construction Worker,common,11,1,,False,quest,,https://wynncraft.wiki.gg/images/ConstructionWorker.png?cc161f,Echoes of Change
+Favian,common,11,2,,False,quest,https://wynncraft.wiki.gg/wiki/Favian,https://wynncraft.wiki.gg/images/Favian.png?2fcbfa,Favian | Tribal Aggression
+Flodur,common,11,2,,False,quest,https://wynncraft.wiki.gg/wiki/Flodur,https://wynncraft.wiki.gg/images/Flodur.png?e3a0dc,Flodur | Meaningful Holiday
+Wilted Camellia,common,11,2,,False,quest,,,Ensemble of Hope | Overture to Despair
+Gendarme Commander,common,11,2,,False,quest,,https://wynncraft.wiki.gg/images/GendarmeCommander.png?5096de,Ensemble of Hope | Queen's Recruit
+Espren Child,common,11,1,,False,quest,,https://wynncraft.wiki.gg/images/EsprenChild.png?5479f6,Espren Citizen (NPC)
+Fort Hegea Archer,common,11,1,,False,quest,,,First Wicker's Spark
+Monte,common,11,2,,False,template,https://wynncraft.wiki.gg/wiki/Monte,https://wynncraft.wiki.gg/images/Monte.png?b8dd9b,Grand Youth | Monte
+Isfurus,common,11,1,,False,template,https://wynncraft.wiki.gg/wiki/Isfurus,https://wynncraft.wiki.gg/images/Isfurus.png?b4028c,Grand Youth
+Cabac,common,11,1,,True,quest,,,Frost Bitten
+Tarek,common,11,1,,False,template,https://wynncraft.wiki.gg/wiki/Tarek,https://wynncraft.wiki.gg/images/Tarek.png?f3430e,Kingdom of Sand
+Leacen,common,11,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Leacen,https://wynncraft.wiki.gg/images/Leacen.png?fe37c9,Leacen | Lost Soles
+Vesdar,common,11,1,,True,quest,https://wynncraft.wiki.gg/wiki/Vesdar,https://wynncraft.wiki.gg/images/Vesdar.png?bcf0d6,Lazarus Pit (1.19)
+Merloni,common,11,2,,False,template,https://wynncraft.wiki.gg/wiki/Merloni,https://wynncraft.wiki.gg/images/Merloni.png?549917,Merloni | Pit of the Dead (Quest)
+Damiral,common,11,1,,False,quest,https://wynncraft.wiki.gg/wiki/Damiral,https://wynncraft.wiki.gg/images/Damiral.png?8e275e,Pirate's Trove
+Nedlom,common,11,1,,True,quest,https://wynncraft.wiki.gg/wiki/Nedlom,https://wynncraft.wiki.gg/images/Nedlom.png?5d8621,Purple and Blue (1.20)
+Aelumia Guard,common,11,1,,False,quest,,,Queen's Recruit
+Representative,common,11,1,,False,quest,,,Queen's Recruit
+Regular Humyn,common,11,2,,False,template,https://wynncraft.wiki.gg/wiki/Regular_Humyn,https://wynncraft.wiki.gg/images/RegularHumyn.png?a7fd0c,Recipe For Disaster | Regular Humyn
+Skyraider Guard,common,11,3,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Skyraider_Guard,https://wynncraft.wiki.gg/images/SkyraiderGuard.png?6b75f0,Royal Trials | Royal Trials (1.20) | Skyraider Guard
+Xao,common,11,2,,False,quest,,,Revelations in Fall | The Cursed One
+Adventuring Mage,common,11,1,,True,quest,https://wynncraft.wiki.gg/wiki/Adventuring_Mage,https://wynncraft.wiki.gg/images/AdventuringMage.png?fad99b,Studying the Corrupt
+Thesead Miner,common,11,1,,False,quest,,https://wynncraft.wiki.gg/images/TheseadMiner.png?e03dcc,The Canary Calls
+Gerten Chief Lobo,common,11,1,,True,quest,https://wynncraft.wiki.gg/wiki/Gerten_Chief_Lobo,https://wynncraft.wiki.gg/images/GertenChiefLobo.png?884acf,The Hunger of Gerts Part 2 (1.20)
+Grenot,common,11,1,,True,quest,https://wynncraft.wiki.gg/wiki/Grenot,https://wynncraft.wiki.gg/images/Grenot.png?717080,The Canary Calls (1.20)
+Food Stand Merchant,common,11,1,,False,quest,,,The Cursed One
+Cousullo,common,11,1,,False,quest,,,The Scarred Springs
+Halbe,common,11,1,,False,quest,,,The Strong Survive
+Calamaro,common,11,2,,False,quest,https://wynncraft.wiki.gg/wiki/Calamaro,https://wynncraft.wiki.gg/images/Calamaro.png?6d2d41,Underice | Underice (1.14)
+Pete,common,11,1,,False,quest,,https://wynncraft.wiki.gg/images/Pete.png?38e162,World Encounters
+Shaman Inrekei,common,11,1,Inrekei,False,quest,https://wynncraft.wiki.gg/wiki/Shaman_Inrekei,https://wynncraft.wiki.gg/images/ShamanInrekei.png?71ae88,Troubled Tribesmen
+Excavator Lykron,common,11,1,,False,quest,https://wynncraft.wiki.gg/wiki/Excavator_Lykron,https://wynncraft.wiki.gg/images/ExcavatorLykron.png?d91da2,WynnExcavation Site B
+Mael Twain,common,10,2,Mael,False,quest,https://wynncraft.wiki.gg/wiki/Mael_Twain,https://wynncraft.wiki.gg/images/Mael.png?79812b,A Grave Mistake | The Twains' Downfall
+Peculiar Old Man,common,10,1,,True,quest,https://wynncraft.wiki.gg/wiki/Peculiar_Old_Man,https://wynncraft.wiki.gg/images/Peculiar_old_man.png?8f1561,Acquiring Credentials (1.19)
+Fruman Recruit,common,10,1,,False,quest,,,A Journey Home
+Teiren,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Teiren,https://wynncraft.wiki.gg/images/Teiren.png?848c28,All Roads to Peace
+Jankan,common,10,1,,False,template,https://wynncraft.wiki.gg/wiki/Jankan,https://wynncraft.wiki.gg/images/OldManJankan.png?18ece5,Canyon Condor
+Cidre,common,10,2,,False,quest,https://wynncraft.wiki.gg/wiki/Cidre,https://wynncraft.wiki.gg/images/Cidre.png?f1665f,Cidre | The Order of the Grook
+Jungle Native,common,10,2,,False,"quest,template",,,Citizen | Jungle Native (NPC)
+Iboju Shaman,common,10,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Iboju_Shaman,https://wynncraft.wiki.gg/images/IbojuShaman.png?6dea16,Citizen | Iboju Shaman
+Sergeant Klafson,common,10,2,Sergeant,False,"quest,template",https://wynncraft.wiki.gg/wiki/Sergeant_Klafson,https://wynncraft.wiki.gg/images/SergeantKlafson.png?6bb55c,Citizen | Tunnel Trouble
+Dejected Identifier,common,10,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Dejected_Identifier,https://wynncraft.wiki.gg/images/DejectedIdentifier.png?98c9dd,Dejected Identifier | Festival Goer
+Plario,common,10,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Plario,https://wynncraft.wiki.gg/images/Plario.png?74d927,Dwarves and Doguns Part I | Fast Travel
+Calo,common,10,3,,False,quest,https://wynncraft.wiki.gg/wiki/Calo,https://wynncraft.wiki.gg/images/Calo%28Detlas%29.png?839451,Fast Travel | Flight in Distress | Flight in Distress (1.20)
+Mafia Prisoner,common,10,1,,False,quest,,https://wynncraft.wiki.gg/images/MafiaPrisoner.png?4742d2,Forbidden Prison (Quest)
+Damien,common,10,1,,True,quest,https://wynncraft.wiki.gg/wiki/Damien,https://wynncraft.wiki.gg/images/Damien.png?f04daf,Finding The Light (1.19)
+Violent Heather,common,10,2,,False,quest,,,Ensemble of Hope | Overture to Despair
+Ghostly Voice,common,10,2,,False,template,,,Graveyard of 100 Years | Ice Barrows
+Zenam,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Zenam,https://wynncraft.wiki.gg/images/Zenam.png?2b2f91,Heart of Llevigar
+Head Engineer,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Head_Engineer,https://wynncraft.wiki.gg/images/Head_Engineer.png?44aa3b,Heart of Llevigar
+Pastor Nitram,common,10,1,Nitram,True,quest,https://wynncraft.wiki.gg/wiki/Pastor_Nitram,https://wynncraft.wiki.gg/images/PastorNitram.png?389345,Hollow Sirene
+Cinfras,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Cinfras,https://wynncraft.wiki.gg/images/Cinfras%28NPC%29.png?776671,Haven Antiquity
+Kantor,common,10,2,,False,quest,https://wynncraft.wiki.gg/wiki/Kantor,https://wynncraft.wiki.gg/images/Kantor.png?a06243,Kantor | One Thousand Meters Under
+King of Troms,common,10,2,,False,quest,https://wynncraft.wiki.gg/wiki/King_of_Troms,https://wynncraft.wiki.gg/images/KingofTroms.png?c3f160,King of Troms | WynnExcavation Site D
+Prince of Troms,common,10,2,King's Son,False,"quest,template",https://wynncraft.wiki.gg/wiki/Prince_of_Troms,https://wynncraft.wiki.gg/images/PrinceofTroms.png?2d85fb,Lost Royalty | Prince of Troms
+Nami The Healer,common,10,2,,False,quest,https://wynncraft.wiki.gg/wiki/Nami_The_Healer,https://wynncraft.wiki.gg/images/NamiTheHealer.png?844e41,Lava Springs | Nami The Healer
+Snail Race Supervisor,common,10,1,,False,template,,https://wynncraft.wiki.gg/images/SnailRaceSupervisor.png?cbb420,Recipe For Disaster
+Karkun,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Karkun,https://wynncraft.wiki.gg/images/Karkun.png?55cea9,Redbeard's Booty
+Rinire,common,10,1,,True,quest,https://wynncraft.wiki.gg/wiki/Rinire,https://wynncraft.wiki.gg/images/Rinire.png?564722,Rise of the Quartron (1.19)
+Elder Berusia,common,10,2,,False,quest,https://wynncraft.wiki.gg/wiki/Elder_Berusia,https://wynncraft.wiki.gg/images/ElderBerusia.png?a79f54,Shattered Minds | Shattered Minds (1.19)
+Jamie,common,10,1,,False,quest,,https://wynncraft.wiki.gg/images/Jamie.png?c8d09b,Shrouded in Mist
+Siegfried Fan,common,10,1,,False,quest,,,The Hero of Gavel
+Corrupted Scout (Lv. 3),common,10,2,Scout,False,template,https://wynncraft.wiki.gg/wiki/Corrupted_Scout_%28Lv._3%29,https://wynncraft.wiki.gg/images/CorruptedScout%28Lv3%29.png?34f877,Tempo Town Trouble | The Dark Descent
+Grant,common,10,1,,False,quest,,,The Feathers Fly Part II
+Yuge,common,10,2,,False,quest,https://wynncraft.wiki.gg/wiki/Yuge,https://wynncraft.wiki.gg/images/Yuge.png?e56b4c,The Lost | The Lost (1.20)
+Ghost Guide,common,10,1,,False,quest,,,The Order of the Grook
+Priscilla,common,10,1,,False,quest,,,The Strong Survive
+Recruiter Strumon,common,10,1,,False,quest,,,The Strong Survive
+Caras,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Caras,https://wynncraft.wiki.gg/images/Caras.png?a6017e,Tribal Aggression
+Ka L'argwit,common,10,1,,False,quest,https://wynncraft.wiki.gg/wiki/Ka_L%27argwit,https://wynncraft.wiki.gg/images/KaL%27argwit.png?98a33a,Troubled Tribesmen
+Soway,common,9,1,,True,quest,https://wynncraft.wiki.gg/wiki/Soway,https://wynncraft.wiki.gg/images/Soway.png?f44e1b,Aldorei's Secret Part II (1.20)
+Employee,common,9,1,,False,quest,,,A Hunter's Calling
+Espren Border Guard,common,9,1,,False,quest,,https://wynncraft.wiki.gg/images/EsprenBorderGuard.png?53ca28,A New Beginning
+Espren Guard Captain,common,9,1,,False,quest,,,A New Beginning
+Ureietun,common,9,1,,False,quest,,https://wynncraft.wiki.gg/images/Ureietun.png?e5b735,All Roads to Peace
+Lomoster,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Lomoster,https://wynncraft.wiki.gg/images/Lomoster.png?b7f462,All Roads to Peace
+Mango,common,9,2,,False,quest,,https://wynncraft.wiki.gg/images/Mango.png?551f7b,All Roads to Peace | Nunexetor
+Miliyus,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Miliyus,https://wynncraft.wiki.gg/images/Miliyus.png?c45268,All Roads to Peace
+Etemitoro,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Etemitoro,https://wynncraft.wiki.gg/images/Etemitoro.png?ea5951,All Roads to Peace
+Blacksmith Dwarf,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Blacksmith_Dwarf,https://wynncraft.wiki.gg/images/BlacksmithDwarf.png?79107a,Blacksmith Dwarf
+Eagle Tribesman,common,9,3,,False,"quest,template",,,Citizen | Eagle Tribesman (NPC) | Totem Pole
+Rodoroc Citizen,common,9,2,,False,quest,,https://wynncraft.wiki.gg/images/RodorocCitizen.png?b053b0,Citizen | Dwarves and Doguns Part IV
+Charlie,common,9,1,,True,quest,https://wynncraft.wiki.gg/wiki/Charlie,https://wynncraft.wiki.gg/images/Charlie.png?4a6da5,Finding The Light (1.19)
+Salesman,common,9,2,,False,template,https://wynncraft.wiki.gg/wiki/Salesman,https://wynncraft.wiki.gg/images/Salesman.png?601a49,Grand Youth | Salesman
+Hallfred,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Hallfred,https://wynncraft.wiki.gg/images/Hallfred.png?45fe25,Ice Nations
+Jaybip,common,9,1,,True,quest,https://wynncraft.wiki.gg/wiki/Jaybip,https://wynncraft.wiki.gg/images/Jaybip%28Mission%29.png?a2bda4,Jaybip
+The Mayor,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/The_Mayor,,Lexdale Witch Trials
+Poclo Wabblebuff of Gelibord,common,9,1,,False,template,,https://wynncraft.wiki.gg/images/PocloWabblebuffofGelibord.png?35268d,Lazarus Pit (Quest)
+Mayor Eoric,common,9,2,Eoric,False,quest,https://wynncraft.wiki.gg/wiki/Mayor_Eoric,https://wynncraft.wiki.gg/images/Mayor_Eoric.png?ad23e4,Mayor Eoric | The Hidden City
+Mister Caritat,common,9,1,,False,quest,,,Memory Paranoia
+Rynend,common,9,2,,False,template,https://wynncraft.wiki.gg/wiki/Rynend,https://wynncraft.wiki.gg/images/Rynend.png?8a37df,Maltic's Well | Rynend
+Nybun,common,9,1,,True,quest,https://wynncraft.wiki.gg/wiki/Nybun,,Nybun
+Mylo,common,9,2,,False,quest,https://wynncraft.wiki.gg/wiki/Mylo,https://wynncraft.wiki.gg/images/Mylo.png?d8fc53,Mylo | The Mercenary (2.0.4)
+Xanthos,common,9,1,,False,quest,,,Remains of the Cursed
+General Algard,common,9,1,,False,quest,,,The Doguns' Defeat
+Thesead's Mayor,common,9,2,,False,quest,https://wynncraft.wiki.gg/wiki/Thesead%27s_Mayor,https://wynncraft.wiki.gg/images/Thesead%27s_Mayor.png?1a0faa,The Hidden City | Thesead's Mayor
+Fetu,common,9,1,,False,quest,,https://wynncraft.wiki.gg/images/Fetu.png?7d453f,The Lost
+Constable,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Constable,,The Missing Piece
+Uniform Tailor,common,9,1,,False,quest,,,The Strong Survive
+Matilda,common,9,1,,False,quest,,,The Strong Survive
+Wilton,common,9,1,,False,quest,,,The Strong Survive
+Saldin,common,9,1,,False,quest,,,The Strong Survive
+Royal Advisor Carlos,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Royal_Advisor_Carlos,https://wynncraft.wiki.gg/images/RoyalAdvisorCarlos.png?6ef5fd,WynnExcavation Site D
+Traitor Thomas,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Traitor_Thomas,https://wynncraft.wiki.gg/images/TraitorThomas.png?c5be18,WynnExcavation Site D
+Phief,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Phief,https://wynncraft.wiki.gg/images/Phief.png?f26a5e,Zhight Island (Quest)
+Tirt,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Tirt,https://wynncraft.wiki.gg/images/Tirt.png?2bc49e,Zhight Island (Quest)
+Waiter,common,8,2,,False,quest,,,Acquiring Credentials | Overture to Despair
+Amadel,common,8,2,,False,quest,https://wynncraft.wiki.gg/wiki/Amadel,https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a,A Hunter's Calling | WynnExcavation Site D
+Agitated Citizen,common,8,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Agitated_Citizen,https://wynncraft.wiki.gg/images/AgitatedCitizen.png?4e87f1,Agitated Citizen | Citizen
+Elio,common,8,1,,True,quest,https://wynncraft.wiki.gg/wiki/Elio,https://wynncraft.wiki.gg/images/Elio.png?970793,An Iron Heart Part II (1.19)
+Creinu,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Creinu,https://wynncraft.wiki.gg/images/Creinu.png?6916e7,All Roads to Peace
+Peaches,common,8,2,,False,quest,,https://wynncraft.wiki.gg/images/Peaches.png?713af4,All Roads to Peace | Nunexetor
+Ario,common,8,1,,True,quest,https://wynncraft.wiki.gg/wiki/Ario,,Ario
+Alekin Guard,common,8,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/AlekinGuard.png?b8f616,Alekin Guard (NPC) | Citizen
+Avos Citizen,common,8,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/AvosCitizen.png?f30032,Avos Citizen (NPC) | Citizen
+Popo,common,8,3,,False,quest,https://wynncraft.wiki.gg/wiki/Popo,,Bugabo | Rise of the Quartron | Rise of the Quartron (1.19)
+Markque The Wizard,common,8,1,,False,quest,,,Bob's Lost Soul
+Bored Farmer,common,8,2,,False,quest,https://wynncraft.wiki.gg/wiki/Bored_Farmer,https://wynncraft.wiki.gg/images/BoredFarmer.png?720c46,Bored Farmer | Cook Assistant (2.1.1)
+Brank,common,8,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Brank,https://wynncraft.wiki.gg/images/Brank.png?8f535d,Brank | Citizen
+Barkeep,common,8,1,,False,quest,,,Brothers Return
+Alfe,common,8,1,,False,quest,,,Brothers Return
+Angry Townsperson,common,8,2,,False,"quest,template",,,Citizen | Corrupted Townsperson
+Corrupted Townsperson,common,8,2,Townsperson,False,"quest,template",https://wynncraft.wiki.gg/wiki/Corrupted_Townsperson,,Citizen | Corrupted Townsperson
+Relos Mechanic,common,8,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/RelosMechanic.png?75a9a5,Citizen | Relos Mechanic (NPC)
+Llevigar Professor,common,8,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/LlevigarProfessor.png?d54651,Citizen | Llevigar Professor (NPC)
+Private Walder,common,8,2,,False,quest,,https://wynncraft.wiki.gg/images/PrivateWalder.png?c5bc01,Citizen | The Breaking Point
+Nettik,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Nettik,https://wynncraft.wiki.gg/images/Nettik.png?ccc510,Desperate Metal
+Barden,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Barden,https://wynncraft.wiki.gg/images/Barden.png?4553e4,Dwarves and Doguns Part I
+Office Manager,common,8,2,,False,quest,https://wynncraft.wiki.gg/wiki/Office_Manager,https://wynncraft.wiki.gg/images/OfficeManager.png?3fec26,Fallen Delivery | Fallen Delivery (1.20)
+Excited Fan,common,8,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Excited_Fan,https://wynncraft.wiki.gg/images/ExcitedFan.png?ad86b9,Excited Fan | The Hero of Gavel
+Clan Members,common,8,1,,False,quest,,,First Wicker's Spark
+Keibon,common,8,1,,True,quest,,https://wynncraft.wiki.gg/images/Keibon.png?d7595c,Frost Bitten
+Gerten Chief Snaga,common,8,2,,False,quest,https://wynncraft.wiki.gg/wiki/Gerten_Chief_Snaga,https://wynncraft.wiki.gg/images/GertenChiefSnaga.png?4b1004,Hunger of the Gerts Part I | The Hunger of Gerts Part 1 (1.20)
+Gert,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Gert,https://wynncraft.wiki.gg/images/Gert.png?cb171b,Hunger of the Gerts Part I
+Amira,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Amira,https://wynncraft.wiki.gg/images/Amira.png?41521a,Lexdale Witch Trials
+Sesad,common,8,1,,True,quest,https://wynncraft.wiki.gg/wiki/Sesad,https://wynncraft.wiki.gg/images/Sesad.png?7a6dde,Lazarus Pit (1.19)
+Old Book,common,8,1,,False,template,,https://wynncraft.wiki.gg/images/OldBook.png?da3e39,Lazarus Pit (Quest)
+Rotating Game Expert,common,8,1,,False,quest,,https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5,Minigame Expert
+Aryn,common,8,1,,False,template,https://wynncraft.wiki.gg/wiki/Aryn,https://wynncraft.wiki.gg/images/Aryn.png?1abba1,Lost in the Jungle
+Baker,common,8,2,,False,"quest,template",,https://wynncraft.wiki.gg/images/Baker.png?891f83,Memory Paranoia | Recipe For Disaster
+Caritat Senior,common,8,1,,False,quest,,,Memory Paranoia
+Rontaid,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Rontaid,https://wynncraft.wiki.gg/images/Rontaid.png?c04293,One Thousand Meters Under
+Otium,common,8,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Otium,https://wynncraft.wiki.gg/images/Otium.png?4479f8,Non-Quest NPCs | Otium
+Prentiss,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Prentiss,https://wynncraft.wiki.gg/images/Prentiss.png?992ae6,Out of my Mind
+Todd,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Todd,https://wynncraft.wiki.gg/images/Todd.png?261f59,Out of my Mind
+Martim,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Martim,https://wynncraft.wiki.gg/images/Martim.png?1cda03,Redbeard's Booty
+Bob,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Bob,https://wynncraft.wiki.gg/images/Bob.png?230166,Reincarnation
+Red Fox Owner,common,8,1,,False,quest,,,Revelations in Fall
+Grandmaster Shaman,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Grandmaster_Shaman,https://wynncraft.wiki.gg/images/GrandmasterShaman.png?bf8b81,The Envoy Part II
+Thesead Coal Miner,common,8,1,,False,quest,,https://wynncraft.wiki.gg/images/TheseadCoalMiner.png?465cf6,The Canary Calls
+Tasha,common,8,1,,False,quest,,,The Feathers Fly Part II
+Kabo,common,8,1,,False,quest,,,The Cursed One
+Aluxander,common,8,1,,True,quest,https://wynncraft.wiki.gg/wiki/Aluxander,https://wynncraft.wiki.gg/images/Aluxander2.png?68d4c6,The Realm of Light (Quest) (1.19)
+Regulux,common,8,1,,True,quest,https://wynncraft.wiki.gg/wiki/Regulux,https://wynncraft.wiki.gg/images/Regulux.png?b82f0b,The Realm of Light (Quest) (1.19)
+Maiden,common,8,1,,False,quest,,,The Maiden Tower
+Atila,common,8,1,,False,quest,,https://wynncraft.wiki.gg/images/Atila.png?f11f12,The Thanos Depository
+Vagabond,common,8,1,,False,quest,,,The Missing Piece
+Robyn,common,8,1,,False,quest,,,The Strong Survive
+Gernald,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Gernald,https://wynncraft.wiki.gg/images/Gernald.png?978331,Underice
+Old Druid,common,8,1,,False,quest,,,World Encounters
+Larry,common,8,1,,False,quest,,https://wynncraft.wiki.gg/images/Larry.png?c40d1a,World Encounters
+Excavator Admin Uci,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci,https://wynncraft.wiki.gg/images/ExcavatorAdminUci.png?757c6e,WynnExcavation Site D
+WynnExcavation Leader Amadel,common,8,1,,False,quest,,,WynnExcavation Site D
+Amadel's Assistant,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant,https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c,WynnExcavation Site D

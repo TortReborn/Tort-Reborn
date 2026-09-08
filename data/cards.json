@@ -1,12 +1,12 @@
 {
- "generated_at": "2026-09-08T02:43:42+00:00",
+ "generated_at": "2026-09-08T23:10:26+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 378,
+ "count": 543,
  "cards": [
   {
    "slug": "tasim",
    "name": "Tasim",
-   "lines": 839,
+   "lines": 1138,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Tasim",
    "image_url": "https://wynncraft.wiki.gg/images/Tasim%28InfestedPlants%29.png?fbd363",
    "tier": "legendary"
@@ -22,7 +22,7 @@
   {
    "slug": "ava",
    "name": "Ava",
-   "lines": 703,
+   "lines": 790,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ava",
    "image_url": "https://wynncraft.wiki.gg/images/Ava.png?54d7d7",
    "tier": "legendary"
@@ -52,12 +52,68 @@
    "tier": "legendary"
   },
   {
+   "slug": "aster",
+   "name": "Aster",
+   "lines": 385,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Aster",
+   "image_url": "https://wynncraft.wiki.gg/images/Aster.png?682f3c",
+   "tier": "legendary"
+  },
+  {
+   "slug": "aledar",
+   "name": "Aledar",
+   "lines": 373,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Aledar",
+   "image_url": "https://wynncraft.wiki.gg/images/Aledar.png?eacfe7",
+   "tier": "legendary"
+  },
+  {
+   "slug": "bonfire-keeper",
+   "name": "Bonfire Keeper",
+   "lines": 369,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bonfire_Keeper",
+   "image_url": "https://wynncraft.wiki.gg/images/BonfireKeeper%28BattlefortheBonfire%29.png?3c2cbe",
+   "tier": "legendary"
+  },
+  {
+   "slug": "the-traveler",
+   "name": "The Traveler",
+   "lines": 368,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Traveler",
+   "image_url": "https://wynncraft.wiki.gg/images/TheTraveler.png?f4d766",
+   "tier": "legendary"
+  },
+  {
+   "slug": "seaskipper-captain",
+   "name": "Seaskipper Captain",
+   "lines": 363,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Seaskipper_Captain",
+   "image_url": "https://wynncraft.wiki.gg/images/SeaskipperCaptain.png?cb27ed",
+   "tier": "legendary"
+  },
+  {
    "slug": "lari",
    "name": "Lari",
-   "lines": 350,
+   "lines": 361,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Lari",
    "image_url": "https://wynncraft.wiki.gg/images/Lari.png?a4c818",
-   "tier": "legendary"
+   "tier": "epic"
+  },
+  {
+   "slug": "efena",
+   "name": "Efena",
+   "lines": 301,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Efena",
+   "image_url": "https://wynncraft.wiki.gg/images/Efena.png?e1e4ed",
+   "tier": "epic"
+  },
+  {
+   "slug": "olon",
+   "name": "Olon",
+   "lines": 287,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Olon",
+   "image_url": "https://wynncraft.wiki.gg/images/Olon.png?7548f3",
+   "tier": "epic"
   },
   {
    "slug": "yuman",
@@ -65,7 +121,23 @@
    "lines": 272,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Yuman",
    "image_url": "https://wynncraft.wiki.gg/images/YumanSmilingPortrait.png?64558f",
-   "tier": "legendary"
+   "tier": "epic"
+  },
+  {
+   "slug": "maxie",
+   "name": "Maxie",
+   "lines": 262,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Maxie",
+   "image_url": "https://wynncraft.wiki.gg/images/Maxie%28Hostile%2CAHunter%27sCalling%29.png?13f9cb",
+   "tier": "epic"
+  },
+  {
+   "slug": "dr-picard",
+   "name": "Dr. Picard",
+   "lines": 249,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dr._Picard",
+   "image_url": "https://wynncraft.wiki.gg/images/Dr.Picard.png?f91eb7",
+   "tier": "epic"
   },
   {
    "slug": "elise",
@@ -76,51 +148,11 @@
    "tier": "epic"
   },
   {
-   "slug": "olon",
-   "name": "Olon",
-   "lines": 244,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Olon",
-   "image_url": "https://wynncraft.wiki.gg/images/Olon.png?7548f3",
-   "tier": "epic"
-  },
-  {
-   "slug": "efena",
-   "name": "Efena",
-   "lines": 223,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Efena",
-   "image_url": "https://wynncraft.wiki.gg/images/Efena.png?e1e4ed",
-   "tier": "epic"
-  },
-  {
-   "slug": "aledar",
-   "name": "Aledar",
-   "lines": 214,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Aledar",
-   "image_url": "https://wynncraft.wiki.gg/images/Aledar.png?eacfe7",
-   "tier": "epic"
-  },
-  {
-   "slug": "maxie",
-   "name": "Maxie",
-   "lines": 212,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Maxie",
-   "image_url": "https://wynncraft.wiki.gg/images/Maxie%28Hostile%2CAHunter%27sCalling%29.png?13f9cb",
-   "tier": "epic"
-  },
-  {
    "slug": "death",
    "name": "Death",
    "lines": 211,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Death",
    "image_url": "https://wynncraft.wiki.gg/images/Death.png?650731",
-   "tier": "epic"
-  },
-  {
-   "slug": "dr-picard",
-   "name": "Dr. Picard",
-   "lines": 205,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dr._Picard",
-   "image_url": "https://wynncraft.wiki.gg/images/Dr.Picard.png?f91eb7",
    "tier": "epic"
   },
   {
@@ -140,11 +172,27 @@
    "tier": "epic"
   },
   {
+   "slug": "drale",
+   "name": "Drale",
+   "lines": 196,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Drale",
+   "image_url": "https://wynncraft.wiki.gg/images/Drale%28Cowfusion%29.png?318a09",
+   "tier": "epic"
+  },
+  {
    "slug": "mora",
    "name": "Mora",
    "lines": 189,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Mora",
    "image_url": "https://wynncraft.wiki.gg/images/Mora%28GuardUniform%29.png?2db8a8",
+   "tier": "epic"
+  },
+  {
+   "slug": "siegfried",
+   "name": "Siegfried",
+   "lines": 180,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Siegfried",
+   "image_url": "https://wynncraft.wiki.gg/images/MonumenttoSiegfried.png?d937ab",
    "tier": "epic"
   },
   {
@@ -156,11 +204,19 @@
    "tier": "epic"
   },
   {
-   "slug": "drale",
-   "name": "Drale",
-   "lines": 150,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Drale",
-   "image_url": "https://wynncraft.wiki.gg/images/Drale%28Cowfusion%29.png?318a09",
+   "slug": "sybil",
+   "name": "Sybil",
+   "lines": 157,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sybil",
+   "image_url": "https://wynncraft.wiki.gg/images/Sybil%28Detlas%29.png?2c9c5d",
+   "tier": "epic"
+  },
+  {
+   "slug": "kelight",
+   "name": "Kelight",
+   "lines": 149,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Kelight",
+   "image_url": "https://wynncraft.wiki.gg/images/Kelight.png?317768",
    "tier": "epic"
   },
   {
@@ -172,11 +228,51 @@
    "tier": "epic"
   },
   {
+   "slug": "the-guide",
+   "name": "The Guide",
+   "lines": 140,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Guide",
+   "image_url": "https://wynncraft.wiki.gg/images/TheGuide.png?9310b4",
+   "tier": "epic"
+  },
+  {
+   "slug": "honip",
+   "name": "Honip",
+   "lines": 138,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Honip",
+   "image_url": "https://wynncraft.wiki.gg/images/Honip%28Nemract%29.png?9b38f2",
+   "tier": "epic"
+  },
+  {
+   "slug": "afelis",
+   "name": "Afelis",
+   "lines": 136,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Afelis",
+   "image_url": "https://wynncraft.wiki.gg/images/Afelis%28Ragni%29.png?739991",
+   "tier": "epic"
+  },
+  {
    "slug": "jofash-resident",
    "name": "Jofash Resident",
    "lines": 136,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/JofashResident.png?57c672",
+   "tier": "epic"
+  },
+  {
+   "slug": "reynauld",
+   "name": "Reynauld",
+   "lines": 136,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Reynauld",
+   "image_url": "https://wynncraft.wiki.gg/images/ScoutReynauld.png?fc65ba",
+   "tier": "epic"
+  },
+  {
+   "slug": "ope",
+   "name": "Ope",
+   "lines": 131,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ope",
+   "image_url": "https://wynncraft.wiki.gg/images/Ope.png?f0bb93",
    "tier": "epic"
   },
   {
@@ -188,11 +284,11 @@
    "tier": "epic"
   },
   {
-   "slug": "reynauld",
-   "name": "Reynauld",
-   "lines": 130,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Reynauld",
-   "image_url": "https://wynncraft.wiki.gg/images/ScoutReynauld.png?fc65ba",
+   "slug": "zuett",
+   "name": "Zuett",
+   "lines": 129,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Zuett",
+   "image_url": "https://wynncraft.wiki.gg/images/Zuett.png?13546b",
    "tier": "epic"
   },
   {
@@ -206,9 +302,65 @@
   {
    "slug": "relend",
    "name": "Relend",
-   "lines": 122,
+   "lines": 123,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Relend",
    "image_url": "https://wynncraft.wiki.gg/images/Relend.png?de69d2",
+   "tier": "epic"
+  },
+  {
+   "slug": "santa",
+   "name": "Santa",
+   "lines": 120,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Santa",
+   "image_url": "https://wynncraft.wiki.gg/images/Santa%28CraftmasChaos%29.png?b0eee0",
+   "tier": "epic"
+  },
+  {
+   "slug": "dodegar",
+   "name": "Dodegar",
+   "lines": 119,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dodegar",
+   "image_url": "https://wynncraft.wiki.gg/images/Dodegar%28FestivaloftheBonfire%29.png?3b0915",
+   "tier": "epic"
+  },
+  {
+   "slug": "hive-servant",
+   "name": "Hive Servant",
+   "lines": 118,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Hive_Servant.png?9fdfe1",
+   "tier": "epic"
+  },
+  {
+   "slug": "asher",
+   "name": "Asher",
+   "lines": 114,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Asher",
+   "image_url": "https://wynncraft.wiki.gg/images/Asher.png?aebea9",
+   "tier": "epic"
+  },
+  {
+   "slug": "caid",
+   "name": "Caid",
+   "lines": 113,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caid",
+   "image_url": "https://wynncraft.wiki.gg/images/SailorCaid.png?17b2fb",
+   "tier": "epic"
+  },
+  {
+   "slug": "nohno",
+   "name": "Nohno",
+   "lines": 113,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nohno",
+   "image_url": "https://wynncraft.wiki.gg/images/Nohno.png?fd33ca",
+   "tier": "epic"
+  },
+  {
+   "slug": "corkus-citizen",
+   "name": "Corkus Citizen",
+   "lines": 107,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/CorkusCitizen.png?2fb5b1",
    "tier": "epic"
   },
   {
@@ -220,25 +372,9 @@
    "tier": "epic"
   },
   {
-   "slug": "caid",
-   "name": "Caid",
-   "lines": 102,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caid",
-   "image_url": "https://wynncraft.wiki.gg/images/SailorCaid.png?17b2fb",
-   "tier": "epic"
-  },
-  {
-   "slug": "siegfried",
-   "name": "Siegfried",
-   "lines": 100,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Siegfried",
-   "image_url": "https://wynncraft.wiki.gg/images/MonumenttoSiegfried.png?d937ab",
-   "tier": "epic"
-  },
-  {
    "slug": "receptionist",
    "name": "Receptionist",
-   "lines": 97,
+   "lines": 103,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Receptionist.png?16646e",
    "tier": "epic"
@@ -246,26 +382,98 @@
   {
    "slug": "king-draani",
    "name": "King Draani",
-   "lines": 97,
+   "lines": 102,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/King_Draani",
    "image_url": "https://wynncraft.wiki.gg/images/KingDraani.png?6c09fa",
    "tier": "epic"
   },
   {
-   "slug": "honip",
-   "name": "Honip",
+   "slug": "jaspur",
+   "name": "Jaspur",
+   "lines": 102,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jaspur",
+   "image_url": "https://wynncraft.wiki.gg/images/Jaspur.png?e9f099",
+   "tier": "epic"
+  },
+  {
+   "slug": "gale",
+   "name": "Gale",
+   "lines": 101,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Gale",
+   "image_url": "https://wynncraft.wiki.gg/images/SpiritofGale.png?bea6ba",
+   "tier": "epic"
+  },
+  {
+   "slug": "korzim",
+   "name": "Korzim",
+   "lines": 98,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Korzim",
+   "image_url": "https://wynncraft.wiki.gg/images/Korzim.png?dec656",
+   "tier": "epic"
+  },
+  {
+   "slug": "enzan",
+   "name": "Enzan",
+   "lines": 98,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Enzan",
+   "image_url": "https://wynncraft.wiki.gg/images/Enzan.png?3f33ce",
+   "tier": "epic"
+  },
+  {
+   "slug": "orja",
+   "name": "Orja",
    "lines": 93,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Honip",
-   "image_url": "https://wynncraft.wiki.gg/images/Honip%28Nemract%29.png?9b38f2",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orja",
+   "image_url": "https://wynncraft.wiki.gg/images/Orja.png?c72a96",
    "tier": "epic"
   },
   {
    "slug": "elphaba",
    "name": "Elphaba",
-   "lines": 90,
+   "lines": 92,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Elphaba",
    "image_url": "https://wynncraft.wiki.gg/images/Elphaba%28AJourneyBeyond%29.png?50cbf5",
    "tier": "epic"
+  },
+  {
+   "slug": "llevigar-archivist",
+   "name": "Llevigar Archivist",
+   "lines": 90,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Llevigar_Archivist",
+   "image_url": "https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1",
+   "tier": "rare"
+  },
+  {
+   "slug": "caissop",
+   "name": "Caissop",
+   "lines": 89,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caissop",
+   "image_url": "https://wynncraft.wiki.gg/images/Caissop.png?a48c7d",
+   "tier": "rare"
+  },
+  {
+   "slug": "drucksh",
+   "name": "Drucksh",
+   "lines": 89,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Drucksh",
+   "image_url": "https://wynncraft.wiki.gg/images/Drucksh.png?b45f97",
+   "tier": "rare"
+  },
+  {
+   "slug": "chef-hamsey",
+   "name": "Chef Hamsey",
+   "lines": 88,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Chef_Hamsey",
+   "image_url": "https://wynncraft.wiki.gg/images/ChefHamsey.png?d49238",
+   "tier": "rare"
+  },
+  {
+   "slug": "dr-legendary",
+   "name": "Dr. Legendary",
+   "lines": 87,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dr._Legendary",
+   "image_url": "https://wynncraft.wiki.gg/images/DrLegendary.png?17e606",
+   "tier": "rare"
   },
   {
    "slug": "sovereign-soosu",
@@ -273,15 +481,55 @@
    "lines": 86,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Soosu",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignSoosu.png?1633cb",
-   "tier": "epic"
+   "tier": "rare"
   },
   {
-   "slug": "corkus-citizen",
-   "name": "Corkus Citizen",
-   "lines": 84,
+   "slug": "dogun",
+   "name": "Dogun",
+   "lines": 86,
    "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/CorkusCitizen.png?2fb5b1",
-   "tier": "epic"
+   "image_url": "https://wynncraft.wiki.gg/images/Dogun.png?1893be",
+   "tier": "rare"
+  },
+  {
+   "slug": "korun",
+   "name": "Korun",
+   "lines": 86,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Korun",
+   "image_url": "https://wynncraft.wiki.gg/images/Korun.png?4105da",
+   "tier": "rare"
+  },
+  {
+   "slug": "rhay",
+   "name": "Rhay",
+   "lines": 86,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rhay",
+   "image_url": "https://wynncraft.wiki.gg/images/Rhay.png?27bf6d",
+   "tier": "rare"
+  },
+  {
+   "slug": "mask-salesman",
+   "name": "Mask Salesman",
+   "lines": 85,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mask_Salesman",
+   "image_url": "https://wynncraft.wiki.gg/images/MaskSalesman.png?568a17",
+   "tier": "rare"
+  },
+  {
+   "slug": "nick",
+   "name": "Nick",
+   "lines": 85,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nick",
+   "image_url": "https://wynncraft.wiki.gg/images/Nick.png?9207a6",
+   "tier": "rare"
+  },
+  {
+   "slug": "doan",
+   "name": "Doan",
+   "lines": 84,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Doan",
+   "image_url": "https://wynncraft.wiki.gg/images/Doan.png?98782f",
+   "tier": "rare"
   },
   {
    "slug": "master-azael",
@@ -289,7 +537,31 @@
    "lines": 84,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Master_Azael",
    "image_url": "https://wynncraft.wiki.gg/images/AzaelPortraitSmiling.png?cd28f2",
-   "tier": "epic"
+   "tier": "rare"
+  },
+  {
+   "slug": "ragni-s-king",
+   "name": "Ragni's King",
+   "lines": 83,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ragni%27s_King",
+   "image_url": "https://wynncraft.wiki.gg/images/Ragni%27sKing.png?278ac2",
+   "tier": "rare"
+  },
+  {
+   "slug": "admiral-aegis",
+   "name": "Admiral Aegis",
+   "lines": 82,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Admiral_Aegis",
+   "image_url": "https://wynncraft.wiki.gg/images/AdmiralAegis.png?8cbcad",
+   "tier": "rare"
+  },
+  {
+   "slug": "angie",
+   "name": "Angie",
+   "lines": 82,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Angie",
+   "image_url": "https://wynncraft.wiki.gg/images/Angie%28AuburnForest%29.png?33c4bd",
+   "tier": "rare"
   },
   {
    "slug": "captain-fuhue",
@@ -297,7 +569,23 @@
    "lines": 81,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Fuhue",
    "image_url": "https://wynncraft.wiki.gg/images/FuhuePortrait.png?ee2889",
-   "tier": "epic"
+   "tier": "rare"
+  },
+  {
+   "slug": "worker",
+   "name": "Worker",
+   "lines": 81,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Worker.png?541252",
+   "tier": "rare"
+  },
+  {
+   "slug": "festival-worker",
+   "name": "Festival Worker",
+   "lines": 81,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Festival_Worker",
+   "image_url": "https://wynncraft.wiki.gg/images/FestivalWorker%28Performances%29.png?694cfa",
+   "tier": "rare"
   },
   {
    "slug": "garvan",
@@ -305,7 +593,23 @@
    "lines": 80,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Garvan",
    "image_url": "https://wynncraft.wiki.gg/images/Garvan%28Past%29.png?4eddf6",
-   "tier": "epic"
+   "tier": "rare"
+  },
+  {
+   "slug": "old-man",
+   "name": "Old Man",
+   "lines": 79,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Man",
+   "image_url": "https://wynncraft.wiki.gg/images/OldMan%28HollowSerenity%29.png?8941d3",
+   "tier": "rare"
+  },
+  {
+   "slug": "yahya",
+   "name": "Yahya",
+   "lines": 78,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yahya",
+   "image_url": "https://wynncraft.wiki.gg/images/Yahya%28NivlaHouse%29.png?bd5ec1",
+   "tier": "rare"
   },
   {
    "slug": "abramod",
@@ -316,11 +620,59 @@
    "tier": "rare"
   },
   {
+   "slug": "farcor",
+   "name": "Farcor",
+   "lines": 77,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Farcor",
+   "image_url": "https://wynncraft.wiki.gg/images/Farcor%28Portrait%29.png?d0715f",
+   "tier": "rare"
+  },
+  {
+   "slug": "mastro",
+   "name": "Mastro",
+   "lines": 75,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mastro",
+   "image_url": "https://wynncraft.wiki.gg/images/Mastro.png?f3464a",
+   "tier": "rare"
+  },
+  {
+   "slug": "linton",
+   "name": "Linton",
+   "lines": 75,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Linton",
+   "image_url": "https://wynncraft.wiki.gg/images/MinerLinton.png?c558e5",
+   "tier": "rare"
+  },
+  {
    "slug": "cemor",
    "name": "Cemor",
    "lines": 74,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Cemor.png?ed852f",
+   "tier": "rare"
+  },
+  {
+   "slug": "the-envoy",
+   "name": "The Envoy",
+   "lines": 73,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Envoy",
+   "image_url": "https://wynncraft.wiki.gg/images/TheEnvoy.png?47bfb4",
+   "tier": "rare"
+  },
+  {
+   "slug": "garull",
+   "name": "Garull",
+   "lines": 71,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Garull",
+   "image_url": "https://wynncraft.wiki.gg/images/Garull.png?85ee6c",
+   "tier": "rare"
+  },
+  {
+   "slug": "orikal",
+   "name": "Orikal",
+   "lines": 71,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orikal",
+   "image_url": "https://wynncraft.wiki.gg/images/Orikal.png?52ce14",
    "tier": "rare"
   },
   {
@@ -340,11 +692,27 @@
    "tier": "rare"
   },
   {
+   "slug": "juggler",
+   "name": "Juggler",
+   "lines": 69,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Juggler",
+   "image_url": "https://wynncraft.wiki.gg/images/Juggler.png?b9518b",
+   "tier": "rare"
+  },
+  {
    "slug": "elder-birch",
    "name": "Elder Birch",
    "lines": 68,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/ElderBirch.png?72afce",
+   "tier": "rare"
+  },
+  {
+   "slug": "farmer-cevalus",
+   "name": "Farmer Cevalus",
+   "lines": 68,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Farmer_Cevalus",
+   "image_url": "https://wynncraft.wiki.gg/images/FarmerCevalus.png?d52139",
    "tier": "rare"
   },
   {
@@ -356,19 +724,27 @@
    "tier": "rare"
   },
   {
-   "slug": "dodegar",
-   "name": "Dodegar",
-   "lines": 62,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dodegar",
-   "image_url": "https://wynncraft.wiki.gg/images/Dodegar%28FestivaloftheBonfire%29.png?3b0915",
+   "slug": "detlas-soldier",
+   "name": "Detlas Soldier",
+   "lines": 66,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Detlas_Soldier.png?961519",
    "tier": "rare"
   },
   {
-   "slug": "caissop",
-   "name": "Caissop",
-   "lines": 61,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caissop",
-   "image_url": "https://wynncraft.wiki.gg/images/Caissop.png?a48c7d",
+   "slug": "junes",
+   "name": "Junes",
+   "lines": 66,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Junes",
+   "image_url": "https://wynncraft.wiki.gg/images/Junes.png?704a91",
+   "tier": "rare"
+  },
+  {
+   "slug": "sayleros",
+   "name": "Sayleros",
+   "lines": 65,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sayleros",
+   "image_url": "https://wynncraft.wiki.gg/images/Sayleros.png?e231a8",
    "tier": "rare"
   },
   {
@@ -388,11 +764,83 @@
    "tier": "rare"
   },
   {
+   "slug": "the-scavenger",
+   "name": "The Scavenger",
+   "lines": 59,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Scavenger",
+   "image_url": "https://wynncraft.wiki.gg/images/TheScavenger.png?ad36ba",
+   "tier": "rare"
+  },
+  {
+   "slug": "confectionery-merchant",
+   "name": "Confectionery Merchant",
+   "lines": 59,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Confectionery_Merchant",
+   "image_url": "https://wynncraft.wiki.gg/images/ConfectioneryMerchant.png?baec99",
+   "tier": "rare"
+  },
+  {
    "slug": "bak-al",
    "name": "Bak'al",
-   "lines": 57,
+   "lines": 58,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Bak%27al",
    "image_url": "https://wynncraft.wiki.gg/images/Bak%27al.png?53b127",
+   "tier": "rare"
+  },
+  {
+   "slug": "theorick-twain",
+   "name": "Theorick Twain",
+   "lines": 58,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Theorick_Twain",
+   "image_url": "https://wynncraft.wiki.gg/images/TheorickTwain.png?306363",
+   "tier": "rare"
+  },
+  {
+   "slug": "lutho-citizen",
+   "name": "Lutho Citizen",
+   "lines": 58,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lutho_Citizen",
+   "image_url": "https://wynncraft.wiki.gg/images/LuthoCitizen.png?892870",
+   "tier": "rare"
+  },
+  {
+   "slug": "festival-goer",
+   "name": "Festival Goer",
+   "lines": 58,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Festival_Goer",
+   "image_url": "https://wynncraft.wiki.gg/images/FestivalGoer%28Friendly%29.png?eb7f5d",
+   "tier": "rare"
+  },
+  {
+   "slug": "ildan",
+   "name": "Ildan",
+   "lines": 58,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ildan",
+   "image_url": "https://wynncraft.wiki.gg/images/Ildan.png?14f380",
+   "tier": "rare"
+  },
+  {
+   "slug": "souvenir-t-shirt-merchant",
+   "name": "Souvenir T-Shirt Merchant",
+   "lines": 58,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Souvenir_T-Shirt_Merchant",
+   "image_url": "https://wynncraft.wiki.gg/images/SouvenirT-ShirtMerchant.png?ea091d",
+   "tier": "rare"
+  },
+  {
+   "slug": "troll",
+   "name": "Troll",
+   "lines": 58,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Troll",
+   "image_url": "https://wynncraft.wiki.gg/images/Troll_Savage.png?663fc5",
+   "tier": "rare"
+  },
+  {
+   "slug": "silverbull-worker",
+   "name": "Silverbull Worker",
+   "lines": 57,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/SilverbullWorker%281%29.png?6812d3",
    "tier": "rare"
   },
   {
@@ -404,27 +852,27 @@
    "tier": "rare"
   },
   {
-   "slug": "farmer-cevalus",
-   "name": "Farmer Cevalus",
+   "slug": "worid",
+   "name": "Worid",
    "lines": 57,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Farmer_Cevalus",
-   "image_url": "https://wynncraft.wiki.gg/images/FarmerCevalus.png?d52139",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Worid",
+   "image_url": "https://wynncraft.wiki.gg/images/Worid%28Iboju%29.png?f69226",
    "tier": "rare"
   },
   {
-   "slug": "korzim",
-   "name": "Korzim",
+   "slug": "captain-ragon",
+   "name": "Captain Ragon",
+   "lines": 56,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Ragon",
+   "image_url": "https://wynncraft.wiki.gg/images/CaptainRagon.png?42ee7e",
+   "tier": "rare"
+  },
+  {
+   "slug": "yansur",
+   "name": "Yansur",
    "lines": 55,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Korzim",
-   "image_url": "https://wynncraft.wiki.gg/images/Korzim.png?dec656",
-   "tier": "rare"
-  },
-  {
-   "slug": "worker",
-   "name": "Worker",
-   "lines": 54,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Worker.png?541252",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yansur",
+   "image_url": "https://wynncraft.wiki.gg/images/Yansur.png?3d5b81",
    "tier": "rare"
   },
   {
@@ -433,6 +881,22 @@
    "lines": 54,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/ElderOak.png?bb55f5",
+   "tier": "rare"
+  },
+  {
+   "slug": "olux-citizen",
+   "name": "Olux Citizen",
+   "lines": 54,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/OluxCitizen.png?a91192",
+   "tier": "rare"
+  },
+  {
+   "slug": "cinfras-citizen",
+   "name": "Cinfras Citizen",
+   "lines": 54,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/CinfrasCitizen.png?fd6811",
    "tier": "rare"
   },
   {
@@ -460,6 +924,14 @@
    "tier": "rare"
   },
   {
+   "slug": "the-seer",
+   "name": "The Seer",
+   "lines": 54,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Seer",
+   "image_url": "https://wynncraft.wiki.gg/images/TheSeer%28Appearance1%29.png?8b4705",
+   "tier": "rare"
+  },
+  {
    "slug": "secretary",
    "name": "Secretary",
    "lines": 54,
@@ -476,19 +948,59 @@
    "tier": "rare"
   },
   {
-   "slug": "nick",
-   "name": "Nick",
-   "lines": 52,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nick",
-   "image_url": "https://wynncraft.wiki.gg/images/Nick.png?9207a6",
+   "slug": "the-cook",
+   "name": "The Cook",
+   "lines": 53,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Cook",
+   "image_url": "https://wynncraft.wiki.gg/images/TheCook.png?9d1d43",
    "tier": "rare"
   },
   {
-   "slug": "ragni-s-king",
-   "name": "Ragni's King",
+   "slug": "svin",
+   "name": "Svin",
+   "lines": 53,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Svin",
+   "image_url": "https://wynncraft.wiki.gg/images/Svin.png?66196d",
+   "tier": "rare"
+  },
+  {
+   "slug": "thomas",
+   "name": "Thomas",
+   "lines": 53,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Thomas",
+   "image_url": "https://wynncraft.wiki.gg/images/Thomas.png?dd6648",
+   "tier": "rare"
+  },
+  {
+   "slug": "therck",
+   "name": "Therck",
+   "lines": 52,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Therck",
+   "image_url": "https://wynncraft.wiki.gg/images/Therck.png?359a98",
+   "tier": "rare"
+  },
+  {
+   "slug": "tolem",
+   "name": "Tolem",
+   "lines": 52,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tolem",
+   "image_url": "https://wynncraft.wiki.gg/images/Tolem.png?2a4713",
+   "tier": "rare"
+  },
+  {
+   "slug": "captain-kymer",
+   "name": "Captain Kymer",
+   "lines": 51,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Kymer",
+   "image_url": "https://wynncraft.wiki.gg/images/CaptainKymer.png?a81976",
+   "tier": "rare"
+  },
+  {
+   "slug": "soldier",
+   "name": "Soldier",
    "lines": 50,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ragni%27s_King",
-   "image_url": "https://wynncraft.wiki.gg/images/Ragni%27sKing.png?278ac2",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Soldier",
+   "image_url": "https://wynncraft.wiki.gg/images/Regular_Soldier.png?3cb51c",
    "tier": "rare"
   },
   {
@@ -500,19 +1012,35 @@
    "tier": "rare"
   },
   {
-   "slug": "captain-kymer",
-   "name": "Captain Kymer",
-   "lines": 49,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Kymer",
-   "image_url": "https://wynncraft.wiki.gg/images/CaptainKymer.png?a81976",
+   "slug": "lanu",
+   "name": "Lanu",
+   "lines": 50,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lanu",
+   "image_url": "https://wynncraft.wiki.gg/images/Lanu.png?c958c9",
    "tier": "rare"
   },
   {
-   "slug": "rhay",
-   "name": "Rhay",
-   "lines": 49,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rhay",
-   "image_url": "https://wynncraft.wiki.gg/images/Rhay.png?27bf6d",
+   "slug": "general-graken",
+   "name": "General Graken",
+   "lines": 50,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/General_Graken",
+   "image_url": "https://wynncraft.wiki.gg/images/GeneralGraken.png?e18281",
+   "tier": "rare"
+  },
+  {
+   "slug": "psilo",
+   "name": "Psilo",
+   "lines": 50,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Psilo",
+   "image_url": "https://wynncraft.wiki.gg/images/Psilo.png?a49f9c",
+   "tier": "rare"
+  },
+  {
+   "slug": "qira-mistress-of-the-hive",
+   "name": "Qira, Mistress of the Hive",
+   "lines": 50,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Qira%2C_Mistress_of_the_Hive",
+   "image_url": "https://wynncraft.wiki.gg/images/Qira%2CMistressoftheHive%28Phase1%29.png?28d3e1",
    "tier": "rare"
   },
   {
@@ -524,11 +1052,19 @@
    "tier": "rare"
   },
   {
-   "slug": "doan",
-   "name": "Doan",
+   "slug": "pastor-arwes",
+   "name": "Pastor Arwes",
+   "lines": 49,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Pastor_Arwes",
+   "image_url": "https://wynncraft.wiki.gg/images/PastorArwes.png?cf8994",
+   "tier": "rare"
+  },
+  {
+   "slug": "anast",
+   "name": "Anast",
    "lines": 48,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Doan",
-   "image_url": "https://wynncraft.wiki.gg/images/Doan.png?98782f",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Anast",
+   "image_url": "https://wynncraft.wiki.gg/images/Anast.png?d44b53",
    "tier": "rare"
   },
   {
@@ -540,19 +1076,27 @@
    "tier": "rare"
   },
   {
-   "slug": "anast",
-   "name": "Anast",
-   "lines": 47,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Anast",
-   "image_url": "https://wynncraft.wiki.gg/images/Anast.png?d44b53",
+   "slug": "gawrick",
+   "name": "Gawrick",
+   "lines": 46,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Gawrick",
+   "image_url": "https://wynncraft.wiki.gg/images/Gawrick.png?d7e337",
    "tier": "rare"
   },
   {
-   "slug": "yansur",
-   "name": "Yansur",
+   "slug": "jenprest",
+   "name": "Jenprest",
    "lines": 46,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yansur",
-   "image_url": "https://wynncraft.wiki.gg/images/Yansur.png?3d5b81",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jenprest",
+   "image_url": "https://wynncraft.wiki.gg/images/Jenprest.png?bd2b3f",
+   "tier": "rare"
+  },
+  {
+   "slug": "captain-enduyn",
+   "name": "Captain Enduyn",
+   "lines": 45,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Enduyn",
+   "image_url": "https://wynncraft.wiki.gg/images/CaptainEnduyn.png?e812cf",
    "tier": "rare"
   },
   {
@@ -564,27 +1108,67 @@
    "tier": "rare"
   },
   {
-   "slug": "llevigar-archivist",
-   "name": "Llevigar Archivist",
-   "lines": 45,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Llevigar_Archivist",
-   "image_url": "https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1",
-   "tier": "rare"
-  },
-  {
-   "slug": "zuett",
-   "name": "Zuett",
+   "slug": "rusty-bartender",
+   "name": "Rusty Bartender",
    "lines": 44,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Zuett",
-   "image_url": "https://wynncraft.wiki.gg/images/Zuett.png?13546b",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rusty_Bartender",
+   "image_url": "https://wynncraft.wiki.gg/images/RustyBartender.png?a802d9",
    "tier": "rare"
   },
   {
    "slug": "sensei-miyagi",
    "name": "Sensei Miyagi",
-   "lines": 43,
+   "lines": 44,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sensei_Miyagi",
    "image_url": "https://wynncraft.wiki.gg/images/SenseiMiyagi.png?b90315",
+   "tier": "rare"
+  },
+  {
+   "slug": "galippe",
+   "name": "Galippe",
+   "lines": 44,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Galippe",
+   "image_url": "https://wynncraft.wiki.gg/images/Galippe.png?64fbac",
+   "tier": "rare"
+  },
+  {
+   "slug": "vera",
+   "name": "Vera",
+   "lines": 44,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Vera",
+   "image_url": "https://wynncraft.wiki.gg/images/Vera.png?e66ffa",
+   "tier": "rare"
+  },
+  {
+   "slug": "lighthouse-keeper",
+   "name": "Lighthouse Keeper",
+   "lines": 44,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lighthouse_Keeper",
+   "image_url": "https://wynncraft.wiki.gg/images/LighthouseKeeper.png?bbd115",
+   "tier": "rare"
+  },
+  {
+   "slug": "the-hoarder",
+   "name": "The Hoarder",
+   "lines": 44,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Hoarder",
+   "image_url": "https://wynncraft.wiki.gg/images/TheHoarder.png?86242d",
+   "tier": "rare"
+  },
+  {
+   "slug": "croaquin",
+   "name": "Croaquin",
+   "lines": 43,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Croaquin",
+   "image_url": "https://wynncraft.wiki.gg/images/Croaquin.png?d267a3",
+   "tier": "rare"
+  },
+  {
+   "slug": "villager",
+   "name": "Villager",
+   "lines": 43,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Villager.png?4a0135",
    "tier": "rare"
   },
   {
@@ -596,19 +1180,51 @@
    "tier": "rare"
   },
   {
-   "slug": "farcor",
-   "name": "Farcor",
+   "slug": "mel",
+   "name": "Mel",
    "lines": 43,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Farcor",
-   "image_url": "https://wynncraft.wiki.gg/images/Farcor%28Portrait%29.png?d0715f",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mel",
+   "image_url": "https://wynncraft.wiki.gg/images/Mel.png?272dfc",
    "tier": "rare"
   },
   {
-   "slug": "croaquin",
-   "name": "Croaquin",
-   "lines": 43,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Croaquin",
-   "image_url": "https://wynncraft.wiki.gg/images/Croaquin.png?d267a3",
+   "slug": "burtur",
+   "name": "Burtur",
+   "lines": 42,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Burtur",
+   "image_url": "https://wynncraft.wiki.gg/images/Burtur.png?3b7f93",
+   "tier": "rare"
+  },
+  {
+   "slug": "island-worker",
+   "name": "Island Worker",
+   "lines": 42,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Island_Worker",
+   "image_url": "https://wynncraft.wiki.gg/images/IslandWorker%28NPC%29.png?185cb5",
+   "tier": "rare"
+  },
+  {
+   "slug": "llevigar-citizen",
+   "name": "Llevigar Citizen",
+   "lines": 42,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/LlevigarCitizen.png?b5833b",
+   "tier": "rare"
+  },
+  {
+   "slug": "old-man-martyn",
+   "name": "Old Man Martyn",
+   "lines": 42,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Man_Martyn",
+   "image_url": "https://wynncraft.wiki.gg/images/OldManMartyn.png?4ec37a",
+   "tier": "rare"
+  },
+  {
+   "slug": "silverbull-beacon-expert",
+   "name": "Silverbull Beacon Expert",
+   "lines": 42,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Silverbull_Beacon_Expert",
+   "image_url": "https://wynncraft.wiki.gg/images/SilverbullBeaconExpert.png?961d7a",
    "tier": "rare"
   },
   {
@@ -628,11 +1244,11 @@
    "tier": "rare"
   },
   {
-   "slug": "gert-guard",
-   "name": "Gert Guard",
+   "slug": "corkus-jeweler",
+   "name": "Corkus Jeweler",
    "lines": 40,
    "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/GertGuard.png?b7d53c",
+   "image_url": "https://wynncraft.wiki.gg/images/CorkusJeweler.png?fe4ac8",
    "tier": "rare"
   },
   {
@@ -641,6 +1257,38 @@
    "lines": 40,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Gikyo",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignGikyo.png?1052e0",
+   "tier": "rare"
+  },
+  {
+   "slug": "gert-guard",
+   "name": "Gert Guard",
+   "lines": 40,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/GertGuard.png?b7d53c",
+   "tier": "rare"
+  },
+  {
+   "slug": "yavlis",
+   "name": "Yavlis",
+   "lines": 40,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yavlis",
+   "image_url": "https://wynncraft.wiki.gg/images/Yavlis.png?b4c3f9",
+   "tier": "rare"
+  },
+  {
+   "slug": "durbeo",
+   "name": "Durbeo",
+   "lines": 39,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Durbeo",
+   "image_url": "https://wynncraft.wiki.gg/images/Durbeo.png?c80682",
+   "tier": "rare"
+  },
+  {
+   "slug": "ann",
+   "name": "Ann",
+   "lines": 39,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ann",
+   "image_url": "https://wynncraft.wiki.gg/images/Ann.png?9be532",
    "tier": "rare"
   },
   {
@@ -660,12 +1308,44 @@
    "tier": "rare"
   },
   {
+   "slug": "mayor-alvin",
+   "name": "Mayor Alvin",
+   "lines": 39,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mayor_Alvin",
+   "image_url": "https://wynncraft.wiki.gg/images/MayorAlvin.png?d49c8a",
+   "tier": "rare"
+  },
+  {
+   "slug": "bulbo",
+   "name": "Bulbo",
+   "lines": 38,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bulbo",
+   "image_url": "https://wynncraft.wiki.gg/images/Bulbo%28FestivaloftheBonfire%29.png?326e3f",
+   "tier": "uncommon"
+  },
+  {
    "slug": "tom",
    "name": "Tom",
    "lines": 38,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Tom",
    "image_url": "https://wynncraft.wiki.gg/images/Tom.png?9759db",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "sanba",
+   "name": "Sanba",
+   "lines": 38,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sanba",
+   "image_url": "https://wynncraft.wiki.gg/images/Sanba.png?9f18da",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "hans",
+   "name": "Hans",
+   "lines": 37,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hans",
+   "image_url": "https://wynncraft.wiki.gg/images/Hans.png?251aa6",
+   "tier": "uncommon"
   },
   {
    "slug": "voer",
@@ -673,7 +1353,15 @@
    "lines": 37,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Voer",
    "image_url": "https://wynncraft.wiki.gg/images/Voer.png?5b224b",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "sherk",
+   "name": "Sherk",
+   "lines": 37,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sherk",
+   "image_url": "https://wynncraft.wiki.gg/images/Sherk.png?54f82e",
+   "tier": "uncommon"
   },
   {
    "slug": "malo",
@@ -681,15 +1369,23 @@
    "lines": 37,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Malo",
    "image_url": "https://wynncraft.wiki.gg/images/Malo.png?3c0f1f",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "sybil",
-   "name": "Sybil",
+   "slug": "alem",
+   "name": "Alem",
    "lines": 36,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sybil",
-   "image_url": "https://wynncraft.wiki.gg/images/Sybil%28Detlas%29.png?2c9c5d",
-   "tier": "rare"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Alem",
+   "image_url": "https://wynncraft.wiki.gg/images/Alem.png?3ea316",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "norsten",
+   "name": "Norsten",
+   "lines": 36,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Norsten",
+   "image_url": "https://wynncraft.wiki.gg/images/Norsten.png?8af759",
+   "tier": "uncommon"
   },
   {
    "slug": "girazh",
@@ -697,15 +1393,15 @@
    "lines": 36,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Girazh.png?461e30",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "soldier",
-   "name": "Soldier",
-   "lines": 35,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Soldier",
-   "image_url": "https://wynncraft.wiki.gg/images/Regular_Soldier.png?3cb51c",
-   "tier": "rare"
+   "slug": "admiral-amerigo",
+   "name": "Admiral Amerigo",
+   "lines": 36,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Admiral_Amerigo",
+   "image_url": "https://wynncraft.wiki.gg/images/AdmiralAmerigo.png?e8d3d8",
+   "tier": "uncommon"
   },
   {
    "slug": "citizen",
@@ -713,7 +1409,23 @@
    "lines": 35,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Citizen",
    "image_url": "https://wynncraft.wiki.gg/images/AlekinCitizen%28NPC1%29.png?44649a",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "carl",
+   "name": "\"Carl\"",
+   "lines": 35,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/%22Carl%22",
+   "image_url": "https://wynncraft.wiki.gg/images/Carl.png?7642aa",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "caravan-driver",
+   "name": "Caravan Driver",
+   "lines": 35,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caravan_Driver",
+   "image_url": "https://wynncraft.wiki.gg/images/CaravanDriver.png?143534",
+   "tier": "uncommon"
   },
   {
    "slug": "chieftain-paku",
@@ -721,7 +1433,7 @@
    "lines": 35,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Chieftain_Paku",
    "image_url": "https://wynncraft.wiki.gg/images/DogunChieftain.png?a4b47e",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "rohem",
@@ -729,15 +1441,7 @@
    "lines": 35,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Rohem",
    "image_url": "https://wynncraft.wiki.gg/images/Rohem.png?920d67",
-   "tier": "rare"
-  },
-  {
-   "slug": "ineos",
-   "name": "Ineos",
-   "lines": 35,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Ineos.png?4ac722",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "tiek",
@@ -745,7 +1449,15 @@
    "lines": 35,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Tiek",
    "image_url": "https://wynncraft.wiki.gg/images/Sorceress_Tiek.png?d01463",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "ineos",
+   "name": "Ineos",
+   "lines": 35,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Ineos.png?4ac722",
+   "tier": "uncommon"
   },
   {
    "slug": "adder",
@@ -753,7 +1465,7 @@
    "lines": 35,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Adder.png?fffb26",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "arnod",
@@ -761,31 +1473,39 @@
    "lines": 34,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Arnod",
    "image_url": "https://wynncraft.wiki.gg/images/Arnod.png?2a4992",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "seaskipper-captain",
-   "name": "Seaskipper Captain",
+   "slug": "runo",
+   "name": "Runo",
    "lines": 34,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Seaskipper_Captain",
-   "image_url": "https://wynncraft.wiki.gg/images/SeaskipperCaptain.png?cb27ed",
-   "tier": "rare"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Runo",
+   "image_url": "https://wynncraft.wiki.gg/images/Runo.png?d0dcc1",
+   "tier": "uncommon"
   },
   {
-   "slug": "linton",
-   "name": "Linton",
+   "slug": "leif-pyle",
+   "name": "Leif Pyle",
    "lines": 34,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Linton",
-   "image_url": "https://wynncraft.wiki.gg/images/MinerLinton.png?c558e5",
-   "tier": "rare"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Leif_Pyle",
+   "image_url": "https://wynncraft.wiki.gg/images/LeifPyle.png?b08a4b",
+   "tier": "uncommon"
   },
   {
-   "slug": "sherk",
-   "name": "Sherk",
+   "slug": "the-assistant",
+   "name": "The Assistant",
    "lines": 34,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sherk",
-   "image_url": "https://wynncraft.wiki.gg/images/Sherk.png?54f82e",
-   "tier": "rare"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Assistant",
+   "image_url": "https://wynncraft.wiki.gg/images/TheAssistant.png?88ebf9",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "obsessor",
+   "name": "Obsessor",
+   "lines": 33,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Obsessor",
+   "image_url": "https://wynncraft.wiki.gg/images/Obsessor%28Fake%29.png?94d052",
+   "tier": "uncommon"
   },
   {
    "slug": "man",
@@ -793,7 +1513,7 @@
    "lines": 33,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Man%C3%A9.png?bacdae",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "kreimu",
@@ -801,15 +1521,31 @@
    "lines": 33,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Kreimu",
    "image_url": "https://wynncraft.wiki.gg/images/Kreimu.png?625bea",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "gawrick",
-   "name": "Gawrick",
+   "slug": "customs-clerk",
+   "name": "Customs Clerk",
    "lines": 33,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Gawrick",
-   "image_url": "https://wynncraft.wiki.gg/images/Gawrick.png?d7e337",
-   "tier": "rare"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Customs_Clerk",
+   "image_url": "https://wynncraft.wiki.gg/images/CustomsClerk.png?9791e4",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "frank",
+   "name": "Frank",
+   "lines": 33,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Frank",
+   "image_url": "https://wynncraft.wiki.gg/images/Frank.png?a0277a",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "mercenary-leader",
+   "name": "Mercenary Leader",
+   "lines": 33,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mercenary_Leader",
+   "image_url": "https://wynncraft.wiki.gg/images/MercenaryLeader.png?851578",
+   "tier": "uncommon"
   },
   {
    "slug": "corkus-city-citizen",
@@ -817,15 +1553,7 @@
    "lines": 33,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Corkus_City_Citizen",
    "image_url": "https://wynncraft.wiki.gg/images/CorkusCityCitizen%28Aqueduct%29.png?2395a8",
-   "tier": "rare"
-  },
-  {
-   "slug": "mel",
-   "name": "Mel",
-   "lines": 33,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mel",
-   "image_url": "https://wynncraft.wiki.gg/images/Mel.png?272dfc",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "lucio",
@@ -833,15 +1561,47 @@
    "lines": 32,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Lucio",
    "image_url": "https://wynncraft.wiki.gg/images/LucioCropped.png?accdb4",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "orikal",
-   "name": "Orikal",
+   "slug": "gelibord-citizen",
+   "name": "Gelibord Citizen",
    "lines": 32,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orikal",
-   "image_url": "https://wynncraft.wiki.gg/images/Orikal.png?52ce14",
-   "tier": "rare"
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/GelibordCitizen.png?9e4f30",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "bip",
+   "name": "Bip",
+   "lines": 32,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bip",
+   "image_url": "https://wynncraft.wiki.gg/images/Bip.png?e0f668",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "brie",
+   "name": "Brie",
+   "lines": 32,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Brie",
+   "image_url": "https://wynncraft.wiki.gg/images/Brie.png?c6e4fa",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "kale",
+   "name": "Kale",
+   "lines": 32,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Kale",
+   "image_url": "https://wynncraft.wiki.gg/images/Kale.png?c78239",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "kroac",
+   "name": "Kroac",
+   "lines": 31,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Kroac",
+   "image_url": "https://wynncraft.wiki.gg/images/Kroac.png?692a63",
+   "tier": "uncommon"
   },
   {
    "slug": "hyloch-citizen",
@@ -849,15 +1609,23 @@
    "lines": 30,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/HylochCitizen.png?21bb09",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "drucksh",
-   "name": "Drucksh",
+   "slug": "selchar-citizen",
+   "name": "Selchar Citizen",
    "lines": 30,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Drucksh",
-   "image_url": "https://wynncraft.wiki.gg/images/Drucksh.png?b45f97",
-   "tier": "rare"
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/SelcharCitizen.png?a32600",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "herbert",
+   "name": "Herbert",
+   "lines": 30,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Herbert.png?12f55a",
+   "tier": "uncommon"
   },
   {
    "slug": "guardian-of-the-forest",
@@ -865,7 +1633,23 @@
    "lines": 30,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Guardian_of_The_Forest",
    "image_url": "https://wynncraft.wiki.gg/images/GuardianofTheForest.png?3d47fd",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "nakoba",
+   "name": "Nakoba",
+   "lines": 30,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nakoba",
+   "image_url": "https://wynncraft.wiki.gg/images/Naboka.png?3e12ed",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "rileen",
+   "name": "Rileen",
+   "lines": 30,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rileen",
+   "image_url": "https://wynncraft.wiki.gg/images/Rileen.png?2e0554",
+   "tier": "uncommon"
   },
   {
    "slug": "elrund",
@@ -873,15 +1657,7 @@
    "lines": 29,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Elrund",
    "image_url": "https://wynncraft.wiki.gg/images/Elrund.png?e5d11d",
-   "tier": "rare"
-  },
-  {
-   "slug": "santa",
-   "name": "Santa",
-   "lines": 29,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Santa",
-   "image_url": "https://wynncraft.wiki.gg/images/Santa%28CraftmasChaos%29.png?b0eee0",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "mona",
@@ -889,7 +1665,7 @@
    "lines": 29,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Mona.png?f84ad2",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "referick",
@@ -897,7 +1673,55 @@
    "lines": 29,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Referick",
    "image_url": "https://wynncraft.wiki.gg/images/Referick.png?723413",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "dereg",
+   "name": "Dereg",
+   "lines": 29,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dereg",
+   "image_url": "https://wynncraft.wiki.gg/images/Dereg.png?7b862c",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "enkser",
+   "name": "Enkser",
+   "lines": 29,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Enkser",
+   "image_url": "https://wynncraft.wiki.gg/images/Enkser.png?3acd5e",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "old-mage",
+   "name": "Old Mage",
+   "lines": 29,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Mage",
+   "image_url": "https://wynncraft.wiki.gg/images/OldMage.png?aa8156",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "ormrod",
+   "name": "Ormrod",
+   "lines": 29,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ormrod",
+   "image_url": "https://wynncraft.wiki.gg/images/Ormrod.png?455cce",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "talking-mushroom",
+   "name": "Talking Mushroom",
+   "lines": 28,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Talking_Mushroom",
+   "image_url": "https://wynncraft.wiki.gg/images/Talking_mushroom_log1.png?963b91",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "aunoa",
+   "name": "Aunoa",
+   "lines": 28,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Aunoa",
+   "image_url": "https://wynncraft.wiki.gg/images/Aunoa.png?2debdd",
+   "tier": "uncommon"
   },
   {
    "slug": "dr-urelix",
@@ -905,7 +1729,7 @@
    "lines": 28,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Dr._Urelix",
    "image_url": "https://wynncraft.wiki.gg/images/Dr.Urelix%28AnIronHeartPartII%2CFactory%29.png?ff1153",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "irlok",
@@ -913,15 +1737,31 @@
    "lines": 28,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Irlok",
    "image_url": "https://wynncraft.wiki.gg/images/Irlok.png?86bca7",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "theorick-twain",
-   "name": "Theorick Twain",
+   "slug": "thanos-dwarf",
+   "name": "Thanos Dwarf",
    "lines": 28,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Theorick_Twain",
-   "image_url": "https://wynncraft.wiki.gg/images/TheorickTwain.png?306363",
-   "tier": "rare"
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/ThanosDwarf%281%29.png?2f93e3",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "elder-astal",
+   "name": "Elder Astal",
+   "lines": 28,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Astal",
+   "image_url": "https://wynncraft.wiki.gg/images/ElderAstal%28Frozen%29.png?943e2f",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "edula",
+   "name": "Edula",
+   "lines": 28,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Edula",
+   "image_url": "https://wynncraft.wiki.gg/images/Edula.png?9dda9b",
+   "tier": "uncommon"
   },
   {
    "slug": "engineer-eric",
@@ -929,7 +1769,23 @@
    "lines": 28,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Engineer_Eric",
    "image_url": "https://wynncraft.wiki.gg/images/EngineerEric.png?ebdb5a",
-   "tier": "rare"
+   "tier": "uncommon"
+  },
+  {
+   "slug": "forve",
+   "name": "Forve",
+   "lines": 28,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Forve",
+   "image_url": "https://wynncraft.wiki.gg/images/Forve%28Mission%2CDefendingtheGate%29.png?7e8c49",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "espren-citizen",
+   "name": "Espren Citizen",
+   "lines": 28,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/EsprenCitizen.png?db7897",
+   "tier": "uncommon"
   },
   {
    "slug": "grandon",
@@ -937,15 +1793,23 @@
    "lines": 28,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Grandon",
    "image_url": "https://wynncraft.wiki.gg/images/Grandon.png?2363e2",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
-   "slug": "the-assistant",
-   "name": "The Assistant",
+   "slug": "nikoler",
+   "name": "Nikoler",
    "lines": 28,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Assistant",
-   "image_url": "https://wynncraft.wiki.gg/images/TheAssistant.png?88ebf9",
-   "tier": "rare"
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Nikoler%28Stage7_1%29.png?3cb0d2",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "skyraider-admirer",
+   "name": "Skyraider Admirer",
+   "lines": 28,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Admirer",
+   "image_url": "https://wynncraft.wiki.gg/images/SkyraiderAdmirer.png?d19948",
+   "tier": "uncommon"
   },
   {
    "slug": "gurix",
@@ -953,7 +1817,7 @@
    "lines": 28,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Gurix",
    "image_url": "https://wynncraft.wiki.gg/images/Gurix.png?bc0fa3",
-   "tier": "rare"
+   "tier": "uncommon"
   },
   {
    "slug": "togak",
@@ -961,6 +1825,38 @@
    "lines": 27,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Togak",
    "image_url": "https://wynncraft.wiki.gg/images/Togak.png?44c235",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "qunit",
+   "name": "Qunit",
+   "lines": 27,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Qunit",
+   "image_url": "https://wynncraft.wiki.gg/images/Qunit.png?fac5c5",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "c-s-s-sunrise-captain",
+   "name": "C.S.S. Sunrise Captain",
+   "lines": 27,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/C.S.S._Sunrise_Captain",
+   "image_url": "https://wynncraft.wiki.gg/images/CSSSunriseCaptain.png?40a059",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "doubiss",
+   "name": "Doubiss",
+   "lines": 27,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Doubiss",
+   "image_url": "https://wynncraft.wiki.gg/images/Doubiss.png?7c8ef9",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "silverbull-rank-expert",
+   "name": "Silverbull Rank Expert",
+   "lines": 27,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Silverbull_Rank_Expert",
+   "image_url": "https://wynncraft.wiki.gg/images/SilverbullRankExpert.png?5a693f",
    "tier": "uncommon"
   },
   {
@@ -972,51 +1868,75 @@
    "tier": "uncommon"
   },
   {
-   "slug": "enkser",
-   "name": "Enkser",
-   "lines": 27,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Enkser",
-   "image_url": "https://wynncraft.wiki.gg/images/Enkser.png?3acd5e",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "chef-hamsey",
-   "name": "Chef Hamsey",
-   "lines": 27,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Chef_Hamsey",
-   "image_url": "https://wynncraft.wiki.gg/images/ChefHamsey.png?d49238",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "obsessor",
-   "name": "Obsessor",
+   "slug": "almuj-bank-guard",
+   "name": "Almuj Bank Guard",
    "lines": 26,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Obsessor",
-   "image_url": "https://wynncraft.wiki.gg/images/Obsessor%28Fake%29.png?94d052",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Almuj_Bank_Guard",
+   "image_url": "https://wynncraft.wiki.gg/images/AlmujBankGuard.png?f62ff2",
    "tier": "uncommon"
   },
   {
-   "slug": "lutho-citizen",
-   "name": "Lutho Citizen",
+   "slug": "dalben",
+   "name": "Dalben",
    "lines": 26,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lutho_Citizen",
-   "image_url": "https://wynncraft.wiki.gg/images/LuthoCitizen.png?892870",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dalben",
+   "image_url": "https://wynncraft.wiki.gg/images/Dalben.png?47f5b9",
    "tier": "uncommon"
   },
   {
-   "slug": "captain-enduyn",
-   "name": "Captain Enduyn",
-   "lines": 25,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Enduyn",
-   "image_url": "https://wynncraft.wiki.gg/images/CaptainEnduyn.png?e812cf",
+   "slug": "rymek-citizen",
+   "name": "Rymek Citizen",
+   "lines": 26,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/RymekCitizen%28NPC%29.png?c79a18",
    "tier": "uncommon"
   },
   {
-   "slug": "doubiss",
-   "name": "Doubiss",
+   "slug": "homeless-mayor",
+   "name": "Homeless Mayor",
+   "lines": 26,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Homeless_Mayor",
+   "image_url": "https://wynncraft.wiki.gg/images/HomelessMayor.png?47fda1",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "bandit",
+   "name": "Bandit",
    "lines": 25,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Doubiss",
-   "image_url": "https://wynncraft.wiki.gg/images/Doubiss.png?7c8ef9",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bandit",
+   "image_url": "https://wynncraft.wiki.gg/images/Bandit%28Removed%29.png?26416f",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "thesead-citizen",
+   "name": "Thesead Citizen",
+   "lines": 25,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/TheseadCitizen.png?55da7a",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "barkeep-romu",
+   "name": "Barkeep Romu",
+   "lines": 25,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/BarkeepRomu.png?917322",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "merchant-risch",
+   "name": "Merchant Risch",
+   "lines": 25,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/MerchantRisch.png?8fee13",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "czytash",
+   "name": "Czytash",
+   "lines": 25,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Czytash",
+   "image_url": "https://wynncraft.wiki.gg/images/Czytash.png?3e3aa3",
    "tier": "uncommon"
   },
   {
@@ -1036,11 +1956,27 @@
    "tier": "uncommon"
   },
   {
+   "slug": "old-siwel",
+   "name": "Old Siwel",
+   "lines": 25,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Siwel",
+   "image_url": "https://wynncraft.wiki.gg/images/OldSiwel.png?95ffcd",
+   "tier": "uncommon"
+  },
+  {
    "slug": "dado",
    "name": "Dado",
    "lines": 25,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Dado",
    "image_url": "https://wynncraft.wiki.gg/images/Dado.png?dd822a",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "fisherman",
+   "name": "Fisherman",
+   "lines": 25,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/FishyZombie.png?8a1f62",
    "tier": "uncommon"
   },
   {
@@ -1052,19 +1988,43 @@
    "tier": "uncommon"
   },
   {
-   "slug": "nakoba",
-   "name": "Nakoba",
+   "slug": "bandit-leader",
+   "name": "Bandit Leader",
    "lines": 24,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nakoba",
-   "image_url": "https://wynncraft.wiki.gg/images/Naboka.png?3e12ed",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/BanditLeader%28NPC%29.png?5e7503",
    "tier": "uncommon"
   },
   {
-   "slug": "old-siwel",
-   "name": "Old Siwel",
+   "slug": "bylvis",
+   "name": "Bylvis",
    "lines": 24,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Siwel",
-   "image_url": "https://wynncraft.wiki.gg/images/OldSiwel.png?95ffcd",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bylvis",
+   "image_url": "https://wynncraft.wiki.gg/images/Bylvis.png?a639c3",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "bishop-kaideus",
+   "name": "Bishop Kaideus",
+   "lines": 24,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bishop_Kaideus",
+   "image_url": "https://wynncraft.wiki.gg/images/BishopKaideus.png?ff9b82",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "ahmsord-citizen",
+   "name": "Ahmsord Citizen",
+   "lines": 24,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/AhmsordCitizen.png?d17ade",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "omango",
+   "name": "Omango",
+   "lines": 24,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Omango",
+   "image_url": "https://wynncraft.wiki.gg/images/Omango.png?1ffe5d",
    "tier": "uncommon"
   },
   {
@@ -1076,27 +2036,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "tolem",
-   "name": "Tolem",
-   "lines": 24,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tolem",
-   "image_url": "https://wynncraft.wiki.gg/images/Tolem.png?2a4713",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "barkeep-romu",
-   "name": "Barkeep Romu",
-   "lines": 24,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/BarkeepRomu.png?917322",
-   "tier": "uncommon"
-  },
-  {
    "slug": "darnes",
    "name": "Darnes",
    "lines": 23,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Darnes",
    "image_url": "https://wynncraft.wiki.gg/images/Darnes.png?736945",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "elder-prometheus",
+   "name": "Elder Prometheus",
+   "lines": 23,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Prometheus",
+   "image_url": "https://wynncraft.wiki.gg/images/ElderPrometheus.png?8e642c",
    "tier": "uncommon"
   },
   {
@@ -1116,19 +2068,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "elder-prometheus",
-   "name": "Elder Prometheus",
+   "slug": "lodog",
+   "name": "Lodog",
    "lines": 23,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Prometheus",
-   "image_url": "https://wynncraft.wiki.gg/images/ElderPrometheus.png?8e642c",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lodog",
+   "image_url": "https://wynncraft.wiki.gg/images/Lodog.png?869cbd",
    "tier": "uncommon"
   },
   {
-   "slug": "hans",
-   "name": "Hans",
+   "slug": "lieutenant-van",
+   "name": "Lieutenant Van",
    "lines": 23,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hans",
-   "image_url": "https://wynncraft.wiki.gg/images/Hans.png?251aa6",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lieutenant_Van",
+   "image_url": "https://wynncraft.wiki.gg/images/LieutenantVan.png?38f5f8",
    "tier": "uncommon"
   },
   {
@@ -1156,11 +2108,11 @@
    "tier": "uncommon"
   },
   {
-   "slug": "merchant-risch",
-   "name": "Merchant Risch",
-   "lines": 23,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/MerchantRisch.png?8fee13",
+   "slug": "almuj-citizen-a-sandy-scandal",
+   "name": "Almuj Citizen (A Sandy Scandal)",
+   "lines": 22,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Almuj_Citizen_%28A_Sandy_Scandal%29",
+   "image_url": "https://wynncraft.wiki.gg/images/AlmujCitizen%28QuestNPC%29.png?a841ab",
    "tier": "uncommon"
   },
   {
@@ -1172,11 +2124,43 @@
    "tier": "uncommon"
   },
   {
-   "slug": "captain-ragon",
-   "name": "Captain Ragon",
+   "slug": "big-butch",
+   "name": "Big Butch",
    "lines": 22,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Ragon",
-   "image_url": "https://wynncraft.wiki.gg/images/CaptainRagon.png?42ee7e",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Big_Butch",
+   "image_url": "https://wynncraft.wiki.gg/images/BigButch.png?9c89b0",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "colonel-gailard",
+   "name": "Colonel Gailard",
+   "lines": 22,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Colonel_Gailard",
+   "image_url": "https://wynncraft.wiki.gg/images/ColonelGailard.png?aab11a",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "slykaar",
+   "name": "Slykaar",
+   "lines": 22,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Slykaar",
+   "image_url": "https://wynncraft.wiki.gg/images/Slykaar%28Phase1%29.png?623693",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "private",
+   "name": "Private",
+   "lines": 22,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Private.png?ed16e9",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "dohstaj",
+   "name": "Dohstaj",
+   "lines": 22,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dohstaj",
+   "image_url": "https://wynncraft.wiki.gg/images/Dohstaj.png?661b15",
    "tier": "uncommon"
   },
   {
@@ -1204,11 +2188,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "vera",
-   "name": "Vera",
+   "slug": "yodbon",
+   "name": "Yodbon",
    "lines": 22,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Vera",
-   "image_url": "https://wynncraft.wiki.gg/images/Vera.png?e66ffa",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yodbon",
+   "image_url": "https://wynncraft.wiki.gg/images/Yodbon.png?3d5c3e",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "general-elix",
+   "name": "General Elix",
+   "lines": 22,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/General_Elix",
+   "image_url": "https://wynncraft.wiki.gg/images/GeneralElix.png?6cc279",
    "tier": "uncommon"
   },
   {
@@ -1217,22 +2209,6 @@
    "lines": 22,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Detective_Lorias",
    "image_url": "https://wynncraft.wiki.gg/images/DetectiveLorias.png?d053b1",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "korun",
-   "name": "Korun",
-   "lines": 22,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Korun",
-   "image_url": "https://wynncraft.wiki.gg/images/Korun.png?4105da",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "worid",
-   "name": "Worid",
-   "lines": 22,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Worid",
-   "image_url": "https://wynncraft.wiki.gg/images/Worid%28Iboju%29.png?f69226",
    "tier": "uncommon"
   },
   {
@@ -1260,83 +2236,11 @@
    "tier": "uncommon"
   },
   {
-   "slug": "suspicious-cow",
-   "name": "Suspicious Cow",
+   "slug": "volmor",
+   "name": "Volmor",
    "lines": 21,
    "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/SuspiciousCow.png?ee441d",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "wedyf",
-   "name": "Wedyf",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Wedyf",
-   "image_url": "https://wynncraft.wiki.gg/images/Wedyf.png?4c5b13",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "bylvis",
-   "name": "Bylvis",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bylvis",
-   "image_url": "https://wynncraft.wiki.gg/images/Bylvis.png?a639c3",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "tavern-owner",
-   "name": "Tavern Owner",
-   "lines": 21,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/TavernOwner.png?401ade",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "alein",
-   "name": "Alein",
-   "lines": 21,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Alein.png?f0eb60",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "colonel-gailard",
-   "name": "Colonel Gailard",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Colonel_Gailard",
-   "image_url": "https://wynncraft.wiki.gg/images/ColonelGailard.png?aab11a",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "scientist-ynnos",
-   "name": "Scientist Ynnos",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Scientist_Ynnos",
-   "image_url": "https://wynncraft.wiki.gg/images/Ynnos.png?cea9fe",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "jenprest",
-   "name": "Jenprest",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jenprest",
-   "image_url": "https://wynncraft.wiki.gg/images/Jenprest.png?bd2b3f",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "likeru",
-   "name": "Likeru",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Likeru",
-   "image_url": "https://wynncraft.wiki.gg/images/Likeru.png?a5158e",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "batelu",
-   "name": "Batelu",
-   "lines": 21,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Batelu",
-   "image_url": "https://wynncraft.wiki.gg/images/Batelu.png?a933f5",
+   "image_url": "https://wynncraft.wiki.gg/images/Volmor.png?95cb49",
    "tier": "uncommon"
   },
   {
@@ -1348,19 +2252,99 @@
    "tier": "uncommon"
   },
   {
+   "slug": "captain-goruca",
+   "name": "Captain Goruca",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Goruca",
+   "image_url": "https://wynncraft.wiki.gg/images/CaptainGoruca.png?7d3b06",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "wedyf",
+   "name": "Wedyf",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Wedyf",
+   "image_url": "https://wynncraft.wiki.gg/images/Wedyf.png?4c5b13",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "takan",
+   "name": "Takan",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Takan",
+   "image_url": "https://wynncraft.wiki.gg/images/Takan.png?e1c3e8",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "suspicious-cow",
+   "name": "Suspicious Cow",
+   "lines": 21,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/SuspiciousCow.png?ee441d",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "tavern-owner",
+   "name": "Tavern Owner",
+   "lines": 21,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/TavernOwner.png?401ade",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "telvu",
+   "name": "Telvu",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Telvu",
+   "image_url": "https://wynncraft.wiki.gg/images/Telvu.png?9c0d9f",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "alein",
+   "name": "Alein",
+   "lines": 21,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Alein.png?f0eb60",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "scientist-ynnos",
+   "name": "Scientist Ynnos",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Scientist_Ynnos",
+   "image_url": "https://wynncraft.wiki.gg/images/Ynnos.png?cea9fe",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "batelu",
+   "name": "Batelu",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Batelu",
+   "image_url": "https://wynncraft.wiki.gg/images/Batelu.png?a933f5",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "likeru",
+   "name": "Likeru",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Likeru",
+   "image_url": "https://wynncraft.wiki.gg/images/Likeru.png?a5158e",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "skyraider-elie",
+   "name": "Skyraider Elie",
+   "lines": 21,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Elie",
+   "image_url": "https://wynncraft.wiki.gg/images/SkyraiderElie.png?16ba2e",
+   "tier": "uncommon"
+  },
+  {
    "slug": "elder-alder",
    "name": "Elder Alder",
    "lines": 20,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/ElderAlder.png?28b343",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "captain-goruca",
-   "name": "Captain Goruca",
-   "lines": 20,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Goruca",
-   "image_url": "https://wynncraft.wiki.gg/images/CaptainGoruca.png?7d3b06",
    "tier": "uncommon"
   },
   {
@@ -1372,19 +2356,59 @@
    "tier": "uncommon"
   },
   {
-   "slug": "durbeo",
-   "name": "Durbeo",
+   "slug": "cheese-merchant",
+   "name": "Cheese Merchant",
    "lines": 20,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Durbeo",
-   "image_url": "https://wynncraft.wiki.gg/images/Durbeo.png?c80682",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Cheese_Merchant",
+   "image_url": "https://wynncraft.wiki.gg/images/CheeseMerchant.png?fcebb0",
    "tier": "uncommon"
   },
   {
-   "slug": "old-man",
-   "name": "Old Man",
+   "slug": "karoc-miner",
+   "name": "Karoc Miner",
    "lines": 20,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Man",
-   "image_url": "https://wynncraft.wiki.gg/images/OldMan%28HollowSerenity%29.png?8941d3",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Karoc_Miner",
+   "image_url": "https://wynncraft.wiki.gg/images/KarocMiner.png?a771e1",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "dobile",
+   "name": "Dobile",
+   "lines": 20,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dobile",
+   "image_url": "https://wynncraft.wiki.gg/images/Dobile.png?39c740",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "dorroc",
+   "name": "Dorroc",
+   "lines": 20,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dorroc",
+   "image_url": "https://wynncraft.wiki.gg/images/Dorroc.png?954665",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "eluzterp",
+   "name": "Eluzterp",
+   "lines": 20,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Eluzterp",
+   "image_url": "https://wynncraft.wiki.gg/images/Eluzterp.png?9e1507",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "jiro",
+   "name": "Jiro",
+   "lines": 20,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jiro",
+   "image_url": "https://wynncraft.wiki.gg/images/JiroPortraitNeutral.png?d43ee6",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "syni",
+   "name": "Syni",
+   "lines": 20,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Syni",
+   "image_url": "https://wynncraft.wiki.gg/images/Syni.png?4bffc1",
    "tier": "uncommon"
   },
   {
@@ -1396,11 +2420,11 @@
    "tier": "uncommon"
   },
   {
-   "slug": "jiro",
-   "name": "Jiro",
+   "slug": "orphion",
+   "name": "Orphion",
    "lines": 20,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jiro",
-   "image_url": "https://wynncraft.wiki.gg/images/JiroPortraitNeutral.png?d43ee6",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orphion",
+   "image_url": "https://wynncraft.wiki.gg/images/Orphion%2CLightIncarnate.png?4920da",
    "tier": "uncommon"
   },
   {
@@ -1420,19 +2444,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "ranol",
-   "name": "Ranol",
+   "slug": "child",
+   "name": "Child",
    "lines": 19,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ranol",
-   "image_url": "https://wynncraft.wiki.gg/images/Ranol.png?52435b",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Child.png?89a5f8",
    "tier": "uncommon"
   },
   {
-   "slug": "norsten",
-   "name": "Norsten",
+   "slug": "tarod",
+   "name": "Tarod",
    "lines": 19,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Norsten",
-   "image_url": "https://wynncraft.wiki.gg/images/Norsten.png?8af759",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tarod",
+   "image_url": "https://wynncraft.wiki.gg/images/Tarod.png?6c20f6",
    "tier": "uncommon"
   },
   {
@@ -1444,27 +2468,11 @@
    "tier": "uncommon"
   },
   {
-   "slug": "caravan-driver",
-   "name": "Caravan Driver",
+   "slug": "ranol",
+   "name": "Ranol",
    "lines": 19,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caravan_Driver",
-   "image_url": "https://wynncraft.wiki.gg/images/CaravanDriver.png?143534",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "sanba",
-   "name": "Sanba",
-   "lines": 19,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sanba",
-   "image_url": "https://wynncraft.wiki.gg/images/Sanba.png?9f18da",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "elder",
-   "name": "Elder",
-   "lines": 19,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Elder.png?de7181",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ranol",
+   "image_url": "https://wynncraft.wiki.gg/images/Ranol.png?52435b",
    "tier": "uncommon"
   },
   {
@@ -1473,6 +2481,22 @@
    "lines": 19,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Phinas",
    "image_url": "https://wynncraft.wiki.gg/images/Phinas.png?dba4d1",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "dwarf-salesman",
+   "name": "Dwarf Salesman",
+   "lines": 19,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dwarf_Salesman",
+   "image_url": "https://wynncraft.wiki.gg/images/DwarfSalesman.png?45387b",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "elder",
+   "name": "Elder",
+   "lines": 19,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Elder.png?de7181",
    "tier": "uncommon"
   },
   {
@@ -1492,27 +2516,35 @@
    "tier": "uncommon"
   },
   {
-   "slug": "admiral-amerigo",
-   "name": "Admiral Amerigo",
-   "lines": 19,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Admiral_Amerigo",
-   "image_url": "https://wynncraft.wiki.gg/images/AdmiralAmerigo.png?e8d3d8",
+   "slug": "corkus-guard",
+   "name": "Corkus Guard",
+   "lines": 18,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/CorkusGuard.png?ec45d6",
    "tier": "uncommon"
   },
   {
-   "slug": "tarod",
-   "name": "Tarod",
+   "slug": "private-cob",
+   "name": "Private Cob",
    "lines": 18,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tarod",
-   "image_url": "https://wynncraft.wiki.gg/images/Tarod.png?6c20f6",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Private_Cob",
+   "image_url": "https://wynncraft.wiki.gg/images/PrivateCob.png?b4ec3b",
    "tier": "uncommon"
   },
   {
-   "slug": "bishop-kaideus",
-   "name": "Bishop Kaideus",
+   "slug": "troms-guard",
+   "name": "Troms Guard",
    "lines": 18,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bishop_Kaideus",
-   "image_url": "https://wynncraft.wiki.gg/images/BishopKaideus.png?ff9b82",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/TromsGuard%28WynnExcavationSiteD%29.png?843086",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "pirate",
+   "name": "Pirate",
+   "lines": 18,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Pirate.png?799038",
    "tier": "uncommon"
   },
   {
@@ -1524,19 +2556,11 @@
    "tier": "uncommon"
   },
   {
-   "slug": "yahya",
-   "name": "Yahya",
+   "slug": "reddy",
+   "name": "Reddy",
    "lines": 18,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yahya",
-   "image_url": "https://wynncraft.wiki.gg/images/Yahya%28NivlaHouse%29.png?bd5ec1",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "lanu",
-   "name": "Lanu",
-   "lines": 18,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lanu",
-   "image_url": "https://wynncraft.wiki.gg/images/Lanu.png?c958c9",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Reddy",
+   "image_url": "https://wynncraft.wiki.gg/images/Reddy.png?174188",
    "tier": "uncommon"
   },
   {
@@ -1548,19 +2572,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "psilo",
-   "name": "Psilo",
+   "slug": "skyraider-mercenary",
+   "name": "Skyraider Mercenary",
    "lines": 18,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Psilo",
-   "image_url": "https://wynncraft.wiki.gg/images/Psilo.png?a49f9c",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Mercenary",
+   "image_url": "https://wynncraft.wiki.gg/images/SkyraiderMercenary.png?42486d",
    "tier": "uncommon"
   },
   {
-   "slug": "ildan",
-   "name": "Ildan",
+   "slug": "skyraider-lookout",
+   "name": "Skyraider Lookout",
    "lines": 18,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ildan",
-   "image_url": "https://wynncraft.wiki.gg/images/Ildan.png?14f380",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Lookout",
+   "image_url": "https://wynncraft.wiki.gg/images/SkyraiderLookout.png?922d3f",
    "tier": "uncommon"
   },
   {
@@ -1580,27 +2604,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "runo",
-   "name": "Runo",
+   "slug": "gracen",
+   "name": "Gracen",
    "lines": 17,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Runo",
-   "image_url": "https://wynncraft.wiki.gg/images/Runo.png?d0dcc1",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Gracen",
+   "image_url": "https://wynncraft.wiki.gg/images/Gracen.png?3abed2",
    "tier": "uncommon"
   },
   {
-   "slug": "general-elix",
-   "name": "General Elix",
+   "slug": "old-fisherman",
+   "name": "Old Fisherman",
    "lines": 17,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/General_Elix",
-   "image_url": "https://wynncraft.wiki.gg/images/GeneralElix.png?6cc279",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "elder-astal",
-   "name": "Elder Astal",
-   "lines": 17,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Astal",
-   "image_url": "https://wynncraft.wiki.gg/images/ElderAstal%28Frozen%29.png?943e2f",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Fisherman",
+   "image_url": "https://wynncraft.wiki.gg/images/OldFisherman.png?1b9e98",
    "tier": "uncommon"
   },
   {
@@ -1612,11 +2628,19 @@
    "tier": "uncommon"
   },
   {
-   "slug": "carl",
-   "name": "\"Carl\"",
+   "slug": "gordon",
+   "name": "Gordon",
    "lines": 17,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/%22Carl%22",
-   "image_url": "https://wynncraft.wiki.gg/images/Carl.png?7642aa",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Gordon.png?262f4b",
+   "tier": "uncommon"
+  },
+  {
+   "slug": "tesha",
+   "name": "Tesha",
+   "lines": 17,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tesha",
+   "image_url": "https://wynncraft.wiki.gg/images/Tesha.png?580e50",
    "tier": "uncommon"
   },
   {
@@ -1628,20 +2652,12 @@
    "tier": "uncommon"
   },
   {
-   "slug": "gordon",
-   "name": "Gordon",
-   "lines": 17,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Gordon.png?262f4b",
-   "tier": "uncommon"
-  },
-  {
    "slug": "kansard",
    "name": "Kansard",
    "lines": 16,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Kansard",
    "image_url": "https://wynncraft.wiki.gg/images/KansardAd1.png?1b627c",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
    "slug": "corak",
@@ -1649,103 +2665,15 @@
    "lines": 16,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Corak",
    "image_url": "https://wynncraft.wiki.gg/images/Corak.png?fbd683",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
-   "slug": "nunexetor",
-   "name": "Nunexetor",
+   "slug": "ahmas",
+   "name": "Ahmas",
    "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nunexetor",
-   "image_url": "https://wynncraft.wiki.gg/images/Nunexetor.png?4493ce",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "gelibord-citizen",
-   "name": "Gelibord Citizen",
-   "lines": 16,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/GelibordCitizen.png?9e4f30",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "aldwell-guard",
-   "name": "Aldwell Guard",
-   "lines": 16,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/AldwellGuard.png?1735b4",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "pastor-arwes",
-   "name": "Pastor Arwes",
-   "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Pastor_Arwes",
-   "image_url": "https://wynncraft.wiki.gg/images/PastorArwes.png?cf8994",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "bip",
-   "name": "Bip",
-   "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bip",
-   "image_url": "https://wynncraft.wiki.gg/images/Bip.png?e0f668",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "valimare",
-   "name": "Valimare",
-   "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Valimare",
-   "image_url": "https://wynncraft.wiki.gg/images/Valimare.png?f45d69",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "rensa",
-   "name": "Rensa",
-   "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rensa",
-   "image_url": "https://wynncraft.wiki.gg/images/Rensa.png?d4e011",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "burtur",
-   "name": "Burtur",
-   "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Burtur",
-   "image_url": "https://wynncraft.wiki.gg/images/Burtur.png?3b7f93",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "corkus-jeweler",
-   "name": "Corkus Jeweler",
-   "lines": 16,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/CorkusJeweler.png?fe4ac8",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "traitor-amadel",
-   "name": "Traitor Amadel",
-   "lines": 16,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "squidward",
-   "name": "Squidward",
-   "lines": 16,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Squidward",
-   "image_url": "https://wynncraft.wiki.gg/images/Squidward.png?f18db3",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "master-oshman",
-   "name": "Master Oshman",
-   "lines": 16,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb",
-   "tier": "uncommon"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ahmas",
+   "image_url": "https://wynncraft.wiki.gg/images/Ahmas.png?f09824",
+   "tier": "common"
   },
   {
    "slug": "bassow",
@@ -1753,7 +2681,7 @@
    "lines": 16,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Bassow.png?3740ad",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
    "slug": "nawild",
@@ -1761,7 +2689,119 @@
    "lines": 16,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Nawild.png?50a49b",
-   "tier": "uncommon"
+   "tier": "common"
+  },
+  {
+   "slug": "nunexetor",
+   "name": "Nunexetor",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nunexetor",
+   "image_url": "https://wynncraft.wiki.gg/images/Nunexetor.png?4493ce",
+   "tier": "common"
+  },
+  {
+   "slug": "boat-captain",
+   "name": "Boat Captain",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Boat_Captain",
+   "image_url": "https://wynncraft.wiki.gg/images/BoatCaptain.png?b165b8",
+   "tier": "common"
+  },
+  {
+   "slug": "zhight-tour-guide",
+   "name": "Zhight Tour Guide",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Zhight_Tour_Guide",
+   "image_url": "https://wynncraft.wiki.gg/images/Zhight_Tour_Guide.png?df5534",
+   "tier": "common"
+  },
+  {
+   "slug": "aldwell-guard",
+   "name": "Aldwell Guard",
+   "lines": 16,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/AldwellGuard.png?1735b4",
+   "tier": "common"
+  },
+  {
+   "slug": "missing-child",
+   "name": "Missing Child",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Missing_Child",
+   "image_url": "https://wynncraft.wiki.gg/images/MissingChild.png?4cea35",
+   "tier": "common"
+  },
+  {
+   "slug": "excavator-placardus",
+   "name": "Excavator Placardus",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Placardus",
+   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorPlacardus.png?9aa4ab",
+   "tier": "common"
+  },
+  {
+   "slug": "ferndor",
+   "name": "Ferndor",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ferndor",
+   "image_url": "https://wynncraft.wiki.gg/images/Ferndor.png?9e98a1",
+   "tier": "common"
+  },
+  {
+   "slug": "valimare",
+   "name": "Valimare",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Valimare",
+   "image_url": "https://wynncraft.wiki.gg/images/Valimare.png?f45d69",
+   "tier": "common"
+  },
+  {
+   "slug": "rensa",
+   "name": "Rensa",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rensa",
+   "image_url": "https://wynncraft.wiki.gg/images/Rensa.png?d4e011",
+   "tier": "common"
+  },
+  {
+   "slug": "mysterious-figure",
+   "name": "Mysterious Figure",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mysterious_Figure",
+   "image_url": "https://wynncraft.wiki.gg/images/MysteriousFigure.png?2fa8b0",
+   "tier": "common"
+  },
+  {
+   "slug": "squidward",
+   "name": "Squidward",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Squidward",
+   "image_url": "https://wynncraft.wiki.gg/images/Squidward.png?f18db3",
+   "tier": "common"
+  },
+  {
+   "slug": "sayrr",
+   "name": "Sayrr",
+   "lines": 16,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sayrr",
+   "image_url": "https://wynncraft.wiki.gg/images/Sayrr.png?35c75e",
+   "tier": "common"
+  },
+  {
+   "slug": "master-oshman",
+   "name": "Master Oshman",
+   "lines": 16,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb",
+   "tier": "common"
+  },
+  {
+   "slug": "traitor-amadel",
+   "name": "Traitor Amadel",
+   "lines": 16,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a",
+   "tier": "common"
   },
   {
    "slug": "avos-chief",
@@ -1769,15 +2809,23 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Avos_Chief",
    "image_url": "https://wynncraft.wiki.gg/images/AvosChief.png?5d464c",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
-   "slug": "winie",
-   "name": "Winie",
+   "slug": "leucsaa",
+   "name": "Leucsaa",
    "lines": 15,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Winie.png?df4239",
-   "tier": "uncommon"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Leucsaa",
+   "image_url": "https://wynncraft.wiki.gg/images/Leucsaa.png?dd6382",
+   "tier": "common"
+  },
+  {
+   "slug": "egpla",
+   "name": "Egpla",
+   "lines": 15,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Egpla",
+   "image_url": "https://wynncraft.wiki.gg/images/Egpla.png?b8f9d4",
+   "tier": "common"
   },
   {
    "slug": "captured-prisoner",
@@ -1785,7 +2833,7 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Captured_Prisoner",
    "image_url": "https://wynncraft.wiki.gg/images/CapturedPrisoner.png?75bb90",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
    "slug": "ceyquin",
@@ -1793,39 +2841,39 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ceyquin",
    "image_url": "https://wynncraft.wiki.gg/images/Ceyquin.png?2a3aff",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
-   "slug": "brie",
-   "name": "Brie",
+   "slug": "winie",
+   "name": "Winie",
    "lines": 15,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Brie",
-   "image_url": "https://wynncraft.wiki.gg/images/Brie.png?c6e4fa",
-   "tier": "uncommon"
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Winie.png?df4239",
+   "tier": "common"
   },
   {
-   "slug": "kale",
-   "name": "Kale",
+   "slug": "laen",
+   "name": "Laen",
    "lines": 15,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Kale",
-   "image_url": "https://wynncraft.wiki.gg/images/Kale.png?c78239",
-   "tier": "uncommon"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Laen",
+   "image_url": "https://wynncraft.wiki.gg/images/Laen.png?83d50f",
+   "tier": "common"
   },
   {
-   "slug": "frank",
-   "name": "Frank",
+   "slug": "scavenger-hunt-collector",
+   "name": "Scavenger Hunt Collector",
    "lines": 15,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Frank",
-   "image_url": "https://wynncraft.wiki.gg/images/Frank.png?a0277a",
-   "tier": "uncommon"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Scavenger_Hunt_Collector",
+   "image_url": "https://wynncraft.wiki.gg/images/ScavengerHuntCollector.png?3c1c03",
+   "tier": "common"
   },
   {
-   "slug": "excavator-placardus",
-   "name": "Excavator Placardus",
+   "slug": "rayshyroth",
+   "name": "Rayshyroth",
    "lines": 15,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Placardus",
-   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorPlacardus.png?9aa4ab",
-   "tier": "uncommon"
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rayshyroth",
+   "image_url": "https://wynncraft.wiki.gg/images/Rayshyroth.png?d7f010",
+   "tier": "common"
   },
   {
    "slug": "zhight",
@@ -1833,30 +2881,14 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Zhight",
    "image_url": "https://wynncraft.wiki.gg/images/Zhight.png?7796f4",
-   "tier": "uncommon"
+   "tier": "common"
   },
   {
-   "slug": "qira-mistress-of-the-hive",
-   "name": "Qira, Mistress of the Hive",
-   "lines": 15,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Qira%2C_Mistress_of_the_Hive",
-   "image_url": "https://wynncraft.wiki.gg/images/Qira%2CMistressoftheHive%28Phase1%29.png?28d3e1",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "espren-citizen",
-   "name": "Espren Citizen",
-   "lines": 15,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/EsprenCitizen.png?db7897",
-   "tier": "uncommon"
-  },
-  {
-   "slug": "veekhat",
-   "name": "Veekhat",
+   "slug": "achper",
+   "name": "Achper",
    "lines": 14,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Veekhat",
-   "image_url": "https://wynncraft.wiki.gg/images/VeekhattheMinotaur.png?ff5fc1",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Achper",
+   "image_url": "https://wynncraft.wiki.gg/images/Achper.png?3696f4",
    "tier": "common"
   },
   {
@@ -1876,11 +2908,51 @@
    "tier": "common"
   },
   {
-   "slug": "private-tylas",
-   "name": "Private Tylas",
+   "slug": "hermit",
+   "name": "Hermit",
    "lines": 14,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Private_Tylas",
-   "image_url": "https://wynncraft.wiki.gg/images/PrivateTylas.png?38c728",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hermit",
+   "image_url": "https://wynncraft.wiki.gg/images/Hermit.png?ee1504",
+   "tier": "common"
+  },
+  {
+   "slug": "detlas-citizen",
+   "name": "Detlas Citizen",
+   "lines": 14,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/DetlasCitizen.png?2dcfca",
+   "tier": "common"
+  },
+  {
+   "slug": "lusuco-citizen",
+   "name": "Lusuco Citizen",
+   "lines": 14,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/LusucoCitizen.png?83975d",
+   "tier": "common"
+  },
+  {
+   "slug": "veekhat",
+   "name": "Veekhat",
+   "lines": 14,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Veekhat",
+   "image_url": "https://wynncraft.wiki.gg/images/VeekhattheMinotaur.png?ff5fc1",
+   "tier": "common"
+  },
+  {
+   "slug": "eltom-guard",
+   "name": "Eltom Guard",
+   "lines": 14,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Eltom_Guard",
+   "image_url": "https://wynncraft.wiki.gg/images/EltomGuard.png?7b0089",
+   "tier": "common"
+  },
+  {
+   "slug": "elder-desint",
+   "name": "Elder Desint",
+   "lines": 14,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Desint",
+   "image_url": "https://wynncraft.wiki.gg/images/ElderDesint%28Frozen%29.png?8785b7",
    "tier": "common"
   },
   {
@@ -1892,19 +2964,27 @@
    "tier": "common"
   },
   {
-   "slug": "aunoa",
-   "name": "Aunoa",
+   "slug": "event-airship-pilot",
+   "name": "Event Airship Pilot",
    "lines": 14,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Aunoa",
-   "image_url": "https://wynncraft.wiki.gg/images/Aunoa.png?2debdd",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Event_Airship_Pilot",
+   "image_url": "https://wynncraft.wiki.gg/images/EventAirshipPilot.png?b488aa",
    "tier": "common"
   },
   {
-   "slug": "ferndor",
-   "name": "Ferndor",
+   "slug": "private-tylas",
+   "name": "Private Tylas",
    "lines": 14,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ferndor",
-   "image_url": "https://wynncraft.wiki.gg/images/Ferndor.png?9e98a1",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Private_Tylas",
+   "image_url": "https://wynncraft.wiki.gg/images/PrivateTylas.png?38c728",
+   "tier": "common"
+  },
+  {
+   "slug": "yobon",
+   "name": "Yobon",
+   "lines": 14,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yobon",
+   "image_url": "https://wynncraft.wiki.gg/images/Yobon.png?f6e350",
    "tier": "common"
   },
   {
@@ -1924,11 +3004,11 @@
    "tier": "common"
   },
   {
-   "slug": "ahmas",
-   "name": "Ahmas",
+   "slug": "narder",
+   "name": "Narder",
    "lines": 14,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ahmas",
-   "image_url": "https://wynncraft.wiki.gg/images/Ahmas.png?f09824",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Narder",
+   "image_url": "https://wynncraft.wiki.gg/images/Narder.png?c32443",
    "tier": "common"
   },
   {
@@ -1956,27 +3036,11 @@
    "tier": "common"
   },
   {
-   "slug": "narder",
-   "name": "Narder",
-   "lines": 14,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Narder",
-   "image_url": "https://wynncraft.wiki.gg/images/Narder.png?c32443",
-   "tier": "common"
-  },
-  {
    "slug": "legolus",
    "name": "Legolus",
    "lines": 13,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Legolus",
    "image_url": "https://wynncraft.wiki.gg/images/Legulus114.png?3419a0",
-   "tier": "common"
-  },
-  {
-   "slug": "dalben",
-   "name": "Dalben",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dalben",
-   "image_url": "https://wynncraft.wiki.gg/images/Dalben.png?47f5b9",
    "tier": "common"
   },
   {
@@ -1988,27 +3052,19 @@
    "tier": "common"
   },
   {
-   "slug": "thomas",
-   "name": "Thomas",
+   "slug": "lieutenant",
+   "name": "Lieutenant",
    "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Thomas",
-   "image_url": "https://wynncraft.wiki.gg/images/Thomas.png?dd6648",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Lieutenant.png?f25dc6",
    "tier": "common"
   },
   {
-   "slug": "sayleros",
-   "name": "Sayleros",
+   "slug": "witch",
+   "name": "Witch",
    "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sayleros",
-   "image_url": "https://wynncraft.wiki.gg/images/Sayleros.png?e231a8",
-   "tier": "common"
-  },
-  {
-   "slug": "edula",
-   "name": "Edula",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Edula",
-   "image_url": "https://wynncraft.wiki.gg/images/Edula.png?9dda9b",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Witch.png?3b3c66",
    "tier": "common"
   },
   {
@@ -2028,14 +3084,6 @@
    "tier": "common"
   },
   {
-   "slug": "ann",
-   "name": "Ann",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ann",
-   "image_url": "https://wynncraft.wiki.gg/images/Ann.png?9be532",
-   "tier": "common"
-  },
-  {
    "slug": "mysterious-leader",
    "name": "Mysterious Leader",
    "lines": 13,
@@ -2052,6 +3100,30 @@
    "tier": "common"
   },
   {
+   "slug": "lazing-dogun",
+   "name": "Lazing Dogun",
+   "lines": 13,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lazing_Dogun",
+   "image_url": "https://wynncraft.wiki.gg/images/LazingDogun.png?3e73cc",
+   "tier": "common"
+  },
+  {
+   "slug": "lumilda",
+   "name": "Lumilda",
+   "lines": 13,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lumilda",
+   "image_url": "https://wynncraft.wiki.gg/images/Lumilda.png?1578a4",
+   "tier": "common"
+  },
+  {
+   "slug": "shopkeeper",
+   "name": "Shopkeeper",
+   "lines": 13,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Shopkeeper.png?983585",
+   "tier": "common"
+  },
+  {
    "slug": "celuuse",
    "name": "Celuuse",
    "lines": 13,
@@ -2060,35 +3132,11 @@
    "tier": "common"
   },
   {
-   "slug": "scavenger-hunt-collector",
-   "name": "Scavenger Hunt Collector",
+   "slug": "otenu",
+   "name": "Otenu",
    "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Scavenger_Hunt_Collector",
-   "image_url": "https://wynncraft.wiki.gg/images/ScavengerHuntCollector.png?3c1c03",
-   "tier": "common"
-  },
-  {
-   "slug": "asher",
-   "name": "Asher",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Asher",
-   "image_url": "https://wynncraft.wiki.gg/images/Asher.png?aebea9",
-   "tier": "common"
-  },
-  {
-   "slug": "egpla",
-   "name": "Egpla",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Egpla",
-   "image_url": "https://wynncraft.wiki.gg/images/Egpla.png?b8f9d4",
-   "tier": "common"
-  },
-  {
-   "slug": "trunan",
-   "name": "Trunan",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Trunan",
-   "image_url": "https://wynncraft.wiki.gg/images/Trunan.png?c81cf0",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Otenu",
+   "image_url": "https://wynncraft.wiki.gg/images/Otenu.png?76ad88",
    "tier": "common"
   },
   {
@@ -2100,19 +3148,35 @@
    "tier": "common"
   },
   {
+   "slug": "jorkin",
+   "name": "Jorkin",
+   "lines": 13,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jorkin",
+   "image_url": "https://wynncraft.wiki.gg/images/Jorkin.png?1a3b57",
+   "tier": "common"
+  },
+  {
+   "slug": "trunan",
+   "name": "Trunan",
+   "lines": 13,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Trunan",
+   "image_url": "https://wynncraft.wiki.gg/images/Trunan.png?c81cf0",
+   "tier": "common"
+  },
+  {
+   "slug": "tyko",
+   "name": "Tyko",
+   "lines": 13,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tyko",
+   "image_url": "https://wynncraft.wiki.gg/images/Tyko.png?b34ea6",
+   "tier": "common"
+  },
+  {
    "slug": "tinemild",
    "name": "Tinemild",
    "lines": 13,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Tinemild.png?ca57bd",
-   "tier": "common"
-  },
-  {
-   "slug": "dereg",
-   "name": "Dereg",
-   "lines": 13,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dereg",
-   "image_url": "https://wynncraft.wiki.gg/images/Dereg.png?7b862c",
    "tier": "common"
   },
   {
@@ -2124,11 +3188,11 @@
    "tier": "common"
   },
   {
-   "slug": "the-blacksmith",
-   "name": "The Blacksmith",
+   "slug": "agent",
+   "name": "Agent",
    "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Blacksmith",
-   "image_url": "https://wynncraft.wiki.gg/images/TheBlacksmith.png?fa0ba2",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Agent",
+   "image_url": "https://wynncraft.wiki.gg/images/Agent.png?449b74",
    "tier": "common"
   },
   {
@@ -2140,27 +3204,91 @@
    "tier": "common"
   },
   {
-   "slug": "dorroc",
-   "name": "Dorroc",
+   "slug": "peli",
+   "name": "Peli",
    "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dorroc",
-   "image_url": "https://wynncraft.wiki.gg/images/Dorroc.png?954665",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Peli.png?367160",
    "tier": "common"
   },
   {
-   "slug": "lodog",
-   "name": "Lodog",
+   "slug": "avos-shaman",
+   "name": "Avos Shaman",
    "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lodog",
-   "image_url": "https://wynncraft.wiki.gg/images/Lodog.png?869cbd",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Avos_Shaman",
+   "image_url": "https://wynncraft.wiki.gg/images/AvosShaman.png?ec5541",
    "tier": "common"
   },
   {
-   "slug": "mastro",
-   "name": "Mastro",
+   "slug": "banker",
+   "name": "Banker",
    "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mastro",
-   "image_url": "https://wynncraft.wiki.gg/images/Mastro.png?f3464a",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Banker",
+   "image_url": "https://wynncraft.wiki.gg/images/TheBanker.png?daad6d",
+   "tier": "common"
+  },
+  {
+   "slug": "the-blacksmith",
+   "name": "The Blacksmith",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Blacksmith",
+   "image_url": "https://wynncraft.wiki.gg/images/TheBlacksmith.png?fa0ba2",
+   "tier": "common"
+  },
+  {
+   "slug": "bucie-citizen",
+   "name": "Bucie Citizen",
+   "lines": 12,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/BucieCitizen.png?14de0a",
+   "tier": "common"
+  },
+  {
+   "slug": "nesaak-citizen",
+   "name": "Nesaak Citizen",
+   "lines": 12,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/NesaakCitizen.png?b76080",
+   "tier": "common"
+  },
+  {
+   "slug": "legendary-messenger",
+   "name": "Legendary Messenger",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Legendary_Messenger",
+   "image_url": "https://wynncraft.wiki.gg/images/LegendaryMessenger.png?fdbabd",
+   "tier": "common"
+  },
+  {
+   "slug": "hot-air-balloon-captain",
+   "name": "Hot Air Balloon Captain",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hot_Air_Balloon_Captain",
+   "image_url": "https://wynncraft.wiki.gg/images/HotAirBalloonCaptain.png?67f523",
+   "tier": "common"
+  },
+  {
+   "slug": "relos-citizen",
+   "name": "Relos Citizen",
+   "lines": 12,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/RelosCitizen.png?97aaab",
+   "tier": "common"
+  },
+  {
+   "slug": "c-s-s-wavebreaker-captain",
+   "name": "C.S.S Wavebreaker Captain",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/C.S.S_Wavebreaker_Captain",
+   "image_url": "https://wynncraft.wiki.gg/images/CSSWavebreakerCaptain.png?5b0a25",
+   "tier": "common"
+  },
+  {
+   "slug": "hrona",
+   "name": "Hrona",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hrona",
+   "image_url": "https://wynncraft.wiki.gg/images/Hrona.png?d3c1a1",
    "tier": "common"
   },
   {
@@ -2172,11 +3300,11 @@
    "tier": "common"
   },
   {
-   "slug": "blackjack-dealer",
-   "name": "Blackjack Dealer",
+   "slug": "minigame-expert",
+   "name": "Minigame Expert",
    "lines": 12,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/BlackjackDealer.png?e7d518",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Minigame_Expert",
+   "image_url": "https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5",
    "tier": "common"
   },
   {
@@ -2188,19 +3316,19 @@
    "tier": "common"
   },
   {
-   "slug": "jill",
-   "name": "Jill",
+   "slug": "blackjack-dealer",
+   "name": "Blackjack Dealer",
    "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jill",
-   "image_url": "https://wynncraft.wiki.gg/images/Jill.png?3703ad",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/BlackjackDealer.png?e7d518",
    "tier": "common"
   },
   {
-   "slug": "lekal",
-   "name": "Lekal",
+   "slug": "ostentatious-envoy",
+   "name": "Ostentatious Envoy",
    "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lekal",
-   "image_url": "https://wynncraft.wiki.gg/images/Lekal.png?560700",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ostentatious_Envoy",
+   "image_url": "https://wynncraft.wiki.gg/images/OstentatiousEnvoy.png?eecdaa",
    "tier": "common"
   },
   {
@@ -2212,11 +3340,35 @@
    "tier": "common"
   },
   {
+   "slug": "jill",
+   "name": "Jill",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jill",
+   "image_url": "https://wynncraft.wiki.gg/images/Jill.png?3703ad",
+   "tier": "common"
+  },
+  {
+   "slug": "twendle",
+   "name": "Twendle",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Twendle",
+   "image_url": "https://wynncraft.wiki.gg/images/Twendle.png?1a30b9",
+   "tier": "common"
+  },
+  {
    "slug": "comor",
    "name": "Comor",
    "lines": 12,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Comor",
    "image_url": "https://wynncraft.wiki.gg/images/Comor.png?83fa24",
+   "tier": "common"
+  },
+  {
+   "slug": "lekal",
+   "name": "Lekal",
+   "lines": 12,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lekal",
+   "image_url": "https://wynncraft.wiki.gg/images/Lekal.png?560700",
    "tier": "common"
   },
   {
@@ -2228,19 +3380,19 @@
    "tier": "common"
   },
   {
-   "slug": "czytash",
-   "name": "Czytash",
-   "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Czytash",
-   "image_url": "https://wynncraft.wiki.gg/images/Czytash.png?3e3aa3",
-   "tier": "common"
-  },
-  {
    "slug": "butler-hayn",
    "name": "Butler Hayn",
    "lines": 12,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/ButlerHayn.png?6c0eaa",
+   "tier": "common"
+  },
+  {
+   "slug": "airbase-attendant",
+   "name": "Airbase Attendant",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Airbase_Attendant",
+   "image_url": "https://wynncraft.wiki.gg/images/AirbaseAttendant.png?8c9241",
    "tier": "common"
   },
   {
@@ -2260,19 +3412,19 @@
    "tier": "common"
   },
   {
-   "slug": "dobile",
-   "name": "Dobile",
+   "slug": "grapes",
+   "name": "Grapes",
    "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dobile",
-   "image_url": "https://wynncraft.wiki.gg/images/Dobile.png?39c740",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Grapes.png?e6202c",
    "tier": "common"
   },
   {
-   "slug": "yobon",
-   "name": "Yobon",
+   "slug": "ibele",
+   "name": "Ibele",
    "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yobon",
-   "image_url": "https://wynncraft.wiki.gg/images/Yobon.png?f6e350",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ibele",
+   "image_url": "https://wynncraft.wiki.gg/images/Ibele.png?9fbe8d",
    "tier": "common"
   },
   {
@@ -2284,11 +3436,83 @@
    "tier": "common"
   },
   {
+   "slug": "favian",
+   "name": "Favian",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Favian",
+   "image_url": "https://wynncraft.wiki.gg/images/Favian.png?2fcbfa",
+   "tier": "common"
+  },
+  {
+   "slug": "flodur",
+   "name": "Flodur",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Flodur",
+   "image_url": "https://wynncraft.wiki.gg/images/Flodur.png?e3a0dc",
+   "tier": "common"
+  },
+  {
+   "slug": "gendarme-commander",
+   "name": "Gendarme Commander",
+   "lines": 11,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/GendarmeCommander.png?5096de",
+   "tier": "common"
+  },
+  {
+   "slug": "espren-child",
+   "name": "Espren Child",
+   "lines": 11,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/EsprenChild.png?5479f6",
+   "tier": "common"
+  },
+  {
+   "slug": "monte",
+   "name": "Monte",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Monte",
+   "image_url": "https://wynncraft.wiki.gg/images/Monte.png?b8dd9b",
+   "tier": "common"
+  },
+  {
+   "slug": "isfurus",
+   "name": "Isfurus",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Isfurus",
+   "image_url": "https://wynncraft.wiki.gg/images/Isfurus.png?b4028c",
+   "tier": "common"
+  },
+  {
+   "slug": "tarek",
+   "name": "Tarek",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tarek",
+   "image_url": "https://wynncraft.wiki.gg/images/Tarek.png?f3430e",
+   "tier": "common"
+  },
+  {
+   "slug": "leacen",
+   "name": "Leacen",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Leacen",
+   "image_url": "https://wynncraft.wiki.gg/images/Leacen.png?fe37c9",
+   "tier": "common"
+  },
+  {
    "slug": "vesdar",
    "name": "Vesdar",
    "lines": 11,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Vesdar",
    "image_url": "https://wynncraft.wiki.gg/images/Vesdar.png?bcf0d6",
+   "tier": "common"
+  },
+  {
+   "slug": "merloni",
+   "name": "Merloni",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Merloni",
+   "image_url": "https://wynncraft.wiki.gg/images/Merloni.png?549917",
    "tier": "common"
   },
   {
@@ -2308,11 +3532,19 @@
    "tier": "common"
   },
   {
-   "slug": "thesead-miner",
-   "name": "Thesead Miner",
+   "slug": "regular-humyn",
+   "name": "Regular Humyn",
    "lines": 11,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/TheseadMiner.png?e03dcc",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Regular_Humyn",
+   "image_url": "https://wynncraft.wiki.gg/images/RegularHumyn.png?a7fd0c",
+   "tier": "common"
+  },
+  {
+   "slug": "skyraider-guard",
+   "name": "Skyraider Guard",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Guard",
+   "image_url": "https://wynncraft.wiki.gg/images/SkyraiderGuard.png?6b75f0",
    "tier": "common"
   },
   {
@@ -2324,35 +3556,11 @@
    "tier": "common"
   },
   {
-   "slug": "shopkeeper",
-   "name": "Shopkeeper",
+   "slug": "thesead-miner",
+   "name": "Thesead Miner",
    "lines": 11,
    "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Shopkeeper.png?983585",
-   "tier": "common"
-  },
-  {
-   "slug": "grenot",
-   "name": "Grenot",
-   "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Grenot",
-   "image_url": "https://wynncraft.wiki.gg/images/Grenot.png?717080",
-   "tier": "common"
-  },
-  {
-   "slug": "excavator-lykron",
-   "name": "Excavator Lykron",
-   "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Lykron",
-   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorLykron.png?d91da2",
-   "tier": "common"
-  },
-  {
-   "slug": "calamaro",
-   "name": "Calamaro",
-   "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Calamaro",
-   "image_url": "https://wynncraft.wiki.gg/images/Calamaro.png?6d2d41",
+   "image_url": "https://wynncraft.wiki.gg/images/TheseadMiner.png?e03dcc",
    "tier": "common"
   },
   {
@@ -2364,35 +3572,27 @@
    "tier": "common"
   },
   {
-   "slug": "big-butch",
-   "name": "Big Butch",
+   "slug": "grenot",
+   "name": "Grenot",
    "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Big_Butch",
-   "image_url": "https://wynncraft.wiki.gg/images/BigButch.png?9c89b0",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Grenot",
+   "image_url": "https://wynncraft.wiki.gg/images/Grenot.png?717080",
    "tier": "common"
   },
   {
-   "slug": "omango",
-   "name": "Omango",
+   "slug": "calamaro",
+   "name": "Calamaro",
    "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Omango",
-   "image_url": "https://wynncraft.wiki.gg/images/Omango.png?1ffe5d",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Calamaro",
+   "image_url": "https://wynncraft.wiki.gg/images/Calamaro.png?6d2d41",
    "tier": "common"
   },
   {
-   "slug": "kroac",
-   "name": "Kroac",
+   "slug": "pete",
+   "name": "Pete",
    "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Kroac",
-   "image_url": "https://wynncraft.wiki.gg/images/Kroac.png?692a63",
-   "tier": "common"
-  },
-  {
-   "slug": "rileen",
-   "name": "Rileen",
-   "lines": 11,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rileen",
-   "image_url": "https://wynncraft.wiki.gg/images/Rileen.png?2e0554",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Pete.png?38e162",
    "tier": "common"
   },
   {
@@ -2404,27 +3604,19 @@
    "tier": "common"
   },
   {
+   "slug": "excavator-lykron",
+   "name": "Excavator Lykron",
+   "lines": 11,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Lykron",
+   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorLykron.png?d91da2",
+   "tier": "common"
+  },
+  {
    "slug": "mael-twain",
    "name": "Mael Twain",
    "lines": 10,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Mael_Twain",
    "image_url": "https://wynncraft.wiki.gg/images/Mael.png?79812b",
-   "tier": "common"
-  },
-  {
-   "slug": "ibele",
-   "name": "Ibele",
-   "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ibele",
-   "image_url": "https://wynncraft.wiki.gg/images/Ibele.png?9fbe8d",
-   "tier": "common"
-  },
-  {
-   "slug": "teiren",
-   "name": "Teiren",
-   "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Teiren",
-   "image_url": "https://wynncraft.wiki.gg/images/Teiren.png?848c28",
    "tier": "common"
   },
   {
@@ -2436,11 +3628,67 @@
    "tier": "common"
   },
   {
-   "slug": "missing-child",
-   "name": "Missing Child",
+   "slug": "teiren",
+   "name": "Teiren",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Missing_Child",
-   "image_url": "https://wynncraft.wiki.gg/images/MissingChild.png?4cea35",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Teiren",
+   "image_url": "https://wynncraft.wiki.gg/images/Teiren.png?848c28",
+   "tier": "common"
+  },
+  {
+   "slug": "jankan",
+   "name": "Jankan",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jankan",
+   "image_url": "https://wynncraft.wiki.gg/images/OldManJankan.png?18ece5",
+   "tier": "common"
+  },
+  {
+   "slug": "cidre",
+   "name": "Cidre",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Cidre",
+   "image_url": "https://wynncraft.wiki.gg/images/Cidre.png?f1665f",
+   "tier": "common"
+  },
+  {
+   "slug": "iboju-shaman",
+   "name": "Iboju Shaman",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Iboju_Shaman",
+   "image_url": "https://wynncraft.wiki.gg/images/IbojuShaman.png?6dea16",
+   "tier": "common"
+  },
+  {
+   "slug": "sergeant-klafson",
+   "name": "Sergeant Klafson",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sergeant_Klafson",
+   "image_url": "https://wynncraft.wiki.gg/images/SergeantKlafson.png?6bb55c",
+   "tier": "common"
+  },
+  {
+   "slug": "dejected-identifier",
+   "name": "Dejected Identifier",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dejected_Identifier",
+   "image_url": "https://wynncraft.wiki.gg/images/DejectedIdentifier.png?98c9dd",
+   "tier": "common"
+  },
+  {
+   "slug": "plario",
+   "name": "Plario",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Plario",
+   "image_url": "https://wynncraft.wiki.gg/images/Plario.png?74d927",
+   "tier": "common"
+  },
+  {
+   "slug": "calo",
+   "name": "Calo",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Calo",
+   "image_url": "https://wynncraft.wiki.gg/images/Calo%28Detlas%29.png?839451",
    "tier": "common"
   },
   {
@@ -2452,11 +3700,11 @@
    "tier": "common"
   },
   {
-   "slug": "syni",
-   "name": "Syni",
+   "slug": "damien",
+   "name": "Damien",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Syni",
-   "image_url": "https://wynncraft.wiki.gg/images/Syni.png?4bffc1",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Damien",
+   "image_url": "https://wynncraft.wiki.gg/images/Damien.png?f04daf",
    "tier": "common"
   },
   {
@@ -2476,14 +3724,6 @@
    "tier": "common"
   },
   {
-   "slug": "damien",
-   "name": "Damien",
-   "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Damien",
-   "image_url": "https://wynncraft.wiki.gg/images/Damien.png?f04daf",
-   "tier": "common"
-  },
-  {
    "slug": "pastor-nitram",
    "name": "Pastor Nitram",
    "lines": 10,
@@ -2500,27 +3740,43 @@
    "tier": "common"
   },
   {
-   "slug": "yavlis",
-   "name": "Yavlis",
+   "slug": "kantor",
+   "name": "Kantor",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Yavlis",
-   "image_url": "https://wynncraft.wiki.gg/images/Yavlis.png?b4c3f9",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Kantor",
+   "image_url": "https://wynncraft.wiki.gg/images/Kantor.png?a06243",
    "tier": "common"
   },
   {
-   "slug": "mercenary-leader",
-   "name": "Mercenary Leader",
+   "slug": "king-of-troms",
+   "name": "King of Troms",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mercenary_Leader",
-   "image_url": "https://wynncraft.wiki.gg/images/MercenaryLeader.png?851578",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/King_of_Troms",
+   "image_url": "https://wynncraft.wiki.gg/images/KingofTroms.png?c3f160",
    "tier": "common"
   },
   {
-   "slug": "elder-berusia",
-   "name": "Elder Berusia",
+   "slug": "prince-of-troms",
+   "name": "Prince of Troms",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Berusia",
-   "image_url": "https://wynncraft.wiki.gg/images/ElderBerusia.png?a79f54",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Prince_of_Troms",
+   "image_url": "https://wynncraft.wiki.gg/images/PrinceofTroms.png?2d85fb",
+   "tier": "common"
+  },
+  {
+   "slug": "nami-the-healer",
+   "name": "Nami The Healer",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nami_The_Healer",
+   "image_url": "https://wynncraft.wiki.gg/images/NamiTheHealer.png?844e41",
+   "tier": "common"
+  },
+  {
+   "slug": "snail-race-supervisor",
+   "name": "Snail Race Supervisor",
+   "lines": 10,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/SnailRaceSupervisor.png?cbb420",
    "tier": "common"
   },
   {
@@ -2540,11 +3796,11 @@
    "tier": "common"
   },
   {
-   "slug": "hrona",
-   "name": "Hrona",
+   "slug": "elder-berusia",
+   "name": "Elder Berusia",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hrona",
-   "image_url": "https://wynncraft.wiki.gg/images/Hrona.png?d3c1a1",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Berusia",
+   "image_url": "https://wynncraft.wiki.gg/images/ElderBerusia.png?a79f54",
    "tier": "common"
   },
   {
@@ -2556,19 +3812,11 @@
    "tier": "common"
   },
   {
-   "slug": "caras",
-   "name": "Caras",
+   "slug": "corrupted-scout-lv-3",
+   "name": "Corrupted Scout (Lv. 3)",
    "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caras",
-   "image_url": "https://wynncraft.wiki.gg/images/Caras.png?a6017e",
-   "tier": "common"
-  },
-  {
-   "slug": "favian",
-   "name": "Favian",
-   "lines": 10,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Favian",
-   "image_url": "https://wynncraft.wiki.gg/images/Favian.png?2fcbfa",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Corrupted_Scout_%28Lv._3%29",
+   "image_url": "https://wynncraft.wiki.gg/images/CorruptedScout%28Lv3%29.png?34f877",
    "tier": "common"
   },
   {
@@ -2580,43 +3828,19 @@
    "tier": "common"
   },
   {
+   "slug": "caras",
+   "name": "Caras",
+   "lines": 10,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Caras",
+   "image_url": "https://wynncraft.wiki.gg/images/Caras.png?a6017e",
+   "tier": "common"
+  },
+  {
    "slug": "ka-l-argwit",
    "name": "Ka L'argwit",
    "lines": 10,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ka_L%27argwit",
    "image_url": "https://wynncraft.wiki.gg/images/KaL%27argwit.png?98a33a",
-   "tier": "common"
-  },
-  {
-   "slug": "ureietun",
-   "name": "Ureietun",
-   "lines": 9,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Ureietun.png?e5b735",
-   "tier": "common"
-  },
-  {
-   "slug": "lomoster",
-   "name": "Lomoster",
-   "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lomoster",
-   "image_url": "https://wynncraft.wiki.gg/images/Lomoster.png?b7f462",
-   "tier": "common"
-  },
-  {
-   "slug": "miliyus",
-   "name": "Miliyus",
-   "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Miliyus",
-   "image_url": "https://wynncraft.wiki.gg/images/Miliyus.png?c45268",
-   "tier": "common"
-  },
-  {
-   "slug": "etemitoro",
-   "name": "Etemitoro",
-   "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Etemitoro",
-   "image_url": "https://wynncraft.wiki.gg/images/Etemitoro.png?ea5951",
    "tier": "common"
   },
   {
@@ -2636,11 +3860,59 @@
    "tier": "common"
   },
   {
-   "slug": "dohstaj",
-   "name": "Dohstaj",
+   "slug": "ureietun",
+   "name": "Ureietun",
    "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Dohstaj",
-   "image_url": "https://wynncraft.wiki.gg/images/Dohstaj.png?661b15",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Ureietun.png?e5b735",
+   "tier": "common"
+  },
+  {
+   "slug": "lomoster",
+   "name": "Lomoster",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Lomoster",
+   "image_url": "https://wynncraft.wiki.gg/images/Lomoster.png?b7f462",
+   "tier": "common"
+  },
+  {
+   "slug": "mango",
+   "name": "Mango",
+   "lines": 9,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Mango.png?551f7b",
+   "tier": "common"
+  },
+  {
+   "slug": "miliyus",
+   "name": "Miliyus",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Miliyus",
+   "image_url": "https://wynncraft.wiki.gg/images/Miliyus.png?c45268",
+   "tier": "common"
+  },
+  {
+   "slug": "etemitoro",
+   "name": "Etemitoro",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Etemitoro",
+   "image_url": "https://wynncraft.wiki.gg/images/Etemitoro.png?ea5951",
+   "tier": "common"
+  },
+  {
+   "slug": "blacksmith-dwarf",
+   "name": "Blacksmith Dwarf",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Blacksmith_Dwarf",
+   "image_url": "https://wynncraft.wiki.gg/images/BlacksmithDwarf.png?79107a",
+   "tier": "common"
+  },
+  {
+   "slug": "rodoroc-citizen",
+   "name": "Rodoroc Citizen",
+   "lines": 9,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/RodorocCitizen.png?b053b0",
    "tier": "common"
   },
   {
@@ -2652,19 +3924,11 @@
    "tier": "common"
   },
   {
-   "slug": "qunit",
-   "name": "Qunit",
+   "slug": "salesman",
+   "name": "Salesman",
    "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Qunit",
-   "image_url": "https://wynncraft.wiki.gg/images/Qunit.png?fac5c5",
-   "tier": "common"
-  },
-  {
-   "slug": "mask-salesman",
-   "name": "Mask Salesman",
-   "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mask_Salesman",
-   "image_url": "https://wynncraft.wiki.gg/images/MaskSalesman.png?568a17",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Salesman",
+   "image_url": "https://wynncraft.wiki.gg/images/Salesman.png?601a49",
    "tier": "common"
   },
   {
@@ -2676,19 +3940,67 @@
    "tier": "common"
   },
   {
+   "slug": "jaybip",
+   "name": "Jaybip",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Jaybip",
+   "image_url": "https://wynncraft.wiki.gg/images/Jaybip%28Mission%29.png?a2bda4",
+   "tier": "common"
+  },
+  {
+   "slug": "poclo-wabblebuff-of-gelibord",
+   "name": "Poclo Wabblebuff of Gelibord",
+   "lines": 9,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/PocloWabblebuffofGelibord.png?35268d",
+   "tier": "common"
+  },
+  {
+   "slug": "mayor-eoric",
+   "name": "Mayor Eoric",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mayor_Eoric",
+   "image_url": "https://wynncraft.wiki.gg/images/Mayor_Eoric.png?ad23e4",
+   "tier": "common"
+  },
+  {
+   "slug": "rynend",
+   "name": "Rynend",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rynend",
+   "image_url": "https://wynncraft.wiki.gg/images/Rynend.png?8a37df",
+   "tier": "common"
+  },
+  {
+   "slug": "mylo",
+   "name": "Mylo",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mylo",
+   "image_url": "https://wynncraft.wiki.gg/images/Mylo.png?d8fc53",
+   "tier": "common"
+  },
+  {
+   "slug": "thesead-s-mayor",
+   "name": "Thesead's Mayor",
+   "lines": 9,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Thesead%27s_Mayor",
+   "image_url": "https://wynncraft.wiki.gg/images/Thesead%27s_Mayor.png?1a0faa",
+   "tier": "common"
+  },
+  {
+   "slug": "fetu",
+   "name": "Fetu",
+   "lines": 9,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Fetu.png?7d453f",
+   "tier": "common"
+  },
+  {
    "slug": "royal-advisor-carlos",
    "name": "Royal Advisor Carlos",
    "lines": 9,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Royal_Advisor_Carlos",
    "image_url": "https://wynncraft.wiki.gg/images/RoyalAdvisorCarlos.png?6ef5fd",
-   "tier": "common"
-  },
-  {
-   "slug": "king-of-troms",
-   "name": "King of Troms",
-   "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/King_of_Troms",
-   "image_url": "https://wynncraft.wiki.gg/images/KingofTroms.png?c3f160",
    "tier": "common"
   },
   {
@@ -2716,19 +4028,19 @@
    "tier": "common"
   },
   {
-   "slug": "fetu",
-   "name": "Fetu",
-   "lines": 9,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Fetu.png?7d453f",
+   "slug": "amadel",
+   "name": "Amadel",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel",
+   "image_url": "https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a",
    "tier": "common"
   },
   {
-   "slug": "mysterious-figure",
-   "name": "Mysterious Figure",
-   "lines": 9,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mysterious_Figure",
-   "image_url": "https://wynncraft.wiki.gg/images/MysteriousFigure.png?2fa8b0",
+   "slug": "agitated-citizen",
+   "name": "Agitated Citizen",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Agitated_Citizen",
+   "image_url": "https://wynncraft.wiki.gg/images/AgitatedCitizen.png?4e87f1",
    "tier": "common"
   },
   {
@@ -2748,19 +4060,67 @@
    "tier": "common"
   },
   {
-   "slug": "amadel",
-   "name": "Amadel",
+   "slug": "peaches",
+   "name": "Peaches",
    "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel",
-   "image_url": "https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Peaches.png?713af4",
    "tier": "common"
   },
   {
-   "slug": "calo",
-   "name": "Calo",
+   "slug": "alekin-guard",
+   "name": "Alekin Guard",
    "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Calo",
-   "image_url": "https://wynncraft.wiki.gg/images/Calo%28Detlas%29.png?839451",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/AlekinGuard.png?b8f616",
+   "tier": "common"
+  },
+  {
+   "slug": "avos-citizen",
+   "name": "Avos Citizen",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/AvosCitizen.png?f30032",
+   "tier": "common"
+  },
+  {
+   "slug": "bored-farmer",
+   "name": "Bored Farmer",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Bored_Farmer",
+   "image_url": "https://wynncraft.wiki.gg/images/BoredFarmer.png?720c46",
+   "tier": "common"
+  },
+  {
+   "slug": "brank",
+   "name": "Brank",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Brank",
+   "image_url": "https://wynncraft.wiki.gg/images/Brank.png?8f535d",
+   "tier": "common"
+  },
+  {
+   "slug": "relos-mechanic",
+   "name": "Relos Mechanic",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/RelosMechanic.png?75a9a5",
+   "tier": "common"
+  },
+  {
+   "slug": "llevigar-professor",
+   "name": "Llevigar Professor",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/LlevigarProfessor.png?d54651",
+   "tier": "common"
+  },
+  {
+   "slug": "private-walder",
+   "name": "Private Walder",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/PrivateWalder.png?c5bc01",
    "tier": "common"
   },
   {
@@ -2772,11 +4132,35 @@
    "tier": "common"
   },
   {
+   "slug": "barden",
+   "name": "Barden",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Barden",
+   "image_url": "https://wynncraft.wiki.gg/images/Barden.png?4553e4",
+   "tier": "common"
+  },
+  {
    "slug": "office-manager",
    "name": "Office Manager",
    "lines": 8,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Office_Manager",
    "image_url": "https://wynncraft.wiki.gg/images/OfficeManager.png?3fec26",
+   "tier": "common"
+  },
+  {
+   "slug": "excited-fan",
+   "name": "Excited Fan",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excited_Fan",
+   "image_url": "https://wynncraft.wiki.gg/images/ExcitedFan.png?ad86b9",
+   "tier": "common"
+  },
+  {
+   "slug": "keibon",
+   "name": "Keibon",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Keibon.png?d7595c",
    "tier": "common"
   },
   {
@@ -2796,38 +4180,6 @@
    "tier": "common"
   },
   {
-   "slug": "barden",
-   "name": "Barden",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Barden",
-   "image_url": "https://wynncraft.wiki.gg/images/Barden.png?4553e4",
-   "tier": "common"
-  },
-  {
-   "slug": "plario",
-   "name": "Plario",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Plario",
-   "image_url": "https://wynncraft.wiki.gg/images/Plario.png?74d927",
-   "tier": "common"
-  },
-  {
-   "slug": "keibon",
-   "name": "Keibon",
-   "lines": 8,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Keibon.png?d7595c",
-   "tier": "common"
-  },
-  {
-   "slug": "flodur",
-   "name": "Flodur",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Flodur",
-   "image_url": "https://wynncraft.wiki.gg/images/Flodur.png?e3a0dc",
-   "tier": "common"
-  },
-  {
    "slug": "amira",
    "name": "Amira",
    "lines": 8,
@@ -2844,11 +4196,51 @@
    "tier": "common"
   },
   {
-   "slug": "ope",
-   "name": "Ope",
+   "slug": "old-book",
+   "name": "Old Book",
    "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Ope",
-   "image_url": "https://wynncraft.wiki.gg/images/Ope.png?f0bb93",
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/OldBook.png?da3e39",
+   "tier": "common"
+  },
+  {
+   "slug": "rotating-game-expert",
+   "name": "Rotating Game Expert",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5",
+   "tier": "common"
+  },
+  {
+   "slug": "aryn",
+   "name": "Aryn",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Aryn",
+   "image_url": "https://wynncraft.wiki.gg/images/Aryn.png?1abba1",
+   "tier": "common"
+  },
+  {
+   "slug": "baker",
+   "name": "Baker",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Baker.png?891f83",
+   "tier": "common"
+  },
+  {
+   "slug": "rontaid",
+   "name": "Rontaid",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rontaid",
+   "image_url": "https://wynncraft.wiki.gg/images/Rontaid.png?c04293",
+   "tier": "common"
+  },
+  {
+   "slug": "otium",
+   "name": "Otium",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Otium",
+   "image_url": "https://wynncraft.wiki.gg/images/Otium.png?4479f8",
    "tier": "common"
   },
   {
@@ -2868,38 +4260,6 @@
    "tier": "common"
   },
   {
-   "slug": "nami-the-healer",
-   "name": "Nami The Healer",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Nami_The_Healer",
-   "image_url": "https://wynncraft.wiki.gg/images/NamiTheHealer.png?844e41",
-   "tier": "common"
-  },
-  {
-   "slug": "rontaid",
-   "name": "Rontaid",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rontaid",
-   "image_url": "https://wynncraft.wiki.gg/images/Rontaid.png?c04293",
-   "tier": "common"
-  },
-  {
-   "slug": "lieutenant",
-   "name": "Lieutenant",
-   "lines": 8,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/Lieutenant.png?f25dc6",
-   "tier": "common"
-  },
-  {
-   "slug": "grandmaster-shaman",
-   "name": "Grandmaster Shaman",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Grandmaster_Shaman",
-   "image_url": "https://wynncraft.wiki.gg/images/GrandmasterShaman.png?bf8b81",
-   "tier": "common"
-  },
-  {
    "slug": "martim",
    "name": "Martim",
    "lines": 8,
@@ -2916,43 +4276,19 @@
    "tier": "common"
   },
   {
+   "slug": "grandmaster-shaman",
+   "name": "Grandmaster Shaman",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Grandmaster_Shaman",
+   "image_url": "https://wynncraft.wiki.gg/images/GrandmasterShaman.png?bf8b81",
+   "tier": "common"
+  },
+  {
    "slug": "thesead-coal-miner",
    "name": "Thesead Coal Miner",
    "lines": 8,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/TheseadCoalMiner.png?465cf6",
-   "tier": "common"
-  },
-  {
-   "slug": "skyraider-guard",
-   "name": "Skyraider Guard",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Guard",
-   "image_url": "https://wynncraft.wiki.gg/images/SkyraiderGuard.png?6b75f0",
-   "tier": "common"
-  },
-  {
-   "slug": "c-s-s-wavebreaker-captain",
-   "name": "C.S.S Wavebreaker Captain",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/C.S.S_Wavebreaker_Captain",
-   "image_url": "https://wynncraft.wiki.gg/images/CSSWavebreakerCaptain.png?5b0a25",
-   "tier": "common"
-  },
-  {
-   "slug": "excavator-admin-uci",
-   "name": "Excavator Admin Uci",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci",
-   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorAdminUci.png?757c6e",
-   "tier": "common"
-  },
-  {
-   "slug": "amadel-s-assistant",
-   "name": "Amadel's Assistant",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant",
-   "image_url": "https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c",
    "tier": "common"
   },
   {
@@ -2972,46 +4308,6 @@
    "tier": "common"
   },
   {
-   "slug": "gernald",
-   "name": "Gernald",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Gernald",
-   "image_url": "https://wynncraft.wiki.gg/images/Gernald.png?978331",
-   "tier": "common"
-  },
-  {
-   "slug": "mylo",
-   "name": "Mylo",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mylo",
-   "image_url": "https://wynncraft.wiki.gg/images/Mylo.png?d8fc53",
-   "tier": "common"
-  },
-  {
-   "slug": "tesha",
-   "name": "Tesha",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Tesha",
-   "image_url": "https://wynncraft.wiki.gg/images/Tesha.png?580e50",
-   "tier": "common"
-  },
-  {
-   "slug": "mayor-eoric",
-   "name": "Mayor Eoric",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Mayor_Eoric",
-   "image_url": "https://wynncraft.wiki.gg/images/Mayor_Eoric.png?ad23e4",
-   "tier": "common"
-  },
-  {
-   "slug": "boat-captain",
-   "name": "Boat Captain",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Boat_Captain",
-   "image_url": "https://wynncraft.wiki.gg/images/BoatCaptain.png?b165b8",
-   "tier": "common"
-  },
-  {
    "slug": "atila",
    "name": "Atila",
    "lines": 8,
@@ -3020,11 +4316,35 @@
    "tier": "common"
   },
   {
-   "slug": "sayrr",
-   "name": "Sayrr",
+   "slug": "gernald",
+   "name": "Gernald",
    "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Sayrr",
-   "image_url": "https://wynncraft.wiki.gg/images/Sayrr.png?35c75e",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Gernald",
+   "image_url": "https://wynncraft.wiki.gg/images/Gernald.png?978331",
+   "tier": "common"
+  },
+  {
+   "slug": "larry",
+   "name": "Larry",
+   "lines": 8,
+   "wiki_url": "",
+   "image_url": "https://wynncraft.wiki.gg/images/Larry.png?c40d1a",
+   "tier": "common"
+  },
+  {
+   "slug": "excavator-admin-uci",
+   "name": "Excavator Admin Uci",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci",
+   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorAdminUci.png?757c6e",
+   "tier": "common"
+  },
+  {
+   "slug": "amadel-s-assistant",
+   "name": "Amadel's Assistant",
+   "lines": 8,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant",
+   "image_url": "https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c",
    "tier": "common"
   }
  ]
