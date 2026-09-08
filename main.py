@@ -15,7 +15,7 @@ from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
 from Helpers.storage import warm_background_cache
 from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS, ERROR_PING_USER_ID
-from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO
+from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO, WARN
 from Helpers import logger
 from Helpers import telemetry
 from Commands.generate import ApplicationButtonView
@@ -75,6 +75,35 @@ async def on_ready():
         client.add_view(ThreadVoteView())
         client.add_view(RecruitPaidView())
         client.add_view(RecruiterReviewView())
+        # Commands are registered per guild, and Discord rejects the whole
+        # sync with a 403 if any target guild is one the bot is not in — so a
+        # single stale guild id silently costs every command everywhere. Drop
+        # unreachable guilds first; a command left with no reachable guild is
+        # skipped rather than falling through to a global registration.
+        def _all_pending():
+            # Before the first sync commands live in pending_application_commands.
+            # walk_application_commands() reads the post-registration map, which
+            # is still empty at this point and would filter nothing.
+            for cmd in client.pending_application_commands:
+                yield cmd
+                walk = getattr(cmd, "walk_commands", None)
+                if walk is not None:
+                    yield from walk()
+
+        reachable = {g.id for g in client.guilds}
+        unreachable = set()
+        for cmd in _all_pending():
+            gids = getattr(cmd, "guild_ids", None)
+            if not gids:
+                continue
+            missing = set(gids) - reachable
+            if missing:
+                unreachable |= missing
+                cmd.guild_ids = [g for g in gids if g in reachable]
+        if unreachable:
+            log(WARN, "Skipping slash command sync for guilds the bot is not in: "
+                      + ", ".join(str(g) for g in sorted(unreachable)))
+
         try:
             await client.sync_commands()
             client.synced = True
@@ -274,6 +303,7 @@ extensions = [
     'Commands.register',
     'Commands.app_commands',
     'Commands.kick_list',
+    'Commands.cards',
 
     # Dev Commands
     'Commands.render_text',
