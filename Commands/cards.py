@@ -162,7 +162,7 @@ def _wiki_button(card: dict) -> discord.ui.Button | None:
     if not url or card.get("member"):
         return None
     return discord.ui.Button(style=discord.ButtonStyle.link,
-                             label="Wynncraft Wiki", url=url,
+                             label="Wiki Page", url=url,
                              emoji="\N{OPEN BOOK}")
 
 
@@ -177,11 +177,15 @@ def _wiki_view(card: dict) -> discord.ui.View | None:
 
 
 def _credit(card: dict, *bits) -> str:
-    """Footer text, with the licence appended for wiki-sourced cards."""
-    parts = [b for b in bits if b]
+    """Footer text: the source line first, then whatever the command reports.
+
+    The footer is the only slot Discord puts below the card image, so the
+    credit leads it and the ownership detail follows on the next line.
+    """
+    detail = " · ".join(b for b in bits if b)
     if card.get("wiki_url") and not card.get("member"):
-        parts.append(WIKI_CREDIT)
-    return " · ".join(parts)
+        return f"{WIKI_CREDIT}\n{detail}" if detail else WIKI_CREDIT
+    return detail
 
 
 async def _send_card(ctx, embed, file, card):
@@ -200,14 +204,12 @@ def _card_color(card: dict) -> int:
 
 def _card_embed(card: dict, copies: int, remaining: int, filename: str,
                 who: str, stars: int = 1, gained: int = 0) -> discord.Embed:
-    embed = discord.Embed(
-        title=f"{card['name']} {_stars(stars)}".strip(),
-        description=("1/1 · " if card.get("member") else "")
-                    + _tier_label(card["tier"]),
-        color=_card_color(card),
-        url=card.get("wiki_url") or None,
-    )
+    # Name, tier and stars are all drawn on the card itself, so repeating
+    # them in the embed just doubles up.
+    embed = discord.Embed(color=_card_color(card))
     embed.set_author(name=f"{who}'s reel")
+    if card.get("member"):
+        embed.description = f"**1/1** · {card['rank']}"
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(text=_credit(
         card,
@@ -535,13 +537,9 @@ class Cards(commands.Cog):
 
         stars = entry["stars"]
         file = await asyncio.to_thread(card_file, match, None, stars)
-        embed = discord.Embed(
-            title=f"{match['name']} {_stars(stars)}".strip(),
-            description=("1/1 · " if match.get("member") else "")
-                        + _tier_label(match["tier"]),
-            color=_card_color(match),
-            url=match.get("wiki_url") or None,
-        )
+        embed = discord.Embed(color=_card_color(match))
+        if match.get("member"):
+            embed.description = f"**1/1** · {match['rank']}"
         embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(text=_credit(
             match,
@@ -896,12 +894,9 @@ class Cards(commands.Cog):
         stars = entry["stars"] if entry else 1
         file = await asyncio.to_thread(card_file, card, None, stars)
 
-        embed = discord.Embed(
-            title=f"{card['name']} {_stars(stars)}".strip(),
-            description=(f"1/1 · {card['rank']}" if member
-                         else _tier_label(card["tier"])),
-            color=_card_color(card),
-            url=card.get("wiki_url") or None)
+        embed = discord.Embed(color=_card_color(card))
+        if member:
+            embed.description = f"**1/1** · {card['rank']}"
         embed.set_image(url=f"attachment://{file.filename}")
 
         if member:
