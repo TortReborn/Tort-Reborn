@@ -151,49 +151,27 @@ async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
 
 
 # Card art and dialogue come from the Wynncraft Wiki under CC BY-NC-SA 4.0,
-# which asks that the source and licence travel with the work. A link button
-# says where it came from; the footer names the licence. Member 1/1s are
-# rendered from Minecraft skins instead, so neither applies to them.
-WIKI_CREDIT = "Wynncraft Wiki · CC BY-NC-SA 4.0"
+# which asks that the source and licence travel with the work. Both sit on one
+# line directly above the card. Member 1/1s are rendered from Minecraft skins
+# instead, so neither applies to them.
+WIKI_LICENCE = "CC BY-NC-SA 4.0"
 
 
-def _wiki_button(card: dict) -> discord.ui.Button | None:
+def _wiki_line(card: dict) -> str | None:
+    """The source, as a link sitting immediately above the card image.
+
+    A footer would put it below the art but Discord does not render links
+    there, so the description is the closest spot that stays clickable.
+    """
     url = card.get("wiki_url")
     if not url or card.get("member"):
         return None
-    return discord.ui.Button(style=discord.ButtonStyle.link,
-                             label="Wiki Page", url=url,
-                             emoji="\N{OPEN BOOK}")
-
-
-def _wiki_view(card: dict) -> discord.ui.View | None:
-    """A view holding nothing but the source link, for plain card sends."""
-    button = _wiki_button(card)
-    if button is None:
-        return None
-    view = discord.ui.View(timeout=None)   # link buttons never need handling
-    view.add_item(button)
-    return view
+    return f"[Wiki Page]({url}) · {WIKI_LICENCE}"
 
 
 def _credit(card: dict, *bits) -> str:
-    """Footer text: the source line first, then whatever the command reports.
-
-    The footer is the only slot Discord puts below the card image, so the
-    credit leads it and the ownership detail follows on the next line.
-    """
-    detail = " · ".join(b for b in bits if b)
-    if card.get("wiki_url") and not card.get("member"):
-        return f"{WIKI_CREDIT}\n{detail}" if detail else WIKI_CREDIT
-    return detail
-
-
-async def _send_card(ctx, embed, file, card):
-    view = _wiki_view(card)
-    kwargs = {"embed": embed, "file": file}
-    if view is not None:
-        kwargs["view"] = view
-    return await ctx.followup.send(**kwargs)
+    """Footer text — what the command wants to report, nothing more."""
+    return " · ".join(b for b in bits if b)
 
 
 def _card_color(card: dict) -> int:
@@ -207,7 +185,8 @@ def _card_embed(card: dict, copies: int, remaining: int, filename: str,
     # The card art already prints the name, the tier or rank, the star level
     # and the 1/1 badge, so the embed adds nothing but what the art cannot
     # show: who rolled it, and what it means for your collection.
-    embed = discord.Embed(color=_card_color(card))
+    embed = discord.Embed(color=_card_color(card),
+                          description=_wiki_line(card))
     embed.set_author(name=f"{who}'s reel")
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(text=_credit(
@@ -305,21 +284,8 @@ class ReelView(discord.ui.View):
         self.owner_name = owner_name
         self.message = None
         self.history = []         # everything rerolled past this session
-        self._wiki = None
-        self.current = None
-        self.set_card(card)       # shown on the card image right now
+        self.current = card       # shown on the card image right now
         self.set_exhausted(exhausted)
-
-    def set_card(self, card: dict):
-        """Point the view at a card, swapping the wiki link to match."""
-        self.current = card
-        if self._wiki is not None:
-            self.remove_item(self._wiki)
-            self._wiki = None
-        button = _wiki_button(card)
-        if button is not None:
-            self.add_item(button)
-            self._wiki = button
 
     def set_exhausted(self, exhausted: bool):
         self.reel_again.disabled = exhausted
@@ -363,7 +329,7 @@ class ReelView(discord.ui.View):
         # The card being replaced becomes part of the session log above it.
         if self.current is not None:
             self.history.append(self.current)
-        self.set_card(card)
+        self.current = card
 
         self.set_exhausted(info == 0)
         # attachments=[] drops the previous card image; the new file replaces it.
@@ -536,13 +502,14 @@ class Cards(commands.Cog):
 
         stars = entry["stars"]
         file = await asyncio.to_thread(card_file, match, None, stars)
-        embed = discord.Embed(color=_card_color(match))
+        embed = discord.Embed(color=_card_color(match),
+                              description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(text=_credit(
             match,
             f"{entry['count']} cop{'y' if entry['count'] == 1 else 'ies'}",
             f"{stars}★" if stars > 1 else None))
-        await _send_card(ctx, embed, file, match)
+        await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank list ───────────────────────────────────────────────────────────
 
@@ -775,17 +742,19 @@ class Cards(commands.Cog):
                 ephemeral=True)
 
         file = await asyncio.to_thread(card_file, match, None, to_star)
+        summary = (f"Spent {copies} copies and {pearls:,} pearls · "
+                   f"{result['pearls']:,} pearls left")
+        line = _wiki_line(match)
         embed = discord.Embed(
             title=f"{match['name']} is now {to_star}★",
-            description=(f"Spent {copies} copies and {pearls:,} pearls · "
-                         f"{result['pearls']:,} pearls left"),
+            description=f"{summary}\n{line}" if line else summary,
             color=cardlib.TIER_COLORS[match["tier"]])
         embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(text=_credit(
             match,
             f"{result['count']} cop"
             f"{'y' if result['count'] == 1 else 'ies'} remaining"))
-        await _send_card(ctx, embed, file, match)
+        await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank trade ──────────────────────────────────────────────────────────
 
@@ -891,7 +860,8 @@ class Cards(commands.Cog):
         stars = entry["stars"] if entry else 1
         file = await asyncio.to_thread(card_file, card, None, stars)
 
-        embed = discord.Embed(color=_card_color(card))
+        embed = discord.Embed(color=_card_color(card),
+                              description=_wiki_line(card))
         embed.set_image(url=f"attachment://{file.filename}")
 
         if member:
@@ -914,7 +884,7 @@ class Cards(commands.Cog):
             f"You own {entry['count']} cop"
             f"{'y' if entry['count'] == 1 else 'ies'}" if entry
             else "Not in your tank yet"))
-        await _send_card(ctx, embed, file, card)
+        await ctx.followup.send(embed=embed, file=file)
 
     @pool.command(name="list", description="Everything that can drop")
     async def pool_list(
