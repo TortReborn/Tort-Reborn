@@ -104,12 +104,42 @@ async def _autocomplete_owned(ctx: discord.AutocompleteContext):
 
 
 async def _autocomplete_pool(ctx: discord.AutocompleteContext):
-    try:
-        pool = await asyncio.to_thread(cardlib.db_get_pool)
-    except Exception:
-        return []
+    """Everything obtainable: the 1/1 members first, then the card set."""
     typed = (ctx.value or "").lower()
-    return [p["name"] for p in pool if typed in p["name"].lower()][:25]
+    try:
+        members = [p["name"] for p in await asyncio.to_thread(cardlib.db_get_pool)
+                   if typed in p["name"].lower()]
+    except Exception:
+        members = []
+    cards = sorted(c["name"] for c in cardlib.load_card_set()["cards"]
+                   if typed in c["name"].lower())
+    return (sorted(members) + cards)[:25]
+
+
+def _find_card(name: str) -> dict | None:
+    """A card from the set by display name. Member 1/1s are looked up in DB."""
+    wanted = name.strip().lower()
+    for c in cardlib.load_card_set()["cards"]:
+        if c["name"].lower() == wanted:
+            return c
+    return None
+
+
+def _pool_entries(tier: str | None) -> list:
+    """Everything that can drop, rarest first, optionally filtered by tier.
+
+    Member 1/1s lead because they are the rarest thing in the game; the card
+    set follows in tier order, most-spoken first inside each tier.
+    """
+    out = []
+    if tier in (None, "member"):
+        out += cardlib.db_get_pool()
+    cards = cardlib.load_card_set()["cards"]
+    if tier != "member":
+        wanted = [c for c in cards if tier is None or c["tier"] == tier]
+        order = {t: i for i, t in enumerate(cardlib.CARD_TIERS)}
+        out += sorted(wanted, key=lambda c: (order[c["tier"]], -c["lines"]))
+    return out
 
 
 async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
@@ -351,7 +381,7 @@ class Cards(commands.Cog):
     wish = SlashCommandGroup(name="wishlist", description="Aim your luck",
                              guild_ids=EXEC_GUILD_IDS)
     pool = SlashCommandGroup(name="pool",
-                             description="The 1/1 member card pool",
+                             description="Every card that can drop",
                              guild_ids=EXEC_GUILD_IDS)
 
     def __init__(self, client):
@@ -786,68 +816,107 @@ class Cards(commands.Cog):
 
     # ── /pool ────────────────────────────────────────────────────────────────
 
-    @pool.command(name="view", description="Preview one member's 1/1 card")
+    @pool.command(name="view",
+                  description="Preview any card, a character or a member 1/1")
     async def pool_view(
         self, ctx: discord.ApplicationContext,
-        name: discord.Option(str, description="Member name",
+        name: discord.Option(str, description="Character or guild member",
                              autocomplete=_autocomplete_pool),
     ):
         await ctx.defer()
-        entries = await asyncio.to_thread(cardlib.db_get_pool)
         wanted = name.strip().lower()
+        entries = await asyncio.to_thread(cardlib.db_get_pool)
         member = next((p for p in entries if p["name"].lower() == wanted), None)
-        if member is None:
+        card = member or _find_card(name)
+        if card is None:
             return await ctx.followup.send(
-                f"**{name}** isn't in the 1/1 pool. Only Swordfish and above "
-                "with a linked account are eligible.", ephemeral=True)
+                f"Nothing called **{name}** can drop. That covers every "
+                "character in the set and every member eligible for a 1/1.",
+                ephemeral=True)
 
-        file = await asyncio.to_thread(card_file, member)
+        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
+                                        card["slug"])
+        stars = entry["stars"] if entry else 1
+        file = await asyncio.to_thread(card_file, card, None, stars)
+
         embed = discord.Embed(
-            title=member["name"],
-            description=f"1/1 · {member['rank']}",
-            color=cardlib.TIER_COLORS["member"])
+            title=f"{card['name']} {_stars(stars)}".strip(),
+            description=(f"1/1 · {card['rank']}" if member
+                         else _tier_label(card["tier"])),
+            color=_card_color(card),
+            url=card.get("wiki_url") or None)
         embed.set_image(url=f"attachment://{file.filename}")
 
-        if member["retired"]:
-            state = "Retired — the holder has left, and no copy will be minted again"
-        elif member["minted"]:
-            state = f"Already minted — held by <@{member['owner']}>"
+        if member:
+            if card["retired"]:
+                state = ("Retired — the holder has left, and no copy will be "
+                         "minted again")
+            elif card["minted"]:
+                state = f"Already minted — held by <@{card['owner']}>"
+            else:
+                state = "Not minted yet — still out there to be reeled"
+            embed.add_field(name="Status", value=state, inline=False)
         else:
-            state = "Not minted yet — still out there to be reeled"
-        embed.add_field(name="Status", value=state)
+            embed.add_field(name="Dialogue", value=f"{card['lines']:,} lines")
+            embed.add_field(
+                name="Drop chance",
+                value=f"{cardlib.TIER_WEIGHTS[card['tier']]}% for the tier")
+
+        embed.set_footer(
+            text=f"You own {entry['count']} cop"
+                 f"{'y' if entry['count'] == 1 else 'ies'}" if entry
+                 else "Not in your tank yet")
         await ctx.followup.send(embed=embed, file=file)
 
-    @pool.command(name="list", description="Every member whose 1/1 can drop")
-    async def pool_list(self, ctx: discord.ApplicationContext):
+    @pool.command(name="list", description="Everything that can drop")
+    async def pool_list(
+        self, ctx: discord.ApplicationContext,
+        tier: discord.Option(
+            str, description="Narrow it down (default: everything)",
+            required=False, default=None,
+            choices=["member 1/1", "legendary", "epic", "rare", "uncommon",
+                     "common"]),
+    ):
         await ctx.defer()
-        entries = await asyncio.to_thread(cardlib.db_get_pool)
+        want = "member" if tier == "member 1/1" else tier
+        entries = await asyncio.to_thread(_pool_entries, want)
         if not entries:
-            return await ctx.followup.send(
-                "Nobody is eligible for a 1/1 yet.", ephemeral=True)
+            return await ctx.followup.send("Nothing to show there yet.",
+                                           ephemeral=True)
 
-        minted = sum(1 for p in entries if p["minted"])
-        header = (f"**{len(entries)}** eligible · **{len(entries) - minted}** "
-                  f"still unminted · ranked highest first")
+        owned = await asyncio.to_thread(cardlib.db_get_collection, ctx.author.id)
+        members = [e for e in entries if e.get("member")]
+        cards = len(entries) - len(members)
+        header = (f"**{len(entries)}** obtainable"
+                  + (f" · {len(members)} one-of-ones" if members else "")
+                  + (f" · {cards} characters" if cards else "")
+                  + " · rarest first")
 
         page_list = []
         for i in range(0, len(entries), POOL_PER_PAGE):
             lines = []
-            for p in entries[i:i + POOL_PER_PAGE]:
-                if p["retired"]:
-                    tail = "retired"
-                elif p["minted"]:
-                    tail = f"held by <@{p['owner']}>"
+            for e in entries[i:i + POOL_PER_PAGE]:
+                if e.get("member"):
+                    label = "1/1"
+                    if e["retired"]:
+                        tail = "retired"
+                    elif e["minted"]:
+                        tail = f"held by <@{e['owner']}>"
+                    else:
+                        tail = "unminted"
                 else:
-                    tail = "available"
-                lines.append(f"`{p['rank']:11}` **{p['name']}** — {tail}")
+                    label = _tier_label(e["tier"])
+                    tail = f"{e['lines']:,} lines"
+                mark = " ✓" if e["slug"] in owned else ""
+                lines.append(f"`{label:9}` **{e['name']}**{mark} — {tail}")
             embed = discord.Embed(
-                title="The 1/1 Pool",
+                title="Everything That Can Drop",
                 description=header + "\n\n" + "\n".join(lines),
-                color=cardlib.TIER_COLORS["member"])
+                color=_card_color(entries[i]))
             embed.set_footer(
                 text=f"Page {i // POOL_PER_PAGE + 1} of "
                      f"{(len(entries) - 1) // POOL_PER_PAGE + 1} · "
-                     f"/pool view to see a card")
+                     f"✓ marks what you own · /pool view for a card")
             page_list.append(pages.Page(embeds=[embed]))
 
         if len(page_list) == 1:
