@@ -150,11 +150,9 @@ async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
     return sorted(names)[:25]
 
 
-# Card art and dialogue come from the Wynncraft Wiki under CC BY-NC-SA 4.0,
-# which asks that the source and licence travel with the work. Both sit on one
-# line directly above the card. Member 1/1s are rendered from Minecraft skins
-# instead, so neither applies to them.
-WIKI_LICENCE = "CC BY-NC-SA 4.0"
+# Card art and dialogue come from the Wynncraft Wiki, credited by a link
+# directly above the card. Member 1/1s are rendered from Minecraft skins
+# instead, so they carry no link.
 
 
 def _wiki_line(card: dict) -> str | None:
@@ -166,7 +164,7 @@ def _wiki_line(card: dict) -> str | None:
     url = card.get("wiki_url")
     if not url or card.get("member"):
         return None
-    return f"[Wiki Page]({url}) · {WIKI_LICENCE}"
+    return f"[Wiki Page]({url})"
 
 
 def _credit(card: dict, *bits) -> str:
