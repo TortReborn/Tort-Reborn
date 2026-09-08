@@ -1,8 +1,8 @@
 """Card collection commands — executive guild only.
 
-The loop: /reel pulls cards, duplicates disenchant into pearls, pearls buy
-star fusion and tank upgrades. Wishes bias which epic or legendary you land.
-Nothing here touches shells; the two economies never meet.
+The loop: /reel pulls cards and every pull pays pearls, duplicates included;
+pearls buy star fusion and tank upgrades. Wishes bias which epic or legendary
+you land. Nothing here touches shells; the two economies never meet.
 """
 
 import asyncio
@@ -18,6 +18,7 @@ from Helpers.pagination import add_paginator_buttons
 from Helpers.variables import EXEC_GUILD_IDS
 
 CARDS_PER_PAGE = 20
+HISTORY_LINES = 12   # session pulls listed above the current card
 
 
 def _tier_label(tier: str) -> str:
@@ -76,7 +77,7 @@ def _card_color(card: dict) -> int:
 
 
 def _card_embed(card: dict, copies: int, remaining: int, filename: str,
-                who: str, stars: int = 1) -> discord.Embed:
+                who: str, stars: int = 1, gained: int = 0) -> discord.Embed:
     embed = discord.Embed(
         title=f"{card['name']} {_stars(stars)}".strip(),
         description=("1/1 · " if card.get("member") else "")
@@ -86,10 +87,26 @@ def _card_embed(card: dict, copies: int, remaining: int, filename: str,
     )
     embed.set_author(name=f"{who}'s reel")
     embed.set_image(url=f"attachment://{filename}")
-    footer = "New to your tank" if copies == 1 else f"Copy #{copies}"
-    embed.set_footer(
-        text=f"{footer} · {remaining} reel{'' if remaining == 1 else 's'} left")
+    bits = ["New to your tank" if copies == 1 else f"Copy #{copies}"]
+    if gained:
+        bits.append(f"+{gained:,} pearls")
+    bits.append(f"{remaining} reel{'' if remaining == 1 else 's'} left")
+    embed.set_footer(text=" · ".join(bits))
     return embed
+
+
+def _history_content(history: list) -> str:
+    """The session's earlier pulls, one line each, above the current card."""
+    lines = []
+    shown = history[-HISTORY_LINES:]
+    if len(history) > HISTORY_LINES:
+        lines.append(f"-# ...and {len(history) - HISTORY_LINES} earlier")
+    for c in shown:
+        tier = "1/1" if c.get("member") else _tier_label(c["tier"])
+        lines.append(f"-# {tier} · {c['name']}")
+    refresh = cardlib.next_refresh_ts()
+    lines.append(f"-# Next refresh <t:{refresh}:R>")
+    return "\n".join(lines)
 
 
 async def _do_reel(user_id: int, who: str):
@@ -122,8 +139,11 @@ async def _do_reel(user_id: int, who: str):
             context="cards")
         return None, None, "render", None
 
-    copies = await asyncio.to_thread(cardlib.db_add_card, user_id, card["slug"])
-    embed = _card_embed(card, copies, remaining, file.filename, who)
+    pearls = cardlib.pull_value(card)
+    result = await asyncio.to_thread(cardlib.db_add_card, user_id,
+                                     card["slug"], pearls)
+    embed = _card_embed(card, result["count"], remaining, file.filename, who,
+                        gained=result["gained"])
     return embed, file, remaining, card
 
 
@@ -155,11 +175,14 @@ class ReelView(discord.ui.View):
     own, so a card in a busy channel can't be rerolled out from under someone.
     """
 
-    def __init__(self, owner_id: int, owner_name: str, exhausted: bool = False):
+    def __init__(self, owner_id: int, owner_name: str, card: dict,
+                 exhausted: bool = False):
         super().__init__(timeout=900)
         self.owner_id = owner_id
         self.owner_name = owner_name
         self.message = None
+        self.current = card       # shown on the card image right now
+        self.history = []         # everything rerolled past this session
         self.set_exhausted(exhausted)
 
     def set_exhausted(self, exhausted: bool):
@@ -201,11 +224,15 @@ class ReelView(discord.ui.View):
                 "That card wouldn't render, so your reel has been refunded. "
                 "Try again.", ephemeral=True)
 
+        # The card being replaced becomes part of the session log above it.
+        if self.current is not None:
+            self.history.append(self.current)
+        self.current = card
+
         self.set_exhausted(info == 0)
-        refresh = cardlib.next_refresh_ts()
         # attachments=[] drops the previous card image; the new file replaces it.
         await interaction.response.edit_message(
-            content=f"-# Next refresh <t:{refresh}:R>",
+            content=_history_content(self.history),
             embed=embed, file=file, attachments=[], view=self)
         await _announce_and_reward(interaction.channel, interaction.user, card)
 
@@ -307,11 +334,10 @@ class Cards(commands.Cog):
                 "That card wouldn't render, so your reel has been refunded. "
                 "Try again.", ephemeral=True)
 
-        view = ReelView(ctx.author.id, who, exhausted=(info == 0))
-        refresh = cardlib.next_refresh_ts()
+        view = ReelView(ctx.author.id, who, card, exhausted=(info == 0))
         # wait=True so the view can disable its own button when it times out.
         view.message = await ctx.followup.send(
-            content=f"-# Next refresh <t:{refresh}:R>",
+            content=_history_content([]),
             embed=embed, file=file, view=view, wait=True)
         await _announce_and_reward(ctx.channel, ctx.author, card)
 
@@ -535,43 +561,6 @@ class Cards(commands.Cog):
         await ctx.followup.send(embed=discord.Embed(
             title="Deepest Tanks", description="\n".join(lines), color=0x38C9BD))
 
-    # ── /tank disenchant ─────────────────────────────────────────────────────
-
-    @tank.command(name="disenchant",
-                  description="Scrap spare copies for pearls")
-    async def tank_disenchant(
-        self, ctx: discord.ApplicationContext,
-        card: discord.Option(str, description="Card to scrap",
-                             autocomplete=_autocomplete_owned),
-        count: discord.Option(int, description="How many spares", min_value=1,
-                              default=1),
-    ):
-        await ctx.defer()
-        match = await asyncio.to_thread(_resolve, card)
-        if match is None:
-            return await ctx.followup.send(
-                f"No card called **{card}** exists.", ephemeral=True)
-        if match.get("member"):
-            return await ctx.followup.send(
-                "1/1 cards can't be disenchanted — there's only one.",
-                ephemeral=True)
-
-        rate = cardlib.DISENCHANT[match["tier"]]
-        result = await asyncio.to_thread(cardlib.db_disenchant, ctx.author.id,
-                                         match["slug"], count, rate)
-        if result is None:
-            return await ctx.followup.send(
-                f"You don't have {count} spare cop{'y' if count == 1 else 'ies'} "
-                f"of **{match['name']}** — the last one always stays.",
-                ephemeral=True)
-
-        await ctx.followup.send(embed=discord.Embed(
-            title=f"Disenchanted {count}× {match['name']}",
-            description=(f"**+{result['gained']:,}** pearls "
-                         f"({rate:,} each) · {result['pearls']:,} total"),
-            color=cardlib.TIER_COLORS[match["tier"]]
-        ).set_footer(text=f"{result['left']} left in your tank"))
-
     # ── /tank fuse ───────────────────────────────────────────────────────────
 
     @tank.command(name="fuse",
@@ -759,5 +748,25 @@ class Cards(commands.Cog):
               "legendary pulls are steered toward these.")
 
 
+class CardsDev(commands.Cog):
+    """Testing helpers. Administrator only."""
+
+    def __init__(self, client):
+        self.client = client
+
+    @slash_command(name="reset-reels",
+                   description="[Dev] Refill everyone's reels for testing",
+                   guild_ids=EXEC_GUILD_IDS)
+    @commands.has_permissions(administrator=True)
+    async def reset_reels(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+        n = await asyncio.to_thread(cardlib.db_reset_all_reels)
+        refresh = cardlib.next_refresh_ts()
+        await ctx.followup.send(
+            f"Refilled reels for **{n}** wallet{'' if n == 1 else 's'} to a full "
+            f"bank. The next natural refresh is still <t:{refresh}:R>.")
+
+
 def setup(client):
     client.add_cog(Cards(client))
+    client.add_cog(CardsDev(client))

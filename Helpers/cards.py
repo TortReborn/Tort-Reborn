@@ -54,14 +54,25 @@ TIER_COLORS = {
 }
 
 # ── Pearls ───────────────────────────────────────────────────────────────────
-# Disenchanting a duplicate. Member 1/1s are never disenchantable.
-DISENCHANT = {
-    "common": 5,
-    "uncommon": 12,
-    "rare": 30,
-    "epic": 200,
-    "legendary": 1200,
+# Every card pays out the moment it is reeled in, duplicates included, so
+# there is nothing to scrap and no decision to get wrong. At 12 reels a day
+# this averages roughly 460 pearls from pulls plus 150 from the daily, which
+# paces the tank ladder at about 3 days for a Reef and six months to an Abyss.
+PEARLS_PER_PULL = {
+    "common": 10,
+    "uncommon": 25,
+    "rare": 60,
+    "epic": 500,
+    "legendary": 2500,
+    "member": 5000,
 }
+
+
+def pull_value(card: dict) -> int:
+    """Pearls paid for reeling this card in."""
+    if card.get("member"):
+        return PEARLS_PER_PULL["member"]
+    return PEARLS_PER_PULL.get(card.get("tier"), 0)
 
 # Star fusion: spare copies plus pearls to go from N stars to N+1.
 FUSION_COPIES = {2: 2, 3: 4, 4: 8, 5: 16}
@@ -415,6 +426,26 @@ def db_refund_reel(user_id: int):
         db.close()
 
 
+def db_reset_all_reels() -> int:
+    """Testing helper: refill everyone to a full bank for the current window.
+
+    Sets window_idx forward too, so the next natural refresh still lands on
+    schedule rather than immediately topping people up again.
+    """
+    window = current_window()
+    cap = _bank_cap_sql()
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            f'UPDATE card_wallet SET reels = {cap}, window_idx = %s', (window,))
+        n = db.cursor.rowcount
+        db.connection.commit()
+        return n
+    finally:
+        db.close()
+
+
 def db_grant_reels(user_id: int, amount: int) -> int:
     """Add reels from guild activity. Respects the tank's bank cap."""
     window = current_window()
@@ -527,7 +558,12 @@ def db_upgrade_tank(user_id: int, to_tier: int) -> bool:
 # DB — collection
 # =============================================================================
 
-def db_add_card(user_id: int, slug: str) -> int:
+def db_add_card(user_id: int, slug: str, pearls: int = 0) -> dict:
+    """Record a pull and pay out its pearls together.
+
+    Both writes share one transaction so a card can never be banked without
+    its payout, or vice versa.
+    """
     db = DB()
     db.connect()
     try:
@@ -537,8 +573,15 @@ def db_add_card(user_id: int, slug: str) -> int:
             'RETURNING count',
             (user_id, slug))
         row = db.cursor.fetchone()
+        total = None
+        if pearls:
+            db.cursor.execute(
+                'UPDATE card_wallet SET pearls = pearls + %s WHERE "user" = %s '
+                'RETURNING pearls', (pearls, user_id))
+            prow = db.cursor.fetchone()
+            total = prow[0] if prow else None
         db.connection.commit()
-        return row[0] if row else 1
+        return {"count": row[0] if row else 1, "gained": pearls, "pearls": total}
     finally:
         db.close()
 
@@ -565,36 +608,6 @@ def db_get_entry(user_id: int, slug: str) -> dict | None:
             (user_id, slug))
         row = db.cursor.fetchone()
         return {"count": row[0], "stars": row[1]} if row else None
-    finally:
-        db.close()
-
-
-def db_disenchant(user_id: int, slug: str, amount: int, pearls_each: int) -> dict | None:
-    """Scrap spare copies for pearls.
-
-    Never touches the last copy or the copies a card's stars are built on, so
-    disenchanting can't silently undo fusion work.
-    """
-    db = DB()
-    db.connect()
-    try:
-        db.cursor.execute(
-            'UPDATE card_collection SET count = count - %s '
-            'WHERE "user" = %s AND card = %s AND count - %s >= 1 '
-            'RETURNING count',
-            (amount, user_id, slug, amount))
-        row = db.cursor.fetchone()
-        if not row:
-            db.connection.rollback()
-            return None
-        gained = pearls_each * amount
-        db.cursor.execute(
-            'UPDATE card_wallet SET pearls = pearls + %s WHERE "user" = %s '
-            'RETURNING pearls', (gained, user_id))
-        prow = db.cursor.fetchone()
-        db.connection.commit()
-        return {"left": row[0], "gained": gained,
-                "pearls": prow[0] if prow else gained}
     finally:
         db.close()
 
