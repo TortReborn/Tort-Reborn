@@ -634,7 +634,8 @@ class Cards(commands.Cog):
                 f"**{match['name']}** isn't in your tank yet.", ephemeral=True)
 
         stars = entry["best"]
-        file = await asyncio.to_thread(card_file, match, None, stars)
+        file = await asyncio.to_thread(card_file, match, None, stars,
+                                       cardlib.tier_max_stars(match))
         embed = discord.Embed(color=_card_color(match),
                               description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
@@ -851,9 +852,11 @@ class Cards(commands.Cog):
             return await ctx.followup.send(
                 "1/1 cards can't be fused — there is only ever one.",
                 ephemeral=True)
-        if from_star >= cardlib.MAX_STARS:
+        ceiling = cardlib.tier_max_stars(match)
+        if from_star >= ceiling:
             return await ctx.followup.send(
-                f"{cardlib.MAX_STARS}★ is the top — nothing above it.",
+                f"**{match['name']}** is {_tier_label(match['tier']).lower()}, "
+                f"so {ceiling}★ is its ceiling — that is as far as it goes.",
                 ephemeral=True)
 
         to_star = from_star + 1
@@ -879,9 +882,12 @@ class Cards(commands.Cog):
                 "Merge failed — your copies or pearls changed. Try again.",
                 ephemeral=True)
 
-        file = await asyncio.to_thread(card_file, match, None, to_star)
+        file = await asyncio.to_thread(card_file, match, None, to_star,
+                                       ceiling)
         summary = (f"Merged {need} {level} copies · {pearls:,} pearls · "
                    f"{result['pearls']:,} left")
+        if to_star >= ceiling:
+            summary = f"**Maxed.** {summary}"
         line = _wiki_line(match)
         embed = discord.Embed(
             title=f"{match['name']} {'★' * to_star}",
@@ -891,7 +897,7 @@ class Cards(commands.Cog):
         embed.set_footer(text=_credit(
             match,
             f"{result['now']}× {to_star}★ · {result['left']} {level} left",
-            f"a {to_star}★ is {cardlib.base_copies_for(to_star)} base copies"))
+            f"{cardlib.base_copies_for(to_star)} copies behind it"))
         await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank trade ──────────────────────────────────────────────────────────
@@ -1007,7 +1013,8 @@ class Cards(commands.Cog):
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
                                         card["slug"])
         stars = entry["best"] if entry else 1
-        file = await asyncio.to_thread(card_file, card, None, stars)
+        file = await asyncio.to_thread(card_file, card, None, stars,
+                                       cardlib.tier_max_stars(card))
 
         embed = discord.Embed(color=_card_color(card),
                               description=_wiki_line(card))

@@ -83,6 +83,15 @@ FUSION_COPIES_PER_STEP = 3
 FUSION_PEARLS = {2: 100, 3: 300, 4: 900, 5: 2700}
 MAX_STARS = 5
 
+# Each tier stops at its own ceiling, because three-of-a-kind compounds fast
+# and the rare tiers simply do not drop often enough to feed it. Copies behind
+# a maxed card: 81 for the common half of the set, 9 for an epic, 3 for a
+# legendary. Every ceiling is meant to be reachable, and every one looks the
+# same when you get there.
+TIER_MAX_STARS = {
+    "common": 5, "uncommon": 5, "rare": 5, "epic": 3, "legendary": 2,
+}
+
 # ── Tank tiers ───────────────────────────────────────────────────────────────
 # Upgrading raises how many reels you can bank, not how many you earn, so the
 # drop odds are untouched by progression.
@@ -295,6 +304,13 @@ def fusion_cost(to_star: int) -> tuple[int, int]:
 def base_copies_for(star: int) -> int:
     """Unfused copies behind one card at this level."""
     return FUSION_COPIES_PER_STEP ** (star - 1)
+
+
+def tier_max_stars(card: dict | None) -> int:
+    """How far this card can be fused. Member 1/1s cannot be fused at all."""
+    if not card or card.get("member"):
+        return 1
+    return TIER_MAX_STARS.get(card.get("tier"), MAX_STARS)
 
 
 def _bank_cap_sql(column: str = "tank_tier") -> str:

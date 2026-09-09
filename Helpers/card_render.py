@@ -52,16 +52,45 @@ RANK_TIERS = {
 }
 TIERS.update(RANK_TIERS)
 
-# Fusion frames. A card's star level repaints the border and adds a star row,
-# so a maxed card is visible as a trophy without reading any text.
-STAR_FRAMES = {
-    1: None,                       # unfused: the plain tier accent
-    2: (205, 127, 50),             # bronze
-    3: (192, 192, 192),            # silver
-    4: (255, 196, 61),             # gold
-    5: (150, 240, 255),            # prismatic (drawn as a gradient)
-}
+# Rarity and fusion are separate facts, so they get separate places. The outer
+# edge always carries the tier colour; fusion shows as an inner ring that
+# climbs bronze, silver, gold, and finally a prismatic edge at the top.
+#
+# The ladder is read as progress toward *this tier's* ceiling rather than as an
+# absolute star count, because the ceilings differ: a legendary maxes at 2★ and
+# an epic at 3★, and both should look every bit as finished as a 5★ common.
+FUSION_RING = [
+    (0.34, (205, 127, 50)),        # bronze
+    (0.67, (214, 216, 222)),       # silver
+    (0.99, (255, 196, 61)),        # gold
+    (1.00, (247, 251, 255)),       # maxed, paired with the prismatic edge
+]
 PRISMATIC = [(255, 120, 200), (150, 200, 255), (140, 255, 210), (255, 225, 140)]
+
+# How far a card can be fused, by tier. Copies triple each step, so these are
+# 81, 9 and 3 base copies respectively.
+MAX_STARS_BY_TIER = {
+    "common": 5, "uncommon": 5, "rare": 5, "epic": 3, "legendary": 2,
+}
+
+
+def max_stars_for(tier: str) -> int:
+    """A member 1/1 has no ladder; everything else has its tier's ceiling."""
+    return MAX_STARS_BY_TIER.get(tier, 1)
+
+
+def _fusion_progress(stars: int, max_stars: int) -> float:
+    """0 for unfused, 1 at this tier's ceiling."""
+    if max_stars <= 1 or stars <= 1:
+        return 0.0
+    return min(1.0, (stars - 1) / (max_stars - 1))
+
+
+def _ring_colour(progress: float):
+    for cutoff, colour in FUSION_RING:
+        if progress <= cutoff:
+            return colour
+    return FUSION_RING[-1][1]
 
 _FONT_CACHE = {}
 
@@ -155,11 +184,16 @@ def _prismatic_border(card, box, radius, width=3):
 
 
 def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
-                badge: str | None = None, stars: int = 1) -> Image.Image:
+                badge: str | None = None, stars: int = 1,
+                max_stars: int | None = None) -> Image.Image:
     """Draw a single card. Falls back to a '?' panel when art is missing."""
     style = TIERS.get(tier, TIERS["common"])
     accent, glow = style["accent"], style["glow"]
-    frame = STAR_FRAMES.get(stars)
+    if max_stars is None:
+        max_stars = max_stars_for(tier)
+    progress = _fusion_progress(stars, max_stars)
+    maxed = stars > 1 and progress >= 1.0
+    ring = _ring_colour(progress) if stars > 1 else None
 
     card = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     body = _vgrad((W, H), BG_TOP, BG_BOT).convert("RGBA")
@@ -214,16 +248,24 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     if stars > 1:
         row = " ".join(["\u2605"] * stars)
         d.text(((W - d.textlength(row, font=lf)) / 2, tier_y + tier_h + 6),
-               row, font=lf, fill=_readable(frame if frame else accent))
+               row, font=lf, fill=_readable(ring))
 
-    if stars >= 5:
-        _prismatic_border(card, [0, 0, W - 1, H - 1], RADIUS, width=3)
+    # Outer edge: the tier, always — except at the ceiling, where the
+    # prismatic band takes over and the tier still reads from the label.
+    if maxed:
+        _prismatic_border(card, [0, 0, W - 1, H - 1], RADIUS, width=4)
     else:
-        border = frame if frame else accent
         d.rounded_rectangle([0, 0, W - 1, H - 1], RADIUS,
-                            outline=border + (235,), width=2 if stars == 1 else 3)
+                            outline=accent + (235,), width=2)
     d.rounded_rectangle([2, 2, W - 3, H - 3], RADIUS - 2,
                         outline=(255, 255, 255, 16), width=1)
+
+    # Inner ring: how far up this tier's ladder the card has been fused.
+    if ring is not None:
+        inset = 6
+        d.rounded_rectangle([inset, inset, W - 1 - inset, H - 1 - inset],
+                            RADIUS - 4, outline=ring + (225,),
+                            width=2 if not maxed else 3)
 
     if badge:
         bf = _font(FONT_UI, 12)
@@ -235,7 +277,8 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     return card
 
 
-def card_file(card: dict, badge: str | None = None, stars: int = 1):
+def card_file(card: dict, badge: str | None = None, stars: int = 1,
+              max_stars: int | None = None):
     """Render a card from a card-set entry into a discord.File.
 
     Member 1/1s carry their own badge and are framed by guild rank, so the
@@ -247,7 +290,8 @@ def card_file(card: dict, badge: str | None = None, stars: int = 1):
         badge = "RETIRED" if card.get("retired") else "1 / 1"
 
     img = render_card(card["name"], card["tier"], card.get("slug", ""),
-                      card.get("image_url", ""), badge=badge, stars=stars)
+                      card.get("image_url", ""), badge=badge, stars=stars,
+                      max_stars=max_stars)
     buf = BytesIO()
     img.convert("RGB").save(buf, format="PNG")
     buf.seek(0)
