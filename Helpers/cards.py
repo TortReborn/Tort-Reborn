@@ -850,11 +850,15 @@ def db_get_entry(user_id: int, slug: str) -> dict | None:
 
 
 def db_fuse(user_id: int, slug: str, to_star: int, copies: int,
-            pearls: int) -> dict | None:
-    """Merge `copies` cards at to_star-1 into one at to_star.
+            pearls: int, made: int = 1) -> dict | None:
+    """Merge `copies` cards at to_star-1 into `made` at to_star.
 
     Every check — enough copies at that exact level, enough pearls — is part
     of the write, so two fast clicks cannot fuse the same copies twice.
+
+    A batch is one transaction rather than a loop of single merges: nine
+    merges that half-fail would leave a collection nobody asked for, and the
+    arithmetic is the same either way.
     """
     db = DB()
     db.connect()
@@ -879,18 +883,19 @@ def db_fuse(user_id: int, slug: str, to_star: int, copies: int,
             return None
 
         db.cursor.execute(
-            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, %s) '
+            'INSERT INTO card_collection ("user", card, stars, count) '
+            'VALUES (%s, %s, %s, %s) '
             'ON CONFLICT ("user", card, stars) '
-            'DO UPDATE SET count = card_collection.count + 1 '
+            'DO UPDATE SET count = card_collection.count + %s '
             'RETURNING count',
-            (user_id, slug, to_star))
-        made = db.cursor.fetchone()
+            (user_id, slug, to_star, made, made))
+        now = db.cursor.fetchone()
         db.cursor.execute(
             'DELETE FROM card_collection WHERE "user" = %s AND count <= 0',
             (user_id,))
         db.connection.commit()
-        return {"left": row[0], "now": made[0] if made else 1,
-                "stars": to_star, "pearls": prow[0]}
+        return {"left": row[0], "now": now[0] if now else made,
+                "stars": to_star, "pearls": prow[0], "made": made}
     finally:
         db.close()
 
