@@ -635,7 +635,8 @@ class Cards(commands.Cog):
             name="Spending pearls",
             value=(f"`/tank fuse` — merge "
                    f"**{cardlib.FUSION_COPIES_PER_STEP}** copies of a level "
-                   "into one of the next. To MAX: "
+                   "into one of the next, or several at once with "
+                   "`count`. To MAX: "
                    f"{_max_costs()}.\n"
                    "`/tank upgrade` — a bigger tank lets you bank more reels, "
                    "gives you passive pearls, and more wishlist slots."),
@@ -891,11 +892,15 @@ class Cards(commands.Cog):
 
     @tank.command(
         name="fuse",
-        description="Merge three copies of a level into one of the next")
+        description="Merge three copies of a level into one of the next, "
+                    "or several at once")
     async def tank_fuse(
         self, ctx: discord.ApplicationContext,
         card: discord.Option(str, description="The stack to merge",
                              autocomplete=_autocomplete_stacks),
+        count: discord.Option(
+            int, description="How many of the next level to make (default 1)",
+            required=False, default=1, min_value=1),
     ):
         await ctx.defer()
         picked = _parse_stack(card)
@@ -922,23 +927,31 @@ class Cards(commands.Cog):
                 ephemeral=True)
 
         to_star = from_star + 1
-        need, pearls = cardlib.fusion_cost(to_star, match["tier"])
+        per_merge, per_pearls = cardlib.fusion_cost(to_star, match["tier"])
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id, slug)
         have = (entry or {}).get("levels", {}).get(from_star, 0)
         wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
 
         level = _level_label(match, from_star) or "plain"
-        if have < need:
+        possible = have // per_merge
+        if possible < 1:
             return await ctx.followup.send(
-                f"Merging into {to_star}★ takes **{need}** {level} copies of "
-                f"**{match['name']}**. You have {have}.", ephemeral=True)
+                f"Merging into {to_star}★ takes **{per_merge}** {level} copies "
+                f"of **{match['name']}**. You have {have}.", ephemeral=True)
+        if count > possible:
+            return await ctx.followup.send(
+                f"**{count}** would take {per_merge * count} {level} copies of "
+                f"**{match['name']}** and you have {have} — enough for "
+                f"**{possible}**.", ephemeral=True)
+
+        need, pearls = per_merge * count, per_pearls * count
         if wallet["pearls"] < pearls:
             return await ctx.followup.send(
-                f"That merge costs **{pearls:,}** pearls — you have "
+                f"Merging {count} costs **{pearls:,}** pearls — you have "
                 f"{wallet['pearls']:,}.", ephemeral=True)
 
         result = await asyncio.to_thread(cardlib.db_fuse, ctx.author.id, slug,
-                                         to_star, need, pearls)
+                                         to_star, need, pearls, count)
         if result is None:
             return await ctx.followup.send(
                 "Merge failed — your copies or pearls changed. Try again.",
@@ -946,8 +959,9 @@ class Cards(commands.Cog):
 
         file = await asyncio.to_thread(card_file, match, None, to_star,
                                        ceiling)
-        summary = (f"Merged {need} {level} copies · {pearls:,} pearls · "
-                   f"{result['pearls']:,} left")
+        into = _level_label(match, to_star)
+        summary = (f"Merged {need} {level} copies into {count}× {into} · "
+                   f"{pearls:,} pearls · {result['pearls']:,} left")
         if to_star >= ceiling:
             summary = f"**Maxed.** {summary}"
         line = _wiki_line(match)
