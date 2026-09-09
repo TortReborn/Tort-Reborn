@@ -20,8 +20,8 @@ from Helpers.variables import EXEC_GUILD_IDS
 CARDS_PER_PAGE = 20
 POOL_PER_PAGE = 15
 
-# /tank set-channel is deliberately exempt from the channel check. It is the
-# command that fixes a wrong setting, so gating it behind the setting would
+# /tank admin set-channel is deliberately exempt from the channel check. It is
+# the command that fixes a wrong setting, so gating it behind the setting would
 # lock the guild out of its own configuration.
 CHANNEL_EXEMPT = {"set-channel"}
 HISTORY_LINES = 12   # session pulls listed above the current card
@@ -396,10 +396,15 @@ class TradeView(discord.ui.View):
 
 
 class Cards(commands.Cog):
+    # Two homes: /tank is yours, /pool is the world. /reel and /bait stay at
+    # the top level because they are run constantly and burying the everyday
+    # actions behind a group would cost more than the tidiness is worth.
     tank = SlashCommandGroup(name="tank", description="Your card collection",
                              guild_ids=EXEC_GUILD_IDS)
-    wish = SlashCommandGroup(name="wishlist", description="Aim your luck",
-                             guild_ids=EXEC_GUILD_IDS)
+    wish = tank.create_subgroup(name="wishlist",
+                                description="Aim your luck at a card")
+    admin = tank.create_subgroup(name="admin",
+                                 description="Card system settings")
     pool = SlashCommandGroup(name="pool",
                              description="Every card that can drop",
                              guild_ids=EXEC_GUILD_IDS)
@@ -809,10 +814,10 @@ class Cards(commands.Cog):
         view.message = await ctx.followup.send(
             content=member.mention, embed=embed, view=view, wait=True)
 
-    # ── /tank set-channel ────────────────────────────────────────────────────
+    # ── /tank admin ──────────────────────────────────────────────────────────
 
-    @tank.command(name="set-channel",
-                  description="[Admin] Confine card commands to one channel")
+    @admin.command(name="set-channel",
+                   description="Confine card commands to one channel")
     @commands.has_permissions(administrator=True)
     async def tank_set_channel(
         self, ctx: discord.ApplicationContext,
@@ -830,8 +835,8 @@ class Cards(commands.Cog):
                 "channel again.")
         await ctx.followup.send(
             f"Card commands are now limited to {channel.mention}. "
-            "`/tank set-channel` itself still works anywhere, so you can "
-            "always move or clear it.")
+            "`/tank admin set-channel` itself still works anywhere, so you "
+            "can always move or clear it.")
 
     # ── /pool ────────────────────────────────────────────────────────────────
 
@@ -987,7 +992,18 @@ class Cards(commands.Cog):
                  "so those odds shift as they are claimed")
         await ctx.followup.send(embed=embed)
 
-    # ── /wishlist ────────────────────────────────────────────────────────────
+    @pool.command(name="reset-reels",
+                  description="[Admin] Refill everyone's reels for testing")
+    @commands.has_permissions(administrator=True)
+    async def pool_reset_reels(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+        n = await asyncio.to_thread(cardlib.db_reset_all_reels)
+        refresh = cardlib.next_refresh_ts()
+        await ctx.followup.send(
+            f"Refilled reels for **{n}** wallet{'' if n == 1 else 's'} to a "
+            f"full bank. The next natural refresh is still <t:{refresh}:R>.")
+
+    # ── /tank wishlist ───────────────────────────────────────────────────────
 
     @wish.command(
         name="add",
@@ -1048,7 +1064,7 @@ class Cards(commands.Cog):
         if not wishes:
             return await ctx.followup.send(
                 f"No wishes set. You have {limit} slot"
-                f"{'' if limit == 1 else 's'} — try `/wishlist add`.")
+                f"{'' if limit == 1 else 's'} — try `/tank wishlist add`.")
         lines = []
         for slug in wishes:
             c = cardlib.get_card(slug)
@@ -1061,32 +1077,5 @@ class Cards(commands.Cog):
               "the card is one you wished for. Tier odds are untouched.")
 
 
-class CardsDev(commands.Cog):
-    """Testing helpers. Administrator only."""
-
-    def __init__(self, client):
-        self.client = client
-
-    async def cog_check(self, ctx: discord.ApplicationContext) -> bool:
-        return await _channel_allowed(ctx)
-
-    async def cog_command_error(self, ctx: discord.ApplicationContext,
-                                error: Exception):
-        await _channel_error(ctx, error)
-
-    @slash_command(name="reset-reels",
-                   description="[Dev] Refill everyone's reels for testing",
-                   guild_ids=EXEC_GUILD_IDS)
-    @commands.has_permissions(administrator=True)
-    async def reset_reels(self, ctx: discord.ApplicationContext):
-        await ctx.defer(ephemeral=True)
-        n = await asyncio.to_thread(cardlib.db_reset_all_reels)
-        refresh = cardlib.next_refresh_ts()
-        await ctx.followup.send(
-            f"Refilled reels for **{n}** wallet{'' if n == 1 else 's'} to a full "
-            f"bank. The next natural refresh is still <t:{refresh}:R>.")
-
-
 def setup(client):
     client.add_cog(Cards(client))
-    client.add_cog(CardsDev(client))
