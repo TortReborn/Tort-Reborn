@@ -251,8 +251,10 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     d.text(((W - d.textlength(spaced, font=lf)) / 2, tier_y),
            spaced, font=lf, fill=_readable(accent))
 
+    # Counting stars stops meaning anything at the ceiling, where the point is
+    # that there is nowhere left to go — so it says so.
     if stars > 0:
-        row = " ".join(["\u2605"] * stars)
+        row = "MAX" if maxed else " ".join(["\u2605"] * stars)
         d.text(((W - d.textlength(row, font=lf)) / 2, tier_y + tier_h + 6),
                row, font=lf, fill=_readable(ring))
 

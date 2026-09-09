@@ -82,14 +82,22 @@ def _resolve(name: str) -> dict | None:
     return None
 
 
+def _level_label(card: dict, star: int) -> str:
+    """How a level reads: blank when plain, stars below the top, MAX at it."""
+    if star <= 0:
+        return ""
+    return "MAX" if star >= cardlib.tier_max_stars(card) else "★" * star
+
+
 def _star_name(card: dict, star: int) -> str:
-    return f"{card['name']} {'★' * star}".strip() if star > 0 else card["name"]
+    label = _level_label(card, star)
+    return f"{card['name']} {label}".strip() if label else card["name"]
 
 
 def _stack_label(card: dict, star: int, count: int) -> str:
     """How one stack reads in a picker: the card, its level, how many."""
-    stars = f" {'★' * star}" if star > 0 else ""
-    return f"{card['name']}{stars} ×{count}"
+    label = _level_label(card, star)
+    return f"{card['name']}{' ' + label if label else ''} ×{count}"
 
 
 def _parse_stack(value: str) -> tuple[str, int] | None:
@@ -640,7 +648,7 @@ class Cards(commands.Cog):
                               description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
         held = " · ".join(
-            f"{c}× {'★' * st if st > 0 else 'unfused'}"
+            f"{c}× {_level_label(match, st) or 'plain'}"
             for st, c in sorted(entry["levels"].items()))
         embed.set_footer(text=_credit(match, held))
         await ctx.followup.send(embed=embed, file=file)
@@ -711,7 +719,8 @@ class Cards(commands.Cog):
                 tier = "1/1" if c.get("member") else _tier_label(c["tier"])
                 bits = []
                 for st, n in sorted(e["levels"].items()):
-                    bits.append(f"{'★' * st}×{n}" if st > 0 else f"×{n}")
+                    label = _level_label(c, st)
+                    bits.append(f"{label}×{n}" if label else f"×{n}")
                 lines.append(f"`{tier:9}` {c['name']} " + " ".join(bits))
             embed = discord.Embed(
                 title=f"{target.display_name}'s Tank",
@@ -865,7 +874,7 @@ class Cards(commands.Cog):
         have = (entry or {}).get("levels", {}).get(from_star, 0)
         wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
 
-        level = f"{from_star}★" if from_star > 0 else "unfused"
+        level = _level_label(match, from_star) or "plain"
         if have < need:
             return await ctx.followup.send(
                 f"Merging into {to_star}★ takes **{need}** {level} copies of "
@@ -890,13 +899,14 @@ class Cards(commands.Cog):
             summary = f"**Maxed.** {summary}"
         line = _wiki_line(match)
         embed = discord.Embed(
-            title=f"{match['name']} {'★' * to_star}",
+            title=f"{match['name']} {_level_label(match, to_star)}".strip(),
             description=f"{summary}\n{line}" if line else summary,
             color=cardlib.TIER_COLORS[match["tier"]])
         embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(text=_credit(
             match,
-            f"{result['now']}× {to_star}★ · {result['left']} {level} left",
+            f"{result['now']}× {_level_label(match, to_star)} · "
+            f"{result['left']} {level} left",
             f"{cardlib.base_copies_for(to_star)} copies behind it"))
         await ctx.followup.send(embed=embed, file=file)
 
