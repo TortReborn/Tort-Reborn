@@ -483,6 +483,69 @@ class Cards(commands.Cog):
                 text=f"Streak bonus grows until day {cardlib.DAILY_STREAK_CAP}")
         await ctx.followup.send(embed=embed)
 
+    @tank.command(name="help", description="How the card system works")
+    async def tank_help(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+        wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
+        cs = cardlib.load_card_set()
+        per_day = cardlib.REELS_PER_WINDOW * (24 * 3600 // cardlib.WINDOW_SECONDS)
+        pct = int(cardlib.WISH_REDIRECT_CHANCE * 100)
+
+        embed = discord.Embed(
+            title="How the Tank works",
+            description=(
+                f"Reel in cards of Wynncraft characters — **{len(cs['cards'])}** "
+                "of them, rare in proportion to how much they actually speak. "
+                "You keep everything you pull, duplicates included, and every "
+                "card pays **pearls** you spend on upgrades."),
+            color=0x38C9BD)
+
+        embed.add_field(
+            name="Start here",
+            value=(f"`/reel` — pull a card. You get **{cardlib.REELS_PER_WINDOW}** "
+                   f"more every 6 hours, {per_day} a day.\n"
+                   "`/bait` — your daily pearls and reels. Keep the streak up."),
+            inline=False)
+        embed.add_field(
+            name="Your collection",
+            value=("`/tank list` — everything you own. Add someone to peek at "
+                   "theirs before a trade.\n"
+                   "`/tank view` — look at one of your cards up close.\n"
+                   "`/tank profile` — pearls, streak, tank tier and totals."),
+            inline=False)
+        embed.add_field(
+            name="Spending pearls",
+            value=("`/tank fuse` — feed spare copies into a card for a star, up "
+                   f"to {cardlib.MAX_STARS}★.\n"
+                   "`/tank upgrade` — a bigger tank banks more reels and "
+                   "trickles pearls on its own."),
+            inline=False)
+        embed.add_field(
+            name="Aiming your luck",
+            value=(f"`/tank wishlist add` — wish for any card and **{pct}%** of "
+                   "that tier's pulls become it. Tier odds never change, so it "
+                   "steers your luck rather than improving it."),
+            inline=False)
+        embed.add_field(
+            name="The whole set",
+            value=("`/pool list` — everything that can drop, rarest first.\n"
+                   "`/pool view` — any card, owned or not.\n"
+                   "`/pool rates` — the drop chances, laid out."),
+            inline=False)
+        embed.add_field(
+            name="With other people",
+            value=("`/tank trade` — swap a spare card with someone.\n"
+                   "`/tank leaderboard` — the deepest tanks in the guild."),
+            inline=False)
+
+        refresh = cardlib.next_refresh_ts()
+        embed.set_footer(
+            text=f"You have {wallet['reels']} reel"
+                 f"{'' if wallet['reels'] == 1 else 's'} and "
+                 f"{wallet['pearls']:,} pearls right now")
+        await ctx.followup.send(
+            content=f"-# Next refresh <t:{refresh}:R>", embed=embed)
+
     # ── /tank view ───────────────────────────────────────────────────────────
 
     @tank.command(name="view", description="Show a card you own")
