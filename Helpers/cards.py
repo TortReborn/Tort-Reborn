@@ -116,7 +116,7 @@ TRICKLE_CAP_HOURS = 24  # offline pearls stop accruing after a day
 DAILY_PEARLS = 50
 DAILY_STREAK_BONUS = 10      # per consecutive day
 DAILY_STREAK_CAP = 10        # bonus stops growing here
-DAILY_REELS = 2
+DAILY_REELS = 3            # held apart from the bank, see bait_reels
 
 # ── Wishlist ─────────────────────────────────────────────────────────────────
 # Wishes never touch tier odds, only which card is drawn once a tier has
@@ -175,6 +175,10 @@ SCHEMA = [
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS streak INT NOT NULL DEFAULT 0',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_daily DATE',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW()',
+    # Reels from bait sit outside the bank so a full bank cannot swallow them.
+    # They never exceed one day's worth, because you cannot bait again while
+    # any are unspent.
+    'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS bait_reels SMALLINT NOT NULL DEFAULT 0',
     'ALTER TABLE card_collection ADD COLUMN IF NOT EXISTS stars SMALLINT NOT NULL DEFAULT 0',
     # Stars used to start at 1 for an unfused card, which made every count one
     # higher than the number of merges behind it. They now count fusions, so a
@@ -467,7 +471,7 @@ def _refresh_sql() -> str:
         '  last_trickle = last_trickle + make_interval(hours => '
         '      FLOOR(EXTRACT(EPOCH FROM (NOW() - last_trickle)) / 3600)::int) '
         'WHERE "user" = %(uid)s '
-        'RETURNING reels, pearls, tank_tier, streak, total_reeled'
+        'RETURNING reels, pearls, tank_tier, streak, total_reeled, bait_reels'
     )
 
 
@@ -486,54 +490,80 @@ def db_get_wallet(user_id: int) -> dict:
         db.connection.commit()
         if not row:
             return {"reels": 0, "pearls": 0, "tank_tier": 1, "streak": 0,
-                    "total_reeled": 0}
+                    "total_reeled": 0, "bait_reels": 0, "total_reels": 0}
         return {"reels": row[0], "pearls": row[1], "tank_tier": row[2],
-                "streak": row[3], "total_reeled": row[4]}
+                "streak": row[3], "total_reeled": row[4], "bait_reels": row[5],
+                "total_reels": row[0] + row[5]}
     finally:
         db.close()
 
 
 def db_get_balance(user_id: int) -> int:
-    return db_get_wallet(user_id)["reels"]
+    return db_get_wallet(user_id)["total_reels"]
 
 
-def db_spend_reel(user_id: int) -> int | None:
-    """Refresh and consume one reel atomically.
+def db_spend_reel(user_id: int) -> dict | None:
+    """Refresh and consume one reel atomically, bait pocket first.
 
-    Returns the remaining balance, or None when the user had none. Doing the
+    Returns the remaining balances, or None when the user had none. Doing the
     refresh inside the same UPDATE keeps a spammed command from double
     spending: the row is locked for the whole statement.
+
+    Bait reels go first so they cannot rot: they block tomorrow's bait until
+    they are gone, and nothing else about them is worth hoarding. The lock is
+    taken in a CTE rather than left implicit, because the caller needs to know
+    which pocket it came out of to refund it correctly, and that is the one
+    thing RETURNING cannot tell it -- RETURNING sees the row after the write.
     """
     window = current_window()
     cap = _bank_cap_sql()
+    fresh = (f'LEAST({cap}, w.reels + '
+             'GREATEST(0, %(w)s - w.window_idx) * %(per)s)')
     db = DB()
     db.connect()
     try:
         _ensure_wallet(db, user_id, window)
         db.cursor.execute(
-            'UPDATE card_wallet SET '
-            f'  reels = LEAST({cap}, reels + GREATEST(0, %(w)s - window_idx) * %(per)s) - 1, '
+            'WITH locked AS ('
+            '    SELECT "user", bait_reels FROM card_wallet '
+            '    WHERE "user" = %(uid)s FOR UPDATE'
+            ') '
+            'UPDATE card_wallet w SET '
+            f'  reels = {fresh} - CASE WHEN l.bait_reels > 0 THEN 0 ELSE 1 END, '
+            '  bait_reels = GREATEST(0, w.bait_reels - 1), '
             '  window_idx = %(w)s, '
-            '  total_reeled = total_reeled + 1 '
-            'WHERE "user" = %(uid)s '
-            f'  AND LEAST({cap}, reels + GREATEST(0, %(w)s - window_idx) * %(per)s) > 0 '
-            'RETURNING reels',
+            '  total_reeled = w.total_reeled + 1 '
+            'FROM locked l '
+            'WHERE w."user" = l."user" '
+            f'  AND (l.bait_reels > 0 OR {fresh} > 0) '
+            'RETURNING w.reels, w.bait_reels, (l.bait_reels > 0)',
             {"w": window, "per": REELS_PER_WINDOW, "uid": user_id},
         )
         row = db.cursor.fetchone()
         db.connection.commit()
-        return row[0] if row else None
+        if not row:
+            return None
+        return {"reels": row[0], "bait_reels": row[1],
+                "total": row[0] + row[1], "used_bait": row[2]}
     finally:
         db.close()
 
 
-def db_refund_reel(user_id: int):
-    cap = _bank_cap_sql()
+def db_refund_reel(user_id: int, bait: bool = False):
+    """Put a reel back in the pocket it was taken from.
+
+    A bait reel refunded into the bank would vanish against the cap, which is
+    the whole thing the separate pocket exists to prevent.
+    """
+    if bait:
+        restore = 'bait_reels = LEAST(%s, bait_reels + 1)' % DAILY_REELS
+    else:
+        restore = 'reels = LEAST(%s, reels + 1)' % _bank_cap_sql()
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            f'UPDATE card_wallet SET reels = LEAST({cap}, reels + 1), '
+            f'UPDATE card_wallet SET {restore}, '
             '  total_reeled = GREATEST(0, total_reeled - 1) '
             'WHERE "user" = %s',
             (user_id,),
@@ -631,40 +661,64 @@ def db_next_daily_reset() -> int:
         db.close()
 
 
-def db_claim_daily(user_id: int) -> dict | None:
-    """Claim the daily. Returns None if already claimed today.
+def db_claim_daily(user_id: int) -> dict:
+    """Claim the daily.
+
+    Returns {"ok": True, ...} or {"ok": False, "reason": ...} where the reason
+    is "claimed" (already had it today) or "unspent" (bait reels still in
+    hand). Unspent bait blocks the next claim on purpose: it caps the pocket
+    at one day's worth without needing a cap, and it keeps bait from becoming
+    a second bank people sit on.
 
     The streak continues when the last claim was yesterday and resets
     otherwise, decided in SQL so two fast clicks cannot both land.
     """
     window = current_window()
-    cap = _bank_cap_sql()
     db = DB()
     db.connect()
     try:
         _ensure_wallet(db, user_id, window)
+        # Bring the bank and the trickle current first, in the same
+        # transaction, so the numbers reported back are the real ones.
+        db.cursor.execute(_refresh_sql(), {
+            "w": window, "per": REELS_PER_WINDOW,
+            "cap_h": TRICKLE_CAP_HOURS, "uid": user_id,
+        })
         db.cursor.execute(
             'UPDATE card_wallet SET '
             '  streak = CASE WHEN last_daily = CURRENT_DATE - 1 THEN streak + 1 ELSE 1 END, '
             '  last_daily = CURRENT_DATE, '
             '  pearls = pearls + %(base)s + %(bonus)s * LEAST(%(cap_s)s, '
             '      CASE WHEN last_daily = CURRENT_DATE - 1 THEN streak + 1 ELSE 1 END), '
-            f'  reels = LEAST({cap}, reels + %(reels)s) '
+            '  bait_reels = %(reels)s '
             'WHERE "user" = %(uid)s '
             '  AND (last_daily IS NULL OR last_daily < CURRENT_DATE) '
-            'RETURNING streak, pearls, reels',
+            '  AND bait_reels = 0 '
+            'RETURNING streak, pearls, reels, bait_reels',
             {"base": DAILY_PEARLS, "bonus": DAILY_STREAK_BONUS,
              "cap_s": DAILY_STREAK_CAP, "reels": DAILY_REELS, "uid": user_id},
         )
         row = db.cursor.fetchone()
-        db.connection.commit()
         if not row:
-            return None
+            # Two things can block a claim; say which one it was.
+            db.cursor.execute(
+                'SELECT last_daily >= CURRENT_DATE, bait_reels '
+                'FROM card_wallet WHERE "user" = %s', (user_id,))
+            state = db.cursor.fetchone()
+            db.connection.commit()
+            today, held = (state[0], state[1]) if state else (True, 0)
+            return {"ok": False, "bait_reels": held,
+                    "reason": "claimed" if today else "unspent"}
+
+        db.connection.commit()
         streak = row[0]
         return {
+            "ok": True,
             "streak": streak,
             "pearls": row[1],
             "reels": row[2],
+            "bait_reels": row[3],
+            "total_reels": row[2] + row[3],
             "gained": DAILY_PEARLS + DAILY_STREAK_BONUS * min(DAILY_STREAK_CAP, streak),
         }
     finally:
