@@ -1036,6 +1036,10 @@ CREATE TABLE IF NOT EXISTS card_wallet (
     streak       INT         NOT NULL DEFAULT 0,
     last_daily   DATE,
     last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- Reels from /bait, held outside the bank so a full bank cannot swallow
+    -- them. Spent before reels do, and never above one day's worth: you
+    -- cannot bait again while any are unspent.
+    bait_reels   SMALLINT    NOT NULL DEFAULT 0,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

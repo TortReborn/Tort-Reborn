@@ -1,5 +1,5 @@
 {
- "note": "The five raid bosses. Hand-curated rather than mined: they are bosses, not speaking characters, so a dialogue line count says nothing useful about them. Merged into the playable set by scripts/build_card_set.py.",
+ "note": "The raid and world bosses. Hand-curated rather than mined: they are bosses, not speaking characters, so a dialogue line count says nothing useful about them. Merged into the playable set by scripts/build_card_set.py.",
  "tier": "fabled",
  "cards": [
   {
@@ -36,6 +36,13 @@
    "raid": "Nexus of Light",
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Anathema",
    "image_url": "https://wynncraft.wiki.gg/images/Anathema%28Render%29.png?a83e45"
+  },
+  {
+   "slug": "annihilation",
+   "name": "Annihilation",
+   "raid": "Roots of Corruption",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Annihilation",
+   "image_url": "https://wynncraft.wiki.gg/images/Annihilation.png?2f0714"
   }
  ]
 }
