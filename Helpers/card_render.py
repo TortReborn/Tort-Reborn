@@ -23,9 +23,9 @@ FONT_UI = os.path.join(BASE, "images", "shell_exchange", "resources",
                        "Inter-VariableFont_opsz,wght.ttf")
 ART_CACHE = os.path.join(BASE, "images", "cards")
 
-W, H = 320, 424
+W, H = 340, 500
 PAD = 13
-ART_H = 286
+ART_H = 320
 RADIUS = 16
 
 BG_TOP = (26, 29, 36)
@@ -238,25 +238,30 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     ny = ay1 + 16
     d.line([PAD + 6, ny, W - PAD - 6, ny], fill=accent + (70,), width=1)
 
-    nf = _fit_font(d, name, FONT_GAME, W - 2 * PAD - 14, 27)
-    lf = _font(FONT_UI, 13)
-    name_h, gap, tier_h = 27, 14, 13
-    star_h = 18 if stars > 0 else 0
-    top = ny + max(8, (H - ny - (name_h + gap + tier_h + star_h)) // 2)
+    nf = _fit_font(d, name, FONT_GAME, W - 2 * PAD - 14, 29)
+    tier_font = _font(FONT_UI, 18)
+    level_font = _font(FONT_UI, 22)
+
+    name_h, gap, tier_h, level_gap = 30, 15, 18, 9
+    level_h = 24 if stars > 0 else 0
+    block = name_h + gap + tier_h + (level_gap + level_h if level_h else 0)
+    top = ny + max(10, (H - ny - block) // 2)
 
     d.text(((W - d.textlength(name, font=nf)) / 2, top), name, font=nf,
            fill=(240, 243, 248))
+
     spaced = " ".join(tier.upper())
     tier_y = top + name_h + gap
-    d.text(((W - d.textlength(spaced, font=lf)) / 2, tier_y),
-           spaced, font=lf, fill=_readable(accent))
+    d.text(((W - d.textlength(spaced, font=tier_font)) / 2, tier_y),
+           spaced, font=tier_font, fill=_readable(accent))
 
     # Counting stars stops meaning anything at the ceiling, where the point is
     # that there is nowhere left to go — so it says so.
     if stars > 0:
-        row = "MAX" if maxed else " ".join(["\u2605"] * stars)
-        d.text(((W - d.textlength(row, font=lf)) / 2, tier_y + tier_h + 6),
-               row, font=lf, fill=_readable(ring))
+        row = "M A X" if maxed else "  ".join(["\u2605"] * stars)
+        d.text(((W - d.textlength(row, font=level_font)) / 2,
+                tier_y + tier_h + level_gap),
+               row, font=level_font, fill=_readable(ring if ring else accent))
 
     # Outer edge: the tier, always — except at the ceiling, where the
     # prismatic band takes over and the tier still reads from the label.
