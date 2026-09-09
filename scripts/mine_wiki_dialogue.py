@@ -40,7 +40,7 @@ BAD_RENAME = {                      # search fallback matched the wrong thing
     "Villagers": "Villager", "Doguns": "Dogun",
 }
 REJECT = {"Tunnel Dweller Chieftain", "Garoth's Journal", "Sol", "Blueberry",
-          "Guard Golem", "Teleportation Mech", "Antikythera Supercomputer"}
+          "Guard Golem", "Teleportation Mech", "??? (Wynn Plains Monument)"}
 
 QUEST_RE = re.compile(r"^\*+\s*'''(.{1,120}?)'''", re.M)
 TMPL_RE = re.compile(r"\{\{\s*Dialogue\s*\|[^|}]*\|([^|}]*)\|", re.I)
@@ -53,6 +53,24 @@ JUNK_EXACT = {"dialogue", "note", "warning", "info", "objective", "reward",
               "old", "new", "fortune cookie", "list of supplies", "bush"}
 JUNK_PAT = re.compile(
     r"^\d|^log \d|\d+ (ap|bp|eb|xp|le)$|^\[.*\] \d+ (ap|bp)$|years ago$", re.I)
+
+
+def qmark_name(name: str, title: str) -> str:
+    """Key a withheld-identity speaker to the page it spoke on.
+
+    The wiki writes ??? for a speaker whose identity a quest is holding back.
+    Pooling every one of them into a single name invents a character that
+    speaks 382 lines across 62 unrelated quests, which is how a mob screenshot
+    ended up as the third-rarest card in the set.
+
+    Several of them do have a page of their own, disambiguated by where they
+    appear -- ??? (A Hunter's Calling) is a real NPC with real art. Keying by
+    page lets those resolve normally; the ones with no page behind them stay
+    unresolved, pick up no art, and fall out when the playable set is built.
+    """
+    if name != "???":
+        return name
+    return title if title.startswith("???") else f"??? ({title})"
 
 
 def api(params):
@@ -256,6 +274,7 @@ def main():
             name = clean_speaker(raw)
             if not name:
                 continue
+            name = qmark_name(name, title)
             counts[name] = counts.get(name, 0) + 1
             sources.setdefault(name, set()).add(title)
             fmt.setdefault(name, set()).add(kind)
