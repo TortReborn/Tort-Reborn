@@ -82,6 +82,64 @@ def _resolve(name: str) -> dict | None:
     return None
 
 
+def _star_name(card: dict, star: int) -> str:
+    return f"{card['name']} {'★' * star}".strip() if star > 1 else card["name"]
+
+
+def _stack_label(card: dict, star: int, count: int) -> str:
+    """How one stack reads in a picker: the card, its level, how many."""
+    stars = f" {'★' * star}" if star > 1 else ""
+    return f"{card['name']}{stars} ×{count}"
+
+
+def _parse_stack(value: str) -> tuple[str, int] | None:
+    """Pull the slug and star back out of a picker value."""
+    if ":" not in value:
+        return None
+    slug, _, star = value.rpartition(":")
+    return (slug, int(star)) if star.isdigit() else None
+
+
+async def _stack_choices(user_id: int, typed: str, resolve_member=True):
+    """Every stack a user holds, one entry per star level."""
+    owned = await asyncio.to_thread(cardlib.db_get_collection, user_id)
+    if not owned:
+        return []
+    members = await asyncio.to_thread(
+        cardlib.db_get_member_cards,
+        [s for s in owned if cardlib.is_member_slug(s)]) if resolve_member else {}
+
+    out = []
+    for slug, entry in owned.items():
+        card = cardlib.get_card(slug) or members.get(slug)
+        if not card or typed not in card["name"].lower():
+            continue
+        for star, count in sorted(entry["levels"].items()):
+            out.append(discord.OptionChoice(
+                name=_stack_label(card, star, count), value=f"{slug}:{star}"))
+    return sorted(out, key=lambda c: c.name)[:25]
+
+
+async def _autocomplete_stacks(ctx: discord.AutocompleteContext):
+    try:
+        return await _stack_choices(ctx.interaction.user.id,
+                                    (ctx.value or "").lower())
+    except Exception:
+        return []
+
+
+async def _autocomplete_their_stacks(ctx: discord.AutocompleteContext):
+    """The other side of a trade, once they have picked who."""
+    try:
+        member = (ctx.options or {}).get("member")
+        if not member:
+            return []
+        uid = int(member["id"] if isinstance(member, dict) else member)
+        return await _stack_choices(uid, (ctx.value or "").lower())
+    except Exception:
+        return []
+
+
 async def _autocomplete_owned(ctx: discord.AutocompleteContext):
     try:
         owned = await asyncio.to_thread(cardlib.db_get_collection,
@@ -341,12 +399,14 @@ class TradeView(discord.ui.View):
     """Two-sided confirm. Only the recipient can accept or decline."""
 
     def __init__(self, proposer: discord.User, target: discord.User,
-                 give: dict, want: dict):
+                 give: dict, give_star: int, want: dict, want_star: int):
         super().__init__(timeout=300)
         self.proposer = proposer
         self.target = target
         self.give = give
+        self.give_star = give_star
         self.want = want
+        self.want_star = want_star
         self.message = None
         self.done = False
 
@@ -378,15 +438,17 @@ class TradeView(discord.ui.View):
                      interaction: discord.Interaction):
         ok = await asyncio.to_thread(
             cardlib.db_trade, self.proposer.id, self.target.id,
-            self.give["slug"], self.want["slug"])
+            self.give["slug"], self.give_star,
+            self.want["slug"], self.want_star)
         if not ok:
             return await self._close(
                 interaction,
-                "Trade failed — one side no longer has a spare, unfused copy.")
+                "Trade failed — one side no longer holds that copy.")
         await self._close(
             interaction,
             f"Trade complete: {self.proposer.mention} gave "
-            f"**{self.give['name']}** and received **{self.want['name']}** "
+            f"**{_star_name(self.give, self.give_star)}** and received "
+            f"**{_star_name(self.want, self.want_star)}** "
             f"from {self.target.mention}.")
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.secondary)
@@ -515,8 +577,12 @@ class Cards(commands.Cog):
             inline=False)
         embed.add_field(
             name="Spending pearls",
-            value=("`/tank fuse` — feed spare copies into a card for a star, up "
-                   f"to {cardlib.MAX_STARS}★.\n"
+            value=(f"`/tank fuse` — merge "
+                   f"**{cardlib.FUSION_COPIES_PER_STEP}** copies of a level "
+                   "into one of the next. A "
+                   f"{cardlib.MAX_STARS}★ is "
+                   f"{cardlib.base_copies_for(cardlib.MAX_STARS)} copies of "
+                   f"one card, so it is the long haul.\n"
                    "`/tank upgrade` — a bigger tank banks more reels and "
                    "trickles pearls on its own."),
             inline=False)
@@ -534,7 +600,8 @@ class Cards(commands.Cog):
             inline=False)
         embed.add_field(
             name="With other people",
-            value=("`/tank trade` — swap a spare card with someone.\n"
+            value=("`/tank trade` — swap any copy you hold, fused or "
+                   f"not.\n"
                    "`/tank leaderboard` — the deepest tanks in the guild."),
             inline=False)
 
@@ -566,15 +633,15 @@ class Cards(commands.Cog):
             return await ctx.followup.send(
                 f"**{match['name']}** isn't in your tank yet.", ephemeral=True)
 
-        stars = entry["stars"]
+        stars = entry["best"]
         file = await asyncio.to_thread(card_file, match, None, stars)
         embed = discord.Embed(color=_card_color(match),
                               description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
-        embed.set_footer(text=_credit(
-            match,
-            f"{entry['count']} cop{'y' if entry['count'] == 1 else 'ies'}",
-            f"{stars}★" if stars > 1 else None))
+        held = " · ".join(
+            f"{c}× {'★' * st if st > 1 else 'unfused'}"
+            for st, c in sorted(entry["levels"].items()))
+        embed.set_footer(text=_credit(match, held))
         await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank list ───────────────────────────────────────────────────────────
@@ -626,13 +693,13 @@ class Cards(commands.Cog):
             return (idx, r[0]["name"])
         rows.sort(key=sort_key)
 
-        total_copies = sum(e["count"] for _, e in rows)
+        total_copies = sum(e["total"] for _, e in rows)
         header = f"**{len(rows)}** of {len(cs['cards'])} cards · {total_copies} total"
         if mine:
             header += (f" · {wallet['pearls']:,} pearls · {wallet['reels']} reel"
                        f"{'' if wallet['reels'] == 1 else 's'}")
         else:
-            spares = sum(e["count"] - 1 for _, e in rows if e["count"] > 1)
+            spares = sum(e["total"] - 1 for _, e in rows if e["total"] > 1)
             header += f" · {spares} spare{'' if spares == 1 else 's'} to trade"
 
         page_list = []
@@ -641,9 +708,10 @@ class Cards(commands.Cog):
             lines = []
             for c, e in chunk:
                 tier = "1/1" if c.get("member") else _tier_label(c["tier"])
-                dupe = f" ×{e['count']}" if e["count"] > 1 else ""
-                lines.append(
-                    f"`{tier:9}` {c['name']}{dupe} {_stars(e['stars'])}".rstrip())
+                bits = []
+                for st, n in sorted(e["levels"].items()):
+                    bits.append(f"{'★' * st}×{n}" if st > 1 else f"×{n}")
+                lines.append(f"`{tier:9}` {c['name']} " + " ".join(bits))
             embed = discord.Embed(
                 title=f"{target.display_name}'s Tank",
                 description=header + "\n\n" + "\n".join(lines),
@@ -671,7 +739,7 @@ class Cards(commands.Cog):
 
         tier = wallet["tank_tier"]
         spec = cardlib.TANK_TIERS[tier]
-        copies = sum(e["count"] for e in owned.values()) if owned else 0
+        copies = sum(e["total"] for e in owned.values()) if owned else 0
 
         embed = discord.Embed(title=f"{ctx.author.display_name}'s Tank",
                               color=0x38C9BD)
@@ -758,68 +826,72 @@ class Cards(commands.Cog):
 
     # ── /tank fuse ───────────────────────────────────────────────────────────
 
-    @tank.command(name="fuse",
-                  description="Spend copies and pearls to add a star")
+    @tank.command(
+        name="fuse",
+        description="Merge three copies of a level into one of the next")
     async def tank_fuse(
         self, ctx: discord.ApplicationContext,
-        card: discord.Option(str, description="Card to fuse",
-                             autocomplete=_autocomplete_owned),
+        card: discord.Option(str, description="The stack to merge",
+                             autocomplete=_autocomplete_stacks),
     ):
         await ctx.defer()
-        match = await asyncio.to_thread(_resolve, card)
-        if match is None:
+        picked = _parse_stack(card)
+        if picked is None:
             return await ctx.followup.send(
-                f"No card called **{card}** exists.", ephemeral=True)
+                "Pick a card from the list so I know which level to merge.",
+                ephemeral=True)
+        slug, from_star = picked
+
+        match = cardlib.get_card(slug) or await asyncio.to_thread(
+            cardlib.db_get_member_card, slug)
+        if match is None:
+            return await ctx.followup.send("That card doesn't exist.",
+                                           ephemeral=True)
         if match.get("member"):
             return await ctx.followup.send(
-                "1/1 cards can't be fused — there are no spare copies to use.",
+                "1/1 cards can't be fused — there is only ever one.",
+                ephemeral=True)
+        if from_star >= cardlib.MAX_STARS:
+            return await ctx.followup.send(
+                f"{cardlib.MAX_STARS}★ is the top — nothing above it.",
                 ephemeral=True)
 
-        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
-                                        match["slug"])
-        if not entry:
-            return await ctx.followup.send(
-                f"**{match['name']}** isn't in your tank yet.", ephemeral=True)
-
-        stars = entry["stars"]
-        if stars >= cardlib.MAX_STARS:
-            return await ctx.followup.send(
-                f"**{match['name']}** is already {cardlib.MAX_STARS}★ — "
-                "prismatic and finished.", ephemeral=True)
-
-        to_star = stars + 1
-        copies, pearls = cardlib.fusion_cost(match["tier"], to_star)
+        to_star = from_star + 1
+        need, pearls = cardlib.fusion_cost(to_star)
+        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id, slug)
+        have = (entry or {}).get("levels", {}).get(from_star, 0)
         wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
 
-        if entry["count"] < copies + 1:
+        level = f"{from_star}★" if from_star > 1 else "unfused"
+        if have < need:
             return await ctx.followup.send(
-                f"{to_star}★ needs **{copies}** spare copies plus the one you "
-                f"keep. You have {entry['count']}.", ephemeral=True)
+                f"Merging into {to_star}★ takes **{need}** {level} copies of "
+                f"**{match['name']}**. You have {have}.", ephemeral=True)
         if wallet["pearls"] < pearls:
             return await ctx.followup.send(
-                f"{to_star}★ costs **{pearls:,}** pearls — you have "
+                f"That merge costs **{pearls:,}** pearls — you have "
                 f"{wallet['pearls']:,}.", ephemeral=True)
 
-        result = await asyncio.to_thread(cardlib.db_fuse, ctx.author.id,
-                                         match["slug"], to_star, copies, pearls)
+        result = await asyncio.to_thread(cardlib.db_fuse, ctx.author.id, slug,
+                                         to_star, need, pearls)
         if result is None:
             return await ctx.followup.send(
-                "Fusion failed — your copies or pearls changed. Try again.",
+                "Merge failed — your copies or pearls changed. Try again.",
                 ephemeral=True)
 
         file = await asyncio.to_thread(card_file, match, None, to_star)
-        summary = (f"Spent {copies} copies and {pearls:,} pearls · "
-                   f"{result['pearls']:,} pearls left")
+        summary = (f"Merged {need} {level} copies · {pearls:,} pearls · "
+                   f"{result['pearls']:,} left")
         line = _wiki_line(match)
         embed = discord.Embed(
-            title=f"{match['name']} is now {to_star}★",
+            title=f"{match['name']} {'★' * to_star}",
             description=f"{summary}\n{line}" if line else summary,
             color=cardlib.TIER_COLORS[match["tier"]])
         embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(text=_credit(
             match,
-            f"{result['count']} cop"
-            f"{'y' if result['count'] == 1 else 'ies'} remaining"))
+            f"{result['now']}× {to_star}★ · {result['left']} {level} left",
+            f"a {to_star}★ is {cardlib.base_copies_for(to_star)} base copies"))
         await ctx.followup.send(embed=embed, file=file)
 
     # ── /tank trade ──────────────────────────────────────────────────────────
@@ -828,9 +900,10 @@ class Cards(commands.Cog):
     async def tank_trade(
         self, ctx: discord.ApplicationContext,
         member: discord.Option(discord.Member, description="Who to trade with"),
-        give: discord.Option(str, description="The card you give",
-                             autocomplete=_autocomplete_owned),
-        want: discord.Option(str, description="The card you want"),
+        give: discord.Option(str, description="The copy you give",
+                             autocomplete=_autocomplete_stacks),
+        want: discord.Option(str, description="The copy you want",
+                             autocomplete=_autocomplete_their_stacks),
     ):
         await ctx.defer()
         if member.id == ctx.author.id:
@@ -840,40 +913,50 @@ class Cards(commands.Cog):
             return await ctx.followup.send("Bots don't collect cards.",
                                            ephemeral=True)
 
-        give_card = await asyncio.to_thread(_resolve, give)
-        want_card = await asyncio.to_thread(_resolve, want)
-        if give_card is None or want_card is None:
+        mine_pick, theirs_pick = _parse_stack(give), _parse_stack(want)
+        if mine_pick is None or theirs_pick is None:
             return await ctx.followup.send(
-                "One of those cards doesn't exist — check the spelling.",
-                ephemeral=True)
+                "Pick both cards from the lists so I know which copies you "
+                "mean — a 1★ and a 2★ are different things.", ephemeral=True)
+        give_slug, give_star = mine_pick
+        want_slug, want_star = theirs_pick
+
+        give_card = cardlib.get_card(give_slug) or await asyncio.to_thread(
+            cardlib.db_get_member_card, give_slug)
+        want_card = cardlib.get_card(want_slug) or await asyncio.to_thread(
+            cardlib.db_get_member_card, want_slug)
+        if give_card is None or want_card is None:
+            return await ctx.followup.send("One of those cards doesn't exist.",
+                                           ephemeral=True)
 
         mine = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
-                                       give_card["slug"])
+                                       give_slug)
         theirs = await asyncio.to_thread(cardlib.db_get_entry, member.id,
-                                         want_card["slug"])
-        if not mine:
+                                         want_slug)
+        if not mine or not mine["levels"].get(give_star):
             return await ctx.followup.send(
-                f"You don't own **{give_card['name']}**.", ephemeral=True)
-        if not theirs:
-            return await ctx.followup.send(
-                f"{member.display_name} doesn't own **{want_card['name']}**.",
+                f"You don't have a {give_star}★ **{give_card['name']}**.",
                 ephemeral=True)
-        if mine["stars"] > 1 or theirs["stars"] > 1:
+        if not theirs or not theirs["levels"].get(want_star):
             return await ctx.followup.send(
-                "Fused cards can't be traded — offer an unfused copy instead.",
-                ephemeral=True)
+                f"{member.display_name} doesn't have a {want_star}★ "
+                f"**{want_card['name']}**.", ephemeral=True)
 
         embed = discord.Embed(
             title="Trade offer",
-            description=(f"{ctx.author.mention} gives **{give_card['name']}** "
-                         f"({_tier_label(give_card['tier'])})\n"
-                         f"{member.mention} gives **{want_card['name']}** "
-                         f"({_tier_label(want_card['tier'])})"),
+            description=(
+                f"{ctx.author.mention} gives "
+                f"**{_star_name(give_card, give_star)}** "
+                f"({_tier_label(give_card['tier'])})\n"
+                f"{member.mention} gives "
+                f"**{_star_name(want_card, want_star)}** "
+                f"({_tier_label(want_card['tier'])})"),
             color=0x38C9BD)
         embed.set_footer(
             text="Only the recipient can accept. Expires in 5 minutes.")
 
-        view = TradeView(ctx.author, member, give_card, want_card)
+        view = TradeView(ctx.author, member, give_card, give_star,
+                         want_card, want_star)
         view.message = await ctx.followup.send(
             content=member.mention, embed=embed, view=view, wait=True)
 
@@ -923,7 +1006,7 @@ class Cards(commands.Cog):
 
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
                                         card["slug"])
-        stars = entry["stars"] if entry else 1
+        stars = entry["best"] if entry else 1
         file = await asyncio.to_thread(card_file, card, None, stars)
 
         embed = discord.Embed(color=_card_color(card),
@@ -942,8 +1025,8 @@ class Cards(commands.Cog):
 
         embed.set_footer(text=_credit(
             card,
-            f"You own {entry['count']} cop"
-            f"{'y' if entry['count'] == 1 else 'ies'}" if entry
+            f"You own {entry['total']} cop"
+            f"{'y' if entry['total'] == 1 else 'ies'}" if entry
             else "Not in your tank yet"))
         await ctx.followup.send(embed=embed, file=file)
 

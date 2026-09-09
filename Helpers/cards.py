@@ -74,12 +74,13 @@ def pull_value(card: dict) -> int:
         return PEARLS_PER_PULL["member"]
     return PEARLS_PER_PULL.get(card.get("tier"), 0)
 
-# Star fusion: spare copies plus pearls to go from N stars to N+1.
-FUSION_COPIES = {2: 2, 3: 4, 4: 8, 5: 16}
-FUSION_PEARLS = {2: 150, 3: 500, 4: 1800, 5: 6000}
-FUSION_TIER_FACTOR = {
-    "common": 0.5, "uncommon": 0.75, "rare": 1.0, "epic": 2.0, "legendary": 4.0,
-}
+# Star fusion merges three of a level into one of the next, so a 5★ is 81 base
+# copies of the same card. The copies are the work; pearls are a light tax on
+# top. Building a full 5★ costs 10,800 pearls across the whole pyramid, set
+# against roughly 613 a day of income, so it never becomes the thing holding
+# someone back.
+FUSION_COPIES_PER_STEP = 3
+FUSION_PEARLS = {2: 100, 3: 300, 4: 900, 5: 2700}
 MAX_STARS = 5
 
 # ── Tank tiers ───────────────────────────────────────────────────────────────
@@ -149,6 +150,23 @@ SCHEMA = [
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_daily DATE',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW()',
     'ALTER TABLE card_collection ADD COLUMN IF NOT EXISTS stars SMALLINT NOT NULL DEFAULT 1',
+    # Stars live on the copy, not on the card, so a 1★ and a 2★ of the same
+    # character are separate stacks that can be held and traded apart.
+    '''
+    DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1 FROM pg_index i
+            JOIN pg_class c ON c.oid = i.indexrelid
+            JOIN pg_class t ON t.oid = i.indrelid
+            WHERE t.relname = 'card_collection' AND i.indisprimary
+              AND array_length(i.indkey::int2[], 1) = 2
+        ) THEN
+            ALTER TABLE card_collection DROP CONSTRAINT card_collection_pkey;
+            ALTER TABLE card_collection ADD PRIMARY KEY ("user", card, stars);
+        END IF;
+    END $$;
+    ''',
     """
     CREATE TABLE IF NOT EXISTS card_wishlist (
         "user"   BIGINT      NOT NULL,
@@ -269,11 +287,14 @@ def wish_slots(tank_tier: int) -> int:
     return TANK_TIERS.get(tank_tier, TANK_TIERS[1])["wishes"]
 
 
-def fusion_cost(tier: str, to_star: int) -> tuple[int, int]:
-    """(spare copies, pearls) needed to reach to_star."""
-    copies = FUSION_COPIES[to_star]
-    pearls = int(round(FUSION_PEARLS[to_star] * FUSION_TIER_FACTOR.get(tier, 1.0)))
-    return copies, pearls
+def fusion_cost(to_star: int) -> tuple[int, int]:
+    """(copies of the level below, pearls) needed to make one card at to_star."""
+    return FUSION_COPIES_PER_STEP, FUSION_PEARLS[to_star]
+
+
+def base_copies_for(star: int) -> int:
+    """Unfused copies behind one card at this level."""
+    return FUSION_COPIES_PER_STEP ** (star - 1)
 
 
 def _bank_cap_sql(column: str = "tank_tier") -> str:
@@ -617,8 +638,9 @@ def db_add_card(user_id: int, slug: str, pearls: int = 0) -> dict:
     db.connect()
     try:
         db.cursor.execute(
-            'INSERT INTO card_collection ("user", card) VALUES (%s, %s) '
-            'ON CONFLICT ("user", card) DO UPDATE SET count = card_collection.count + 1 '
+            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, 1) '
+            'ON CONFLICT ("user", card, stars) '
+            'DO UPDATE SET count = card_collection.count + 1 '
             'RETURNING count',
             (user_id, slug))
         row = db.cursor.fetchone()
@@ -636,49 +658,63 @@ def db_add_card(user_id: int, slug: str, pearls: int = 0) -> dict:
 
 
 def db_get_collection(user_id: int) -> dict:
-    """slug -> {count, stars}."""
+    """slug -> {"total": copies at every level, "levels": {star: count}}."""
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            'SELECT card, count, stars FROM card_collection WHERE "user" = %s',
+            'SELECT card, stars, count FROM card_collection '
+            'WHERE "user" = %s AND count > 0 ORDER BY card, stars',
             (user_id,))
-        return {r[0]: {"count": r[1], "stars": r[2]} for r in db.cursor.fetchall()}
+        out = {}
+        for card, stars, count in db.cursor.fetchall():
+            e = out.setdefault(card, {"total": 0, "levels": {}})
+            e["levels"][stars] = count
+            e["total"] += count
+        return out
     finally:
         db.close()
 
 
 def db_get_entry(user_id: int, slug: str) -> dict | None:
+    """One card's holdings, or None if none are held at any level."""
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            'SELECT count, stars FROM card_collection WHERE "user" = %s AND card = %s',
+            'SELECT stars, count FROM card_collection '
+            'WHERE "user" = %s AND card = %s AND count > 0 ORDER BY stars',
             (user_id, slug))
-        row = db.cursor.fetchone()
-        return {"count": row[0], "stars": row[1]} if row else None
+        rows = db.cursor.fetchall()
+        if not rows:
+            return None
+        levels = {r[0]: r[1] for r in rows}
+        return {"levels": levels, "total": sum(levels.values()),
+                "best": max(levels)}
     finally:
         db.close()
 
 
-def db_fuse(user_id: int, slug: str, to_star: int, copies: int, pearls: int) -> dict | None:
-    """Spend spare copies and pearls to add a star.
+def db_fuse(user_id: int, slug: str, to_star: int, copies: int,
+            pearls: int) -> dict | None:
+    """Merge `copies` cards at to_star-1 into one at to_star.
 
-    All three checks — enough copies, enough pearls, still at the expected
-    star — are part of the write, so two clicks can't fuse twice.
+    Every check — enough copies at that exact level, enough pearls — is part
+    of the write, so two fast clicks cannot fuse the same copies twice.
     """
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            'UPDATE card_collection SET count = count - %s, stars = %s '
-            'WHERE "user" = %s AND card = %s AND stars = %s AND count - %s >= 1 '
-            'RETURNING count, stars',
-            (copies, to_star, user_id, slug, to_star - 1, copies))
+            'UPDATE card_collection SET count = count - %s '
+            'WHERE "user" = %s AND card = %s AND stars = %s AND count >= %s '
+            'RETURNING count',
+            (copies, user_id, slug, to_star - 1, copies))
         row = db.cursor.fetchone()
         if not row:
             db.connection.rollback()
             return None
+
         db.cursor.execute(
             'UPDATE card_wallet SET pearls = pearls - %s '
             'WHERE "user" = %s AND pearls >= %s RETURNING pearls',
@@ -687,34 +723,51 @@ def db_fuse(user_id: int, slug: str, to_star: int, copies: int, pearls: int) -> 
         if not prow:
             db.connection.rollback()
             return None
+
+        db.cursor.execute(
+            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, %s) '
+            'ON CONFLICT ("user", card, stars) '
+            'DO UPDATE SET count = card_collection.count + 1 '
+            'RETURNING count',
+            (user_id, slug, to_star))
+        made = db.cursor.fetchone()
+        db.cursor.execute(
+            'DELETE FROM card_collection WHERE "user" = %s AND count <= 0',
+            (user_id,))
         db.connection.commit()
-        return {"count": row[0], "stars": row[1], "pearls": prow[0]}
+        return {"left": row[0], "now": made[0] if made else 1,
+                "stars": to_star, "pearls": prow[0]}
     finally:
         db.close()
 
 
-def db_trade(from_user: int, to_user: int, give: str, want: str) -> bool:
-    """Swap one copy each way inside a single transaction.
+def db_trade(from_user: int, to_user: int, give: str, give_star: int,
+             want: str, want_star: int) -> bool:
+    """Swap one copy each way, at the star level each side named.
 
-    Either both sides move or neither does, so a trade can never half-apply.
+    Any copy can be traded, fused or not — a 2★ and a 1★ of the same card are
+    separate stacks and move independently. Either both sides move or neither
+    does, so a trade can never half-apply.
     """
     db = DB()
     db.connect()
     try:
-        for owner, slug in ((from_user, give), (to_user, want)):
+        for owner, slug, star in ((from_user, give, give_star),
+                                  (to_user, want, want_star)):
             db.cursor.execute(
                 'UPDATE card_collection SET count = count - 1 '
-                'WHERE "user" = %s AND card = %s AND count >= 1 AND stars = 1',
-                (owner, slug))
+                'WHERE "user" = %s AND card = %s AND stars = %s AND count >= 1',
+                (owner, slug, star))
             if db.cursor.rowcount == 0:
                 db.connection.rollback()
                 return False
-        for owner, slug in ((to_user, give), (from_user, want)):
+        for owner, slug, star in ((to_user, give, give_star),
+                                  (from_user, want, want_star)):
             db.cursor.execute(
-                'INSERT INTO card_collection ("user", card) VALUES (%s, %s) '
-                'ON CONFLICT ("user", card) DO UPDATE '
-                'SET count = card_collection.count + 1',
-                (owner, slug))
+                'INSERT INTO card_collection ("user", card, stars) '
+                'VALUES (%s, %s, %s) ON CONFLICT ("user", card, stars) '
+                'DO UPDATE SET count = card_collection.count + 1',
+                (owner, slug, star))
         db.cursor.execute(
             'DELETE FROM card_collection WHERE count <= 0 AND "user" IN (%s, %s)',
             (from_user, to_user))
@@ -960,7 +1013,8 @@ def db_leaderboard(limit: int = 15) -> list:
     db.connect()
     try:
         db.cursor.execute(
-            'SELECT c."user", COUNT(*) AS uniques, SUM(c.count) AS copies, '
+            'SELECT c."user", COUNT(DISTINCT c.card) AS uniques, '
+            '       SUM(c.count) AS copies, '
             '       COALESCE(MAX(w.pearls), 0) AS pearls '
             'FROM card_collection c '
             'LEFT JOIN card_wallet w ON w."user" = c."user" '
