@@ -148,7 +148,7 @@ VISAGE_URL = "https://visage.surgeplay.com/bust/500/{uuid}"
 UNIQUE_MILESTONES = {25: 250, 50: 600, 100: 1500, 200: 4000, 300: 9000}
 TIER_COMPLETE_PEARLS = {
     "common": 3000, "uncommon": 3500, "rare": 5000, "epic": 15000,
-    "legendary": 40000,
+    "legendary": 40000, "fabled": 25000,
 }
 
 SCHEMA = [
@@ -610,6 +610,23 @@ def db_spend_pearls(user_id: int, amount: int) -> int | None:
         row = db.cursor.fetchone()
         db.connection.commit()
         return row[0] if row else None
+    finally:
+        db.close()
+
+
+def db_next_daily_reset() -> int:
+    """Unix time of the next daily rollover.
+
+    Asked of Postgres rather than worked out here, because the claim itself
+    turns on CURRENT_DATE: whatever timezone the database is set to, this
+    lands on the same boundary the claim will.
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            "SELECT EXTRACT(EPOCH FROM (CURRENT_DATE + 1)::timestamptz)::bigint")
+        return int(db.cursor.fetchone()[0])
     finally:
         db.close()
 

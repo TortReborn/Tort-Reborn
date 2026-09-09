@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-09T05:10:56+00:00",
+ "generated_at": "2026-09-09T18:07:37+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 548,
+ "count": 549,
  "cards": [
   {
    "slug": "tasim",
@@ -4389,6 +4389,15 @@
    "raid": "Nexus of Light",
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Anathema",
    "image_url": "https://wynncraft.wiki.gg/images/Anathema%28Render%29.png?a83e45",
+   "tier": "fabled",
+   "lines": 0
+  },
+  {
+   "slug": "annihilation",
+   "name": "Annihilation",
+   "raid": "Roots of Corruption",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Annihilation",
+   "image_url": "https://wynncraft.wiki.gg/images/Annihilation.png?2f0714",
    "tier": "fabled",
    "lines": 0
   }

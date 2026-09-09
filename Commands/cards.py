@@ -535,9 +535,10 @@ class Cards(commands.Cog):
         await ctx.defer()
         result = await asyncio.to_thread(cardlib.db_claim_daily, ctx.author.id)
         if result is None:
+            reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
             return await ctx.followup.send(
-                "You've already baited today. Come back tomorrow.",
-                ephemeral=True)
+                f"You've already baited today. The next one lands "
+                f"<t:{reset}:R>, at <t:{reset}:t>.", ephemeral=True)
 
         embed = discord.Embed(
             title="Bait cast",
@@ -551,7 +552,9 @@ class Cards(commands.Cog):
         if result["streak"] < cardlib.DAILY_STREAK_CAP:
             embed.set_footer(
                 text=f"Streak bonus grows until day {cardlib.DAILY_STREAK_CAP}")
-        await ctx.followup.send(embed=embed)
+        reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
+        await ctx.followup.send(
+            content=f"-# Next bait <t:{reset}:R>", embed=embed)
 
     @tank.command(name="help", description="How the card system works")
     async def tank_help(self, ctx: discord.ApplicationContext):
