@@ -627,8 +627,8 @@ class Cards(commands.Cog):
                    f"**{cardlib.FUSION_COPIES_PER_STEP}** copies of a level "
                    "into one of the next. To MAX: "
                    f"{_max_costs()}.\n"
-                   "`/tank upgrade` — a bigger tank banks more reels and "
-                   "trickles pearls on its own."),
+                   "`/tank upgrade` — a bigger tank lets you bank more reels, "
+                   "gives you passive pearls, and more wishlist slots."),
             inline=False)
         embed.add_field(
             name="Aiming your luck",
