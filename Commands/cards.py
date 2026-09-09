@@ -320,7 +320,10 @@ async def _do_reel(user_id: int, who: str):
             card = cardlib.roll_card()
 
     try:
-        file = await asyncio.to_thread(card_file, card)
+        # Spelled out rather than left to defaults: a fresh pull is always
+        # unfused, and that is worth saying at the call site.
+        file = await asyncio.to_thread(card_file, card, None, 0,
+                                       cardlib.tier_max_stars(card))
     except Exception as e:
         await asyncio.to_thread(cardlib.db_refund_reel, user_id,
                                 spend["used_bait"])
