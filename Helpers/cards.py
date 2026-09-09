@@ -33,16 +33,18 @@ REELS_PER_WINDOW = 3
 # (84 a week, 360 a month): an epic about weekly, a legendary about monthly,
 # and a 1-in-4 chance of a member 1/1 somewhere in those thirty days.
 TIER_WEIGHTS = {
-    "common": 43.76,
+    "common": 43.61,
     "uncommon": 32.82,
     "rare": 21.88,
     "epic": 1.19,
     "legendary": 0.28,
+    "fabled": 0.14,     # half a legendary's chance: the five raid bosses
     "member": 0.08,
 }
 
-TIER_ORDER = ["member", "legendary", "epic", "rare", "uncommon", "common"]
-CARD_TIERS = ["legendary", "epic", "rare", "uncommon", "common"]
+TIER_ORDER = ["member", "fabled", "legendary", "epic", "rare", "uncommon",
+              "common"]
+CARD_TIERS = ["fabled", "legendary", "epic", "rare", "uncommon", "common"]
 
 TIER_COLORS = {
     "common": 0x9CA3AF,
@@ -50,6 +52,7 @@ TIER_COLORS = {
     "rare": 0x60A5FA,
     "epic": 0xC084FC,
     "legendary": 0xFBBF24,
+    "fabled": 0xFF6A3D,
     "member": 0xF2549A,
 }
 
@@ -64,6 +67,7 @@ PEARLS_PER_PULL = {
     "rare": 60,
     "epic": 500,
     "legendary": 2500,
+    "fabled": 4000,
     "member": 5000,
 }
 
@@ -79,9 +83,11 @@ def pull_value(card: dict) -> int:
 # top. Building a full 5★ costs 10,800 pearls across the whole pyramid, set
 # against roughly 613 a day of income, so it never becomes the thing holding
 # someone back.
+# Stars count fusions, so an unfused card is 0★ and one merge makes it 1★.
 FUSION_COPIES_PER_STEP = 3
-FUSION_PEARLS = {2: 100, 3: 300, 4: 900, 5: 2700}
-MAX_STARS = 5
+FUSION_PEARLS = {1: 100, 2: 300, 3: 900, 4: 2700}
+FUSION_TIER_MULT = {"fabled": 2.0}     # a fabled merge costs double
+MAX_STARS = 4
 
 # Each tier stops at its own ceiling, because three-of-a-kind compounds fast
 # and the rare tiers simply do not drop often enough to feed it. Copies behind
@@ -89,7 +95,8 @@ MAX_STARS = 5
 # legendary. Every ceiling is meant to be reachable, and every one looks the
 # same when you get there.
 TIER_MAX_STARS = {
-    "common": 5, "uncommon": 5, "rare": 5, "epic": 3, "legendary": 2,
+    "common": 4, "uncommon": 4, "rare": 4, "epic": 2,
+    "legendary": 1, "fabled": 1,
 }
 
 # ── Tank tiers ───────────────────────────────────────────────────────────────
@@ -120,11 +127,21 @@ DAILY_REELS = 2
 # Every rarity can be wished for. Member 1/1s cannot — a single-copy card of a
 # named person should never be targetable.
 WISH_REDIRECT_CHANCE = 0.25
-WISHABLE_TIERS = tuple(CARD_TIERS)
+WISHABLE_TIERS = tuple(CARD_TIERS)   # everything but a member 1/1
 
 # ── Member 1/1 cards ─────────────────────────────────────────────────────────
 MEMBER_ELIGIBLE_RANKS = ["Swordfish", "Hammerhead", "Sailfish", "Dolphin",
                          "Narwhal", "Hydra"]
+
+# A link row survives someone leaving the guild, so rank alone would keep
+# minting cards of people who are long gone. player_activity is written from
+# the live roster every day, so appearing in a recent snapshot is what proves
+# somebody is still here.
+MEMBER_ACTIVE_DAYS = 14
+ACTIVE_MEMBER_SQL = (
+    "EXISTS (SELECT 1 FROM player_activity pa WHERE pa.uuid = dl.uuid "
+    "AND pa.snapshot_date >= CURRENT_DATE - %s)"
+)
 VISAGE_URL = "https://visage.surgeplay.com/bust/500/{uuid}"
 
 # ── Milestones ───────────────────────────────────────────────────────────────
@@ -158,7 +175,20 @@ SCHEMA = [
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS streak INT NOT NULL DEFAULT 0',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_daily DATE',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW()',
-    'ALTER TABLE card_collection ADD COLUMN IF NOT EXISTS stars SMALLINT NOT NULL DEFAULT 1',
+    'ALTER TABLE card_collection ADD COLUMN IF NOT EXISTS stars SMALLINT NOT NULL DEFAULT 0',
+    # Stars used to start at 1 for an unfused card, which made every count one
+    # higher than the number of merges behind it. They now count fusions, so a
+    # plain card is 0★. Shift any pre-existing rows down once.
+    '''
+    DO $$
+    BEGIN
+        IF EXISTS (SELECT 1 FROM card_collection WHERE stars >= 1)
+           AND NOT EXISTS (SELECT 1 FROM card_collection WHERE stars = 0) THEN
+            UPDATE card_collection SET stars = stars - 1;
+        END IF;
+        ALTER TABLE card_collection ALTER COLUMN stars SET DEFAULT 0;
+    END $$;
+    ''',
     # Stars live on the copy, not on the card, so a 1★ and a 2★ of the same
     # character are separate stacks that can be held and traded apart.
     '''
@@ -296,20 +326,21 @@ def wish_slots(tank_tier: int) -> int:
     return TANK_TIERS.get(tank_tier, TANK_TIERS[1])["wishes"]
 
 
-def fusion_cost(to_star: int) -> tuple[int, int]:
+def fusion_cost(to_star: int, tier: str | None = None) -> tuple[int, int]:
     """(copies of the level below, pearls) needed to make one card at to_star."""
-    return FUSION_COPIES_PER_STEP, FUSION_PEARLS[to_star]
+    pearls = FUSION_PEARLS[to_star] * FUSION_TIER_MULT.get(tier, 1.0)
+    return FUSION_COPIES_PER_STEP, int(round(pearls))
 
 
 def base_copies_for(star: int) -> int:
-    """Unfused copies behind one card at this level."""
-    return FUSION_COPIES_PER_STEP ** (star - 1)
+    """Unfused copies behind one card at this level. 0★ is a single card."""
+    return FUSION_COPIES_PER_STEP ** star
 
 
 def tier_max_stars(card: dict | None) -> int:
     """How far this card can be fused. Member 1/1s cannot be fused at all."""
     if not card or card.get("member"):
-        return 1
+        return 0
     return TIER_MAX_STARS.get(card.get("tier"), MAX_STARS)
 
 
@@ -654,7 +685,7 @@ def db_add_card(user_id: int, slug: str, pearls: int = 0) -> dict:
     db.connect()
     try:
         db.cursor.execute(
-            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, 1) '
+            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, 0) '
             'ON CONFLICT ("user", card, stars) '
             'DO UPDATE SET count = card_collection.count + 1 '
             'RETURNING count',
@@ -900,11 +931,13 @@ def db_mint_member_card(owner_id: int) -> dict | None:
     db.connect()
     try:
         db.cursor.execute(
-            'SELECT discord_id, ign, uuid::text, rank FROM discord_links '
-            'WHERE linked AND uuid IS NOT NULL AND rank = ANY(%s) '
-            '  AND discord_id NOT IN (SELECT discord_id FROM card_members) '
+            'SELECT dl.discord_id, dl.ign, dl.uuid::text, dl.rank '
+            'FROM discord_links dl '
+            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            f'  AND {ACTIVE_MEMBER_SQL} '
+            '  AND dl.discord_id NOT IN (SELECT discord_id FROM card_members) '
             'ORDER BY RANDOM() LIMIT 1',
-            (MEMBER_ELIGIBLE_RANKS,))
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         row = db.cursor.fetchone()
         if not row:
             return None
@@ -959,8 +992,9 @@ def db_get_pool() -> list:
             'FROM discord_links dl '
             'LEFT JOIN card_members cm ON cm.discord_id = dl.discord_id '
             'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            f'  AND {ACTIVE_MEMBER_SQL} '
             'ORDER BY array_position(%s::text[], dl.rank) DESC, lower(dl.ign)',
-            (MEMBER_ELIGIBLE_RANKS, MEMBER_ELIGIBLE_RANKS))
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS, MEMBER_ELIGIBLE_RANKS))
         return [pool_entry(*r) for r in db.cursor.fetchall()]
     finally:
         db.close()
@@ -974,8 +1008,10 @@ def db_count_eligible_members() -> tuple[int, int]:
         db.cursor.execute('SELECT COUNT(*) FROM card_members')
         minted = db.cursor.fetchone()[0]
         db.cursor.execute(
-            'SELECT COUNT(*) FROM discord_links WHERE linked AND uuid IS NOT NULL '
-            'AND rank = ANY(%s)', (MEMBER_ELIGIBLE_RANKS,))
+            'SELECT COUNT(*) FROM discord_links dl '
+            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            f'  AND {ACTIVE_MEMBER_SQL}',
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         return minted, db.cursor.fetchone()[0]
     finally:
         db.close()
@@ -989,9 +1025,10 @@ def db_retire_departed_members() -> int:
         db.cursor.execute(
             'UPDATE card_members SET retired = TRUE '
             'WHERE NOT retired AND discord_id NOT IN ('
-            '  SELECT discord_id FROM discord_links '
-            '  WHERE linked AND rank = ANY(%s))',
-            (MEMBER_ELIGIBLE_RANKS,))
+            '  SELECT dl.discord_id FROM discord_links dl '
+            '  WHERE dl.linked AND dl.rank = ANY(%s) '
+            f'    AND {ACTIVE_MEMBER_SQL})',
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         n = db.cursor.rowcount
         db.connection.commit()
         return n

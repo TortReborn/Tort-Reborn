@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORPUS = os.path.join(BASE, "data", "card_corpus.json")
+FABLED = os.path.join(BASE, "data", "fabled_cards.json")
 OUT = os.path.join(BASE, "data", "cards.json")
 ART_CACHE = os.path.join(BASE, "images", "cards")
 
@@ -114,6 +115,14 @@ def main() -> int:
             "image_url": c["image_url"],
         })
     assign_tiers(cards)
+
+    # The raid bosses are hand-curated and sit above legendary, so they are
+    # merged in after tiering rather than ranked by dialogue like the rest.
+    with open(FABLED, encoding="utf-8") as f:
+        fab = json.load(f)
+    for c in fab["cards"]:
+        cards.append({**c, "tier": fab["tier"], "lines": 0})
+    print(f"  merged {len(fab['cards'])} {fab['tier']} cards")
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

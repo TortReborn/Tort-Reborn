@@ -83,12 +83,12 @@ def _resolve(name: str) -> dict | None:
 
 
 def _star_name(card: dict, star: int) -> str:
-    return f"{card['name']} {'★' * star}".strip() if star > 1 else card["name"]
+    return f"{card['name']} {'★' * star}".strip() if star > 0 else card["name"]
 
 
 def _stack_label(card: dict, star: int, count: int) -> str:
     """How one stack reads in a picker: the card, its level, how many."""
-    stars = f" {'★' * star}" if star > 1 else ""
+    stars = f" {'★' * star}" if star > 0 else ""
     return f"{card['name']}{stars} ×{count}"
 
 
@@ -237,7 +237,7 @@ def _card_color(card: dict) -> int:
 
 
 def _card_embed(card: dict, copies: int, remaining: int, filename: str,
-                who: str, stars: int = 1, gained: int = 0) -> discord.Embed:
+                who: str, stars: int = 0, gained: int = 0) -> discord.Embed:
     # The card art already prints the name, the tier or rank, the star level
     # and the 1/1 badge, so the embed adds nothing but what the art cannot
     # show: who rolled it, and what it means for your collection.
@@ -640,7 +640,7 @@ class Cards(commands.Cog):
                               description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
         held = " · ".join(
-            f"{c}× {'★' * st if st > 1 else 'unfused'}"
+            f"{c}× {'★' * st if st > 0 else 'unfused'}"
             for st, c in sorted(entry["levels"].items()))
         embed.set_footer(text=_credit(match, held))
         await ctx.followup.send(embed=embed, file=file)
@@ -711,7 +711,7 @@ class Cards(commands.Cog):
                 tier = "1/1" if c.get("member") else _tier_label(c["tier"])
                 bits = []
                 for st, n in sorted(e["levels"].items()):
-                    bits.append(f"{'★' * st}×{n}" if st > 1 else f"×{n}")
+                    bits.append(f"{'★' * st}×{n}" if st > 0 else f"×{n}")
                 lines.append(f"`{tier:9}` {c['name']} " + " ".join(bits))
             embed = discord.Embed(
                 title=f"{target.display_name}'s Tank",
@@ -860,12 +860,12 @@ class Cards(commands.Cog):
                 ephemeral=True)
 
         to_star = from_star + 1
-        need, pearls = cardlib.fusion_cost(to_star)
+        need, pearls = cardlib.fusion_cost(to_star, match["tier"])
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id, slug)
         have = (entry or {}).get("levels", {}).get(from_star, 0)
         wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
 
-        level = f"{from_star}★" if from_star > 1 else "unfused"
+        level = f"{from_star}★" if from_star > 0 else "unfused"
         if have < need:
             return await ctx.followup.send(
                 f"Merging into {to_star}★ takes **{need}** {level} copies of "
@@ -1012,7 +1012,7 @@ class Cards(commands.Cog):
 
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
                                         card["slug"])
-        stars = entry["best"] if entry else 1
+        stars = entry["best"] if entry else 0
         file = await asyncio.to_thread(card_file, card, None, stars,
                                        cardlib.tier_max_stars(card))
 
