@@ -1,0 +1,41 @@
+{
+ "note": "The five raid bosses. Hand-curated rather than mined: they are bosses, not speaking characters, so a dialogue line count says nothing useful about them. Merged into the playable set by scripts/build_card_set.py.",
+ "tier": "fabled",
+ "cards": [
+  {
+   "slug": "orphion",
+   "name": "Orphion",
+   "raid": "Orphion's Nexus of Light",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orphion",
+   "image_url": "https://wynncraft.wiki.gg/images/Orphion%2CLightIncarnate.png?4920da"
+  },
+  {
+   "slug": "grootslang-wyrmling",
+   "name": "Grootslang Wyrmling",
+   "raid": "The Nest of the Grootslangs",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Grootslang_Wyrmling",
+   "image_url": "https://wynncraft.wiki.gg/images/GrootslangWyrmling.png?4bfbb5"
+  },
+  {
+   "slug": "the-canyon-colossus",
+   "name": "The Canyon Colossus",
+   "raid": "The Canyon Colossus",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Canyon_Colossus_(Boss)",
+   "image_url": "https://wynncraft.wiki.gg/images/TheColossus.png?7681cc"
+  },
+  {
+   "slug": "the-nameless-anomaly",
+   "name": "The Nameless Anomaly",
+   "raid": "The Nameless Anomaly",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Nameless_Anomaly_(Boss)",
+   "image_url": "https://wynncraft.wiki.gg/images/TheNamelessAnomaly%28Boss%29.png?e7f35d"
+  },
+  {
+   "slug": "anathema",
+   "name": "Anathema",
+   "raid": "Nexus of Light",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Anathema",
+   "image_url": "https://wynncraft.wiki.gg/images/Anathema%28Render%29.png?a83e45"
+  }
+ ]
+}
