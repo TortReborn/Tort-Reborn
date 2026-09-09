@@ -38,9 +38,9 @@ TIERS = {
     "rare": {"accent": (96, 165, 250), "glow": (30, 90, 190)},
     "epic": {"accent": (192, 132, 252), "glow": (110, 50, 180)},
     "legendary": {"accent": (251, 191, 36), "glow": (170, 110, 10)},
-    # The five raid bosses, above legendary. A hot ember orange, well clear of
-    # legendary gold so the two never read as each other.
-    "fabled": {"accent": (255, 106, 61), "glow": (170, 45, 10)},
+    # The five raid bosses, above legendary. Red, which is what Wynncraft
+    # itself uses for Fabled, and well clear of legendary gold.
+    "fabled": {"accent": (255, 85, 85), "glow": (150, 25, 25)},
 }
 
 # 1/1 member cards are tiered by the holder's guild rank rather than by

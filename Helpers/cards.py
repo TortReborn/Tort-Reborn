@@ -52,7 +52,7 @@ TIER_COLORS = {
     "rare": 0x60A5FA,
     "epic": 0xC084FC,
     "legendary": 0xFBBF24,
-    "fabled": 0xFF6A3D,
+    "fabled": 0xFF5555,
     "member": 0xF2549A,
 }
 
