@@ -190,7 +190,7 @@ def _prismatic_border(card, box, radius, width=3):
 
 
 def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
-                badge: str | None = None, stars: int = 1,
+                badge: str | None = None, stars: int = 0,
                 max_stars: int | None = None) -> Image.Image:
     """Draw a single card. Falls back to a '?' panel when art is missing."""
     style = TIERS.get(tier, TIERS["common"])
@@ -290,9 +290,12 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     return card
 
 
-def card_file(card: dict, badge: str | None = None, stars: int = 1,
+def card_file(card: dict, badge: str | None = None, stars: int = 0,
               max_stars: int | None = None):
     """Render a card from a card-set entry into a discord.File.
+
+    Stars default to none: a card out of a reel is unfused, and stars count
+    merges behind it rather than the card itself.
 
     Member 1/1s carry their own badge and are framed by guild rank, so the
     badge defaults to 1 / 1 for them unless the caller says otherwise.
