@@ -113,10 +113,16 @@ MAX_TANK = max(TANK_TIERS)
 TRICKLE_CAP_HOURS = 24  # offline pearls stop accruing after a day
 
 # ── Daily ────────────────────────────────────────────────────────────────────
-DAILY_PEARLS = 50
-DAILY_STREAK_BONUS = 10      # per consecutive day
-DAILY_STREAK_CAP = 10        # bonus stops growing here
-DAILY_REELS = 3            # held apart from the bank, see bait_reels
+# Bait pays in bands rather than a per-day drip, so there is a rung to aim at
+# instead of a number that creeps by ten. Each entry is the first day of its
+# band and the last one runs forever. Reels land in the bait pocket, held
+# apart from the bank -- see bait_reels.
+DAILY_TIERS = [
+    {"from_day": 1, "reels": 2, "pearls": 50},
+    {"from_day": 4, "reels": 4, "pearls": 100},
+    {"from_day": 7, "reels": 6, "pearls": 150},
+]
+MAX_BAIT_REELS = max(t["reels"] for t in DAILY_TIERS)
 
 # ── Wishlist ─────────────────────────────────────────────────────────────────
 # Wishes never touch tier odds, only which card is drawn once a tier has
@@ -328,6 +334,34 @@ def bank_cap(tank_tier: int) -> int:
 
 def wish_slots(tank_tier: int) -> int:
     return TANK_TIERS.get(tank_tier, TANK_TIERS[1])["wishes"]
+
+
+def daily_tier(streak: int) -> dict:
+    """What a streak of this length is worth."""
+    band = DAILY_TIERS[0]
+    for t in DAILY_TIERS:
+        if streak >= t["from_day"]:
+            band = t
+    return band
+
+
+def next_daily_tier(streak: int) -> dict | None:
+    """The band above this streak, or None once it is at the top."""
+    for t in DAILY_TIERS:
+        if streak < t["from_day"]:
+            return t
+    return None
+
+
+def _daily_case_sql(field: str, streak_expr: str) -> str:
+    """A CASE over the streak bands, richest arm first.
+
+    The streak is worked out inside the claim's UPDATE, so what it pays has
+    to be worked out there too, from the same expression.
+    """
+    arms = " ".join(f"WHEN {streak_expr} >= {t['from_day']} THEN {t[field]}"
+                    for t in reversed(DAILY_TIERS))
+    return f"(CASE {arms} ELSE {DAILY_TIERS[0][field]} END)"
 
 
 def fusion_cost(to_star: int, tier: str | None = None) -> tuple[int, int]:
@@ -556,7 +590,7 @@ def db_refund_reel(user_id: int, bait: bool = False):
     the whole thing the separate pocket exists to prevent.
     """
     if bait:
-        restore = 'bait_reels = LEAST(%s, bait_reels + 1)' % DAILY_REELS
+        restore = 'bait_reels = LEAST(%s, bait_reels + 1)' % MAX_BAIT_REELS
     else:
         restore = 'reels = LEAST(%s, reels + 1)' % _bank_cap_sql()
     db = DB()
@@ -671,9 +705,13 @@ def db_claim_daily(user_id: int) -> dict:
     a second bank people sit on.
 
     The streak continues when the last claim was yesterday and resets
-    otherwise, decided in SQL so two fast clicks cannot both land.
+    otherwise, decided in SQL so two fast clicks cannot both land. What it
+    pays comes off that same expression, so the streak reported back and the
+    band it was paid at can never disagree.
     """
     window = current_window()
+    new_streak = ('(CASE WHEN last_daily = CURRENT_DATE - 1 '
+                  'THEN streak + 1 ELSE 1 END)')
     db = DB()
     db.connect()
     try:
@@ -686,17 +724,15 @@ def db_claim_daily(user_id: int) -> dict:
         })
         db.cursor.execute(
             'UPDATE card_wallet SET '
-            '  streak = CASE WHEN last_daily = CURRENT_DATE - 1 THEN streak + 1 ELSE 1 END, '
+            f'  streak = {new_streak}, '
             '  last_daily = CURRENT_DATE, '
-            '  pearls = pearls + %(base)s + %(bonus)s * LEAST(%(cap_s)s, '
-            '      CASE WHEN last_daily = CURRENT_DATE - 1 THEN streak + 1 ELSE 1 END), '
-            '  bait_reels = %(reels)s '
+            f'  pearls = pearls + {_daily_case_sql("pearls", new_streak)}, '
+            f'  bait_reels = {_daily_case_sql("reels", new_streak)} '
             'WHERE "user" = %(uid)s '
             '  AND (last_daily IS NULL OR last_daily < CURRENT_DATE) '
             '  AND bait_reels = 0 '
             'RETURNING streak, pearls, reels, bait_reels',
-            {"base": DAILY_PEARLS, "bonus": DAILY_STREAK_BONUS,
-             "cap_s": DAILY_STREAK_CAP, "reels": DAILY_REELS, "uid": user_id},
+            {"uid": user_id},
         )
         row = db.cursor.fetchone()
         if not row:
@@ -719,7 +755,7 @@ def db_claim_daily(user_id: int) -> dict:
             "reels": row[2],
             "bait_reels": row[3],
             "total_reels": row[2] + row[3],
-            "gained": DAILY_PEARLS + DAILY_STREAK_BONUS * min(DAILY_STREAK_CAP, streak),
+            "gained": daily_tier(streak)["pearls"],
         }
     finally:
         db.close()

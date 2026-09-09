@@ -573,7 +573,7 @@ class Cards(commands.Cog):
         embed = discord.Embed(
             title="Bait cast",
             description=(f"**+{result['gained']:,}** pearls and "
-                         f"**+{cardlib.DAILY_REELS}** bait reels"),
+                         f"**+{result['bait_reels']}** bait reels"),
             color=0x38C9BD)
         embed.add_field(name="Streak", value=f"{result['streak']} day"
                         f"{'' if result['streak'] == 1 else 's'}")
@@ -582,9 +582,14 @@ class Cards(commands.Cog):
             name="Reels",
             value=f"{result['total_reels']} "
                   f"({result['bait_reels']} from bait)")
-        if result["streak"] < cardlib.DAILY_STREAK_CAP:
-            embed.set_footer(
-                text=f"Streak bonus grows until day {cardlib.DAILY_STREAK_CAP}")
+
+        # Name the next rung rather than the whole ladder: one line, and it
+        # is the only part of the ladder that is worth acting on.
+        nxt = cardlib.next_daily_tier(result["streak"])
+        embed.set_footer(
+            text=(f"Day {nxt['from_day']}: {nxt['reels']} reels and "
+                  f"{nxt['pearls']} pearls a day" if nxt else
+                  "Top streak — keep it up."))
         reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
         await ctx.followup.send(
             content=f"-# Bait reels are spent first, and the next bait waits "
@@ -612,8 +617,10 @@ class Cards(commands.Cog):
             name="Start here",
             value=(f"`/reel` — pull a card. You get **{cardlib.REELS_PER_WINDOW}** "
                    f"more every 6 hours, and can hold **{cap}** at a time.\n"
-                   "`/bait` — your daily pearls and "
-                   f"{cardlib.DAILY_REELS} bait reels."),
+                   "`/bait` — your daily pearls and bait reels. Both climb "
+                   f"with the streak, up to **{cardlib.MAX_BAIT_REELS}** "
+                   f"reels and **{cardlib.DAILY_TIERS[-1]['pearls']}** "
+                   "pearls a day."),
             inline=False)
         embed.add_field(
             name="Your collection",
