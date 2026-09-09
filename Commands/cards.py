@@ -688,7 +688,7 @@ class Cards(commands.Cog):
         embed = discord.Embed(color=_card_color(match),
                               description=_wiki_line(match))
         embed.set_image(url=f"attachment://{file.filename}")
-        held = " · ".join(
+        held = "" if match.get("member") else " · ".join(
             f"{c}× {_level_label(match, st) or 'plain'}"
             for st, c in sorted(entry["levels"].items()))
         embed.set_footer(text=_credit(match, held))
@@ -758,12 +758,17 @@ class Cards(commands.Cog):
             chunk = rows[i:i + CARDS_PER_PAGE]
             lines = []
             for c, e in chunk:
-                tier = "1/1" if c.get("member") else _tier_label(c["tier"])
+                member = c.get("member")
+                tier = "1/1" if member else _tier_label(c["tier"])
+                # A 1/1 has no count worth printing: there is one, there was
+                # only ever going to be one, and it cannot be fused.
                 bits = []
-                for st, n in sorted(e["levels"].items()):
-                    label = _level_label(c, st)
-                    bits.append(f"{label}×{n}" if label else f"×{n}")
-                lines.append(f"`{tier:9}` {c['name']} " + " ".join(bits))
+                if not member:
+                    for st, n in sorted(e["levels"].items()):
+                        label = _level_label(c, st)
+                        bits.append(f"{label}×{n}" if label else f"×{n}")
+                line = f"`{tier:9}` {c['name']}"
+                lines.append(f"{line} {' '.join(bits)}" if bits else line)
             embed = discord.Embed(
                 title=f"{target.display_name}'s Tank",
                 description=header + "\n\n" + "\n".join(lines),
