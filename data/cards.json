@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-09T19:27:11+00:00",
+ "generated_at": "2026-09-09T19:28:51+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 550,
+ "count": 551,
  "cards": [
   {
    "slug": "tasim",
@@ -1097,6 +1097,14 @@
    "lines": 46,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Jenprest",
    "image_url": "https://wynncraft.wiki.gg/images/Jenprest.png?bd2b3f",
+   "tier": "rare"
+  },
+  {
+   "slug": "antikythera-supercomputer",
+   "name": "Antikythera Supercomputer",
+   "lines": 46,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Antikythera_Supercomputer",
+   "image_url": "https://wynncraft.wiki.gg/images/AntikytheraSupercomputer.png?a1226f",
    "tier": "rare"
   },
   {

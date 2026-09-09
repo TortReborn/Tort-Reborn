@@ -40,8 +40,7 @@ BAD_RENAME = {                      # search fallback matched the wrong thing
     "Villagers": "Villager", "Doguns": "Dogun",
 }
 REJECT = {"Tunnel Dweller Chieftain", "Garoth's Journal", "Sol", "Blueberry",
-          "Guard Golem", "Teleportation Mech", "Antikythera Supercomputer",
-          "??? (Wynn Plains Monument)"}
+          "Guard Golem", "Teleportation Mech", "??? (Wynn Plains Monument)"}
 
 QUEST_RE = re.compile(r"^\*+\s*'''(.{1,120}?)'''", re.M)
 TMPL_RE = re.compile(r"\{\{\s*Dialogue\s*\|[^|}]*\|([^|}]*)\|", re.I)

@@ -1992,6 +1992,18 @@
   "appears_in": "Queen's Recruit | The Sewers of Ragni"
  },
  {
+  "name": "Antikythera Supercomputer",
+  "tier": "rare",
+  "lines": 46,
+  "quests": 2,
+  "aliases": "",
+  "removed_content_only": false,
+  "formats": "quest",
+  "wiki_url": "https://wynncraft.wiki.gg/wiki/Antikythera_Supercomputer",
+  "image_url": "https://wynncraft.wiki.gg/images/AntikytheraSupercomputer.png?a1226f",
+  "appears_in": "Fallen Factory | A Hunter's Calling"
+ },
+ {
   "name": "Captain Enduyn",
   "tier": "rare",
   "lines": 45,
