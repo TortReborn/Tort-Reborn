@@ -1164,6 +1164,18 @@
   "appears_in": "Royal Trials | Royal Trials (1.20)"
  },
  {
+  "name": "??? (A Hunter's Calling)",
+  "tier": "rare",
+  "lines": 74,
+  "quests": 2,
+  "aliases": "???",
+  "removed_content_only": false,
+  "formats": "quest",
+  "wiki_url": "https://wynncraft.wiki.gg/wiki/%3F%3F%3F_(A_Hunter%27s_Calling)",
+  "image_url": "https://wynncraft.wiki.gg/images/AHunter%27sCallingStartNPC.png?edceec",
+  "appears_in": "A Hunter's Calling"
+ },
+ {
   "name": "The Envoy",
   "tier": "rare",
   "lines": 73,

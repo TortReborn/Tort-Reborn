@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-09T18:07:37+00:00",
+ "generated_at": "2026-09-09T19:27:11+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 549,
+ "count": 550,
  "cards": [
   {
    "slug": "tasim",
@@ -649,6 +649,14 @@
    "lines": 74,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Cemor.png?ed852f",
+   "tier": "rare"
+  },
+  {
+   "slug": "a-hunter-s-calling",
+   "name": "??? (A Hunter's Calling)",
+   "lines": 74,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/%3F%3F%3F_(A_Hunter%27s_Calling)",
+   "image_url": "https://wynncraft.wiki.gg/images/AHunter%27sCallingStartNPC.png?edceec",
    "tier": "rare"
   },
   {
