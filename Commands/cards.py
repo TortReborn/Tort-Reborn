@@ -89,6 +89,27 @@ def _level_label(card: dict, star: int) -> str:
     return "MAX" if star >= cardlib.tier_max_stars(card) else "★" * star
 
 
+def _max_costs() -> str:
+    """Unfused copies behind a MAX card, tier by tier.
+
+    Grouped where tiers agree, so the line stays short as ceilings move: it
+    reads off TIER_MAX_STARS rather than repeating what is in it.
+    """
+    groups = {}
+    for tier in cardlib.CARD_TIERS:
+        copies = cardlib.base_copies_for(cardlib.TIER_MAX_STARS[tier])
+        groups.setdefault(copies, []).append(tier)
+
+    parts = []
+    for copies, tiers in groups.items():
+        if len(tiers) > 1:
+            names = f"{', '.join(tiers[:-1])} or {tiers[-1]}"
+        else:
+            names = tiers[0]
+        parts.append(f"**{copies}** {names}")
+    return " · ".join(parts)
+
+
 def _star_name(card: dict, star: int) -> str:
     label = _level_label(card, star)
     return f"{card['name']} {label}".strip() if label else card["name"]
@@ -604,10 +625,8 @@ class Cards(commands.Cog):
             name="Spending pearls",
             value=(f"`/tank fuse` — merge "
                    f"**{cardlib.FUSION_COPIES_PER_STEP}** copies of a level "
-                   "into one of the next. A "
-                   f"{cardlib.MAX_STARS}★ is "
-                   f"{cardlib.base_copies_for(cardlib.MAX_STARS)} copies of "
-                   f"one card, so it is the long haul.\n"
+                   "into one of the next. To MAX: "
+                   f"{_max_costs()}.\n"
                    "`/tank upgrade` — a bigger tank banks more reels and "
                    "trickles pearls on its own."),
             inline=False)
@@ -618,13 +637,13 @@ class Cards(commands.Cog):
             inline=False)
         embed.add_field(
             name="The whole set",
-            value=("`/pool list` — everything that can drop, rarest first.\n"
+            value=("`/pool list` — everything that can be reeled in.\n"
                    "`/pool view` — any card, owned or not.\n"
                    "`/pool rates` — the drop rates for each tier."),
             inline=False)
         embed.add_field(
             name="With other people",
-            value=("`/tank trade` — swap any copy you hold.\n"
+            value=("`/tank trade` — swap any card you hold.\n"
                    "`/tank leaderboard` — the best collections in the guild."),
             inline=False)
 
