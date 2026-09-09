@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-08T23:10:26+00:00",
+ "generated_at": "2026-09-09T05:10:56+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 543,
+ "count": 548,
  "cards": [
   {
    "slug": "tasim",
@@ -4346,6 +4346,51 @@
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant",
    "image_url": "https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c",
    "tier": "common"
+  },
+  {
+   "slug": "orphion",
+   "name": "Orphion",
+   "raid": "Orphion's Nexus of Light",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orphion",
+   "image_url": "https://wynncraft.wiki.gg/images/Orphion%2CLightIncarnate.png?4920da",
+   "tier": "fabled",
+   "lines": 0
+  },
+  {
+   "slug": "grootslang-wyrmling",
+   "name": "Grootslang Wyrmling",
+   "raid": "The Nest of the Grootslangs",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Grootslang_Wyrmling",
+   "image_url": "https://wynncraft.wiki.gg/images/GrootslangWyrmling.png?4bfbb5",
+   "tier": "fabled",
+   "lines": 0
+  },
+  {
+   "slug": "the-canyon-colossus",
+   "name": "The Canyon Colossus",
+   "raid": "The Canyon Colossus",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Canyon_Colossus_(Boss)",
+   "image_url": "https://wynncraft.wiki.gg/images/TheColossus.png?7681cc",
+   "tier": "fabled",
+   "lines": 0
+  },
+  {
+   "slug": "the-nameless-anomaly",
+   "name": "The Nameless Anomaly",
+   "raid": "The Nameless Anomaly",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Nameless_Anomaly_(Boss)",
+   "image_url": "https://wynncraft.wiki.gg/images/TheNamelessAnomaly%28Boss%29.png?e7f35d",
+   "tier": "fabled",
+   "lines": 0
+  },
+  {
+   "slug": "anathema",
+   "name": "Anathema",
+   "raid": "Nexus of Light",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Anathema",
+   "image_url": "https://wynncraft.wiki.gg/images/Anathema%28Render%29.png?a83e45",
+   "tier": "fabled",
+   "lines": 0
   }
  ]
 }

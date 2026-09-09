@@ -38,6 +38,9 @@ TIERS = {
     "rare": {"accent": (96, 165, 250), "glow": (30, 90, 190)},
     "epic": {"accent": (192, 132, 252), "glow": (110, 50, 180)},
     "legendary": {"accent": (251, 191, 36), "glow": (170, 110, 10)},
+    # The five raid bosses, above legendary. A hot ember orange, well clear of
+    # legendary gold so the two never read as each other.
+    "fabled": {"accent": (255, 106, 61), "glow": (170, 45, 10)},
 }
 
 # 1/1 member cards are tiered by the holder's guild rank rather than by
@@ -69,21 +72,24 @@ PRISMATIC = [(255, 120, 200), (150, 200, 255), (140, 255, 210), (255, 225, 140)]
 
 # How far a card can be fused, by tier. Copies triple each step, so these are
 # 81, 9 and 3 base copies respectively.
+# Stars count merges, so 0 is an unfused card. Copies behind a maxed card:
+# 81 for the common half, 9 for an epic, 3 for a legendary or a fabled.
 MAX_STARS_BY_TIER = {
-    "common": 5, "uncommon": 5, "rare": 5, "epic": 3, "legendary": 2,
+    "common": 4, "uncommon": 4, "rare": 4, "epic": 2,
+    "legendary": 1, "fabled": 1,
 }
 
 
 def max_stars_for(tier: str) -> int:
     """A member 1/1 has no ladder; everything else has its tier's ceiling."""
-    return MAX_STARS_BY_TIER.get(tier, 1)
+    return MAX_STARS_BY_TIER.get(tier, 0)
 
 
 def _fusion_progress(stars: int, max_stars: int) -> float:
     """0 for unfused, 1 at this tier's ceiling."""
-    if max_stars <= 1 or stars <= 1:
+    if max_stars <= 0 or stars <= 0:
         return 0.0
-    return min(1.0, (stars - 1) / (max_stars - 1))
+    return min(1.0, stars / max_stars)
 
 
 def _ring_colour(progress: float):
@@ -192,8 +198,8 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     if max_stars is None:
         max_stars = max_stars_for(tier)
     progress = _fusion_progress(stars, max_stars)
-    maxed = stars > 1 and progress >= 1.0
-    ring = _ring_colour(progress) if stars > 1 else None
+    maxed = stars > 0 and progress >= 1.0
+    ring = _ring_colour(progress) if stars > 0 else None
 
     card = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     body = _vgrad((W, H), BG_TOP, BG_BOT).convert("RGBA")
@@ -235,7 +241,7 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     nf = _fit_font(d, name, FONT_GAME, W - 2 * PAD - 14, 27)
     lf = _font(FONT_UI, 13)
     name_h, gap, tier_h = 27, 14, 13
-    star_h = 18 if stars > 1 else 0
+    star_h = 18 if stars > 0 else 0
     top = ny + max(8, (H - ny - (name_h + gap + tier_h + star_h)) // 2)
 
     d.text(((W - d.textlength(name, font=nf)) / 2, top), name, font=nf,
@@ -245,7 +251,7 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     d.text(((W - d.textlength(spaced, font=lf)) / 2, tier_y),
            spaced, font=lf, fill=_readable(accent))
 
-    if stars > 1:
+    if stars > 0:
         row = " ".join(["\u2605"] * stars)
         d.text(((W - d.textlength(row, font=lf)) / 2, tier_y + tier_h + 6),
                row, font=lf, fill=_readable(ring))
