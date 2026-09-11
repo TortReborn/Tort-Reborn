@@ -41,6 +41,11 @@ BAD_RENAME = {                      # search fallback matched the wrong thing
 }
 REJECT = {"Tunnel Dweller Chieftain", "Garoth's Journal", "Sol", "Blueberry",
           "Guard Golem", "Teleportation Mech", "??? (Wynn Plains Monument)"}
+# Characters wanted in the set that the line cutoff alone will not seat. KEEP
+# admits one whose count falls under MIN_LINES; EXTRA_PAGES crawls a page the
+# categories miss, for someone the wiki files away from NPCs.
+KEEP = {"Argus", "Captain Redbeard"}
+EXTRA_PAGES = {"Captain Redbeard"}
 
 QUEST_RE = re.compile(r"^\*+\s*'''(.{1,120}?)'''", re.M)
 TMPL_RE = re.compile(r"\{\{\s*Dialogue\s*\|[^|}]*\|([^|}]*)\|", re.I)
@@ -247,7 +252,8 @@ def main():
     # is a bare title, so any "/" is a translation or a list page.
     def ok(t):
         return "/" not in t
-    pages = sorted({p for p in quests + discoveries + npcs + tmpl if ok(p)})
+    pages = sorted({p for p in quests + discoveries + npcs + tmpl if ok(p)}
+                   | EXTRA_PAGES)
     print(f"  quests {len(quests)}  discoveries {len(discoveries)}  "
           f"npcs {len(npcs)}  template {len(tmpl)}")
     print(f"  unique pages after dropping translations: {len(pages)}")
@@ -318,8 +324,11 @@ def main():
              if k not in DROP and k not in REJECT]
     chars.sort(key=lambda c: -c["lines"])
 
-    corpus = [c for c in chars if c["lines"] >= MIN_LINES]
-    print(f"\ncharacters at >= {MIN_LINES} lines: {len(corpus)}")
+    corpus = [c for c in chars
+              if c["lines"] >= MIN_LINES or c["name"] in KEEP]
+    kept = sum(1 for c in corpus if c["lines"] < MIN_LINES)
+    print(f"\ncharacters at >= {MIN_LINES} lines: {len(corpus) - kept} "
+          f"(+{kept} kept under the cutoff)")
 
     pages_with = sorted({c["page"] for c in corpus if c["page"]})
     print(f"fetching images for {len(pages_with)} pages...")

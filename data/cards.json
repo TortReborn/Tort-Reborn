@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-09T19:28:51+00:00",
+ "generated_at": "2026-09-11T00:14:44+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 551,
+ "count": 553,
  "cards": [
   {
    "slug": "tasim",
@@ -441,7 +441,7 @@
    "lines": 90,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Llevigar_Archivist",
    "image_url": "https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1",
-   "tier": "rare"
+   "tier": "epic"
   },
   {
    "slug": "caissop",
@@ -4361,6 +4361,22 @@
    "lines": 8,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant",
    "image_url": "https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c",
+   "tier": "common"
+  },
+  {
+   "slug": "argus",
+   "name": "Argus",
+   "lines": 4,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Argus",
+   "image_url": "https://wynncraft.wiki.gg/images/Argus.png?2651a7",
+   "tier": "common"
+  },
+  {
+   "slug": "captain-redbeard",
+   "name": "Captain Redbeard",
+   "lines": 2,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Redbeard",
+   "image_url": "https://wynncraft.wiki.gg/images/CaptainRedbeard.png?1b7235",
    "tier": "common"
   },
   {

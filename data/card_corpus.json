@@ -8302,5 +8302,29 @@
   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant",
   "image_url": "https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c",
   "appears_in": "WynnExcavation Site D"
+ },
+ {
+  "name": "Argus",
+  "tier": "common",
+  "lines": 4,
+  "quests": 1,
+  "aliases": "",
+  "removed_content_only": false,
+  "formats": "quest",
+  "wiki_url": "https://wynncraft.wiki.gg/wiki/Argus",
+  "image_url": "https://wynncraft.wiki.gg/images/Argus.png?2651a7",
+  "appears_in": "Redbeard's Booty"
+ },
+ {
+  "name": "Captain Redbeard",
+  "tier": "common",
+  "lines": 2,
+  "quests": 1,
+  "aliases": "Redbeard",
+  "removed_content_only": false,
+  "formats": "quest",
+  "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Redbeard",
+  "image_url": "https://wynncraft.wiki.gg/images/CaptainRedbeard.png?1b7235",
+  "appears_in": "Captain Redbeard"
  }
 ]
