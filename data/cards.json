@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-09T19:28:51+00:00",
+ "generated_at": "2026-09-12T02:01:20+00:00",
  "source": "data/card_corpus.json (art-only)",
  "count": 551,
  "cards": [
@@ -2436,14 +2436,6 @@
    "tier": "uncommon"
   },
   {
-   "slug": "orphion",
-   "name": "Orphion",
-   "lines": 20,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orphion",
-   "image_url": "https://wynncraft.wiki.gg/images/Orphion%2CLightIncarnate.png?4920da",
-   "tier": "uncommon"
-  },
-  {
    "slug": "weaponsmith",
    "name": "Weaponsmith",
    "lines": 20,
@@ -3313,14 +3305,6 @@
    "lines": 12,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Siwel",
    "image_url": "https://wynncraft.wiki.gg/images/Siwel.png?f299d1",
-   "tier": "common"
-  },
-  {
-   "slug": "minigame-expert",
-   "name": "Minigame Expert",
-   "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Minigame_Expert",
-   "image_url": "https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5",
    "tier": "common"
   },
   {
@@ -4361,6 +4345,22 @@
    "lines": 8,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant",
    "image_url": "https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c",
+   "tier": "common"
+  },
+  {
+   "slug": "argus",
+   "name": "Argus",
+   "lines": 4,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Argus",
+   "image_url": "https://wynncraft.wiki.gg/images/Argus.png?2651a7",
+   "tier": "common"
+  },
+  {
+   "slug": "captain-redbeard",
+   "name": "Captain Redbeard",
+   "lines": 2,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Redbeard",
+   "image_url": "https://wynncraft.wiki.gg/images/CaptainRedbeard.png?1b7235",
    "tier": "common"
   },
   {

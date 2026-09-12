@@ -58,6 +58,7 @@ _ENV_CONFIG = {
         "MILITARY_ROLE_ID": 1369134565335236646,
         "HQ_TEAM_ROLE_ID": 1486367257641619537,
         "ANNIHILATION_PING_ROLE_ID": 1523404277043957921,
+        "CARD_PING_ROLE_ID": 1548393718472511702,
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1371292212729479207>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292093074640936>",
@@ -125,6 +126,7 @@ _ENV_CONFIG = {
         "MILITARY_ROLE_ID": 894276062693949521,
         "HQ_TEAM_ROLE_ID": 1405514713554485309,
         "ANNIHILATION_PING_ROLE_ID": 1275082923812458506,
+        "CARD_PING_ROLE_ID": 1548393155018104861,
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1126608994526560306>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292000963395655>",
@@ -238,6 +240,9 @@ MANUAL_REVIEW_ROLE_ID = _cfg["MANUAL_REVIEW_ROLE_ID"]
 MILITARY_ROLE_ID = _cfg["MILITARY_ROLE_ID"]
 HQ_TEAM_ROLE_ID = _cfg["HQ_TEAM_ROLE_ID"]
 ANNIHILATION_PING_ROLE_ID = _cfg["ANNIHILATION_PING_ROLE_ID"]
+# The six-hour reel refresh mentions this role. 0 means no role exists yet:
+# the refresh posts silently and /tank ping says so.
+CARD_PING_ROLE_ID = _cfg["CARD_PING_ROLE_ID"]
 # Always prod — used for cross-server/DM checks that must validate against the real guild
 PROD_TAQ_GUILD_ID      = _ENV_CONFIG["prod"]["TAQ_GUILD_ID"]
 PROD_MILITARY_ROLE_ID  = _ENV_CONFIG["prod"]["MILITARY_ROLE_ID"]
