@@ -98,8 +98,21 @@ def main() -> int:
 
     with open(CORPUS, encoding="utf-8") as f:
         corpus = json.load(f)
+    with open(FABLED, encoding="utf-8") as f:
+        fab = json.load(f)
 
-    playable = [c for c in corpus if c.get("image_url")]
+    # A raid boss who also speaks gets mined like anyone else. The fabled
+    # entry wins: the same slug twice would let an uncommon reel hand out the
+    # fabled card, since the collection only stores the slug.
+    fabled_slugs = {c["slug"] for c in fab["cards"]}
+    playable = []
+    for c in corpus:
+        if not c.get("image_url"):
+            continue
+        if slugify(c["name"], set()) in fabled_slugs:
+            print(f"  {c['name']} is fabled, dropping the mined copy")
+            continue
+        playable.append(c)
     if not playable:
         print("no cards with art in the corpus", file=sys.stderr)
         return 1
@@ -118,8 +131,6 @@ def main() -> int:
 
     # The raid bosses are hand-curated and sit above legendary, so they are
     # merged in after tiering rather than ranked by dialogue like the rest.
-    with open(FABLED, encoding="utf-8") as f:
-        fab = json.load(f)
     for c in fab["cards"]:
         cards.append({**c, "tier": fab["tier"], "lines": 0})
     print(f"  merged {len(fab['cards'])} {fab['tier']} cards")

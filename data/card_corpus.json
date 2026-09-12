@@ -6036,18 +6036,6 @@
   "appears_in": "Haven Antiquity"
  },
  {
-  "name": "Minigame Expert",
-  "tier": "common",
-  "lines": 12,
-  "quests": 1,
-  "aliases": "",
-  "removed_content_only": false,
-  "formats": "quest",
-  "wiki_url": "https://wynncraft.wiki.gg/wiki/Minigame_Expert",
-  "image_url": "https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5",
-  "appears_in": "Minigame Expert"
- },
- {
   "name": "Phoenix Poacher",
   "tier": "common",
   "lines": 12,

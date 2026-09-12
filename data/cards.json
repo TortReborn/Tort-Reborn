@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-11T00:14:44+00:00",
+ "generated_at": "2026-09-12T02:01:20+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 553,
+ "count": 551,
  "cards": [
   {
    "slug": "tasim",
@@ -441,7 +441,7 @@
    "lines": 90,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Llevigar_Archivist",
    "image_url": "https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1",
-   "tier": "epic"
+   "tier": "rare"
   },
   {
    "slug": "caissop",
@@ -2436,14 +2436,6 @@
    "tier": "uncommon"
   },
   {
-   "slug": "orphion",
-   "name": "Orphion",
-   "lines": 20,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orphion",
-   "image_url": "https://wynncraft.wiki.gg/images/Orphion%2CLightIncarnate.png?4920da",
-   "tier": "uncommon"
-  },
-  {
    "slug": "weaponsmith",
    "name": "Weaponsmith",
    "lines": 20,
@@ -3313,14 +3305,6 @@
    "lines": 12,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Siwel",
    "image_url": "https://wynncraft.wiki.gg/images/Siwel.png?f299d1",
-   "tier": "common"
-  },
-  {
-   "slug": "minigame-expert",
-   "name": "Minigame Expert",
-   "lines": 12,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Minigame_Expert",
-   "image_url": "https://wynncraft.wiki.gg/images/RotatingGameExpert.png?5191f5",
    "tier": "common"
   },
   {

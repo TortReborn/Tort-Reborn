@@ -40,7 +40,9 @@ BAD_RENAME = {                      # search fallback matched the wrong thing
     "Villagers": "Villager", "Doguns": "Dogun",
 }
 REJECT = {"Tunnel Dweller Chieftain", "Garoth's Journal", "Sol", "Blueberry",
-          "Guard Golem", "Teleportation Mech", "??? (Wynn Plains Monument)"}
+          "Guard Golem", "Teleportation Mech", "??? (Wynn Plains Monument)",
+          "Minigame Expert"}   # a page of several fair NPCs; its lead image
+                               # is the Rotating Game Expert, who has a card
 # Characters wanted in the set that the line cutoff alone will not seat. KEEP
 # admits one whose count falls under MIN_LINES; EXTRA_PAGES crawls a page the
 # categories miss, for someone the wiki files away from NPCs.
