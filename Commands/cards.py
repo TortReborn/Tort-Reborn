@@ -12,7 +12,7 @@ from discord.commands import SlashCommandGroup, slash_command
 from discord.ext import commands, pages
 
 from Helpers import cards as cardlib
-from Helpers.card_render import card_file
+from Helpers.card_render import card_file, spread_file
 from Helpers.logger import ERROR, SYSTEM, log
 from Helpers.pagination import add_paginator_buttons
 from Helpers.variables import CARD_PING_ROLE_ID, TAQ_GUILD_IDS
@@ -188,6 +188,23 @@ async def _autocomplete_owned(ctx: discord.AutocompleteContext):
         if card and typed in card["name"].lower():
             names.append(card["name"])
     return sorted(names)[:25]
+
+
+async def _autocomplete_discardable(ctx: discord.AutocompleteContext):
+    """Plain stacks of anything that has a tier below it."""
+    try:
+        choices = await _stack_choices(ctx.interaction.user.id,
+                                       (ctx.value or "").lower(),
+                                       resolve_member=False)
+    except Exception:
+        return []
+    out = []
+    for ch in choices:
+        picked = _parse_stack(ch.value)
+        if picked and picked[1] == 0 and cardlib.discard_yield(
+                cardlib.get_card(picked[0])):
+            out.append(ch)
+    return out
 
 
 async def _autocomplete_pool(ctx: discord.AutocompleteContext):
@@ -494,6 +511,101 @@ class TradeView(discord.ui.View):
         await self._close(interaction, "Trade declined.")
 
 
+def _yield_line() -> str:
+    """The discard table in one line, read off DISCARD_YIELD."""
+    return " · ".join(f"{t} → {n} {below}"
+                      for t, (below, n) in cardlib.DISCARD_YIELD.items())
+
+
+async def _do_discard(user_id: int, card: dict, count: int):
+    """Roll the outputs, make the swap, and build the reveal.
+
+    Returns (embed, file, outputs) or (None, None, None) when the copies were
+    gone by the time the write ran.
+    """
+    below, per = cardlib.discard_yield(card)
+    wishes = set(await asyncio.to_thread(cardlib.db_get_wishes, user_id))
+    outputs = [cardlib.roll_in_tier(below, wishes) for _ in range(count * per)]
+
+    result = await asyncio.to_thread(cardlib.db_discard, user_id, card["slug"],
+                                     count, [c["slug"] for c in outputs])
+    if result is None:
+        return None, None, None
+
+    file = await asyncio.to_thread(spread_file, outputs)
+    tally = {}
+    for c in outputs:
+        tally[c["slug"]] = tally.get(c["slug"], 0) + 1
+    by_slug = {c["slug"]: c for c in outputs}
+    lines = []
+    for slug, n in sorted(tally.items(), key=lambda kv: by_slug[kv[0]]["name"]):
+        mark = " — new" if slug in result["new"] else ""
+        lines.append(f"{n}× **{by_slug[slug]['name']}**{mark}")
+
+    embed = discord.Embed(
+        title=f"Discarded {count}× {card['name']}",
+        description=(f"**{len(outputs)}** {_tier_label(below).lower()}"
+                     f"{'' if len(outputs) == 1 else 's'} swam in:\n"
+                     + "\n".join(lines)),
+        color=cardlib.TIER_COLORS[below])
+    embed.set_image(url=f"attachment://{file.filename}")
+    embed.set_footer(text=_credit(
+        card,
+        f"{result['left']} plain {card['name']} left",
+        f"{len(result['new'])} new to your tank" if result["new"] else None))
+    return embed, file, outputs
+
+
+class DiscardView(discord.ui.View):
+    """Confirm before a legendary or fabled goes. Owner only, one shot."""
+
+    def __init__(self, owner_id: int, card: dict, count: int):
+        super().__init__(timeout=120)
+        self.owner_id = owner_id
+        self.card = card
+        self.count = count
+        self.message = None
+        self.done = False
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.owner_id:
+            await interaction.response.send_message(
+                "That's someone else's discard.", ephemeral=True)
+            return False
+        return True
+
+    async def on_timeout(self):
+        if self.done or self.message is None:
+            return
+        for child in self.children:
+            child.disabled = True
+        try:
+            await self.message.edit(content="-# Discard expired — nothing "
+                                            "happened.", view=self)
+        except discord.HTTPException:
+            pass
+
+    @discord.ui.button(label="Discard", style=discord.ButtonStyle.danger)
+    async def confirm(self, button: discord.ui.Button,
+                      interaction: discord.Interaction):
+        self.done = True
+        embed, file, _ = await _do_discard(self.owner_id, self.card, self.count)
+        if embed is None:
+            return await interaction.response.edit_message(
+                content="Discard failed — those copies are no longer there.",
+                embed=None, view=None)
+        await interaction.response.edit_message(
+            content=None, embed=embed, file=file, attachments=[], view=None)
+        await _announce_and_reward(interaction.channel, interaction.user, None)
+
+    @discord.ui.button(label="Keep it", style=discord.ButtonStyle.secondary)
+    async def cancel(self, button: discord.ui.Button,
+                     interaction: discord.Interaction):
+        self.done = True
+        await interaction.response.edit_message(
+            content=f"Kept **{self.card['name']}**.", embed=None, view=None)
+
+
 class Cards(commands.Cog):
     # Two homes: /tank is yours, /pool is the world. /reel and /bait stay at
     # the top level because they are run constantly and burying the everyday
@@ -634,7 +746,10 @@ class Cards(commands.Cog):
             name="Your collection",
             value=("`/tank list` — everything you or another player owns.\n"
                    "`/tank view` — look at one of your cards up close.\n"
-                   "`/tank profile` — pearls, streak, tank tier and totals."),
+                   "`/tank profile` — pearls, streak, tank tier and totals.\n"
+                   "`/tank discard` — give up a plain copy for a roll of the "
+                   f"tier below: {_yield_line()}. Not 1/1s, and not fused "
+                   "copies."),
             inline=False)
         embed.add_field(
             name="Spending pearls",
@@ -1013,6 +1128,77 @@ class Cards(commands.Cog):
             f"{result['left']} {level} left",
             f"{cardlib.base_copies_for(to_star)} copies behind it"))
         await ctx.followup.send(embed=embed, file=file)
+
+    # ── /tank discard ────────────────────────────────────────────────────────
+
+    @tank.command(
+        name="discard",
+        description="Give up a plain copy for a roll of the tier below")
+    async def tank_discard(
+        self, ctx: discord.ApplicationContext,
+        card: discord.Option(str, description="The plain copies to discard",
+                             autocomplete=_autocomplete_discardable),
+        count: discord.Option(
+            int, description="How many copies to discard (default 1)",
+            required=False, default=1, min_value=1),
+    ):
+        await ctx.defer()
+        picked = _parse_stack(card)
+        if picked is None:
+            return await ctx.followup.send(
+                "Pick a card from the list that appears as you type.",
+                ephemeral=True)
+        slug, star = picked
+        if cardlib.is_member_slug(slug):
+            return await ctx.followup.send(
+                "1/1 cards can't be discarded — there is only ever one.",
+                ephemeral=True)
+        match = cardlib.get_card(slug)
+        if match is None:
+            return await ctx.followup.send("That card doesn't exist.",
+                                           ephemeral=True)
+        if star != 0:
+            return await ctx.followup.send(
+                f"Only plain copies can be discarded. A "
+                f"{_level_label(match, star)} **{match['name']}** has "
+                f"{cardlib.base_copies_for(star)} copies fused into it.",
+                ephemeral=True)
+        yld = cardlib.discard_yield(match)
+        if yld is None:
+            return await ctx.followup.send(
+                f"**{match['name']}** is common — there is no tier below it "
+                "to roll from.", ephemeral=True)
+        below, per = yld
+
+        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id, slug)
+        have = (entry or {}).get("levels", {}).get(0, 0)
+        if have < 1:
+            return await ctx.followup.send(
+                f"You have no plain copies of **{match['name']}** to discard.",
+                ephemeral=True)
+        if count > have:
+            return await ctx.followup.send(
+                f"You have **{have}** plain cop{'y' if have == 1 else 'ies'} "
+                f"of **{match['name']}**, not {count}.", ephemeral=True)
+
+        total = count * per
+        if match["tier"] in cardlib.DISCARD_CONFIRM_TIERS:
+            view = DiscardView(ctx.author.id, match, count)
+            view.message = await ctx.followup.send(
+                f"Discard **{count}× {match['name']}** "
+                f"({_tier_label(match['tier']).lower()}) for **{total}** "
+                f"random {_tier_label(below).lower()}"
+                f"{'' if total == 1 else 's'}? This cannot be undone.",
+                view=view, wait=True)
+            return
+
+        embed, file, _ = await _do_discard(ctx.author.id, match, count)
+        if embed is None:
+            return await ctx.followup.send(
+                "Discard failed — those copies are no longer there.",
+                ephemeral=True)
+        await ctx.followup.send(embed=embed, file=file)
+        await _announce_and_reward(ctx.channel, ctx.author, None)
 
     # ── /tank trade ──────────────────────────────────────────────────────────
 

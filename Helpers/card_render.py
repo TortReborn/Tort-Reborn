@@ -290,6 +290,43 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     return card
 
 
+SPREAD_COLS = 5
+SPREAD_SCALE = 0.5
+SPREAD_GAP = 10
+
+
+def render_spread(cards: list) -> Image.Image:
+    """Several plain cards on one sheet, five to a row at half size.
+
+    A discard can turn one card into ten, and ten attachments is both
+    Discord's ceiling and a wall of embeds. One sheet reads as one event.
+    """
+    cw, ch = int(W * SPREAD_SCALE), int(H * SPREAD_SCALE)
+    cols = min(SPREAD_COLS, max(1, len(cards)))
+    rows = (len(cards) + cols - 1) // cols
+    sheet = Image.new("RGBA", (cols * cw + (cols + 1) * SPREAD_GAP,
+                               rows * ch + (rows + 1) * SPREAD_GAP),
+                      BG_BOT + (255,))
+    for i, card in enumerate(cards):
+        img = render_card(card["name"], card["tier"], card.get("slug", ""),
+                          card.get("image_url", ""))
+        img = img.resize((cw, ch), Image.LANCZOS)
+        x = SPREAD_GAP + (i % cols) * (cw + SPREAD_GAP)
+        y = SPREAD_GAP + (i // cols) * (ch + SPREAD_GAP)
+        sheet.paste(img, (x, y), img)
+    return sheet
+
+
+def spread_file(cards: list):
+    """render_spread as a discord.File."""
+    import discord
+
+    buf = BytesIO()
+    render_spread(cards).convert("RGB").save(buf, format="PNG")
+    buf.seek(0)
+    return discord.File(buf, filename=f"spread_{int(time.time())}.png")
+
+
 def card_file(card: dict, badge: str | None = None, stars: int = 0,
               max_stars: int | None = None):
     """Render a card from a card-set entry into a discord.File.

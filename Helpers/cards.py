@@ -99,6 +99,28 @@ TIER_MAX_STARS = {
     "legendary": 1, "fabled": 1,
 }
 
+# ── Discard ──────────────────────────────────────────────────────────────────
+# A plain copy goes back and the tier below rolls in its place, so the fourth
+# legendary that can never fuse anywhere still does something. The counts sit
+# just under the drop weights at the top (a legendary drops 2x as often as a
+# fabled, an epic 4.25x a legendary, a rare 18x an epic) so reeling stays the
+# main way in, and just over them at the bottom, where dupes pile up and the
+# point is a shot at something new. Commons have nowhere to go.
+#
+# Outputs pay no pearls: every card pays once, when it is reeled in, and a
+# chain of discards paying at every step would print them. Wishes apply, the
+# same way they do to a reel. Only unfused copies can be discarded, and never
+# a member 1/1.
+DISCARD_YIELD = {
+    "fabled": ("legendary", 2),
+    "legendary": ("epic", 4),
+    "epic": ("rare", 10),
+    "rare": ("uncommon", 2),
+    "uncommon": ("common", 2),
+}
+# Losing one of these to a mis-click is a month of pulls, so they confirm.
+DISCARD_CONFIRM_TIERS = {"fabled", "legendary"}
+
 # ── Tank tiers ───────────────────────────────────────────────────────────────
 # Upgrading raises how many reels you can bank, not how many you earn, so the
 # drop odds are untouched by progression.
@@ -382,6 +404,14 @@ def tier_max_stars(card: dict | None) -> int:
     return TIER_MAX_STARS.get(card.get("tier"), MAX_STARS)
 
 
+def discard_yield(card: dict | None) -> tuple[str, int] | None:
+    """(tier below, how many) a plain copy of this card turns into, or None
+    when it cannot be discarded at all."""
+    if not card or card.get("member"):
+        return None
+    return DISCARD_YIELD.get(card.get("tier"))
+
+
 def _bank_cap_sql(column: str = "tank_tier") -> str:
     """CASE expression so the refresh can cap against the row's own tank."""
     cases = " ".join(f"WHEN {t} THEN {c['bank']}" for t, c in TANK_TIERS.items())
@@ -413,7 +443,13 @@ def roll_card(wishes: set | None = None, rng: random.Random | None = None) -> di
     tier = roll_tier(r)
     if tier == "member":
         return {"tier": "member"}
+    return roll_in_tier(tier, wishes, r)
 
+
+def roll_in_tier(tier: str, wishes: set | None = None,
+                 rng: random.Random | None = None) -> dict:
+    """A card from one tier, with the wish redirect applied."""
+    r = rng or random
     pool = load_card_set()["by_tier"][tier]
     if wishes:
         wanted = [c for c in pool if c["slug"] in wishes]
@@ -932,6 +968,56 @@ def db_trade(from_user: int, to_user: int, give: str, give_star: int,
             (from_user, to_user))
         db.connection.commit()
         return True
+    except Exception:
+        db.connection.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def db_discard(user_id: int, slug: str, count: int, outputs: list) -> dict | None:
+    """Give up `count` plain copies of `slug` and bank `outputs` in their place.
+
+    The outputs are rolled by the caller; this only makes the swap hold
+    together. The copies leave and the outputs arrive in one transaction, and
+    the decrement is guarded on the count, so a double-click cannot discard
+    the same copies twice or bank two sets of outputs for one.
+
+    Returns {"left": plain copies remaining, "new": slugs first seen here},
+    or None when the copies were not there.
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'UPDATE card_collection SET count = count - %s '
+            'WHERE "user" = %s AND card = %s AND stars = 0 AND count >= %s '
+            'RETURNING count',
+            (count, user_id, slug, count))
+        row = db.cursor.fetchone()
+        if not row:
+            db.connection.rollback()
+            return None
+
+        added = {}
+        for out in outputs:
+            added[out] = added.get(out, 0) + 1
+        new = set()
+        for out, n in added.items():
+            db.cursor.execute(
+                'INSERT INTO card_collection ("user", card, stars, count) '
+                'VALUES (%s, %s, 0, %s) '
+                'ON CONFLICT ("user", card, stars) '
+                'DO UPDATE SET count = card_collection.count + %s '
+                'RETURNING count',
+                (user_id, out, n, n))
+            if db.cursor.fetchone()[0] == n:
+                new.add(out)
+        db.cursor.execute(
+            'DELETE FROM card_collection WHERE "user" = %s AND count <= 0',
+            (user_id,))
+        db.connection.commit()
+        return {"left": row[0], "new": new}
     except Exception:
         db.connection.rollback()
         raise
