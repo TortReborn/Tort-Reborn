@@ -7,6 +7,10 @@ the post lands exactly when balances actually top up.
 
 Guilds that have not set a card channel are skipped — configuring one with
 /tank set-channel is what opts a server in.
+
+The post mentions the reel ping role, which people give themselves with
+/tank ping. Nothing else is ever mentioned: the allowed-mentions list is that
+one role, so a stray @ in the embed cannot reach anyone.
 """
 
 import asyncio
@@ -18,7 +22,7 @@ from discord.ext import commands, tasks
 
 from Helpers import cards as cardlib
 from Helpers.logger import ERROR, INFO, WARN, log
-from Helpers.variables import TAQ_GUILD_IDS
+from Helpers.variables import CARD_PING_ROLE_ID, TAQ_GUILD_IDS
 
 REFRESH_TIMES = [
     dtime(hour=h, minute=0, tzinfo=timezone.utc)
@@ -27,7 +31,7 @@ REFRESH_TIMES = [
 
 
 class CardReelRefresh(commands.Cog):
-    """Posts a plain marker when reels top up. No mentions, ever."""
+    """Posts a marker when reels top up, pinging only those who asked."""
 
     def __init__(self, client):
         self.client = client
@@ -71,9 +75,14 @@ class CardReelRefresh(commands.Cog):
                     color=0x38C9BD)
                 embed.set_footer(text="/reel to cast")
 
-                await channel.send(
-                    embed=embed,
-                    allowed_mentions=discord.AllowedMentions.none())
+                if CARD_PING_ROLE_ID:
+                    role = discord.Object(CARD_PING_ROLE_ID)
+                    content, allowed = f"<@&{CARD_PING_ROLE_ID}>",                         discord.AllowedMentions(roles=[role], users=False,
+                                                everyone=False)
+                else:
+                    content, allowed = None, discord.AllowedMentions.none()
+                await channel.send(content=content, embed=embed,
+                                   allowed_mentions=allowed)
                 self._announced[guild_id] = window
                 log(INFO, f"Announced reel refresh in {channel_id}",
                     context="card_refresh")

@@ -15,7 +15,7 @@ from Helpers import cards as cardlib
 from Helpers.card_render import card_file
 from Helpers.logger import ERROR, SYSTEM, log
 from Helpers.pagination import add_paginator_buttons
-from Helpers.variables import TAQ_GUILD_IDS
+from Helpers.variables import CARD_PING_ROLE_ID, TAQ_GUILD_IDS
 
 CARDS_PER_PAGE = 20
 POOL_PER_PAGE = 15
@@ -623,7 +623,9 @@ class Cards(commands.Cog):
                    "`/bait` — your daily pearls and bait reels. Both climb "
                    f"with the streak, up to **{cardlib.MAX_BAIT_REELS}** "
                    f"reels and **{cardlib.DAILY_TIERS[-1]['pearls']}** "
-                   "pearls a day."),
+                   "pearls a day.\n"
+                   "`/tank ping` — get pinged when reels refresh. Run it "
+                   "again to stop."),
             inline=False)
         embed.add_field(
             name="Your collection",
@@ -833,6 +835,37 @@ class Cards(commands.Cog):
                 text=f"Next: {nxt['name']} for {nxt['cost']:,} pearls "
                      f"— /tank upgrade")
         await ctx.followup.send(embed=embed)
+
+    # ── /tank ping ───────────────────────────────────────────────────────────
+
+    @tank.command(name="ping",
+                  description="Toggle a ping when reels refresh")
+    async def tank_ping(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+        role = ctx.guild.get_role(CARD_PING_ROLE_ID) if CARD_PING_ROLE_ID else None
+        if role is None:
+            return await ctx.followup.send(
+                "There's no reel ping role set up in this server yet.")
+        me = ctx.guild.me
+        if not me or not me.guild_permissions.manage_roles or role >= me.top_role:
+            return await ctx.followup.send(
+                f"I can't hand out {role.mention} — it needs to sit below my "
+                "top role.")
+
+        reason = f"/tank ping by {ctx.author} ({ctx.author.id})"
+        try:
+            if role in ctx.author.roles:
+                await ctx.author.remove_roles(role, reason=reason)
+                return await ctx.followup.send(
+                    "No more reel pings. Run `/tank ping` again to turn them "
+                    "back on.")
+            await ctx.author.add_roles(role, reason=reason)
+        except discord.Forbidden:
+            return await ctx.followup.send(f"I can't hand out {role.mention}.")
+        refresh = cardlib.next_refresh_ts()
+        await ctx.followup.send(
+            f"You'll be pinged every 6 hours when reels refresh, starting "
+            f"<t:{refresh}:R>. Run `/tank ping` again to stop.")
 
     # ── /tank upgrade ────────────────────────────────────────────────────────
 
