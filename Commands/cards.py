@@ -688,31 +688,48 @@ class Cards(commands.Cog):
                 f"You've already baited today. The next one lands "
                 f"<t:{reset}:R>, at <t:{reset}:t>.", ephemeral=True)
 
+        # One line per thing the claim did, each with its own number, so
+        # nobody has to work out why the balance moved by more than the bait.
+        streak = result["streak"]
+        spec = cardlib.TANK_TIERS[result["tank_tier"]]
         embed = discord.Embed(
-            title="Bait cast",
-            description=(f"**+{result['gained']:,}** pearls and "
-                         f"**+{result['bait_reels']}** bait reels"),
+            title=f"Bait cast — day {streak} of your streak",
             color=0x38C9BD)
-        embed.add_field(name="Streak", value=f"{result['streak']} day"
-                        f"{'' if result['streak'] == 1 else 's'}")
-        embed.add_field(name="Pearls", value=f"{result['pearls']:,}")
         embed.add_field(
-            name="Reels",
-            value=f"{result['total_reels']} "
-                  f"({result['bait_reels']} from bait)")
+            name="Bait reels",
+            value=(f"**+{result['bait_reels']}** — spent before your bank, "
+                   "and the next bait waits until they are gone"),
+            inline=False)
+        embed.add_field(
+            name="Streak pearls",
+            value=f"**+{result['gained']:,}** for day {streak}",
+            inline=False)
+        if spec["trickle"]:
+            embed.add_field(
+                name="Passive pearls",
+                value=(f"**+{max(result['passive'], 0):,}** since your last "
+                       f"visit — your {spec['name']} makes "
+                       f"**{spec['trickle']}/hour**, up to "
+                       f"{cardlib.TRICKLE_CAP_HOURS}h while you are away"),
+                inline=False)
+        banked = result["reels"]
+        embed.add_field(
+            name="You now have",
+            value=(f"**{result['total_reels']}** reels "
+                   f"({result['bait_reels']} bait + {banked} banked) · "
+                   f"**{result['pearls']:,}** pearls"),
+            inline=False)
 
         # Name the next rung rather than the whole ladder: one line, and it
         # is the only part of the ladder that is worth acting on.
-        nxt = cardlib.next_daily_tier(result["streak"])
+        nxt = cardlib.next_daily_tier(streak)
         embed.set_footer(
             text=(f"Day {nxt['from_day']}: {nxt['reels']} reels and "
                   f"{nxt['pearls']} pearls a day" if nxt else
                   "Top streak — keep it up."))
         reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
-        await ctx.followup.send(
-            content=f"-# Bait reels are spent first, and the next bait waits "
-                    f"until they are gone. Next bait <t:{reset}:R>",
-            embed=embed)
+        await ctx.followup.send(content=f"-# Next bait <t:{reset}:R>",
+                                embed=embed)
 
     @tank.command(name="help", description="How the card system works")
     async def tank_help(self, ctx: discord.ApplicationContext):
@@ -940,9 +957,9 @@ class Cards(commands.Cog):
                         value=f"{wallet['total_reeled']:,} all time")
         if spec["trickle"]:
             embed.add_field(
-                name="Trickle",
-                value=f"{spec['trickle']} pearls/hour "
-                      f"(caps at {cardlib.TRICKLE_CAP_HOURS}h offline)")
+                name="Passive pearls",
+                value=f"{spec['trickle']}/hour, up to "
+                      f"{cardlib.TRICKLE_CAP_HOURS}h while you are away")
         embed.add_field(
             name=f"Wishes ({len(wishes)}/{spec['wishes']})",
             value=", ".join((cardlib.get_card(w) or {"name": w})["name"]
@@ -1016,7 +1033,7 @@ class Cards(commands.Cog):
         await ctx.followup.send(embed=discord.Embed(
             title=f"Tank upgraded to {nxt['name']}",
             description=(f"Reel bank **{nxt['bank']}** · "
-                         f"trickle **{nxt['trickle']}/hour** · "
+                         f"passive pearls **{nxt['trickle']}/hour** · "
                          f"wish slots **{nxt['wishes']}**"),
             color=0x38C9BD))
 
