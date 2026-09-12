@@ -688,45 +688,26 @@ class Cards(commands.Cog):
                 f"You've already baited today. The next one lands "
                 f"<t:{reset}:R>, at <t:{reset}:t>.", ephemeral=True)
 
-        # One line per thing the claim did, each with its own number, so
-        # nobody has to work out why the balance moved by more than the bait.
+        # Three numbers and a nudge. What bait reels are and where passive
+        # pearls come from belong in /tank help, not in every claim.
         streak = result["streak"]
-        spec = cardlib.TANK_TIERS[result["tank_tier"]]
         embed = discord.Embed(
             title=f"Bait cast — day {streak} of your streak",
             color=0x38C9BD)
-        embed.add_field(
-            name="Bait reels",
-            value=(f"**+{result['bait_reels']}** — spent before your bank, "
-                   "and the next bait waits until they are gone"),
-            inline=False)
-        embed.add_field(
-            name="Streak pearls",
-            value=f"**+{result['gained']:,}** for day {streak}",
-            inline=False)
-        if spec["trickle"]:
-            embed.add_field(
-                name="Passive pearls",
-                value=(f"**+{max(result['passive'], 0):,}** since your last "
-                       f"visit — your {spec['name']} makes "
-                       f"**{spec['trickle']}/hour**, up to "
-                       f"{cardlib.TRICKLE_CAP_HOURS}h while you are away"),
-                inline=False)
-        banked = result["reels"]
-        embed.add_field(
-            name="You now have",
-            value=(f"**{result['total_reels']}** reels "
-                   f"({result['bait_reels']} bait + {banked} banked) · "
-                   f"**{result['pearls']:,}** pearls"),
-            inline=False)
+        embed.add_field(name="Bait reels", value=f"**+{result['bait_reels']}**")
+        embed.add_field(name="Pearls", value=f"**+{result['gained']:,}**")
+        embed.add_field(name="Reels now", value=f"**{result['total_reels']}**")
 
-        # Name the next rung rather than the whole ladder: one line, and it
-        # is the only part of the ladder that is worth acting on.
+        # How far the next rung is, not what is on it: the ladder is in
+        # /tank help, and a countdown is the part worth coming back for.
         nxt = cardlib.next_daily_tier(streak)
-        embed.set_footer(
-            text=(f"Day {nxt['from_day']}: {nxt['reels']} reels and "
-                  f"{nxt['pearls']} pearls a day" if nxt else
-                  "Top streak — keep it up."))
+        if nxt:
+            days = nxt["from_day"] - streak
+            embed.set_footer(text=f"Better rewards in {days} day"
+                                  f"{'' if days == 1 else 's'} — keep the "
+                                  "streak going")
+        else:
+            embed.set_footer(text="Top streak — keep it going")
         reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
         await ctx.followup.send(content=f"-# Next bait <t:{reset}:R>",
                                 embed=embed)
