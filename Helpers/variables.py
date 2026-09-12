@@ -58,7 +58,7 @@ _ENV_CONFIG = {
         "MILITARY_ROLE_ID": 1369134565335236646,
         "HQ_TEAM_ROLE_ID": 1486367257641619537,
         "ANNIHILATION_PING_ROLE_ID": 1523404277043957921,
-        "CARD_PING_ROLE_ID": 0,  # TODO: create the role, paste its id
+        "CARD_PING_ROLE_ID": 1548393718472511702,
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1371292212729479207>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292093074640936>",
@@ -126,7 +126,7 @@ _ENV_CONFIG = {
         "MILITARY_ROLE_ID": 894276062693949521,
         "HQ_TEAM_ROLE_ID": 1405514713554485309,
         "ANNIHILATION_PING_ROLE_ID": 1275082923812458506,
-        "CARD_PING_ROLE_ID": 0,  # TODO: create the role, paste its id
+        "CARD_PING_ROLE_ID": 1548393155018104861,
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1126608994526560306>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292000963395655>",

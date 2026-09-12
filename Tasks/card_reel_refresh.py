@@ -75,10 +75,13 @@ class CardReelRefresh(commands.Cog):
                     color=0x38C9BD)
                 embed.set_footer(text="/reel to cast")
 
+                # The mention lives in the message content, not the embed:
+                # Discord never pings from inside an embed.
                 if CARD_PING_ROLE_ID:
-                    role = discord.Object(CARD_PING_ROLE_ID)
-                    content, allowed = f"<@&{CARD_PING_ROLE_ID}>",                         discord.AllowedMentions(roles=[role], users=False,
-                                                everyone=False)
+                    content = f"<@&{CARD_PING_ROLE_ID}>"
+                    allowed = discord.AllowedMentions(
+                        roles=[discord.Object(CARD_PING_ROLE_ID)],
+                        users=False, everyone=False)
                 else:
                     content, allowed = None, discord.AllowedMentions.none()
                 await channel.send(content=content, embed=embed,
