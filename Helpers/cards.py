@@ -753,12 +753,7 @@ def db_claim_daily(user_id: int) -> dict:
     try:
         _ensure_wallet(db, user_id, window)
         # Bring the bank and the passive pearls current first, in the same
-        # transaction, so the numbers reported back are the real ones. The
-        # balance is read before that so the claim can say how much of the
-        # jump was passive income rather than the bait itself.
-        db.cursor.execute('SELECT pearls, tank_tier FROM card_wallet '
-                          'WHERE "user" = %s', (user_id,))
-        before, tank_tier = db.cursor.fetchone()
+        # transaction, so the numbers reported back are the real ones.
         db.cursor.execute(_refresh_sql(), {
             "w": window, "per": REELS_PER_WINDOW,
             "cap_h": TRICKLE_CAP_HOURS, "uid": user_id,
@@ -789,7 +784,6 @@ def db_claim_daily(user_id: int) -> dict:
 
         db.connection.commit()
         streak = row[0]
-        gained = daily_tier(streak)["pearls"]
         return {
             "ok": True,
             "streak": streak,
@@ -797,9 +791,7 @@ def db_claim_daily(user_id: int) -> dict:
             "reels": row[2],
             "bait_reels": row[3],
             "total_reels": row[2] + row[3],
-            "gained": gained,
-            "passive": row[1] - before - gained,
-            "tank_tier": tank_tier,
+            "gained": daily_tier(streak)["pearls"],
         }
     finally:
         db.close()
