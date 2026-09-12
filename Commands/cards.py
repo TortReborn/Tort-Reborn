@@ -196,7 +196,10 @@ async def _autocomplete_pool(ctx: discord.AutocompleteContext):
     try:
         members = [p["name"] for p in await asyncio.to_thread(cardlib.db_get_pool)
                    if typed in p["name"].lower()]
-    except Exception:
+    except Exception as e:
+        # The list must still answer, but a member silently missing from it
+        # reads as "I'm not in the pool", so say what actually happened.
+        log(ERROR, f"Pool autocomplete lost the members: {e!r}", context="cards")
         members = []
     cards = sorted(c["name"] for c in cardlib.load_card_set()["cards"]
                    if typed in c["name"].lower())
@@ -673,20 +676,21 @@ class Cards(commands.Cog):
     @tank.command(name="view", description="Show a card you own")
     async def tank_view(
         self, ctx: discord.ApplicationContext,
-        card: discord.Option(str, description="Card name",
+        card: discord.Option(str, description="One of your cards — pick from the list",
                              autocomplete=_autocomplete_owned),
     ):
         await ctx.defer()
         match = await asyncio.to_thread(_resolve, card)
-        if match is None:
-            return await ctx.followup.send(
-                f"No card called **{card}** exists.", ephemeral=True)
-
-        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
-                                        match["slug"])
+        entry = match and await asyncio.to_thread(
+            cardlib.db_get_entry, ctx.author.id, match["slug"])
+        # Whether the name is a card they have not pulled, a member whose 1/1
+        # is unminted, or a typo, the answer is the same: it is not in here.
         if not entry:
             return await ctx.followup.send(
-                f"**{match['name']}** isn't in your tank yet.", ephemeral=True)
+                f"**{card.strip()}** isn't in your tank. `/tank view` only "
+                "shows cards you own — pick one from the list that appears as "
+                "you type. `/pool view` shows anything that can drop, whether "
+                "you have it or not.", ephemeral=True)
 
         stars = entry["best"]
         file = await asyncio.to_thread(card_file, match, None, stars,
@@ -1106,7 +1110,7 @@ class Cards(commands.Cog):
                   description="Preview any card, a character or a member 1/1")
     async def pool_view(
         self, ctx: discord.ApplicationContext,
-        name: discord.Option(str, description="Character or guild member",
+        name: discord.Option(str, description="Character or guild member — pick from the list",
                              autocomplete=_autocomplete_pool),
     ):
         await ctx.defer()
@@ -1116,8 +1120,9 @@ class Cards(commands.Cog):
         card = member or _find_card(name)
         if card is None:
             return await ctx.followup.send(
-                f"Nothing called **{name}** can drop. That covers every "
-                "character in the set and every member eligible for a 1/1.",
+                f"Nothing called **{name.strip()}** can drop. Pick a name from "
+                "the list that appears as you type — it covers every character "
+                "in the set and every member eligible for a 1/1.",
                 ephemeral=True)
 
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
