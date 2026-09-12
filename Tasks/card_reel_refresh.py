@@ -18,7 +18,7 @@ from discord.ext import commands, tasks
 
 from Helpers import cards as cardlib
 from Helpers.logger import ERROR, INFO, WARN, log
-from Helpers.variables import EXEC_GUILD_IDS
+from Helpers.variables import TAQ_GUILD_IDS
 
 REFRESH_TIMES = [
     dtime(hour=h, minute=0, tzinfo=timezone.utc)
@@ -48,7 +48,7 @@ class CardReelRefresh(commands.Cog):
         window = cardlib.current_window()
         nxt = cardlib.next_refresh_ts()
 
-        for guild_id in EXEC_GUILD_IDS:
+        for guild_id in TAQ_GUILD_IDS:
             if self._announced.get(guild_id) == window:
                 continue
             try:

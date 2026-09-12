@@ -1,4 +1,4 @@
-"""Card collection commands — executive guild only.
+"""Card collection commands — the main guild.
 
 The loop: /reel pulls cards and every pull pays pearls, duplicates included;
 pearls buy star fusion and tank upgrades. Wishes bias which epic or legendary
@@ -15,7 +15,7 @@ from Helpers import cards as cardlib
 from Helpers.card_render import card_file
 from Helpers.logger import ERROR, SYSTEM, log
 from Helpers.pagination import add_paginator_buttons
-from Helpers.variables import EXEC_GUILD_IDS
+from Helpers.variables import TAQ_GUILD_IDS
 
 CARDS_PER_PAGE = 20
 POOL_PER_PAGE = 15
@@ -496,14 +496,14 @@ class Cards(commands.Cog):
     # the top level because they are run constantly and burying the everyday
     # actions behind a group would cost more than the tidiness is worth.
     tank = SlashCommandGroup(name="tank", description="Your card collection",
-                             guild_ids=EXEC_GUILD_IDS)
+                             guild_ids=TAQ_GUILD_IDS)
     wish = tank.create_subgroup(name="wishlist",
                                 description="Aim your luck at a card")
     admin = tank.create_subgroup(name="admin",
                                  description="Card system settings")
     pool = SlashCommandGroup(name="pool",
                              description="Every card that can drop",
-                             guild_ids=EXEC_GUILD_IDS)
+                             guild_ids=TAQ_GUILD_IDS)
 
     def __init__(self, client):
         self.client = client
@@ -529,7 +529,7 @@ class Cards(commands.Cog):
 
     @slash_command(name="reel",
                    description="Reel in a card. Refreshes every 6 hours.",
-                   guild_ids=EXEC_GUILD_IDS)
+                   guild_ids=TAQ_GUILD_IDS)
     async def reel(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         who = ctx.author.display_name
@@ -556,7 +556,7 @@ class Cards(commands.Cog):
 
     @slash_command(name="bait",
                    description="Claim your daily pearls and reels",
-                   guild_ids=EXEC_GUILD_IDS)
+                   guild_ids=TAQ_GUILD_IDS)
     async def bait(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         result = await asyncio.to_thread(cardlib.db_claim_daily, ctx.author.id)
