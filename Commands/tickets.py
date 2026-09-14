@@ -45,15 +45,15 @@ def _channel_slug(value: str) -> str:
     return slug or "unknown"
 
 
-def _ticket_channel_name(ticket_type: str, ticket_number: int, creator_name: str) -> str:
-    base = f"{ticket_type}-ticket-{ticket_number:04d}"
+def _ticket_channel_name(ticket_number: int, creator_name: str) -> str:
+    base = f"ticket-{ticket_number:04d}"
     suffix = _channel_slug(creator_name)
     max_suffix_len = 100 - len(base) - 1
     return f"{base}-{suffix[:max_suffix_len]}"
 
 
-def _closed_channel_name(ticket_type: str, ticket_number: int) -> str:
-    return f"closed-{ticket_type}-{ticket_number:04d}"
+def _closed_channel_name(ticket_number: int) -> str:
+    return f"closed-{ticket_number:04d}"
 
 
 def _category_id(ticket_type: str) -> int | None:
@@ -256,7 +256,7 @@ class TicketOpenView(discord.ui.View):
 
         try:
             channel = await guild.create_text_channel(
-                name=_ticket_channel_name(ticket_type, ticket_number, creator_name),
+                name=_ticket_channel_name(ticket_number, creator_name),
                 category=category,
                 overwrites=overwrites,
                 topic=(
@@ -347,7 +347,7 @@ class TicketCloseView(discord.ui.View):
 
         try:
             await channel.edit(
-                name=_closed_channel_name(record.ticket_type, record.ticket_number),
+                name=_closed_channel_name(record.ticket_number),
                 reason=f"Ticket closed by {member}",
             )
         except discord.HTTPException:
