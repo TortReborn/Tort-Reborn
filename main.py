@@ -19,6 +19,7 @@ from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO
 from Helpers import logger
 from Helpers import telemetry
 from Commands.generate import ApplicationButtonView
+from Commands.tickets import TicketCloseView, TicketOpenView
 from Helpers.views import ApplicationVoteView, ThreadVoteView, RecruitPaidView, RecruiterReviewView
 
 
@@ -75,6 +76,8 @@ async def on_ready():
         client.add_view(ThreadVoteView())
         client.add_view(RecruitPaidView())
         client.add_view(RecruiterReviewView())
+        client.add_view(TicketOpenView())
+        client.add_view(TicketCloseView())
         try:
             await client.sync_commands()
             client.synced = True
@@ -274,6 +277,7 @@ extensions = [
     'Commands.register',
     'Commands.app_commands',
     'Commands.kick_list',
+    'Commands.tickets',
 
     # Dev Commands
     'Commands.render_text',

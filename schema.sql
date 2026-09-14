@@ -747,6 +747,28 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_type ON audit_log(log_type);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
 
 -- =============================================================================
+-- Discord Ticket System
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id                SERIAL       PRIMARY KEY,
+  ticket_type       VARCHAR(16)  NOT NULL CHECK (ticket_type IN ('war', 'shell')),
+  ticket_number     INT          NOT NULL,
+  channel_id        BIGINT       NOT NULL UNIQUE,
+  opener_discord_id BIGINT       NOT NULL,
+  opener_name       VARCHAR(100),
+  status            VARCHAR(20)  NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+  created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  closed_at         TIMESTAMPTZ,
+  closed_by         BIGINT,
+  close_reason      TEXT,
+  UNIQUE (ticket_type, ticket_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_opener
+  ON support_tickets(ticket_type, opener_discord_id, status);
+
+-- =============================================================================
 -- Website Application System
 -- =============================================================================
 
@@ -849,6 +871,8 @@ CREATE TABLE IF NOT EXISTS bot_settings (
 
 -- Seed app_counter if missing (won't overwrite existing value)
 INSERT INTO bot_settings (key, value) VALUES ('app_counter', '3725') ON CONFLICT DO NOTHING;
+INSERT INTO bot_settings (key, value) VALUES ('ticket_war_counter', '180') ON CONFLICT DO NOTHING;
+INSERT INTO bot_settings (key, value) VALUES ('ticket_shell_counter', '733') ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- Promotion Queue
