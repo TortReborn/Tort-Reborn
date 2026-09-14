@@ -1,6 +1,6 @@
 import os
 import math
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.storage import get_shell_exchange_icon
 from Helpers.logger import log, WARN, ERROR
@@ -23,12 +23,6 @@ COLOR_BG = (41, 42, 46)
 COLOR_ROW = (55, 56, 60)
 COLOR_TEXT = (255, 255, 255)
 
-TIER_COLORS = {
-    1: (255, 255, 255),
-    2: (255, 225, 100),
-    3: (255, 150, 50),
-}
-
 # paths!
 
 BASE = os.path.dirname(os.path.abspath(__file__))  # Helpers
@@ -36,7 +30,6 @@ BASE = os.path.dirname(BASE)  # project root
 RES = os.path.join(BASE, "images", "shell_exchange", "resources")
 
 FONT_FILE = os.path.join(BASE, "images", "profile", "game.ttf")
-STAR_FONT_FILE = os.path.join(RES, "Inter-VariableFont_opsz,wght.ttf")
 SHELL_ICON_FILE = os.path.join(RES, "shell.png")
 
 # layout
@@ -104,31 +97,26 @@ def load_icon(source, h):
     s = h / ih
     return img.resize((int(w * s), h), Image.NEAREST)
 
-# Deprecated Star Drawing :c
+# Tier Stars
 
-def draw_tier_stars(draw, ix, iy, iw, tier, star_font):
+_tier_stars = {}
+
+def tier_star(tier, size):
+    """The tier overlay, sized to *size* square. Its art already sits top-right."""
+    cached = _tier_stars.get((tier, size))
+    if cached is None:
+        star = Image.open(os.path.join(RES, f"tier_{tier}.png")).convert("RGBA")
+        cached = star.resize((size, size), Image.NEAREST)
+        _tier_stars[(tier, size)] = cached
+    return cached
+
+def with_tier_star(icon, tier):
     if tier is None:
-        return
-
-    stars = "⭐" * tier
-    sw = text_w(star_font, stars)
-    color = TIER_COLORS[tier]
-
-    # 3 stars centered, 1–2 right aligned
-    if tier == 3:
-        x = ix + (iw - sw) // 2
-    else:
-        x = ix + iw - sw - 1
-
-    y = iy + 1
-
-    shadow = Image.new("RGBA", (sw + 2, 16), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(shadow)
-    sd.text((1, 1), stars, font=star_font, fill=(0, 0, 0, 140))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(0.5))
-
-    draw.bitmap((x - 3, y - 3), shadow, fill=None)
-    draw.text((x, y), stars, font=star_font, fill=color)
+        return icon
+    star = tier_star(tier, icon.height)
+    stamped = icon.copy()
+    stamped.alpha_composite(star, (icon.width - star.width, 0))
+    return stamped
 
 # Trade Block
 
@@ -215,7 +203,7 @@ def load_entries(category, cfg_data, material):
             for t in (1, 2, 3):
                 td = data.get(f"t{t}", {})
                 if td.get("toggled", True):
-                    entries.append(build_entry(name, icon, iw, ih, t, td))
+                    entries.append(build_entry(name, with_tier_star(icon, t), iw, ih, t, td))
         else:
             if data.get("toggled", True):
                 entries.append(build_entry(name, icon, iw, ih, None, data))
@@ -229,7 +217,6 @@ def render_panel(material_mode=False, ings_data=None, mats_data=None):
     cfg_data = mats_data if material_mode else ings_data
 
     font = load_font(FONT_FILE, FONT_SIZE)
-    star_font = load_font(STAR_FONT_FILE, 14)
     shell_icon = load_icon(SHELL_ICON_FILE, SHELL_SIZE)
 
     entries, skipped = load_entries(category, cfg_data or {}, material_mode)
@@ -270,7 +257,7 @@ def render_panel(material_mode=False, ings_data=None, mats_data=None):
 
         name_color = (
             HIGHLIGHT_TEXT_COLOR if e["highlight"] and HIGHLIGHT_MODE in ("text", "both")
-            else TIER_COLORS.get(e["tier"], COLOR_TEXT)
+            else COLOR_TEXT
         )
 
         draw.text((ix + e["iw"] + 6, y0 + 10), e["name"], fill=name_color, font=font)
@@ -316,7 +303,7 @@ def generate_images(output_mode, config, ings_data=None, mats_data=None):
     return images, skipped
 
 def apply_config(config):
-    global GRID_COLUMNS, HIGHLIGHT_MODE, COLOR_BG, COLOR_ROW, COLOR_TEXT, HIGHLIGHT_TEXT_COLOR, OUTLINE_GRADIENT_POINTS, TIER_COLORS
+    global GRID_COLUMNS, HIGHLIGHT_MODE, COLOR_BG, COLOR_ROW, COLOR_TEXT, HIGHLIGHT_TEXT_COLOR, OUTLINE_GRADIENT_POINTS
     GRID_COLUMNS = config.get("cols_mats", 4) if "materials" in config.get("output_mode", "both") else config.get("cols_ings", 4)
     HIGHLIGHT_MODE = config.get("highlight_mode", "outline")
     COLOR_BG = tuple(config.get("color_bg", [41, 42, 46]))
@@ -324,4 +311,3 @@ def apply_config(config):
     COLOR_TEXT = tuple(config.get("color_text", [255, 255, 255]))
     HIGHLIGHT_TEXT_COLOR = tuple(config.get("highlight_text", [23, 255, 255]))
     OUTLINE_GRADIENT_POINTS = [tuple(p) for p in config.get("gradient_points", [[255, 225, 100], [255, 170, 70], [255, 130, 40], [255, 100, 25]])]
-    TIER_COLORS = {int(k): tuple(v) for k, v in config.get("tier_colors", {"1": [255, 255, 255], "2": [255, 225, 100], "3": [255, 150, 50]}).items()}
