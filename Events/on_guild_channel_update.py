@@ -3,6 +3,7 @@ import json
 import discord
 from discord.ext import commands
 
+from Helpers.app_expiry import expire_if_never_joined
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.variables import CLOSED_CATEGORY_NAME, is_home_guild
@@ -40,18 +41,21 @@ class OnGuildChannelUpdate(commands.Cog):
         if not row:
             return
 
-        # Record when the ticket was first closed (drives auto-transcribe timing).
+        app_type, status, app_id, answers, app_number = row
+
+        # Record when the ticket was first closed (drives auto-transcribe timing),
+        # and retire an accepted guild application whose applicant never joined
+        # so it stops counting as a pending join on the website (TAQ-77).
         db = DB(); db.connect()
         try:
             db.cursor.execute(
                 "UPDATE applications SET closed_at = NOW() WHERE channel_id = %s AND closed_at IS NULL",
                 (after.id,),
             )
+            expire_if_never_joined(db.cursor, app_id, app_type, status)
             db.connection.commit()
         finally:
             db.close()
-
-        app_type, status, app_id, answers, app_number = row
         if isinstance(answers, str):
             answers = json.loads(answers)
         ign = (answers.get("ign") or "").strip()
