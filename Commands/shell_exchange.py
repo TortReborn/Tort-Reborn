@@ -25,7 +25,24 @@ from Helpers.variables import (
     RATES_PING_ROLE_ID,
     RATES_THREAD_ID,
     IS_TEST_MODE,
+    TAQ_EMBED_COLOR,
 )
+
+PANEL_FILENAMES = {
+    "ingredients": "ingredient_shell_panel.png",
+    "materials": "materials_shell_panel.png",
+}
+
+
+def build_panel_view(text, files):
+    """Text plus one gallery per panel, so each image renders at full width."""
+    container = discord.ui.Container(discord.ui.TextDisplay(text), colour=TAQ_EMBED_COLOR)
+    for f in files:
+        container.add_item(
+            discord.ui.MediaGallery(discord.MediaGalleryItem(f"attachment://{f.filename}"))
+        )
+    return discord.ui.DesignerView(container, timeout=None, store=False)
+
 
 class ShellExchange(commands.Cog):
     # Create command groups
@@ -129,6 +146,27 @@ class ShellExchange(commands.Cog):
             lines.extend(format_modified(old_entry, new_entry) for old_entry, new_entry in modified)
 
         return "\n".join(lines)
+
+    def _panel_file(self, images, key):
+        img = images.get(key)
+        if img is None:
+            return None
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+        return discord.File(buffer, PANEL_FILENAMES[key])
+
+    async def _retire_split_panels(self, channel, config):
+        """Drop the text/ings/mats messages the single-message layout replaced."""
+        for key in ("text_message_id", "ings_message_id", "mats_message_id"):
+            message_id = config.pop(key, None)
+            if not message_id:
+                continue
+            try:
+                old = await channel.fetch_message(message_id)
+                await old.delete()
+            except Exception:
+                pass
 
     async def _update_legacy_message(self, embed, files):
         async with aiohttp.ClientSession() as session:
@@ -333,24 +371,10 @@ class ShellExchange(commands.Cog):
         # Embed creation (if not legacy message update)
         long_text = "𓆉  Ingredients are vital to the guild. We use them to craft XP gear, prof gear, war and to offer free war builds. We therefore rely on small donations to keep all guild activities running smoothly. To reward our contributors, we have created our exclusive currency: Shells. They can be traded for crafted gear, guild tomes, mythic items, and more. To find a more comprehensive list, check out the <#1251838254098153492>!\n\nThe list below shows our currently accepted ingredients and materials, which you can receive shells for donating. Other ingredients are welcome, but will not be eligible for shells. If you find an ingredient that isn't on the list but you think might still be useful, feel free to ask a Chief for confirmation. Specially outlined items are of higher need than usual right now, so while you will get exactly the shells displayed still, donating these specific ingredients and materials helps us a lot!\n\n⚠️ Shell rates and accepted ingredients are likely to change depending on their demand, how many we currently have in stock, and their price on the Trade Market. All modifications are announced in ⁠the \"Shell rate balances\" thread. If you'd like to be pinged for them, you can get the <@&1050233131183112255> role in <#752917987853467669>. This role is also used when our supply of a specific ingredient gets low (pro tip: high demand ingredients will likely earn you more shells!).\n\n𓆉  In order to claim your shells: \nPut your ingredients in the guild bank and screenshot the log message and optionally the content, you can then **open a ticket** and **send a screenshot** as evidence. A Narwhal will soon update your profile and close the ticket as soon as the transaction is completed.\n\n⚙️ There are two useful commands to check your balance:\n`/profile [user]`\n`/leaderboard (total/timespan)`"
 
-        embed = discord.Embed(description=long_text)
+        embed = discord.Embed(description=long_text, color=TAQ_EMBED_COLOR)
 
-        ings_file = None
-        mats_file = None
-
-        ings_img = images.get("ingredients")
-        if ings_img:
-            buffer = BytesIO()
-            ings_img.save(buffer, format="PNG")
-            buffer.seek(0)
-            ings_file = discord.File(buffer, "ingredient_shell_panel.png")
-
-        mats_img = images.get("materials")
-        if mats_img:
-            buffer = BytesIO()
-            mats_img.save(buffer, format="PNG")
-            buffer.seek(0)
-            mats_file = discord.File(buffer, "materials_shell_panel.png")
+        ings_file = self._panel_file(images, "ingredients")
+        mats_file = self._panel_file(images, "materials")
 
         # Send or update text message
         if legacy_mode:
@@ -361,48 +385,23 @@ class ShellExchange(commands.Cog):
                 await ctx.followup.send(f"Legacy message update failed: {type(e).__name__}: {e}", ephemeral=True)
                 return
         else:
-            text_msg_id = config.get("text_message_id")
-            if text_msg_id:
+            files = [f for f in (ings_file, mats_file) if f is not None]
+            view = build_panel_view(long_text, files)
+
+            panel_msg = None
+            panel_msg_id = config.get("panel_message_id")
+            if panel_msg_id:
                 try:
-                    text_msg = await channel.fetch_message(text_msg_id)
-                    await text_msg.edit(embed=embed)
-                    updated = True
-                except Exception as e:
-                    text_msg = await channel.send(embed=embed)
-                    config["text_message_id"] = text_msg.id
-                    updated = False
-            else:
-                text_msg = await channel.send(embed=embed)
-                config["text_message_id"] = text_msg.id
-                updated = False
+                    panel_msg = await channel.fetch_message(panel_msg_id)
+                    await panel_msg.edit(view=view, attachments=[], files=files)
+                except Exception:
+                    panel_msg = None
 
-            # Send or update ingredients panel
-            if ings_file is not None:
-                ings_msg_id = config.get("ings_message_id")
-                if ings_msg_id:
-                    try:
-                        ings_msg = await channel.fetch_message(ings_msg_id)
-                        await ings_msg.edit(attachments=[], files=[ings_file])
-                    except Exception as e:
-                        ings_msg = await channel.send(file=ings_file)
-                        config["ings_message_id"] = ings_msg.id
-                else:
-                    ings_msg = await channel.send(file=ings_file)
-                    config["ings_message_id"] = ings_msg.id
+            if panel_msg is None:
+                panel_msg = await channel.send(view=view, files=files)
+                config["panel_message_id"] = panel_msg.id
 
-            # Send or update materials panel
-            if mats_file is not None:
-                mats_msg_id = config.get("mats_message_id")
-                if mats_msg_id:
-                    try:
-                        mats_msg = await channel.fetch_message(mats_msg_id)
-                        await mats_msg.edit(attachments=[], files=[mats_file])
-                    except Exception as e:
-                        mats_msg = await channel.send(file=mats_file)
-                        config["mats_message_id"] = mats_msg.id
-                else:
-                    mats_msg = await channel.send(file=mats_file)
-                    config["mats_message_id"] = mats_msg.id
+            await self._retire_split_panels(channel, config)
 
         await self._post_rates_update(config)
         self.save_config(config)
