@@ -16,6 +16,7 @@ from Helpers.database import (
     get_shell_exchange_mats,
     save_shell_exchange_mats,
 )
+from Helpers.component_media import IS_COMPONENTS_V2, rebind_attachment_urls
 from Helpers.storage import delete_shell_exchange_icon
 from Helpers.variables import (
     HOME_GUILD_IDS,
@@ -137,11 +138,19 @@ class ShellExchange(commands.Cog):
                 legacy_msg = await resp.json()
 
             components = legacy_msg.get("components", [])
-            allow_content_embeds = True
-            if legacy_msg.get("flags") and components:
-                allow_content_embeds = False
+            uses_components_v2 = bool(legacy_msg.get("flags", 0) & IS_COMPONENTS_V2)
+            allow_content_embeds = not uses_components_v2
 
             if files:
+                if uses_components_v2:
+                    unreferenced = rebind_attachment_urls(components, [f.filename for f in files])
+                    if unreferenced:
+                        raise RuntimeError(
+                            "The legacy message has no media slot for "
+                            + ", ".join(unreferenced)
+                            + ". Editing it would leave the panel invisible, so nothing was sent."
+                        )
+
                 form = aiohttp.FormData()
                 attachments = [{"id": i, "filename": f.filename} for i, f in enumerate(files)]
                 payload = {
