@@ -81,6 +81,12 @@ CREATE TABLE IF NOT EXISTS shells (
   last_aspect_convert_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS guild_chat_bridge_state (
+  id         BOOLEAN     PRIMARY KEY DEFAULT TRUE CHECK (id),
+  channel_id BIGINT      NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- =============================================================================
 -- Aspect Distribution System
 -- =============================================================================
