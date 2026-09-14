@@ -7,6 +7,7 @@ from datetime import timezone
 
 import aiohttp
 import discord
+import emoji
 from discord.ext import commands, tasks
 
 from Helpers.database import DB
@@ -28,6 +29,9 @@ MAX_MESSAGE_LENGTH = 4000
 RECENT_DISCORD_MESSAGES = 256
 BRIDGE_WEBHOOK_NAME = "Tort Guild Bridge"
 WEBHOOK_NAME_FORBIDDEN = ("discord", "clyde")
+CUSTOM_EMOJI_PATTERN = re.compile(r"<a?:(\w+):\d+>")
+IGN_MENTION_PATTERN = re.compile(r"(?<![\w@])@(\w{3,16})(?!\w)")
+RANK_TAG_PATTERN = re.compile(r"^(?:" + "|".join(re.escape(rank) for rank in discord_ranks) + r")\s+")
 
 
 @dataclass(frozen=True)
@@ -182,13 +186,14 @@ class GuildChatBridge(commands.Cog):
             return
 
         content = _discord_safe_text(message)
+        content = await _resolve_ign_mentions(content)
 
         async def post(hook: discord.Webhook):
             await hook.send(
                 content[:2000],
                 username=poster.name,
                 avatar_url=poster.avatar_url,
-                allowed_mentions=discord.AllowedMentions.none(),
+                allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False),
             )
 
         try:
@@ -446,6 +451,26 @@ def _linked_discord_id(ign: str) -> int | None:
     return int(row[0]) if row else None
 
 
+async def _resolve_ign_mentions(text: str) -> str:
+    tokens = {match.group(1) for match in IGN_MENTION_PATTERN.finditer(text)}
+    if not tokens:
+        return text
+
+    resolved: dict[str, int] = {}
+    for token in tokens:
+        discord_id = await asyncio.to_thread(_linked_discord_id, token)
+        if discord_id is not None:
+            resolved[token.lower()] = discord_id
+    if not resolved:
+        return text
+
+    def replace(match: re.Match) -> str:
+        discord_id = resolved.get(match.group(1).lower())
+        return f"<@{discord_id}>" if discord_id is not None else match.group(0)
+
+    return IGN_MENTION_PATTERN.sub(replace, text)
+
+
 def _sanitize_webhook_username(name: str) -> str:
     cleaned = name.strip()
     for forbidden in WEBHOOK_NAME_FORBIDDEN:
@@ -455,10 +480,36 @@ def _sanitize_webhook_username(name: str) -> str:
 
 
 def _message_text(message: discord.Message) -> str:
-    text = message.clean_content.strip()
+    text = _resolve_mention_text(message)
+    text = _normalize_emoji(text)
+    text = text.strip()
     if len(text) > MAX_MESSAGE_LENGTH:
         text = text[:MAX_MESSAGE_LENGTH]
     return text
+
+
+def _resolve_mention_text(message: discord.Message) -> str:
+    # message.clean_content resolves mentions to display names, but that keeps the TAq
+    # rank-tag prefix from the member's server nickname (e.g. "Swordfish lamelemon"); resolve
+    # mentions ourselves so we can strip that prefix before it reaches Minecraft chat.
+    text = message.content
+    for member in message.mentions:
+        name = f"@{_strip_rank_prefix(member.display_name)}"
+        text = text.replace(f"<@{member.id}>", name).replace(f"<@!{member.id}>", name)
+    for role in message.role_mentions:
+        text = text.replace(f"<@&{role.id}>", f"@{role.name}")
+    for channel in message.channel_mentions:
+        text = text.replace(f"<#{channel.id}>", f"#{channel.name}")
+    return text
+
+
+def _strip_rank_prefix(name: str) -> str:
+    return RANK_TAG_PATTERN.sub("", name, count=1)
+
+
+def _normalize_emoji(text: str) -> str:
+    text = CUSTOM_EMOJI_PATTERN.sub(r":\1:", text)
+    return emoji.demojize(text, language="en")
 
 
 def _discord_safe_text(text: str) -> str:
