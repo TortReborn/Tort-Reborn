@@ -189,8 +189,12 @@ def load_entries(category, cfg_data, material):
     """Load entries from DB config + S3 icons.
 
     category: "ings" or "mats"
+    Returns (entries, skipped_names) — skipped_names lists display names whose
+    icon was missing from S3, so callers can surface that instead of letting
+    the row silently vanish from the rendered panel.
     """
     entries = []
+    skipped = []
 
     for key in sorted(cfg_data.keys()):
         data = cfg_data[key]
@@ -200,6 +204,7 @@ def load_entries(category, cfg_data, material):
         s3_img = get_shell_exchange_icon(category, key)
         if s3_img is None:
             log(WARN, f"Shell exchange icon missing in S3 for {category}/{key}", context="shell_exchange")
+            skipped.append(display_name(key))
             continue
 
         icon = load_icon(s3_img, ICON_SIZE)
@@ -215,7 +220,7 @@ def load_entries(category, cfg_data, material):
             if data.get("toggled", True):
                 entries.append(build_entry(name, icon, iw, ih, None, data))
 
-    return entries
+    return entries, skipped
 
 # Render
 
@@ -227,9 +232,9 @@ def render_panel(material_mode=False, ings_data=None, mats_data=None):
     star_font = load_font(STAR_FONT_FILE, 14)
     shell_icon = load_icon(SHELL_ICON_FILE, SHELL_SIZE)
 
-    entries = load_entries(category, cfg_data or {}, material_mode)
+    entries, skipped = load_entries(category, cfg_data or {}, material_mode)
     if not entries:
-        return None
+        return None, skipped
 
     # funny width stuff for alignment
     max_shells = max(e["shells"] for e in entries)
@@ -289,23 +294,26 @@ def render_panel(material_mode=False, ings_data=None, mats_data=None):
             row = 0
             col += 1
 
-    return img
+    return img, skipped
 
 def generate_images(output_mode, config, ings_data=None, mats_data=None):
     apply_config(config)
     images = {}
+    skipped = []
     if output_mode in ("ingredients", "both"):
         global GRID_COLUMNS
         GRID_COLUMNS = config.get("cols_ings", 4)
-        img = render_panel(material_mode=False, ings_data=ings_data, mats_data=mats_data)
+        img, missing = render_panel(material_mode=False, ings_data=ings_data, mats_data=mats_data)
+        skipped.extend(missing)
         if img:
             images["ingredients"] = img
     if output_mode in ("materials", "both"):
         GRID_COLUMNS = config.get("cols_mats", 4)
-        img = render_panel(material_mode=True, ings_data=ings_data, mats_data=mats_data)
+        img, missing = render_panel(material_mode=True, ings_data=ings_data, mats_data=mats_data)
+        skipped.extend(missing)
         if img:
             images["materials"] = img
-    return images
+    return images, skipped
 
 def apply_config(config):
     global GRID_COLUMNS, HIGHLIGHT_MODE, COLOR_BG, COLOR_ROW, COLOR_TEXT, HIGHLIGHT_TEXT_COLOR, OUTLINE_GRADIENT_POINTS, TIER_COLORS

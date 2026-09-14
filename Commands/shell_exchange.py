@@ -315,7 +315,7 @@ class ShellExchange(commands.Cog):
         output_mode = config.get("output_mode", "both")
         ings_data = self.load_ings_config()
         mats_data = self.load_mats_config()
-        images = generate_images(output_mode, config, ings_data=ings_data, mats_data=mats_data)
+        images, skipped_icons = generate_images(output_mode, config, ings_data=ings_data, mats_data=mats_data)
 
         if not images:
             await ctx.followup.send("No images generated.", ephemeral=True)
@@ -397,7 +397,12 @@ class ShellExchange(commands.Cog):
 
         await self._post_rates_update(config)
         self.save_config(config)
-        await ctx.followup.send("Posted shell exchange", ephemeral=True)
+
+        result_msg = "Posted shell exchange"
+        if skipped_icons:
+            names = ", ".join(sorted(set(skipped_icons)))
+            result_msg += f"\n⚠️ Missing icon in storage, left off the panel: {names}"
+        await ctx.followup.send(result_msg, ephemeral=True)
 
     @shell_exchange_group.command(name="legacy", description="Toggle legacy webhook updates")
     async def shell_exchange_legacy(self, ctx: discord.ApplicationContext, enabled: discord.Option(bool, required=True)):
