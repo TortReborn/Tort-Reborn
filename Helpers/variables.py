@@ -70,6 +70,8 @@ _ENV_CONFIG = {
         # Thread / Misc
         "SHELL_EXCHANGE_CHANNEL_ID": 1369134566723293199,
         "RATES_THREAD_ID": 1462137243194888212,
+        "WAR_TICKET_CATEGORY_ID": None,
+        "SHELL_TICKET_CATEGORY_ID": None,
         # Vanity roles
         "VANITY_ROLE_IDS": {
             "wars": {
@@ -138,6 +140,8 @@ _ENV_CONFIG = {
         # Thread / Misc
         "SHELL_EXCHANGE_CHANNEL_ID": 1135510651981287424,
         "RATES_THREAD_ID": 1279379192626282579,
+        "WAR_TICKET_CATEGORY_ID": 1304127131080589405,
+        "SHELL_TICKET_CATEGORY_ID": 1135514777016344596,
         # Vanity roles
         "VANITY_ROLE_IDS": {
             "wars": {
@@ -225,6 +229,8 @@ GENERAL_CHANNEL_ID = _cfg["GENERAL_CHANNEL_ID"]
 RULES_CHANNEL_ID = _cfg["RULES_CHANNEL_ID"]
 SHELL_EXCHANGE_CHANNEL_ID = _cfg["SHELL_EXCHANGE_CHANNEL_ID"]
 RATES_THREAD_ID = _cfg["RATES_THREAD_ID"]
+WAR_TICKET_CATEGORY_ID = _cfg["WAR_TICKET_CATEGORY_ID"]
+SHELL_TICKET_CATEGORY_ID = _cfg["SHELL_TICKET_CATEGORY_ID"]
 
 # =============================================================================
 # Role IDs
