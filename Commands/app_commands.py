@@ -405,8 +405,8 @@ class WebAppCommands(commands.Cog):
             await channel.send(
                 f"Hi {mention},\n\n"
                 f"We regret to inform you that your application to become a "
-                f"**Community Member** of The Aquarium has not been accepted at this "
-                f"time. We appreciate your interest and thank you for considering us.\n\n"
+                f"**Community Member** of The Aquarium has been denied. "
+                f"We appreciate your interest and thank you for considering us.\n\n"
                 f"Best Regards,\n"
                 f"The Aquarium Applications Team"
             )
