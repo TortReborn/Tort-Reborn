@@ -7,7 +7,6 @@ from datetime import timezone
 
 import aiohttp
 import discord
-import emoji
 from discord.ext import commands, tasks
 
 from Helpers.database import DB
@@ -508,8 +507,7 @@ def _strip_rank_prefix(name: str) -> str:
 
 
 def _normalize_emoji(text: str) -> str:
-    text = CUSTOM_EMOJI_PATTERN.sub(r":\1:", text)
-    return emoji.demojize(text, language="en")
+    return CUSTOM_EMOJI_PATTERN.sub(r":\1:", text)
 
 
 def _discord_safe_text(text: str) -> str:
