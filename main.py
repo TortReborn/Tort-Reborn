@@ -355,6 +355,7 @@ extensions = [
     'Tasks.loop_lag',
     'Tasks.presence_rollup',
     'Tasks.card_reel_refresh',
+    'Tasks.guild_chat_bridge',
 ]
 
 for ext in extensions:
