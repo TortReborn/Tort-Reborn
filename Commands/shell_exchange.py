@@ -27,6 +27,22 @@ from Helpers.variables import (
     IS_TEST_MODE,
 )
 
+PANEL_FILENAMES = {
+    "ingredients": "ingredient_shell_panel.png",
+    "materials": "materials_shell_panel.png",
+}
+
+
+def build_panel_view(text, files):
+    """Text plus one gallery per panel, so each image renders at full width."""
+    view = discord.ui.DesignerView(discord.ui.TextDisplay(text), timeout=None, store=False)
+    for f in files:
+        view.add_item(
+            discord.ui.MediaGallery(discord.MediaGalleryItem(f"attachment://{f.filename}"))
+        )
+    return view
+
+
 class ShellExchange(commands.Cog):
     # Create command groups
     shell_exchange_group = discord.SlashCommandGroup(
@@ -129,6 +145,27 @@ class ShellExchange(commands.Cog):
             lines.extend(format_modified(old_entry, new_entry) for old_entry, new_entry in modified)
 
         return "\n".join(lines)
+
+    def _panel_file(self, images, key):
+        img = images.get(key)
+        if img is None:
+            return None
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+        return discord.File(buffer, PANEL_FILENAMES[key])
+
+    async def _retire_split_panels(self, channel, config):
+        """Drop the text/ings/mats messages the single-message layout replaced."""
+        for key in ("text_message_id", "ings_message_id", "mats_message_id"):
+            message_id = config.pop(key, None)
+            if not message_id:
+                continue
+            try:
+                old = await channel.fetch_message(message_id)
+                await old.delete()
+            except Exception:
+                pass
 
     async def _update_legacy_message(self, embed, files):
         async with aiohttp.ClientSession() as session:
@@ -335,22 +372,8 @@ class ShellExchange(commands.Cog):
 
         embed = discord.Embed(description=long_text)
 
-        ings_file = None
-        mats_file = None
-
-        ings_img = images.get("ingredients")
-        if ings_img:
-            buffer = BytesIO()
-            ings_img.save(buffer, format="PNG")
-            buffer.seek(0)
-            ings_file = discord.File(buffer, "ingredient_shell_panel.png")
-
-        mats_img = images.get("materials")
-        if mats_img:
-            buffer = BytesIO()
-            mats_img.save(buffer, format="PNG")
-            buffer.seek(0)
-            mats_file = discord.File(buffer, "materials_shell_panel.png")
+        ings_file = self._panel_file(images, "ingredients")
+        mats_file = self._panel_file(images, "materials")
 
         # Send or update text message
         if legacy_mode:
@@ -361,48 +384,23 @@ class ShellExchange(commands.Cog):
                 await ctx.followup.send(f"Legacy message update failed: {type(e).__name__}: {e}", ephemeral=True)
                 return
         else:
-            text_msg_id = config.get("text_message_id")
-            if text_msg_id:
+            files = [f for f in (ings_file, mats_file) if f is not None]
+            view = build_panel_view(long_text, files)
+
+            panel_msg = None
+            panel_msg_id = config.get("panel_message_id")
+            if panel_msg_id:
                 try:
-                    text_msg = await channel.fetch_message(text_msg_id)
-                    await text_msg.edit(embed=embed)
-                    updated = True
-                except Exception as e:
-                    text_msg = await channel.send(embed=embed)
-                    config["text_message_id"] = text_msg.id
-                    updated = False
-            else:
-                text_msg = await channel.send(embed=embed)
-                config["text_message_id"] = text_msg.id
-                updated = False
+                    panel_msg = await channel.fetch_message(panel_msg_id)
+                    await panel_msg.edit(view=view, attachments=[], files=files)
+                except Exception:
+                    panel_msg = None
 
-            # Send or update ingredients panel
-            if ings_file is not None:
-                ings_msg_id = config.get("ings_message_id")
-                if ings_msg_id:
-                    try:
-                        ings_msg = await channel.fetch_message(ings_msg_id)
-                        await ings_msg.edit(attachments=[], files=[ings_file])
-                    except Exception as e:
-                        ings_msg = await channel.send(file=ings_file)
-                        config["ings_message_id"] = ings_msg.id
-                else:
-                    ings_msg = await channel.send(file=ings_file)
-                    config["ings_message_id"] = ings_msg.id
+            if panel_msg is None:
+                panel_msg = await channel.send(view=view, files=files)
+                config["panel_message_id"] = panel_msg.id
 
-            # Send or update materials panel
-            if mats_file is not None:
-                mats_msg_id = config.get("mats_message_id")
-                if mats_msg_id:
-                    try:
-                        mats_msg = await channel.fetch_message(mats_msg_id)
-                        await mats_msg.edit(attachments=[], files=[mats_file])
-                    except Exception as e:
-                        mats_msg = await channel.send(file=mats_file)
-                        config["mats_message_id"] = mats_msg.id
-                else:
-                    mats_msg = await channel.send(file=mats_file)
-                    config["mats_message_id"] = mats_msg.id
+            await self._retire_split_panels(channel, config)
 
         await self._post_rates_update(config)
         self.save_config(config)
