@@ -284,6 +284,8 @@ WEBSITE_URL = "http://localhost:3000" if IS_TEST_MODE else "https://the-aquarium
 TICKET_TOOL_BOT_ID = 557628352828014614
 LEGACY_WEBHOOK_URL = os.getenv("LEGACY_WEBHOOK_URL", "")
 LEGACY_MESSAGE_ID = 1135537781574205520
+
+TAQ_EMBED_COLOR = 0x94C1FF
 LOG_CHANNEL_ID = BOT_LOG_CHANNEL_ID
 
 # =============================================================================
