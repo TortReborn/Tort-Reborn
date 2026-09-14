@@ -392,14 +392,24 @@ class WebAppCommands(commands.Cog):
         applicant = await self._resolve_member(channel, int(app["discord_id"]))
         mention = applicant.mention if applicant else f"<@{app['discord_id']}>"
 
-        await channel.send(
-            f"Hi {mention},\n\n"
-            f"We regret to inform you that your application to join our guild did not "
-            f"meet our current standards. We appreciate your interest and thank you "
-            f"for considering us.\n\n"
-            f"Best Regards,\n"
-            f"The Aquarium Applications Team"
-        )
+        if app["application_type"] == "guild":
+            await channel.send(
+                f"Hi {mention},\n\n"
+                f"We regret to inform you that your application to join our guild did not "
+                f"meet our current standards. We appreciate your interest and thank you "
+                f"for considering us.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
+        else:
+            await channel.send(
+                f"Hi {mention},\n\n"
+                f"We regret to inform you that your application to become a "
+                f"**Community Member** of The Aquarium has not been accepted at this "
+                f"time. We appreciate your interest and thank you for considering us.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
 
         # Update poll embed
         await update_web_poll_embed(self.client, channel.id, ":orange_circle: Denied", 0xFFE019)
