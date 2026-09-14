@@ -8,6 +8,12 @@ from discord.ext import tasks, commands
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
+from Helpers.guild_leave import (
+    CLEAR_LEAVE_SQL,
+    classify_pending_leave,
+    clear_stale_pending_leaves,
+    fetch_pending_leaves,
+)
 from Helpers.app_transcript import (
     classify_transcript_candidate,
     post_transcript,
@@ -29,16 +35,14 @@ class CheckApps(commands.Cog):
         """Monitor accepted guild applications where the player needs to leave their current guild."""
         db = DB()
         db.connect()
-        db.cursor.execute(
-            """
-            SELECT id, channel_id, thread_id, discord_id, answers->>'ign' AS ign
-              FROM applications
-             WHERE status = 'accepted'
-               AND application_type = 'guild'
-               AND guild_leave_pending = TRUE
-            """
-        )
-        rows = db.cursor.fetchall()
+        # A flag left on an applicant who already joined would fire the
+        # "left their guild" ping the day they leave TAq (TAQ-81).
+        stale = clear_stale_pending_leaves(db.cursor)
+        if stale:
+            db.connection.commit()
+            for stale_id, stale_ign in stale:
+                log(INFO, f"Cleared stale guild_leave_pending on app {stale_id} ({stale_ign}): already joined.", context="check_apps")
+        rows = fetch_pending_leaves(db.cursor)
         db.close()
 
         if not rows:
@@ -85,24 +89,21 @@ class CheckApps(commands.Cog):
             return
 
         player_data = await asyncio.to_thread(getPlayerDatav3, uuid)
-        if not isinstance(player_data, dict):
+        outcome = classify_pending_leave(player_data)
+        if outcome in ("unknown", "waiting"):
             return
 
-        guild_info = player_data.get("guild")
-        still_in_guild = bool(guild_info and isinstance(guild_info, dict) and guild_info.get("name"))
-
-        if still_in_guild:
-            return
-
-        # Player has left their guild
+        # Player has left their guild, or is already in TAq (left and joined
+        # between two polls, or registered by hand) -- either way, stop watching.
         db = DB()
         db.connect()
-        db.cursor.execute(
-            "UPDATE applications SET guild_leave_pending = FALSE WHERE id = %s",
-            (app_id,)
-        )
+        db.cursor.execute(CLEAR_LEAVE_SQL, (app_id,))
         db.connection.commit()
         db.close()
+
+        if outcome == "joined":
+            log(INFO, f"{ign} is already in TAq; cleared guild_leave_pending on app {app_id}.", context="check_apps")
+            return
 
         if thread_id:
             thread = self.client.get_channel(thread_id)
