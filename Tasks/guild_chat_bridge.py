@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import re
 from collections import deque
 from dataclasses import dataclass
 from datetime import timezone
@@ -19,11 +20,14 @@ from Helpers.variables import (
 TAQ_GUILD_TAG = "TAq"
 BRIDGE_WORKER_URL = "wss://verge-raid-tracker.wavelink.workers.dev/v1/bridge/ws"
 BRIDGE_CHANNEL_NAME = "🌊｜sea-coast"
-BRIDGE_ANCHOR_CHANNEL_ID = 748900470575071293
+BRIDGE_PERMISSION_ANCHOR_CHANNEL_ID = 736920151081091122  # build-discussions
+BRIDGE_POSITION_ANCHOR_CHANNEL_ID = 748900470575071293  # guild-general
 BRIDGE_ROTATION_HOURS = 24
 BRIDGE_IDLE_MINUTES = 5
 MAX_MESSAGE_LENGTH = 4000
 RECENT_DISCORD_MESSAGES = 256
+BRIDGE_WEBHOOK_NAME = "Tort Guild Bridge"
+WEBHOOK_NAME_FORBIDDEN = ("discord", "clyde")
 
 
 @dataclass(frozen=True)
@@ -33,10 +37,18 @@ class LinkedBridgeMember:
     color: int | None
 
 
+@dataclass(frozen=True)
+class BridgePoster:
+    name: str
+    avatar_url: str
+
+
 class GuildChatBridge(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.channel_id = 0
+        self.webhook_id = 0
+        self.webhook = None
         self.session = None
         self.ws = None
         self.socket_task = None
@@ -57,7 +69,7 @@ class GuildChatBridge(commands.Cog):
             return
         if self.channel_id == 0:
             try:
-                self.channel_id = await asyncio.to_thread(self._load_channel_id)
+                self.channel_id, self.webhook_id = await asyncio.to_thread(self._load_state)
             except Exception as exc:
                 log(ERROR, f"Could not load guild chat bridge channel: {exc}", context="guild_chat_bridge")
                 return
@@ -67,6 +79,7 @@ class GuildChatBridge(commands.Cog):
             return
         self.channel_id = channel.id
         await asyncio.to_thread(self._save_channel_id, channel.id)
+        self.webhook = await self._ensure_webhook(channel)
         if not self.socket_task or self.socket_task.done():
             self.socket_task = asyncio.create_task(self._socket_loop())
 
@@ -146,7 +159,6 @@ class GuildChatBridge(commands.Cog):
             return
 
         username = str(data.get("username") or "")[:16]
-        display_name = str(data.get("displayName") or username)[:64]
         message = str(data.get("message") or "").strip()
         if not username or not message:
             return
@@ -156,12 +168,89 @@ class GuildChatBridge(commands.Cog):
             log(WARN, "Dropped Minecraft bridge message; bridge channel is missing.", context="guild_chat_bridge")
             return
 
-        author = discord.utils.escape_markdown(display_name, as_needed=True)
-        content = f"**{author}**: {_discord_safe_text(message)}"
-        await channel.send(
-            content[:2000],
-            allowed_mentions=discord.AllowedMentions.none(),
+        webhook = self.webhook or await self._ensure_webhook(channel)
+        if webhook is None:
+            log(WARN, "Dropped Minecraft bridge message; bridge webhook is unavailable.", context="guild_chat_bridge")
+            return
+        self.webhook = webhook
+
+        # Sending through the bridge requires Verge login verification, which only succeeds
+        # for a linked TAq member, so a poster should always resolve here.
+        poster = await self._resolve_poster(channel.guild, username)
+        if poster is None:
+            log(WARN, f"Dropped Minecraft bridge message; {username} did not resolve to a linked member.", context="guild_chat_bridge")
+            return
+
+        content = _discord_safe_text(message)
+
+        async def post(hook: discord.Webhook):
+            await hook.send(
+                content[:2000],
+                username=poster.name,
+                avatar_url=poster.avatar_url,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+
+        try:
+            await post(webhook)
+        except discord.NotFound:
+            log(WARN, "Guild chat bridge webhook was deleted; recreating.", context="guild_chat_bridge")
+            self.webhook = None
+            webhook = await self._create_webhook(channel)
+            if webhook is None:
+                return
+            self.webhook = webhook
+            try:
+                await post(webhook)
+            except discord.HTTPException as exc:
+                log(ERROR, f"Could not resend Minecraft bridge message: {exc}", context="guild_chat_bridge")
+        except discord.HTTPException as exc:
+            log(ERROR, f"Could not relay Minecraft message to Discord: {exc}", context="guild_chat_bridge")
+
+    async def _resolve_poster(self, guild: discord.Guild, ign: str) -> BridgePoster | None:
+        discord_id = await asyncio.to_thread(_linked_discord_id, ign)
+        if discord_id is None:
+            return None
+        member = guild.get_member(discord_id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(discord_id)
+            except discord.HTTPException:
+                member = None
+        if member is None:
+            return None
+        return BridgePoster(
+            name=_sanitize_webhook_username(member.display_name),
+            avatar_url=member.display_avatar.url,
         )
+
+    async def _ensure_webhook(self, channel: discord.TextChannel) -> discord.Webhook | None:
+        if self.webhook_id:
+            try:
+                hooks = await channel.webhooks()
+            except discord.Forbidden:
+                log(ERROR, "Missing Manage Webhooks permission for the guild chat bridge channel.", context="guild_chat_bridge")
+                return None
+            except discord.HTTPException as exc:
+                log(WARN, f"Could not list guild chat bridge webhooks: {exc}", context="guild_chat_bridge")
+                hooks = []
+            existing = discord.utils.get(hooks, id=self.webhook_id)
+            if existing is not None:
+                return existing
+        return await self._create_webhook(channel)
+
+    async def _create_webhook(self, channel: discord.TextChannel) -> discord.Webhook | None:
+        try:
+            webhook = await channel.create_webhook(name=BRIDGE_WEBHOOK_NAME, reason="Guild chat bridge")
+        except discord.Forbidden:
+            log(ERROR, "Missing Manage Webhooks permission for the guild chat bridge channel.", context="guild_chat_bridge")
+            return None
+        except discord.HTTPException as exc:
+            log(ERROR, f"Could not create guild chat bridge webhook: {exc}", context="guild_chat_bridge")
+            return None
+        self.webhook_id = webhook.id
+        await asyncio.to_thread(self._save_webhook_id, webhook.id)
+        return webhook
 
     @tasks.loop(minutes=1)
     async def rotate_bridge_channel(self):
@@ -185,6 +274,8 @@ class GuildChatBridge(commands.Cog):
         try:
             replacement = await channel.clone(name=BRIDGE_CHANNEL_NAME, reason="Guild chat bridge daily reset")
             await self._place_bridge_channel(replacement)
+            # Cloning a channel does not carry its webhooks over, so the old one dies with it.
+            self.webhook = await self._create_webhook(replacement)
             await asyncio.to_thread(self._save_channel_id, replacement.id)
             self.channel_id = replacement.id
             await channel.delete(reason="Guild chat bridge daily reset")
@@ -205,14 +296,15 @@ class GuildChatBridge(commands.Cog):
         channel = self.client.get_channel(self.channel_id)
         return channel if isinstance(channel, discord.TextChannel) else None
 
-    def _load_channel_id(self) -> int:
+    def _load_state(self) -> tuple[int, int]:
         _ensure_state_table()
         with DB() as db:
-            db.cursor.execute("SELECT channel_id FROM guild_chat_bridge_state WHERE id = TRUE")
+            db.cursor.execute("SELECT channel_id, webhook_id FROM guild_chat_bridge_state WHERE id = TRUE")
             row = db.cursor.fetchone()
-            if row and row[0]:
-                return int(row[0])
-        return 0
+        if not row:
+            return 0, 0
+        channel_id, webhook_id = row
+        return int(channel_id or 0), int(webhook_id or 0)
 
     def _save_channel_id(self, channel_id: int):
         _ensure_state_table()
@@ -227,6 +319,14 @@ class GuildChatBridge(commands.Cog):
             )
             db.connection.commit()
 
+    def _save_webhook_id(self, webhook_id: int):
+        with DB() as db:
+            db.cursor.execute(
+                "UPDATE guild_chat_bridge_state SET webhook_id = %s, updated_at = NOW() WHERE id = TRUE",
+                (webhook_id,),
+            )
+            db.connection.commit()
+
     async def _ensure_bridge_channel(self) -> discord.TextChannel | None:
         guild = self.client.get_guild(TAQ_GUILD_ID)
         if guild is None:
@@ -235,7 +335,7 @@ class GuildChatBridge(commands.Cog):
         if channel is None:
             channel = self._named_channel()
         if channel is None:
-            anchor = self._anchor_channel()
+            anchor = self._permission_anchor_channel()
             if anchor is None:
                 return None
             channel = await anchor.clone(name=BRIDGE_CHANNEL_NAME, reason="Create guild chat bridge channel")
@@ -245,21 +345,28 @@ class GuildChatBridge(commands.Cog):
         return channel
 
     async def _place_bridge_channel(self, channel: discord.TextChannel):
-        anchor = self._anchor_channel()
-        if anchor is None:
-            return
-        edit = {}
-        if channel.category_id != anchor.category_id:
-            edit["category"] = anchor.category
-        anchor_overwrites = dict(anchor.overwrites)
-        if channel.overwrites != anchor_overwrites:
-            edit["overwrites"] = anchor_overwrites
-        if edit:
-            await channel.edit(**edit, reason="Sync guild chat bridge channel with guild-general")
-        await channel.edit(position=anchor.position + 1, reason="Place guild chat bridge channel")
+        permission_anchor = self._permission_anchor_channel()
+        position_anchor = self._position_anchor_channel()
 
-    def _anchor_channel(self) -> discord.TextChannel | None:
-        channel = self.client.get_channel(BRIDGE_ANCHOR_CHANNEL_ID)
+        edit = {}
+        if position_anchor is not None and channel.category_id != position_anchor.category_id:
+            edit["category"] = position_anchor.category
+        if permission_anchor is not None:
+            anchor_overwrites = dict(permission_anchor.overwrites)
+            if channel.overwrites != anchor_overwrites:
+                edit["overwrites"] = anchor_overwrites
+        if edit:
+            await channel.edit(**edit, reason="Sync guild chat bridge channel with build-discussions")
+
+        if position_anchor is not None:
+            await channel.edit(position=position_anchor.position + 1, reason="Place guild chat bridge channel below guild-general")
+
+    def _permission_anchor_channel(self) -> discord.TextChannel | None:
+        channel = self.client.get_channel(BRIDGE_PERMISSION_ANCHOR_CHANNEL_ID)
+        return channel if isinstance(channel, discord.TextChannel) else None
+
+    def _position_anchor_channel(self) -> discord.TextChannel | None:
+        channel = self.client.get_channel(BRIDGE_POSITION_ANCHOR_CHANNEL_ID)
         return channel if isinstance(channel, discord.TextChannel) else None
 
     def _named_channel(self) -> discord.TextChannel | None:
@@ -284,10 +391,12 @@ def _ensure_state_table():
             CREATE TABLE IF NOT EXISTS guild_chat_bridge_state (
                 id BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (id),
                 channel_id BIGINT NOT NULL,
+                webhook_id BIGINT,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
             """
         )
+        db.cursor.execute("ALTER TABLE guild_chat_bridge_state ADD COLUMN IF NOT EXISTS webhook_id BIGINT")
         db.connection.commit()
 
 
@@ -318,6 +427,31 @@ def _linked_member(discord_id: int) -> LinkedBridgeMember | None:
         ign=str(ign),
         color=_color_value(color),
     )
+
+
+def _linked_discord_id(ign: str) -> int | None:
+    with DB() as db:
+        db.cursor.execute(
+            """
+            SELECT discord_id
+            FROM discord_links
+            WHERE linked = TRUE
+              AND ign IS NOT NULL
+              AND LOWER(ign) = LOWER(%s)
+            LIMIT 1
+            """,
+            (ign,),
+        )
+        row = db.cursor.fetchone()
+    return int(row[0]) if row else None
+
+
+def _sanitize_webhook_username(name: str) -> str:
+    cleaned = name.strip()
+    for forbidden in WEBHOOK_NAME_FORBIDDEN:
+        cleaned = re.sub(re.escape(forbidden), "*" * len(forbidden), cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned[:80].strip()
+    return cleaned or "Player"
 
 
 def _message_text(message: discord.Message) -> str:
