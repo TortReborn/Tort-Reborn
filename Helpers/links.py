@@ -53,12 +53,3 @@ def assert_uuid_free(cursor, uuid, discord_id):
     conflict = find_linked_uuid_conflict(cursor, uuid, discord_id)
     if conflict:
         raise LinkConflictError(uuid, conflict[0], conflict[1])
-
-
-def assert_row_linkable(cursor, discord_id):
-    """Transitional: the application/registration callers still flip rows to
-    linked = TRUE until the next commits switch them to upsert_identity."""
-    cursor.execute("SELECT uuid FROM discord_links WHERE discord_id = %s", (discord_id,))
-    row = cursor.fetchone()
-    if row and row[0]:
-        assert_uuid_free(cursor, row[0], discord_id)

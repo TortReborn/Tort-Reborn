@@ -27,8 +27,11 @@ from Helpers.classes import Guild, DB, BasicPlayerStats
 from Helpers.database import get_current_guild_data_with_db, write_hourly_activity_snapshot_with_db, prune_hourly_activity_snapshots_with_db
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, getPlayerUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
-from Helpers.links import LinkConflictError, assert_row_linkable
-from Helpers.member_roles import honorific_flags, registration_role_names
+from Helpers import roster as roster_db
+from Helpers.leave_prompts import post_leave_prompts
+from Helpers.links import LinkConflictError
+from Helpers.member_roles import registration_role_names
+from Helpers.registration import record_registration
 from Helpers.playtime_daily import refresh_playtime_daily
 from Helpers.variables import (
     RAID_LOG_CHANNEL_ID,
@@ -805,8 +808,18 @@ class UpdateMemberData(commands.Cog):
                 add_chunked(el, 'Left', [prev_map[u]['name'] for u in left])
                 if ch:
                     await ch.send(embed=el)
+                # The guild log gets one message per leaver with the reset /
+                # honorific buttons (TAQ-76); large batches fall back to the list.
                 if guild_log_ch:
-                    await guild_log_ch.send(embed=el)
+                    try:
+                        await post_leave_prompts(
+                            self.client, guild_log_ch,
+                            [(u, prev_map[u]['name'], prev_map[u].get('rank')) for u in left],
+                            fallback_embed=el, now=now,
+                        )
+                    except Exception as e:
+                        log(ERROR, f"Leave prompts failed: {e}", context="guild_log")
+                        await guild_log_ch.send(embed=el)
                 # Void any pending recruit credit for members who left before Piranha
                 for uuid in left:
                     try:
@@ -817,6 +830,13 @@ class UpdateMemberData(commands.Cog):
                         log(ERROR, f"Recruit credit void for {uuid}: {e}", context="guild_log")
         self.previous_members = curr_map
         self._save_to_cache("memberList", curr_map)
+
+        # 3a: guild_roster / membership_stints are the membership record for
+        # the bot and the website; keep them in step with the API every cycle.
+        try:
+            await asyncio.to_thread(self._sync_roster_table, guild.all_members, now)
+        except Exception as e:
+            log(ERROR, f"Roster sync error: {e}", context="update_member_data")
 
         # 3b: Sync renames. The guild API name is authoritative; discord_links.ign
         # is only ever written at link time and otherwise goes stale forever,
@@ -1059,15 +1079,30 @@ class UpdateMemberData(commands.Cog):
         """Check if a joined member has a pending accepted application and auto-register them."""
 
         def _check_pending_app(uuid_str):
+            """The accepted guild application behind this uuid whose applicant
+            has not been registered yet: no Discord rank on their identity
+            row, and no completed stint since the application (someone who
+            joined, was registered and left is not pending again). Application
+            state lives on applications, not on the link."""
             db = DB()
             try:
                 db.connect()
                 db.cursor.execute(
-                    """SELECT dl.discord_id, dl.app_channel
+                    """SELECT dl.discord_id, a.channel_id
                        FROM discord_links dl
-                       WHERE REPLACE(dl.uuid::text, '-', '') = REPLACE(%s, '-', '')
-                         AND dl.linked = FALSE
-                         AND dl.app_channel IS NOT NULL""",
+                       JOIN applications a
+                         ON a.discord_id = dl.discord_id::text
+                        AND a.application_type = 'guild'
+                        AND a.status = 'accepted'
+                       WHERE dl.uuid = %s::uuid
+                         AND dl.rank IS NULL
+                         AND NOT EXISTS (
+                           SELECT 1 FROM membership_stints ms
+                            WHERE ms.uuid = dl.uuid AND ms.left_at IS NOT NULL
+                              AND ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at) - INTERVAL '7 days'
+                         )
+                       ORDER BY a.reviewed_at DESC NULLS LAST, a.id DESC
+                       LIMIT 1""",
                     (uuid_str,)
                 )
                 return db.cursor.fetchone()
@@ -1096,7 +1131,7 @@ class UpdateMemberData(commands.Cog):
 
         # Determine starting rank based on existing Discord roles
         starting_rank = determine_starting_rank(member)
-        was_honored_fish, was_retired_chief = honorific_flags(r.name for r in member.roles)
+        held_role_names = [r.name for r in member.roles]
         to_add, to_remove = registration_role_names(starting_rank)
 
         all_roles = discord_guild.roles
@@ -1118,24 +1153,14 @@ class UpdateMemberData(commands.Cog):
             log(ERROR, f"Error modifying {member.name}: {e}", context="auto_register")
             return
 
-        # Update discord_links: mark as linked, set rank
+        # Identity + rank + stint + honorific record, in one place.
         def _complete_registration(did, ign_val, uuid_str, wars, rank):
             db = DB()
             try:
                 db.connect()
-                assert_row_linkable(db.cursor, did)
-                db.cursor.execute(
-                    """UPDATE discord_links
-                       SET linked = TRUE, rank = %s, ign = %s, wars_on_join = %s,
-                           was_honored_fish = %s, was_retired_chief = %s
-                       WHERE discord_id = %s""",
-                    (rank, ign_val, wars, was_honored_fish, was_retired_chief, did)
-                )
-                # Clear guild_leave_pending if this user had a pending-leave application
-                db.cursor.execute(
-                    """UPDATE applications SET guild_leave_pending = FALSE
-                       WHERE discord_id = %s::TEXT AND guild_leave_pending = TRUE""",
-                    (did,)
+                record_registration(
+                    db.cursor, discord_id=did, ign=ign_val, uuid=uuid_str, rank=rank,
+                    wars_on_join=wars, held_role_names=held_role_names, actor_id=0,
                 )
                 db.connection.commit()
             finally:
@@ -1211,16 +1236,38 @@ class UpdateMemberData(commands.Cog):
             log(WARN, f"Failed to send welcome DM to {member.name}: {e}", context="auto_register")
 
     @staticmethod
+    def _sync_roster_table(members, now):
+        db = DB()
+        try:
+            db.connect()
+            joined, left = roster_db.sync_roster(db.cursor, members, now)
+            db.connection.commit()
+            if joined or left:
+                log(INFO, f"Roster sync: +{len(joined)} -{len(left)}", context="update_member_data")
+            return joined, left
+        finally:
+            db.close()
+
+    @staticmethod
     def _fetch_unlinked_with_app():
-        """Fetch discord_links entries that are unlinked but have an app channel (pending registration)."""
+        """Accepted guild applicants with an identity row but no rank yet
+        (pending registration), for the sweep that catches joins the diff missed."""
         db = DB()
         try:
             db.connect()
             db.cursor.execute(
-                """SELECT uuid, ign FROM discord_links
-                   WHERE linked = FALSE
-                     AND app_channel IS NOT NULL
-                     AND uuid IS NOT NULL"""
+                """SELECT DISTINCT dl.uuid::text, dl.ign
+                   FROM discord_links dl
+                   JOIN applications a
+                     ON a.discord_id = dl.discord_id::text
+                    AND a.application_type = 'guild'
+                    AND a.status = 'accepted'
+                   WHERE dl.rank IS NULL
+                     AND NOT EXISTS (
+                       SELECT 1 FROM membership_stints ms
+                        WHERE ms.uuid = dl.uuid AND ms.left_at IS NOT NULL
+                          AND ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at) - INTERVAL '7 days'
+                     )"""
             )
             return db.cursor.fetchall()
         finally:
@@ -1548,25 +1595,18 @@ class UpdateMemberData(commands.Cog):
     @staticmethod
     def _sync_member_igns(curr_map):
         """Blocking: refresh discord_links.ign for members whose guild-API name
-        changed. Updates every row carrying the uuid (unlinked history rows are
-        the same person). Returns dicts {old, new, discord_id, rank} per rename,
-        where discord_id/rank come from the linked row (None when unlinked) so
-        the caller can rebuild the Discord nickname."""
+        changed. One row per uuid since TAQ-76. Returns dicts
+        {old, new, discord_id, rank} per rename so the caller can rebuild the
+        Discord nickname."""
         db = _db_connect_with_retry()
         try:
             db.cursor.execute(
-                "SELECT uuid::text, ign, discord_id, linked, rank FROM discord_links WHERE uuid IS NOT NULL"
+                "SELECT uuid::text, ign, discord_id, rank FROM discord_links"
             )
-            stored = {}
-            for row_uuid, row_ign, row_discord_id, row_linked, row_rank in db.cursor.fetchall():
-                entry = stored.setdefault(
-                    row_uuid.replace('-', ''),
-                    {'names': set(), 'discord_id': None, 'rank': None},
-                )
-                entry['names'].add(row_ign)
-                if row_linked:
-                    entry['discord_id'] = row_discord_id
-                    entry['rank'] = row_rank
+            stored = {
+                row_uuid.replace('-', ''): {'name': row_ign, 'discord_id': row_discord_id, 'rank': row_rank}
+                for row_uuid, row_ign, row_discord_id, row_rank in db.cursor.fetchall()
+            }
 
             renames = []
             for uuid, info in curr_map.items():
@@ -1574,14 +1614,13 @@ class UpdateMemberData(commands.Cog):
                 if not name:
                     continue
                 entry = stored.get(uuid.replace('-', ''))
-                if entry and entry['names'] != {name}:
+                if entry and entry['name'] != name:
                     db.cursor.execute(
-                        "UPDATE discord_links SET ign = %s WHERE uuid = %s",
+                        "UPDATE discord_links SET ign = %s WHERE uuid = %s::uuid",
                         (name, uuid)
                     )
-                    old = next(n for n in sorted(entry['names']) if n != name)
                     renames.append({
-                        'old': old,
+                        'old': entry['name'],
                         'new': name,
                         'discord_id': entry['discord_id'],
                         'rank': entry['rank'],
