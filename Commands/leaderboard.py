@@ -173,7 +173,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
             uuid = m['uuid']
             name = m.get('name') or m.get('username') or 'Unknown'
             api_rank = m.get('rank', 'unknown')
-            rank = uuid_to_discord_rank.get(uuid, api_rank)
+            rank = uuid_to_discord_rank.get(uuid) or api_rank
 
             is_private = False  # Track if the relevant metric is private/null
 
