@@ -5,7 +5,7 @@ from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
-from Helpers.member_roles import removal_role_names, resolve_roles
+from Helpers.member_removal import remove_member
 from Helpers.variables import (
     TAQ_GUILD_ID,
     ERROR_CHANNEL_ID,
@@ -32,6 +32,7 @@ def _row_to_dict(row):
         'action_type': row[5],
         'queued_by_discord_id': row[6],
         'queued_by_ign': row[7],
+        'grant_honorific': row[8] if len(row) > 8 else None,
     }
 
 
@@ -114,7 +115,8 @@ class PromotionQueueProcessor(commands.Cog):
                         FOR UPDATE SKIP LOCKED
                     )
                     RETURNING id, uuid, ign, current_rank, new_rank,
-                              action_type, queued_by_discord_id, queued_by_ign
+                              action_type, queued_by_discord_id, queued_by_ign,
+                              grant_honorific
                 )
                 SELECT * FROM claimed ORDER BY id ASC
                 """,
@@ -197,19 +199,6 @@ class PromotionQueueProcessor(commands.Cog):
         finally:
             db.close()
 
-    @staticmethod
-    def _remove_from_discord_links(discord_id):
-        db = DB()
-        db.connect()
-        try:
-            db.cursor.execute(
-                "DELETE FROM discord_links WHERE discord_id = %s",
-                (discord_id,)
-            )
-            db.connection.commit()
-        finally:
-            db.close()
-
     # ---- Processing logic ----
 
     async def _process_entry(self, entry, guild):
@@ -254,6 +243,14 @@ class PromotionQueueProcessor(commands.Cog):
             )
 
         action = entry['action_type']
+
+        # --- Security: Retired Chief is the higher honor; Narwhal+ only ---
+        if action == 'remove' and entry.get('grant_honorific') == 'retired_chief':
+            if queuer_index < ranks_list.index('Narwhal'):
+                raise ValueError(
+                    f"Queuer '{entry['queued_by_ign']}' (rank {queuer_rank}) cannot grant "
+                    f"Retired Chief — Narwhal or higher required"
+                )
 
         # --- Security: validate rank direction ---
         if action == 'promote' and entry['new_rank']:
@@ -344,47 +341,18 @@ class PromotionQueueProcessor(commands.Cog):
 
         await asyncio.to_thread(self._update_rank_in_db, member.id, new_rank_key)
 
-    @staticmethod
-    def _lookup_honorific_flags(discord_id):
-        """(was_honored_fish, was_retired_chief) from discord_links. Blocking."""
-        db = DB()
-        db.connect()
-        try:
-            db.cursor.execute(
-                "SELECT was_honored_fish, was_retired_chief FROM discord_links WHERE discord_id = %s",
-                (discord_id,)
-            )
-            row = db.cursor.fetchone()
-            return (bool(row[0]), bool(row[1])) if row else (False, False)
-        finally:
-            db.close()
-
     async def _do_remove(self, entry, member, guild):
         reason = f"Website removal queue (queued by {entry['queued_by_ign']})"
-        all_roles = guild.roles
-
-        # Read the honorific record before the row is deleted below
-        was_honored_fish, was_retired_chief = await asyncio.to_thread(
-            self._lookup_honorific_flags, member.id
+        # The website may attach an honorific to a removal; remove_member
+        # records it in the ledger before touching roles. The discord_links
+        # row is identity and stays; only the rank is cleared (TAQ-76).
+        await remove_member(
+            member, guild,
+            actor_id=entry['queued_by_discord_id'],
+            reason=reason,
+            grant=entry.get('grant_honorific'),
+            note=f"website removal queue #{entry['id']}",
         )
-        to_add, to_remove = removal_role_names(was_honored_fish, was_retired_chief)
-
-        roles_to_remove = resolve_roles(all_roles, to_remove, member=member, present=True)
-        if roles_to_remove:
-            await member.remove_roles(*roles_to_remove, reason=reason, atomic=True)
-
-        # Add Ex-Member plus any restored honorifics
-        roles_to_add = resolve_roles(all_roles, to_add, member=member, present=False)
-        if roles_to_add:
-            await member.add_roles(*roles_to_add, reason=reason, atomic=True)
-
-        # Clear nickname
-        try:
-            await member.edit(nick='')
-        except Exception:
-            pass
-
-        await asyncio.to_thread(self._remove_from_discord_links, member.id)
 
     @staticmethod
     async def _apply_rank_roles(member, new_rank_key, guild, reason):

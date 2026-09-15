@@ -90,6 +90,9 @@ class WavePromote(commands.Cog):
 
         initiator_rank = initiator_row[0]
         ranks_list = list(discord_ranks)
+        if initiator_rank not in discord_ranks:
+            await ctx.respond(':no_entry: You have no recognised rank on record.', ephemeral=True)
+            return
         initiator_index = ranks_list.index(initiator_rank)
         all_roles = ctx.guild.roles
 
@@ -114,6 +117,9 @@ class WavePromote(commands.Cog):
                     continue
 
                 current_rank, uuid, ign = row
+                if current_rank not in discord_ranks:
+                    failures.append((target, 'No rank on record'))
+                    continue
                 current_index = ranks_list.index(current_rank)
 
                 # Rank hierarchy check

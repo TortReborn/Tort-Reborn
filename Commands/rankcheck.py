@@ -8,8 +8,8 @@ import asyncio
 from Helpers.classes import Guild
 from Helpers.database import DB
 from Helpers.functions import getNameFromUUID
-from Helpers.member_roles import removal_role_names, resolve_roles
-from Helpers.stale_links import render_stale_taq_links, split_stale_report, stale_taq_links
+from Helpers.member_removal import check_reset_permission, remove_member
+from Helpers.stale_links import fetch_stale_taq_links, render_stale_taq_links, split_stale_report, stale_taq_links
 from Helpers.variables import discord_ranks, HOME_GUILD_IDS, TAQ_GUILD_ID
 
 
@@ -59,23 +59,11 @@ class RankCheck(commands.Cog):
         self._name_cache = {}
         self._sem = asyncio.Semaphore(5)
 
-    def _fetch_linked_taq_rows(self):
-        ranks = list(discord_ranks)
-        placeholders = ", ".join(["%s"] * len(ranks))
+    def _fetch_stale_rows(self):
         db = DB()
         db.connect()
         try:
-            db.cursor.execute(
-                f"""
-                SELECT discord_id, ign, uuid, rank, was_honored_fish, was_retired_chief
-                FROM discord_links
-                WHERE linked = TRUE
-                  AND uuid IS NOT NULL
-                  AND rank IN ({placeholders})
-                """,
-                tuple(ranks),
-            )
-            return db.cursor.fetchall()
+            return fetch_stale_taq_links(db.cursor)
         finally:
             db.close()
 
@@ -115,16 +103,16 @@ class RankCheck(commands.Cog):
             return "Could not find the TAq Discord server."
 
         actor_rank = await asyncio.to_thread(self._rank_for_discord, interaction.user.id)
-        if actor_rank not in discord_ranks:
-            return "Link your account first."
+        refusal = check_reset_permission(actor_rank, None)
+        if refusal:
+            return refusal[1]
 
-        actor_index = list(discord_ranks).index(actor_rank)
         done = []
         skipped = []
         failed = []
 
         for row in rows:
-            if list(discord_ranks).index(row["rank"]) >= actor_index:
+            if check_reset_permission(actor_rank, (row["rank"],)):
                 skipped.append(row["ign"])
                 continue
 
@@ -133,19 +121,12 @@ class RankCheck(commands.Cog):
                 skipped.append(row["ign"])
                 continue
 
-            to_add, to_remove = removal_role_names(
-                row.get("was_honored_fish", False),
-                row.get("was_retired_chief", False),
-            )
-            roles_to_add = resolve_roles(guild.roles, to_add, member=member, present=False)
-            roles_to_remove = resolve_roles(guild.roles, to_remove, member=member, present=True)
-
             try:
-                if roles_to_add:
-                    await member.add_roles(*roles_to_add, reason=f"Stale role reset by {interaction.user.name}")
-                if roles_to_remove:
-                    await member.remove_roles(*roles_to_remove, reason=f"Stale role reset by {interaction.user.name}")
-                await member.edit(nick="")
+                await remove_member(
+                    member, guild,
+                    actor_id=interaction.user.id,
+                    reason=f"Stale role reset by {interaction.user.name}",
+                )
                 done.append(row["ign"])
             except (discord.Forbidden, discord.HTTPException):
                 failed.append(row["ign"])
@@ -172,12 +153,11 @@ class RankCheck(commands.Cog):
         await ctx.defer(ephemeral=True)
 
         discord_guild = self.client.get_guild(TAQ_GUILD_ID) or ctx.guild
-        rows, guild_members, discord_ids = await asyncio.gather(
-            asyncio.to_thread(self._fetch_linked_taq_rows),
-            asyncio.to_thread(lambda: Guild('The Aquarium').all_members),
+        rows, discord_ids = await asyncio.gather(
+            asyncio.to_thread(self._fetch_stale_rows),
             self._discord_member_ids(discord_guild),
         )
-        stale = stale_taq_links(rows, guild_members, discord_ids)
+        stale = stale_taq_links(rows, discord_ids)
         text = render_stale_taq_links(stale)
         chunks = split_stale_report(text)
         view = StaleRolesView(self, stale) if stale else discord.utils.MISSING
@@ -249,7 +229,7 @@ class RankCheck(commands.Cog):
                     usernames.append(f'\u001b[0;36m {ign:16} → {stale_api}')
 
                 linked = links_map.get(uuid)
-                if linked and linked[1] != 'None':
+                if linked and linked[1]:   # rank is NULL for linked non-members (TAQ-76)
                     discord_id, role = linked
 
                     try:

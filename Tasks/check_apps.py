@@ -223,20 +223,25 @@ class CheckApps(commands.Cog):
 
     @staticmethod
     def _fetch_auto_close_accepted(app_type):
-        """Fetch accepted apps where the user is linked (joined + processed) and 1h+ since review."""
+        """Fetch accepted apps 1h+ past review; guild apps only once the applicant is on the roster."""
         db = DB()
         db.connect()
         try:
             db.cursor.execute(
                 """SELECT a.id, a.channel_id, a.discord_id FROM applications a
-                   JOIN discord_links dl ON dl.discord_id = CAST(a.discord_id AS BIGINT)
                    WHERE a.status = 'accepted'
                      AND a.application_type = %s
                      AND a.poll_status != ':red_circle: Closed'
                      AND a.reviewed_at IS NOT NULL
                      AND a.reviewed_at + interval '1 hour' < NOW()
                      AND a.channel_id IS NOT NULL AND a.channel_id > 0
-                     AND dl.linked = TRUE""",
+                     AND (a.application_type <> 'guild' OR EXISTS (
+                          SELECT 1 FROM discord_links dl
+                          JOIN membership_stints ms ON ms.uuid = dl.uuid
+                          WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
+                            AND (ms.left_at IS NULL
+                                 OR ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at, ms.joined_at) - INTERVAL '7 days')
+                        ))""",
                 (app_type,)
             )
             return db.cursor.fetchall()

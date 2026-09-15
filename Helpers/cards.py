@@ -1131,7 +1131,7 @@ def db_mint_member_card(owner_id: int) -> dict | None:
         db.cursor.execute(
             'SELECT dl.discord_id, dl.ign, dl.uuid::text, dl.rank '
             'FROM discord_links dl '
-            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'  AND {ACTIVE_MEMBER_SQL} '
             '  AND dl.discord_id NOT IN (SELECT discord_id FROM card_members) '
             'ORDER BY RANDOM() LIMIT 1',
@@ -1189,7 +1189,7 @@ def db_get_pool() -> list:
             '       cm.owner, COALESCE(cm.retired, FALSE) '
             'FROM discord_links dl '
             'LEFT JOIN card_members cm ON cm.discord_id = dl.discord_id '
-            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'  AND {ACTIVE_MEMBER_SQL} '
             'ORDER BY array_position(%s::text[], dl.rank) DESC, lower(dl.ign)',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS, MEMBER_ELIGIBLE_RANKS))
@@ -1207,7 +1207,7 @@ def db_count_eligible_members() -> tuple[int, int]:
         minted = db.cursor.fetchone()[0]
         db.cursor.execute(
             'SELECT COUNT(*) FROM discord_links dl '
-            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'  AND {ACTIVE_MEMBER_SQL}',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         return minted, db.cursor.fetchone()[0]
@@ -1224,7 +1224,7 @@ def db_retire_departed_members() -> int:
             'UPDATE card_members SET retired = TRUE '
             'WHERE NOT retired AND discord_id NOT IN ('
             '  SELECT dl.discord_id FROM discord_links dl '
-            '  WHERE dl.linked AND dl.rank = ANY(%s) '
+            '  WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'    AND {ACTIVE_MEMBER_SQL})',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         n = db.cursor.rowcount

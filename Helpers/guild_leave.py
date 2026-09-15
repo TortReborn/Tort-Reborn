@@ -15,10 +15,10 @@ discord_links row, and any pending flag on a joined applicant is cleared
 instead of acted on.
 """
 
-# A live link means the applicant joined and was registered; nothing left to
-# monitor. Same NOT EXISTS shape as Helpers/app_expiry.py -- discord_links
-# keeps stale unlinked rows next to the live one, so a JOIN on linked would
-# still match a joined player through their old row.
+# A membership stint since the application means the applicant joined;
+# nothing left to monitor. Same NOT EXISTS shape as Helpers/app_expiry.py
+# (TAQ-76: membership history is membership_stints, not a flag on the
+# identity row).
 PENDING_LEAVE_SQL = """\
 SELECT a.id, a.channel_id, a.thread_id, a.discord_id, a.answers->>'ign' AS ign
   FROM applications a
@@ -27,8 +27,10 @@ SELECT a.id, a.channel_id, a.thread_id, a.discord_id, a.answers->>'ign' AS ign
    AND a.guild_leave_pending = TRUE
    AND NOT EXISTS (
      SELECT 1 FROM discord_links dl
+     JOIN membership_stints ms ON ms.uuid = dl.uuid
      WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
-       AND dl.linked = TRUE
+       AND (ms.left_at IS NULL
+            OR ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at, ms.joined_at) - INTERVAL '7 days')
    )"""
 
 CLEAR_STALE_LEAVE_SQL = """\
@@ -36,8 +38,10 @@ UPDATE applications a SET guild_leave_pending = FALSE
  WHERE a.guild_leave_pending = TRUE
    AND EXISTS (
      SELECT 1 FROM discord_links dl
+     JOIN membership_stints ms ON ms.uuid = dl.uuid
      WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
-       AND dl.linked = TRUE
+       AND (ms.left_at IS NULL
+            OR ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at, ms.joined_at) - INTERVAL '7 days')
    )
 RETURNING a.id, a.answers->>'ign'"""
 

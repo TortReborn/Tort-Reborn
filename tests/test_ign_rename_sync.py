@@ -11,11 +11,11 @@ the linked member.
 1. A changed name updates the row and reports {old, new, discord_id, rank}
 2. Matching names touch nothing (no UPDATE, no commit)
 3. uuid dash-format differences between API and DB still match
-4. A uuid with mixed rows (one stale, one current) still converges,
-   carrying the linked row's discord_id/rank
-5. Members with no discord_links row are ignored
-6. Nicknames: linked member gets '{rank} {new name}'; Forbidden is swallowed;
+4. Members with no discord_links row are ignored
+5. Nicknames: linked member gets '{rank} {new name}'; Forbidden is swallowed;
    renames without a linked discord_id are skipped
+
+Rows are (uuid, ign, discord_id, rank): one per uuid since TAQ-76.
 """
 
 import asyncio
@@ -69,7 +69,7 @@ def run_sync(monkeypatch, stored_rows, curr_map):
 def test_rename_updates_row(monkeypatch):
     db, renames = run_sync(
         monkeypatch,
-        [(UUID, "JohnMadDog", 609, True, "Angler")],
+        [(UUID, "JohnMadDog", 609, "Angler")],
         {UUID: {"name": "Sedacto", "rank": "captain"}},
     )
     assert renames == [{"old": "JohnMadDog", "new": "Sedacto", "discord_id": 609, "rank": "Angler"}]
@@ -80,7 +80,7 @@ def test_rename_updates_row(monkeypatch):
 def test_matching_name_untouched(monkeypatch):
     db, renames = run_sync(
         monkeypatch,
-        [(UUID, "Sedacto", 609, True, "Angler")],
+        [(UUID, "Sedacto", 609, "Angler")],
         {UUID: {"name": "Sedacto", "rank": "captain"}},
     )
     assert renames == []
@@ -91,30 +91,17 @@ def test_matching_name_untouched(monkeypatch):
 def test_dashless_api_uuid_matches(monkeypatch):
     db, renames = run_sync(
         monkeypatch,
-        [(UUID, "OldName", 609, True, "Angler")],
+        [(UUID, "OldName", 609, "Angler")],
         {UUID.replace("-", ""): {"name": "NewName", "rank": None}},
     )
     assert renames[0]["old"] == "OldName"
     assert renames[0]["new"] == "NewName"
 
 
-def test_mixed_rows_converge_with_linked_identity(monkeypatch):
-    db, renames = run_sync(
-        monkeypatch,
-        [
-            (UUID, "OldName", 111, False, "Starfish"),
-            (UUID, "NewName", 609, True, "Angler"),
-        ],
-        {UUID: {"name": "NewName", "rank": None}},
-    )
-    assert renames == [{"old": "OldName", "new": "NewName", "discord_id": 609, "rank": "Angler"}]
-    assert db.cursor.updates == [("NewName", UUID)]
-
-
 def test_unknown_member_ignored(monkeypatch):
     db, renames = run_sync(
         monkeypatch,
-        [(UUID, "Sedacto", 609, True, "Angler")],
+        [(UUID, "Sedacto", 609, "Angler")],
         {"9aeb062a-f769-49bc-8046-4d9c8cc86e5a": {"name": "guywhyII", "rank": None}},
     )
     assert renames == []
