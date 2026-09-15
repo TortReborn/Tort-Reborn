@@ -1,14 +1,15 @@
 """Guards for discord_links writes.
 
-A Minecraft account may be linked to at most one Discord account at a time.
-The database enforces this with the partial unique index
-discord_links_linked_uuid_uq (schema.sql); duplicate linked rows fan out every
-uuid join in the bot and website, duplicating leaderboard rows and
-double-counting raid points. These helpers let write paths detect the conflict
-up front and report it to the invoker instead of failing on the constraint.
+discord_links is the identity table: one Discord account <-> one Minecraft
+account. The database enforces both directions (discord_id is the primary
+key, discord_links_uuid_uq covers the uuid). Duplicate rows for a uuid would
+fan out every uuid join in the bot and website -- duplicating leaderboard
+rows and double-counting raid points -- so the write paths check up front and
+tell the invoker who holds the account, instead of failing on the constraint.
 
-Unlinked historical rows (e.g. a member who left) may still share a uuid with
-a live link — only currently-linked rows are protected.
+Until the TAQ-76 overhaul the uniqueness was partial (``WHERE linked``) and
+"unlinked history" rows could share a uuid. There is no such state any more:
+a row exists iff the identity is established, and unlinking is a delete.
 """
 
 
@@ -29,20 +30,20 @@ class LinkConflictError(Exception):
         return (
             f":no_entry: **{self.other_ign}** is already linked to "
             f"<@{self.other_discord_id}>. Unlink that account first "
-            f"(or remove the stale row) before linking it elsewhere."
+            f"(`/manage unlink`) before linking it elsewhere."
         )
 
 
 def find_linked_uuid_conflict(cursor, uuid, discord_id):
-    """Return (discord_id, ign) of a *different* Discord account currently
-    linked to this uuid, or None."""
+    """Return (discord_id, ign) of a *different* Discord account holding this
+    uuid, or None."""
     if not uuid:
         return None
     cursor.execute(
         "SELECT discord_id, ign FROM discord_links"
-        " WHERE uuid = %s AND linked = TRUE AND discord_id <> %s"
+        " WHERE uuid = %s::uuid AND discord_id <> %s"
         " LIMIT 1",
-        (uuid, discord_id),
+        (str(uuid), int(discord_id)),
     )
     return cursor.fetchone()
 
@@ -55,13 +56,9 @@ def assert_uuid_free(cursor, uuid, discord_id):
 
 
 def assert_row_linkable(cursor, discord_id):
-    """Guard for paths that flip an existing row to linked = TRUE without
-    touching its uuid: raise LinkConflictError if that row's uuid is already
-    linked to a different Discord account."""
-    cursor.execute(
-        "SELECT uuid FROM discord_links WHERE discord_id = %s",
-        (discord_id,),
-    )
+    """Transitional: the application/registration callers still flip rows to
+    linked = TRUE until the next commits switch them to upsert_identity."""
+    cursor.execute("SELECT uuid FROM discord_links WHERE discord_id = %s", (discord_id,))
     row = cursor.fetchone()
     if row and row[0]:
         assert_uuid_free(cursor, row[0], discord_id)
