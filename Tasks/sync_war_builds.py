@@ -142,8 +142,6 @@ def _fetch_state():
         db.cursor.execute("""
             SELECT uuid::text, discord_id
             FROM discord_links
-            WHERE uuid IS NOT NULL
-            ORDER BY linked ASC
         """)
         uuid_to_discord = {}
         discord_to_uuid = {}
