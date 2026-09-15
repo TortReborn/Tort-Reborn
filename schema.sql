@@ -2,37 +2,125 @@
 -- Member Management
 -- =============================================================================
 
-CREATE TABLE IF NOT EXISTS discord_links (
-  discord_id        BIGINT       PRIMARY KEY,
-  ign               VARCHAR(64)  NOT NULL,
-  uuid              UUID,
-  linked            BOOLEAN      NOT NULL DEFAULT FALSE,
-  rank              VARCHAR(32)  NOT NULL,
-  wars_on_join      INT,
-  -- Honorific roles held at (re)registration, recorded before the bot strips
-  -- them, so member removal can hand them back (TAQ-51). On restore, Retired
-  -- Chief also grants Honored Fish (TAQ-67).
-  was_honored_fish  BOOLEAN      NOT NULL DEFAULT FALSE,
-  was_retired_chief BOOLEAN      NOT NULL DEFAULT FALSE
+-- discord_links is identity only: one Discord account <-> one Minecraft
+-- account (TAQ-76, docs/specs/taq-76-linking-audit.md). Membership lives in
+-- guild_roster / membership_stints, honorifics in member_honorifics, and
+-- application state on applications. `rank` is the Discord rank role the
+-- account holds (member or ally, see rank_definitions); NULL means none.
+--
+-- The one-off migration that reshaped existing databases is
+-- TAq-Website/sql/linking_overhaul_1_additive.sql (+ _2_drop_columns.sql).
+CREATE TABLE IF NOT EXISTS rank_definitions (
+  name       VARCHAR(32) PRIMARY KEY,
+  kind       VARCHAR(8)  NOT NULL CHECK (kind IN ('member', 'ally')),
+  sort_order INT         NOT NULL UNIQUE
 );
 
--- Migration: honorific tracking for member removal (TAQ-51 / TAQ-67)
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'discord_links' AND column_name = 'was_honored_fish') THEN
-    ALTER TABLE discord_links ADD COLUMN was_honored_fish BOOLEAN NOT NULL DEFAULT FALSE;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'discord_links' AND column_name = 'was_retired_chief') THEN
-    ALTER TABLE discord_links ADD COLUMN was_retired_chief BOOLEAN NOT NULL DEFAULT FALSE;
-  END IF;
-END $$;
+INSERT INTO rank_definitions (name, kind, sort_order) VALUES
+  ('Starfish',   'member', 0),
+  ('Manatee',    'member', 1),
+  ('Piranha',    'member', 2),
+  ('Angler',     'member', 3),
+  ('Swordfish',  'member', 4),
+  ('Hammerhead', 'member', 5),
+  ('Sailfish',   'member', 6),
+  ('Dolphin',    'member', 7),
+  ('Narwhal',    'member', 8),
+  ('Hydra',      'member', 9),
+  ('Navigator',  'ally',   100)
+ON CONFLICT (name) DO NOTHING;
 
--- A Minecraft account may be linked to at most one Discord account at a time.
--- Duplicate linked rows fan out every uuid join (bot and website), duplicating
--- leaderboard rows and double-counting raid points. Unlinked historical rows
--- may still share a uuid (e.g. a member who left and relinked elsewhere).
-CREATE UNIQUE INDEX IF NOT EXISTS discord_links_linked_uuid_uq
-  ON discord_links (uuid) WHERE linked AND uuid IS NOT NULL;
+CREATE TABLE IF NOT EXISTS discord_links (
+  discord_id        BIGINT       PRIMARY KEY,
+  ign               VARCHAR(64)  NOT NULL,           -- name cache; rename sync keeps it current
+  uuid              UUID         NOT NULL,
+  rank              VARCHAR(32)  REFERENCES rank_definitions (name),
+  linked_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  linked_by         BIGINT,
+  -- Discord role colour cache for the website (Helpers/discord_colors.py).
+  color_primary     INT,
+  color_secondary   INT,
+  color_tertiary    INT,
+  color_role_name   VARCHAR(100),
+  colors_synced_at  TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS discord_links_uuid_uq ON discord_links (uuid);
+
+-- Who is in the in-game guild right now. Maintained by update_member_data
+-- from the same API diff that posts the join/leave embeds.
+CREATE TABLE IF NOT EXISTS guild_roster (
+  uuid         UUID        PRIMARY KEY,
+  ign          VARCHAR(64) NOT NULL,
+  in_game_rank VARCHAR(16) NOT NULL,
+  joined_at    TIMESTAMPTZ,
+  first_seen   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- One row per stint in the guild; open (left_at NULL) while on the roster.
+CREATE TABLE IF NOT EXISTS membership_stints (
+  id            SERIAL      PRIMARY KEY,
+  uuid          UUID        NOT NULL,
+  discord_id    BIGINT,
+  joined_at     TIMESTAMPTZ NOT NULL,
+  left_at       TIMESTAMPTZ,
+  wars_on_join  INT,
+  rank_at_leave VARCHAR(32),
+  left_via      VARCHAR(16),
+  source        VARCHAR(16) NOT NULL DEFAULT 'live'
+);
+CREATE UNIQUE INDEX IF NOT EXISTS membership_stints_open_uq ON membership_stints (uuid) WHERE left_at IS NULL;
+CREATE INDEX IF NOT EXISTS membership_stints_uuid_idx ON membership_stints (uuid, joined_at DESC);
+CREATE INDEX IF NOT EXISTS membership_stints_discord_idx ON membership_stints (discord_id);
+
+-- Honored Fish / Retired Chief ledger; revoke closes a row, never deletes.
+CREATE TABLE IF NOT EXISTS member_honorifics (
+  id          SERIAL       PRIMARY KEY,
+  uuid        UUID,                                -- NULL only for holders never linked (see CHECK)
+  discord_id  BIGINT,
+  ign         VARCHAR(64)  NOT NULL,
+  honorific   VARCHAR(16)  NOT NULL CHECK (honorific IN ('honored_fish', 'retired_chief')),
+  granted_by  BIGINT       NOT NULL,          -- Discord id; 0 for backfills
+  granted_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  revoked_by  BIGINT,
+  revoked_at  TIMESTAMPTZ,
+  note        TEXT,
+  CHECK (uuid IS NOT NULL OR discord_id IS NOT NULL)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS member_honorifics_active_uq ON member_honorifics (uuid, honorific) WHERE revoked_at IS NULL AND uuid IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS member_honorifics_active_discord_uq ON member_honorifics (discord_id, honorific) WHERE revoked_at IS NULL AND uuid IS NULL;
+CREATE INDEX IF NOT EXISTS member_honorifics_discord_idx ON member_honorifics (discord_id) WHERE revoked_at IS NULL;
+
+-- The per-leaver guild-log message with reset / honorific buttons.
+CREATE TABLE IF NOT EXISTS member_leave_prompts (
+  message_id  BIGINT       PRIMARY KEY,
+  uuid        UUID         NOT NULL,
+  ign         VARCHAR(64)  NOT NULL,
+  discord_id  BIGINT,
+  last_rank   VARCHAR(32),
+  posted_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  resolved_by BIGINT,
+  resolved_at TIMESTAMPTZ,
+  resolution  VARCHAR(16)  CHECK (resolution IN ('reset', 'honored_fish', 'retired_chief', 'noop'))
+);
+
+-- The question every auth check and roster page asks.
+CREATE OR REPLACE VIEW current_members AS
+SELECT gr.uuid,
+       gr.ign          AS guild_ign,
+       gr.in_game_rank,
+       gr.joined_at,
+       gr.first_seen,
+       gr.last_seen,
+       dl.discord_id,
+       dl.ign,
+       dl.rank,
+       dl.color_primary,
+       dl.color_secondary,
+       dl.color_tertiary,
+       dl.color_role_name
+  FROM guild_roster gr
+  LEFT JOIN discord_links dl ON dl.uuid = gr.uuid;
 
 CREATE TABLE IF NOT EXISTS new_app (
   id                   SERIAL       PRIMARY KEY,
@@ -482,11 +570,6 @@ BEGIN
     ALTER TABLE new_app ADD COLUMN poll_message_id BIGINT;
   END IF;
 
-  -- discord_links column
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'discord_links' AND column_name = 'app_channel') THEN
-    ALTER TABLE discord_links ADD COLUMN app_channel BIGINT;
-  END IF;
-
   -- Secondary and tertiary are set only for gradient and holographic roles.
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'discord_links' AND column_name = 'color_primary') THEN
     ALTER TABLE discord_links ADD COLUMN color_primary INT;
@@ -896,8 +979,11 @@ CREATE TABLE IF NOT EXISTS promotion_queue (
   created_at           TIMESTAMPTZ  DEFAULT NOW(),
   status               VARCHAR(20)  NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
   completed_at         TIMESTAMPTZ,
-  error_message        TEXT
+  error_message        TEXT,
+  -- A website removal may carry an honorific grant (TAQ-76).
+  grant_honorific      VARCHAR(16)  CHECK (grant_honorific IS NULL OR grant_honorific IN ('honored_fish', 'retired_chief'))
 );
+ALTER TABLE promotion_queue ADD COLUMN IF NOT EXISTS grant_honorific VARCHAR(16);
 
 -- =============================================================================
 -- Guild Colors & Prefixes (territory map)

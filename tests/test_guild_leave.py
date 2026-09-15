@@ -45,7 +45,8 @@ class FakeCursor:
 def test_poll_skips_applicants_who_already_joined():
     assert "guild_leave_pending = TRUE" in PENDING_LEAVE_SQL
     assert "NOT EXISTS" in PENDING_LEAVE_SQL
-    assert "linked = TRUE" in PENDING_LEAVE_SQL
+    assert "JOIN membership_stints ms ON ms.uuid = dl.uuid" in PENDING_LEAVE_SQL
+    assert "linked" not in PENDING_LEAVE_SQL
     cursor = FakeCursor(rows=[(96, 1, 2, "547898736337092639", "witherfry")])
     assert fetch_pending_leaves(cursor) == [(96, 1, 2, "547898736337092639", "witherfry")]
     assert cursor.queries == [(PENDING_LEAVE_SQL, None)]
@@ -54,7 +55,8 @@ def test_poll_skips_applicants_who_already_joined():
 def test_stale_flags_are_cleared_and_reported():
     assert "SET guild_leave_pending = FALSE" in CLEAR_STALE_LEAVE_SQL
     assert "EXISTS" in CLEAR_STALE_LEAVE_SQL and "NOT EXISTS" not in CLEAR_STALE_LEAVE_SQL
-    assert "linked = TRUE" in CLEAR_STALE_LEAVE_SQL
+    assert "JOIN membership_stints ms ON ms.uuid = dl.uuid" in CLEAR_STALE_LEAVE_SQL
+    assert "linked" not in CLEAR_STALE_LEAVE_SQL
     assert "RETURNING" in CLEAR_STALE_LEAVE_SQL
     cursor = FakeCursor(rows=[(96, "witherfry"), (21, "kioabc1")])
     assert clear_stale_pending_leaves(cursor) == [(96, "witherfry"), (21, "kioabc1")]

@@ -12,7 +12,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from Helpers.classes import LinkAccount, PlayerStats, PlayerShells
 from Helpers.database import DB, apply_shell_delta
-from Helpers.links import LinkConflictError, assert_uuid_free
+from Helpers.links import LinkConflictError
+from Helpers.registration import upsert_identity
 from Helpers.functions import addLine, split_sentence, expand_image, getPlayerUUID, timed_get
 from Helpers.logger import log, ERROR
 from Helpers.variables import HOME_GUILD_IDS, discord_ranks, discord_rank_roles
@@ -39,13 +40,12 @@ def _build_shell_modal_card(ign, operation, amount, reason, user_id, actor_name,
 
     diff = f'+{amount}' if operation == 'add' else f'-{amount}'
 
-    # Connect only now that all external HTTP has completed.
+    # Connect only now that all external HTTP has completed. The modal path
+    # exists for users with no link yet: establish the identity properly
+    # (uuid required) rather than seeding a uuid-less row (TAQ-76).
     db = DB(); db.connect()
     try:
-        db.cursor.execute(
-            "INSERT INTO discord_links (discord_id, ign, linked, rank) VALUES (%s, %s, 0, '') ON CONFLICT (discord_id) DO UPDATE SET ign=EXCLUDED.ign;",
-            (user_id, ign)
-        )
+        upsert_identity(db.cursor, discord_id=user_id, ign=player.username, uuid=player.UUID, linked_by=actor_id)
         if operation == 'add':
             new_total, new_balance = apply_shell_delta(
                 db, user_id, amount, amount, source='manage_shells', ign=ign,
@@ -121,39 +121,51 @@ def _rank_update(target_id, rank):
         db.close()
 
 
-def _link_user(user_id, ign, base_nick):
+def _link_user(user_id, ign, actor_id):
     """Resolve the ign's UUID (HTTP first — no checkout held across it), then
-    upsert the discord link. Blocking — call via asyncio.to_thread.
+    upsert the identity row. Blocking — call via asyncio.to_thread.
 
-    Returns 'updated' or 'linked', or None when the ign cannot be resolved."""
+    Returns 'updated' or 'linked', or None when the ign cannot be resolved.
+    The rank is not touched: linking says who the account is, /manage rank
+    says what standing they have (TAQ-76)."""
     player_data = getPlayerUUID(ign)
     if not player_data:
         return None
-    uuid = player_data[1]
+    canonical_ign, uuid = player_data
 
     db = DB(); db.connect()
     try:
-        assert_uuid_free(db.cursor, uuid, user_id)
         db.cursor.execute(
-            "SELECT * FROM discord_links WHERE discord_id = %s", (user_id,)
+            "SELECT 1 FROM discord_links WHERE discord_id = %s", (user_id,)
         )
-        if db.cursor.fetchone():
-            db.cursor.execute(
-                "UPDATE discord_links SET ign = %s, uuid = %s WHERE discord_id = %s",
-                (ign, uuid, user_id)
-            )
-            db.cursor.execute(
-                "INSERT INTO shells (\"user\") VALUES (%s) ON CONFLICT DO NOTHING",
-                (str(user_id),)
-            )
-            db.connection.commit()
-            return 'updated'
+        existed = db.cursor.fetchone() is not None
+        upsert_identity(db.cursor, discord_id=user_id, ign=canonical_ign, uuid=uuid, linked_by=actor_id)
         db.cursor.execute(
-            "INSERT INTO discord_links (discord_id, ign, uuid, linked, rank) VALUES (%s,%s,%s,False,%s)",
-            (user_id, ign, uuid, base_nick)
+            "INSERT INTO shells (\"user\") VALUES (%s) ON CONFLICT DO NOTHING",
+            (str(user_id),)
         )
         db.connection.commit()
-        return 'linked'
+        return 'updated' if existed else 'linked'
+    finally:
+        db.close()
+
+
+def _unlink_user(user_id, actor_id, actor_name):
+    """Delete the identity row (rank and all) and leave an audit line.
+    Returns the (ign, uuid) that was removed, or None. Blocking."""
+    db = DB(); db.connect()
+    try:
+        db.cursor.execute(
+            "DELETE FROM discord_links WHERE discord_id = %s RETURNING ign, uuid::text", (user_id,)
+        )
+        row = db.cursor.fetchone()
+        if row:
+            db.cursor.execute(
+                "INSERT INTO audit_log (log_type, actor_name, actor_id, action) VALUES (%s, %s, %s, %s)",
+                ('link', actor_name, actor_id, f'unlinked {row[0]} ({row[1]}) from discord {user_id}.')
+            )
+        db.connection.commit()
+        return row
     finally:
         db.close()
 
@@ -263,6 +275,9 @@ class ShellModalName(Modal):
                 interaction.user.name,
                 interaction.user.id,
             )
+        except LinkConflictError as e:
+            await interaction.followup.send(e.user_message(), ephemeral=True)
+            return
         except Exception as e:
             log(ERROR, f"Shell modal card failed for '{self.children[0].value}': {e}", context="manage")
             await interaction.followup.send(
@@ -296,7 +311,7 @@ class Manage(commands.Cog):
         # runs here. No pool slot is held across the role-edit awaits below.
         inv, tgt, rows = await asyncio.to_thread(_rank_lookup, ctx.user.id, user.id)
 
-        if not inv:
+        if not inv or inv[0] not in discord_ranks:
             await ctx.respond(':no_entry: You must link your account before assigning ranks.', ephemeral=True)
             return
         initiator_rank = inv[0]
@@ -307,7 +322,7 @@ class Manage(commands.Cog):
             await ctx.respond(':no_entry: You cannot change your own rank.', ephemeral=True)
             return
 
-        if tgt:
+        if tgt and tgt[0] in discord_ranks:
             current_rank = tgt[0]
             target_index = list(discord_ranks).index(current_rank)
             if target_index >= initiator_index:
@@ -396,9 +411,8 @@ class Manage(commands.Cog):
         ign: str
     ):
         await ctx.defer(ephemeral=True)
-        base = (user.nick.split(' ')[0] if user.nick else '')
         try:
-            result = await asyncio.to_thread(_link_user, user.id, ign, base)
+            result = await asyncio.to_thread(_link_user, user.id, ign, ctx.user.id)
         except LinkConflictError as e:
             await ctx.followup.send(e.user_message(), ephemeral=True)
             return
@@ -425,6 +439,27 @@ class Manage(commands.Cog):
                 f'Linked **{discord.utils.escape_markdown(user.name)}** to **{discord.utils.escape_markdown(ign)}**',
                 ephemeral=True
             )
+
+    @manage_group.command(name='unlink', description='HR: Remove a user\'s Minecraft link entirely')
+    async def unlink(self, ctx: ApplicationContext, user: discord.Member):
+        await ctx.defer(ephemeral=True)
+        inv, tgt, _ = await asyncio.to_thread(_rank_lookup, ctx.user.id, user.id)
+        if not inv or inv[0] not in discord_ranks:
+            await ctx.followup.send(':no_entry: You must link your account first.', ephemeral=True)
+            return
+        if tgt and tgt[0] in discord_ranks:
+            if list(discord_ranks).index(tgt[0]) >= list(discord_ranks).index(inv[0]):
+                await ctx.followup.send(':no_entry: You can only unlink members below your own rank.', ephemeral=True)
+                return
+        row = await asyncio.to_thread(_unlink_user, user.id, ctx.user.id, ctx.user.name)
+        if not row:
+            await ctx.followup.send(f'**{discord.utils.escape_markdown(user.name)}** has no link.', ephemeral=True)
+            return
+        await ctx.followup.send(
+            f'Unlinked **{discord.utils.escape_markdown(user.name)}** from **{discord.utils.escape_markdown(row[0])}**. '
+            f'Their Discord roles were not changed — use `/reset_roles` if they should lose them.',
+            ephemeral=True
+        )
 
     @commands.Cog.listener()
     async def on_ready(self):

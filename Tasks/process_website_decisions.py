@@ -10,7 +10,8 @@ from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed, update_hammerhead_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
-from Helpers.links import LinkConflictError, assert_uuid_free
+from Helpers.links import LinkConflictError
+from Helpers.registration import upsert_identity
 from Helpers.variables import TAQ_GUILD_ID, INVITED_CATEGORY_NAME
 
 
@@ -445,22 +446,12 @@ class ProcessWebsiteDecisions(commands.Cog):
             return None
 
     @staticmethod
-    def _link_discord(discord_id, ign, uuid, app_channel, linked=False):
-        db = DB()
-        db.connect()
+    def _link_discord(discord_id, ign, uuid, app_channel=None, linked=False):
+        """Establish the applicant's identity; application state stays on the
+        application row (TAQ-76). ``app_channel``/``linked`` are ignored."""
+        db = DB(); db.connect()
         try:
-            # Guard even the linked=False writes: a row seeded with another
-            # member's uuid gets flipped to linked later (rescind/auto-register).
-            assert_uuid_free(db.cursor, uuid, discord_id)
-            db.cursor.execute(
-                """INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, app_channel)
-                   VALUES (%s, %s, %s, %s, '', %s)
-                   ON CONFLICT (discord_id) DO UPDATE
-                   SET ign = EXCLUDED.ign, uuid = EXCLUDED.uuid,
-                       app_channel = EXCLUDED.app_channel,
-                       linked = EXCLUDED.linked""",
-                (discord_id, ign, uuid, linked, app_channel)
-            )
+            upsert_identity(db.cursor, discord_id=discord_id, ign=ign, uuid=uuid)
             db.connection.commit()
         finally:
             db.close()

@@ -64,7 +64,7 @@ def stored_colors() -> dict[int, MemberColors]:
         guild_uuids = _current_guild_uuids(db)
         db.cursor.execute(
             "SELECT discord_id, uuid::text, color_primary, color_secondary, color_tertiary, color_role_name"
-            " FROM discord_links WHERE linked = TRUE AND uuid IS NOT NULL"
+            " FROM discord_links WHERE uuid IS NOT NULL"
         )
         rows = db.cursor.fetchall()
     finally:
