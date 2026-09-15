@@ -113,6 +113,9 @@ class Honorifics(commands.Cog):
 
     @group.command(name='lookup', description='HR: What honorifics does a player have on record?')
     async def lookup(self, ctx: ApplicationContext, user: discord.Member = None, ign: str = None):
+        if not ctx.user.guild_permissions.manage_roles:
+            await ctx.respond('You are missing Manage Roles permission(s) to run this command.', ephemeral=True)
+            return
         await ctx.defer(ephemeral=True)
         target = await asyncio.to_thread(_resolve_target, user.id if user else None, ign, user.display_name if user else None)
         if not target:
@@ -145,6 +148,9 @@ class Honorifics(commands.Cog):
     async def grant(self, ctx: ApplicationContext,
                     honorific: discord.Option(str, choices=list(CHOICES)),
                     user: discord.Member = None, ign: str = None, note: str = None):
+        if not ctx.user.guild_permissions.manage_roles:
+            await ctx.respond('You are missing Manage Roles permission(s) to run this command.', ephemeral=True)
+            return
         await ctx.defer(ephemeral=True)
         key = CHOICES[honorific]
         actor_rank = await asyncio.to_thread(_actor_rank, ctx.user.id)
@@ -178,6 +184,9 @@ class Honorifics(commands.Cog):
     async def revoke(self, ctx: ApplicationContext,
                      honorific: discord.Option(str, choices=list(CHOICES)),
                      user: discord.Member = None, ign: str = None, note: str = None):
+        if not ctx.user.guild_permissions.manage_roles:
+            await ctx.respond('You are missing Manage Roles permission(s) to run this command.', ephemeral=True)
+            return
         await ctx.defer(ephemeral=True)
         key = CHOICES[honorific]
         actor_rank = await asyncio.to_thread(_actor_rank, ctx.user.id)
