@@ -30,7 +30,7 @@ SELECT a.id, a.channel_id, a.thread_id, a.discord_id, a.answers->>'ign' AS ign
      JOIN membership_stints ms ON ms.uuid = dl.uuid
      WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
        AND (ms.left_at IS NULL
-            OR ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at, ms.joined_at) - INTERVAL '7 days')
+            OR ms.left_at >= COALESCE(a.submitted_at, a.reviewed_at))
    )"""
 
 CLEAR_STALE_LEAVE_SQL = """\
@@ -41,7 +41,7 @@ UPDATE applications a SET guild_leave_pending = FALSE
      JOIN membership_stints ms ON ms.uuid = dl.uuid
      WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
        AND (ms.left_at IS NULL
-            OR ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at, ms.joined_at) - INTERVAL '7 days')
+            OR ms.left_at >= COALESCE(a.submitted_at, a.reviewed_at))
    )
 RETURNING a.id, a.answers->>'ign'"""
 
