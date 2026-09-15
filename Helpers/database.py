@@ -73,6 +73,9 @@ class DB:
     # Bounded retry on pool exhaustion: getconn() is non-blocking, so a burst
     # would otherwise turn into instant user-facing failures. Two short waits
     # ride out transient contention; real exhaustion still fails, loudly.
+    # The first retry is expected (every loop fires at once on boot, and the
+    # 10-min and hourly loops re-align after) and always recovered in 28 days
+    # of prod logs, so only a second miss is worth a line.
     _POOL_RETRY_DELAYS: ClassVar[tuple] = (0.2, 0.4)
 
     def __init__(self, *, use_pool: bool = True, pool_min: int = 1, pool_max: int | None = None):
@@ -181,7 +184,8 @@ class DB:
             except psycopg2.pool.PoolError:
                 if attempt >= len(self._POOL_RETRY_DELAYS):
                     raise
-                log(WARN, f"DB pool exhausted, retrying (attempt {attempt + 1})", context="database")
+                if attempt >= 1:
+                    log(WARN, f"DB pool exhausted, retrying (attempt {attempt + 1})", context="database")
                 time.sleep(self._POOL_RETRY_DELAYS[attempt])
                 attempt += 1
 

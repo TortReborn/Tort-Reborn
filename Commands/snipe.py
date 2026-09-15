@@ -17,6 +17,7 @@ from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, generate_badge, get_guild_color, getPlayerUUID, vertical_gradient, round_corners, timed_get
 from Helpers.logger import log, ERROR
 from Helpers.snipe_utils import ALL_TERRITORY_NAMES, display_hq, is_dry, normalize_hq_for_storage
+from Helpers.pagination import respond_paginator
 from Helpers.variables import ALL_GUILD_IDS, HQ_TEAM_ROLE_ID, TAQ_GUILD_ID, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS']
@@ -1600,7 +1601,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'lb')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'lb')), ctx.interaction)
 
     # ── /snipe roles ──────────────────────────────────────────────────────────
 
@@ -1645,7 +1646,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'roles')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'roles')), ctx.interaction)
 
     # ── /snipe team ───────────────────────────────────────────────────────────
 
@@ -1778,7 +1779,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'duos')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'duos')), ctx.interaction)
 
     # ── /snipe overview ───────────────────────────────────────────────────────
 
@@ -1986,7 +1987,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'snipe_list')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'snipe_list')), ctx.interaction)
 
     # ── /warseason ────────────────────────────────────────────────────────────
 
