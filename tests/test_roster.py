@@ -128,11 +128,11 @@ def test_applicant_sql_fragment_shape():
 
 
 def test_applicant_has_joined_sql_shape():
-    # Sticky "joined for this application": stint-based with a week of slack,
-    # so an applicant who joined and later left is not pending again.
+    # Sticky "joined for this application": a stint active at or after the
+    # application, so an applicant who joined and later left is not pending again.
     assert "JOIN membership_stints ms ON ms.uuid = dl.uuid" in roster.APPLICANT_HAS_JOINED_SQL
-    assert "INTERVAL '7 days'" in roster.APPLICANT_HAS_JOINED_SQL
-    assert "a.submitted_at" in roster.APPLICANT_HAS_JOINED_SQL
+    assert "ms.left_at >= COALESCE(a.submitted_at, a.reviewed_at)" in roster.APPLICANT_HAS_JOINED_SQL
+    assert "INTERVAL" not in roster.APPLICANT_HAS_JOINED_SQL
 
 
 # ── pending registration (update_member_data) ─────────────────────────────

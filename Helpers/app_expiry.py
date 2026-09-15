@@ -19,7 +19,7 @@ UPDATE applications a SET status = 'expired'
      JOIN membership_stints ms ON ms.uuid = dl.uuid
      WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
        AND (ms.left_at IS NULL
-            OR ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at, ms.joined_at) - INTERVAL '7 days')
+            OR ms.left_at >= COALESCE(a.submitted_at, a.reviewed_at))
    )"""
 
 

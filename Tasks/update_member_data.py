@@ -1104,7 +1104,7 @@ class UpdateMemberData(commands.Cog):
                            SELECT 1 FROM membership_stints ms
                             WHERE ms.uuid = dl.uuid
                               AND (ms.left_at IS NOT NULL OR ms.rank_at_leave IS NOT NULL)
-                              AND ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at) - INTERVAL '7 days'
+                              AND COALESCE(ms.left_at, NOW()) >= COALESCE(a.submitted_at, a.reviewed_at)
                          )
                        ORDER BY a.reviewed_at DESC NULLS LAST, a.id DESC
                        LIMIT 1""",
@@ -1272,7 +1272,7 @@ class UpdateMemberData(commands.Cog):
                        SELECT 1 FROM membership_stints ms
                         WHERE ms.uuid = dl.uuid
                           AND (ms.left_at IS NOT NULL OR ms.rank_at_leave IS NOT NULL)
-                          AND ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at) - INTERVAL '7 days'
+                          AND COALESCE(ms.left_at, NOW()) >= COALESCE(a.submitted_at, a.reviewed_at)
                      )"""
             )
             return db.cursor.fetchall()
