@@ -8,6 +8,7 @@ import asyncio
 from Helpers.classes import Guild
 from Helpers.database import DB
 from Helpers.functions import getNameFromUUID
+from Helpers.guild_accounts import guild_account_uuids, uuid_key
 from Helpers.member_removal import check_reset_permission, remove_member
 from Helpers.stale_links import fetch_stale_taq_links, render_stale_taq_links, split_stale_report, stale_taq_links
 from Helpers.variables import discord_ranks, HOME_GUILD_IDS, TAQ_GUILD_ID
@@ -192,6 +193,7 @@ class RankCheck(commands.Cog):
             db = DB(); db.connect()
             db.cursor.execute("SELECT uuid, discord_id, rank FROM discord_links")
             all_links = db.cursor.fetchall()
+            guild_accounts = guild_account_uuids(db.cursor)
             db.close()
 
             links_map = {row[0]: (row[1], row[2]) for row in all_links}
@@ -262,6 +264,12 @@ class RankCheck(commands.Cog):
                             mismatch.append(
                                 f'\u001b[0;33m NICKNAME MISMATCH: "{second}" ≠ "{ign}"'
                             )
+                elif uuid_key(uuid) in guild_accounts:
+                    # Guild-owned storage account: in the guild, nobody to link (TAQ-88).
+                    linkage.append(
+                        f'[0;0m {ign:16} [1;37m│ [0;0m'
+                        f'{member["rank"].upper():12} [1;37m│ [0;35mGUILD ACCOUNT'
+                    )
                 else:
                     linkage.append(
                         f'\u001b[0;0m {ign:16} \u001b[1;37m│ \u001b[0;0m'
