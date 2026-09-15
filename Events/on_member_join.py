@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 
 from Helpers import honorifics as hon
+from Helpers import roster
 from Helpers.database import DB
 from Helpers.member_roles import removal_role_names, resolve_roles
 from Helpers.variables import ERROR_CHANNEL_ID, GENERAL_CHANNEL_ID, GUILD_LOG_CHANNEL_ID, RULES_CHANNEL_ID, TAQ_GUILD_ID
@@ -13,10 +14,15 @@ WELCOME_COLOR = 0x94C1FF
 
 
 def _honorifics_on_record(discord_id):
-    """Blocking: (honored_fish, retired_chief, [grant dicts]) for a rejoining account."""
+    """Blocking: (honored_fish, retired_chief, [grant dicts]) for a rejoining
+    account. A current in-game member who merely rejoined Discord gets
+    nothing here -- registration handles them and would strip the roles
+    again -- so the roster is checked first."""
     db = DB()
     db.connect()
     try:
+        if roster.is_member(db.cursor, discord_id=discord_id):
+            return False, False, []
         hf, rc = hon.active_honorifics(db.cursor, discord_id=discord_id)
         grants = []
         if hf or rc:

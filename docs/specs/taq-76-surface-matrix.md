@@ -63,14 +63,26 @@ Legend for the last two columns — **T** = covered by an automated test on this
 | Activity Trends cohorts | `linked` + rank test | `rank IS NOT NULL` + rank test → **former members drop out of their stale cohort** (visible) | — | H: decide if acceptable (see rollout doc) |
 | Graid / snipe / raid name lookups | `BEST_LINK_ORDER` tie-break | one row per uuid; roster-then-recency tie-break for names | T: discord-links | — |
 
-## E. Things that are deliberately *not* changed
+## E. Second-pass review findings (2026-09-15)
+
+Each row above was re-read against the code, not the diff. Three defects found and fixed on the branch, one pre-existing quirk noted:
+
+| # | Surface | Finding | Fix |
+| --- | --- | --- | --- |
+| 1 | Auto-registration sweep | `/reset_roles` on a **current** member cleared their rank, and 3 minutes later the sweep saw "accepted app + identity + rank NULL + open stint" and would have **re-registered them at Starfish** with a welcome post. Impossible on `main` (`linked` stayed TRUE). | Pending registration now also excludes any stint since the application that has `rank_at_leave` stamped (which `remove_member` sets on the open stint). `tests/test_roster.py::test_pending_registration_predicate` walks the whole lifecycle. |
+| 2 | `on_member_join` | A current in-game member who left and rejoined Discord would have been handed `Ex-Member` + their honorific roles. | Restore is skipped when the account is on the roster; registration handles them. Tested. |
+| 3 | `/api/members` | `discordRank` became `null` for rankless links where it used to be `''`. | Coerced to `''`; every other client-side `.rank` consumer checked and already null-safe. |
+| — | `/manage rank` on an unlinked user | The `LinkAccount` modal records identity + rank but never applied the rank roles — the "Added Roles:" text it returns is only a header. **Pre-existing on `main`**, unchanged here; worth its own ticket. | — |
+| — | `/new_member` before the in-game join | `wars_on_join` has nowhere to live until the stint opens, so it is NULL for members registered before they appear on the roster (the website flow registers after the join, so this is rare). | Accepted; noted. |
+
+## F. Things that are deliberately *not* changed
 
 - `Rank | Promote/Demote`, `/manage rank`'s role edits, `promotion_queue` promote/demote paths, `determine_starting_rank`, every role-name list in `Helpers/member_roles.py`.
 - Every reader of the `guildData` cache blob for stats (members page, kick-list, shells, backgrounds).
 - The Chronicle's own auth (`lib/wiki-auth.ts`).
 - What counts as Honored Fish / Retired Chief — still a human decision.
 
-## F. Permission grid (the part to turn into tests)
+## G. Permission grid (the part to turn into tests)
 
 Actor rank × action → expected outcome. ✔ allowed, ✘ refused (message), — n/a. "Target" is a Manatee unless stated.
 

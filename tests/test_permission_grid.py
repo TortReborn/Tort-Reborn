@@ -1,4 +1,4 @@
-"""The permission grid from docs/specs/taq-76-surface-matrix.md §F, as tests.
+"""The permission grid from docs/specs/taq-76-surface-matrix.md §G, as tests.
 
 Every gate the overhaul touches is a pure function of (actor rank, target
 rank, action), so the whole table is asserted here across all ten ranks

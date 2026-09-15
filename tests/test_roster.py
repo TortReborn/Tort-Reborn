@@ -133,3 +133,48 @@ def test_applicant_has_joined_sql_shape():
     assert "JOIN membership_stints ms ON ms.uuid = dl.uuid" in roster.APPLICANT_HAS_JOINED_SQL
     assert "INTERVAL '7 days'" in roster.APPLICANT_HAS_JOINED_SQL
     assert "a.submitted_at" in roster.APPLICANT_HAS_JOINED_SQL
+
+
+# ── pending registration (update_member_data) ─────────────────────────────
+
+def _pending(temp_db, monkeypatch, uuid):
+    import Tasks.update_member_data as umd
+    monkeypatch.setattr(umd, 'DB', lambda: temp_db)
+    sweep = {u for u, _ in umd.UpdateMemberData._fetch_unlinked_with_app()}
+    # _check_pending_app is a closure inside _auto_register_joined_member;
+    # the sweep query carries the identical predicate, so assert on that.
+    return uuid in sweep
+
+
+def test_pending_registration_predicate(temp_db, monkeypatch):
+    cur = temp_db.cursor
+    cur.execute("INSERT INTO discord_links (discord_id, ign, uuid, rank) VALUES (7, 'A', %s::uuid, NULL)", (U1,))
+    cur.execute("INSERT INTO applications (application_type, discord_id, discord_username, status, answers, submitted_at, reviewed_at) "
+                "VALUES ('guild', '7', 'a', 'accepted', '{}', '2026-09-01', '2026-09-02')")
+
+    # Accepted, identity row, no rank, no stint yet: pending (they may join any minute).
+    assert _pending(temp_db, monkeypatch, U1) is True
+
+    # Joined for this application: open stint, not yet registered -> still pending.
+    roster.open_stint(cur, U1, joined_at='2026-09-03T00:00:00Z')
+    assert _pending(temp_db, monkeypatch, U1) is True
+
+    # Registered (rank set) -> not pending.
+    cur.execute("UPDATE discord_links SET rank = 'Starfish' WHERE discord_id = 7")
+    assert _pending(temp_db, monkeypatch, U1) is False
+
+    # /reset_roles on a current member: rank cleared but the open stint is
+    # stamped -> must NOT be auto-registered again at Starfish.
+    cur.execute("UPDATE discord_links SET rank = NULL WHERE discord_id = 7")
+    roster.stamp_rank_at_leave(cur, U1, 'Piranha')
+    assert _pending(temp_db, monkeypatch, U1) is False
+
+    # Left in-game (stint closed) -> not pending on the old application.
+    cur.execute("UPDATE membership_stints SET rank_at_leave = NULL WHERE uuid = %s::uuid", (U1,))
+    roster.close_stint(cur, U1)
+    assert _pending(temp_db, monkeypatch, U1) is False
+
+    # A new application after that stint makes them pending again.
+    cur.execute("INSERT INTO applications (application_type, discord_id, discord_username, status, answers, submitted_at, reviewed_at) "
+                "VALUES ('guild', '7', 'a', 'accepted', '{}', NOW(), NOW())")
+    assert _pending(temp_db, monkeypatch, U1) is True

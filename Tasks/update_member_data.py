@@ -1081,9 +1081,13 @@ class UpdateMemberData(commands.Cog):
         def _check_pending_app(uuid_str):
             """The accepted guild application behind this uuid whose applicant
             has not been registered yet: no Discord rank on their identity
-            row, and no completed stint since the application (someone who
-            joined, was registered and left is not pending again). Application
-            state lives on applications, not on the link."""
+            row, and no stint since the application that has already ended or
+            been through a removal (rank_at_leave is stamped by remove_member
+            even while the stint is open). So someone who joined, was
+            registered and left is not pending again, and a current member
+            whose roles were reset by /reset_roles is not silently
+            re-registered at Starfish three minutes later. Application state
+            lives on applications, not on the link."""
             db = DB()
             try:
                 db.connect()
@@ -1098,7 +1102,8 @@ class UpdateMemberData(commands.Cog):
                          AND dl.rank IS NULL
                          AND NOT EXISTS (
                            SELECT 1 FROM membership_stints ms
-                            WHERE ms.uuid = dl.uuid AND ms.left_at IS NOT NULL
+                            WHERE ms.uuid = dl.uuid
+                              AND (ms.left_at IS NOT NULL OR ms.rank_at_leave IS NOT NULL)
                               AND ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at) - INTERVAL '7 days'
                          )
                        ORDER BY a.reviewed_at DESC NULLS LAST, a.id DESC
@@ -1265,7 +1270,8 @@ class UpdateMemberData(commands.Cog):
                    WHERE dl.rank IS NULL
                      AND NOT EXISTS (
                        SELECT 1 FROM membership_stints ms
-                        WHERE ms.uuid = dl.uuid AND ms.left_at IS NOT NULL
+                        WHERE ms.uuid = dl.uuid
+                          AND (ms.left_at IS NOT NULL OR ms.rank_at_leave IS NOT NULL)
                           AND ms.joined_at >= COALESCE(a.submitted_at, a.reviewed_at) - INTERVAL '7 days'
                      )"""
             )

@@ -133,3 +133,26 @@ def test_outcome_branches():
     assert lp._outcome_for({}, M([mr.EX_MEMBER_ROLE]), hon.RETIRED_CHIEF) == 'grant_ex_member'
     assert lp._outcome_for({}, M([mr.EX_MEMBER_ROLE, mr.MEMBER_ROLE]), None) == 'remove'   # half-stripped: still work to do
     assert lp._outcome_for({}, M([mr.MEMBER_ROLE, 'Angler']), None) == 'remove'
+
+
+# ── rejoin restore ───────────────────────────────────────────────────────
+
+def test_rejoin_lookup_skips_current_members(temp_db, monkeypatch):
+    import Events.on_member_join as omj
+    monkeypatch.setattr(omj, 'DB', lambda: temp_db)
+    cur = temp_db.cursor
+    cur.execute("INSERT INTO discord_links (discord_id, ign, uuid, rank) VALUES (5, 'A', %s::uuid, 'Angler')", (U1,))
+    hon.grant(cur, uuid=U1, ign='A', honorific=hon.HONORED_FISH, granted_by=0)
+
+    # On the roster: rejoining Discord must not hand them Ex-Member + Honored Fish.
+    cur.execute("INSERT INTO guild_roster (uuid, ign, in_game_rank) VALUES (%s::uuid, 'A', 'recruit')", (U1,))
+    assert omj._honorifics_on_record(5) == (False, False, [])
+
+    # Off the roster: restore, with the grant details for the log line.
+    cur.execute("DELETE FROM guild_roster")
+    hf, rc, grants = omj._honorifics_on_record(5)
+    assert (hf, rc) == (True, False) and grants[0]['honorific'] == hon.HONORED_FISH
+
+    # Discord-only grant (never linked) is found by account.
+    hon.grant(cur, discord_id=6, ign='B', honorific=hon.RETIRED_CHIEF, granted_by=0)
+    assert omj._honorifics_on_record(6)[:2] == (False, True)
