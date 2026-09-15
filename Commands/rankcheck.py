@@ -8,7 +8,7 @@ import asyncio
 from Helpers.classes import Guild
 from Helpers.database import DB
 from Helpers.functions import getNameFromUUID
-from Helpers.member_removal import remove_member
+from Helpers.member_removal import check_reset_permission, remove_member
 from Helpers.stale_links import fetch_stale_taq_links, render_stale_taq_links, split_stale_report, stale_taq_links
 from Helpers.variables import discord_ranks, HOME_GUILD_IDS, TAQ_GUILD_ID
 
@@ -103,16 +103,16 @@ class RankCheck(commands.Cog):
             return "Could not find the TAq Discord server."
 
         actor_rank = await asyncio.to_thread(self._rank_for_discord, interaction.user.id)
-        if actor_rank not in discord_ranks:
-            return "Link your account first."
+        refusal = check_reset_permission(actor_rank, None)
+        if refusal:
+            return refusal[1]
 
-        actor_index = list(discord_ranks).index(actor_rank)
         done = []
         skipped = []
         failed = []
 
         for row in rows:
-            if list(discord_ranks).index(row["rank"]) >= actor_index:
+            if check_reset_permission(actor_rank, (row["rank"],)):
                 skipped.append(row["ign"])
                 continue
 

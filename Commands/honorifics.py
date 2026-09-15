@@ -15,6 +15,7 @@ from discord.ext import commands
 from Helpers import honorifics as hon
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
+from Helpers.member_removal import meets_floor
 from Helpers.member_roles import removal_role_names, resolve_roles, HONORED_FISH_ROLE, RETIRED_CHIEF_ROLE
 from Helpers.variables import HOME_GUILD_IDS, discord_ranks
 
@@ -91,14 +92,13 @@ def _revoke(uuid, discord_id, honorific, actor_id, note):
         db.close()
 
 
-def can_manage(actor_rank, honorific):
-    """Honored Fish: anyone with a linked rank (manage_roles is checked by
-    Discord). Retired Chief: Narwhal or higher."""
-    if actor_rank not in discord_ranks:
-        return False
+def can_manage(actor_rank, honorific=None):
+    """Lookup and Honored Fish: Hammerhead or higher (the same floor as
+    removals). Retired Chief, and any revoke: Narwhal or higher.
+    manage_roles is checked separately."""
     if honorific == hon.RETIRED_CHIEF:
-        return list(discord_ranks).index(actor_rank) >= list(discord_ranks).index('Narwhal')
-    return True
+        return meets_floor(actor_rank, 'Narwhal')
+    return meets_floor(actor_rank)
 
 
 class Honorifics(commands.Cog):
@@ -117,6 +117,9 @@ class Honorifics(commands.Cog):
             await ctx.respond('You are missing Manage Roles permission(s) to run this command.', ephemeral=True)
             return
         await ctx.defer(ephemeral=True)
+        if not can_manage(await asyncio.to_thread(_actor_rank, ctx.user.id)):
+            await ctx.followup.send(':no_entry: Honorific records need Hammerhead or higher (and a linked account).', ephemeral=True)
+            return
         target = await asyncio.to_thread(_resolve_target, user.id if user else None, ign, user.display_name if user else None)
         if not target:
             await ctx.followup.send(':no_entry: Could not find that player (no link and no Mojang match).', ephemeral=True)
@@ -156,7 +159,7 @@ class Honorifics(commands.Cog):
         actor_rank = await asyncio.to_thread(_actor_rank, ctx.user.id)
         if not can_manage(actor_rank, key):
             await ctx.followup.send(f':no_entry: {honorific} can only be granted by Narwhal or higher.' if key == hon.RETIRED_CHIEF
-                                    else ':no_entry: Link your account first.', ephemeral=True)
+                                    else ':no_entry: Granting Honored Fish needs Hammerhead or higher (and a linked account).', ephemeral=True)
             return
         target = await asyncio.to_thread(_resolve_target, user.id if user else None, ign, user.display_name if user else None)
         if not target:

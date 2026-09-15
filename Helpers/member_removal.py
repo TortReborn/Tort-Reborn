@@ -160,13 +160,28 @@ def record_grant_only(cursor, *, discord_id=None, uuid=None, ign, grant, actor_i
     return grant
 
 
+# Removing members and managing honorifics needs Hammerhead or higher, on
+# top of Discord's manage_roles permission. The website queue already had
+# this floor (MIN_QUEUER_RANK_INDEX); the bot surfaces relied on the Discord
+# permission alone until TAQ-76.
+REMOVAL_FLOOR_RANK = 'Hammerhead'
+
+
+def meets_floor(rank, floor=REMOVAL_FLOOR_RANK):
+    """True when ``rank`` is a recognised member rank at or above ``floor``."""
+    ranks = list(discord_ranks)
+    return rank in discord_ranks and ranks.index(rank) >= ranks.index(floor)
+
+
 def check_reset_permission(initiator_rank, target_row):
     """None when allowed, else the (title, description) of the refusal.
 
-    Shared by the slash command, the user command and the leave-message
-    buttons so the rule lives in one place: the initiator needs a linked
-    account with a recognised rank, and may only reset members ranked
-    strictly below them. A target with no rank on record is always allowed.
+    Shared by the slash command, the user command, /stale-roles and the
+    leave-message buttons so the rule lives in one place: the initiator
+    needs a linked account with a recognised rank of Hammerhead or higher,
+    and may only reset members ranked strictly below them. A target with no
+    rank on record is always allowed. Discord's manage_roles permission is
+    checked separately by each surface before this runs.
     """
     if initiator_rank is None:
         return (':no_entry: Oops!',
@@ -174,6 +189,9 @@ def check_reset_permission(initiator_rank, target_row):
     if initiator_rank not in discord_ranks:
         return (':no_entry: Error',
                 f'Your rank `{initiator_rank}` is not recognized. Please contact an admin.')
+    if not meets_floor(initiator_rank):
+        return (':no_entry: Permission denied',
+                f'Resetting roles needs {REMOVAL_FLOOR_RANK} or higher.')
     if target_row and target_row[0]:
         target_rank = target_row[0]
         if target_rank not in discord_ranks:
