@@ -19,6 +19,11 @@ class ResetRolesCommand(commands.Cog):
         if not message.interaction.user.guild_permissions.manage_roles:
             await message.respond('You are missing Manage Roles permission(s) to run this command.', ephemeral=True)
             return
+        # Discord resolves a user id that has left the server to a bare User,
+        # which has no roles to reset.
+        if not hasattr(user, 'roles'):
+            await message.respond(f'<@{user.id}> is not in this server.', ephemeral=True)
+            return
 
         await message.defer(ephemeral=True)
         db = DB()

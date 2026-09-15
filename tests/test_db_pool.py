@@ -10,7 +10,7 @@ grafted onto it:
 3. Sequential DB() uses check out and return through the same pool
 4. connect() times the checkout in the db.connect bucket
 5. A post-checkout setup failure discards the connection instead of leaking it
-6. PoolError checkout retries (bounded), logs a WARN per retry, then succeeds
+6. PoolError checkout retries (bounded), warns only from the second retry, then succeeds
 7. Sustained exhaustion raises PoolError after the retries are spent
 """
 
@@ -147,7 +147,7 @@ def test_pool_exhaustion_retries_then_succeeds():
     mock_sleep.assert_any_call(0.2)
     mock_sleep.assert_any_call(0.4)
     warns = [c for c in mock_log.call_args_list if "pool exhausted" in str(c)]
-    assert len(warns) == 2
+    assert len(warns) == 1 and "attempt 2" in str(warns[0])
 
 
 def test_pool_exhaustion_raises_after_retries_spent():

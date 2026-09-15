@@ -6,7 +6,7 @@ import math
 
 from Helpers.database import get_territory_data
 from Helpers.rate_limiter import external_rate_limit
-from Helpers.pagination import add_paginator_buttons
+from Helpers.pagination import add_paginator_buttons, respond_paginator
 
 
 class Treasury(commands.Cog):
@@ -101,7 +101,7 @@ class Treasury(commands.Cog):
             paginator = pages.Paginator(pages=book)
             add_paginator_buttons(paginator)
 
-            await paginator.respond(ctx.interaction)
+            await respond_paginator(paginator, ctx.interaction)
 
         except Exception as e:
             error_embed = discord.Embed(
