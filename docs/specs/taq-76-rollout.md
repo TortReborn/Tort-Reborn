@@ -1,6 +1,6 @@
 # TAQ-76 linking overhaul — rollout runbook
 
-Status: **implemented and verified on dev** 2026-09-14. Prod cutover started 2026-09-15: step 1 (dump `backups/prod-pre-taq76-20260915-1531.dump`) done.
+Status: **implemented and verified on dev** 2026-09-14. Prod cutover started 2026-09-15: step 1 (dump `backups/prod-pre-taq76-20260915-1531.dump`) and step 2 (migration 1, sanity + row-by-row cross-check against the dump, all passing) done. One repair on prod: 28 ex-Barracuda stints stamped `rank_at_leave = 'Piranha'` after the migration's rename ran too late; the migration file is fixed for future runs.
 
 What shipped (branch `feat/taq-76-linking-overhaul` in both repos) is P0–P4 of
 [taq-76-linking-audit.md](taq-76-linking-audit.md) plus the ticket's own
