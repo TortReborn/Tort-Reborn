@@ -1,6 +1,6 @@
 # TAQ-76 linking overhaul — rollout runbook
 
-Status: **implemented and verified on dev** 2026-09-14. Not yet on prod.
+Status: **implemented and verified on dev** 2026-09-14. Prod cutover started 2026-09-15: step 1 (dump `backups/prod-pre-taq76-20260915-1531.dump`) done.
 
 What shipped (branch `feat/taq-76-linking-overhaul` in both repos) is P0–P4 of
 [taq-76-linking-audit.md](taq-76-linking-audit.md) plus the ticket's own
@@ -44,6 +44,12 @@ code reads tables step 1 creates.
 4. **Deploy the website** (TAq-Website branch). `requireExecSession` now
    refuses anyone not on the roster — the 8 stale exec accounts lose access
    at this moment.
+4b. **Deploy the Verge raid tracker** (Kenji121Tsuki/verge-raid-tracker PR #1,
+   `discord-links-refactor`). It is a third consumer of the same database:
+   its current `main` reads `discord_links … linked = TRUE` (breaks at
+   step 6), the PR reads `current_members` / `guild_roster` (needs step 2).
+   Order among 3, 4 and 4b does not matter; all three must be live before
+   step 6.
 5. **Honorific role backfill** — from a machine with the bot's `.env`
    pointed at prod (`TEST_MODE=False`):
    `venv/Scripts/python scripts/backfill_honorifics.py` (dry run), then
