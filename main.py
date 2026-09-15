@@ -21,6 +21,7 @@ from Helpers import telemetry
 from Commands.generate import ApplicationButtonView
 from Commands.tickets import TicketCloseView, TicketOpenView
 from Helpers.views import ApplicationVoteView, ThreadVoteView, RecruitPaidView, RecruiterReviewView
+from Helpers.leave_prompts import LeavePromptView
 
 
 
@@ -78,6 +79,7 @@ async def on_ready():
         client.add_view(RecruiterReviewView())
         client.add_view(TicketOpenView())
         client.add_view(TicketCloseView())
+        client.add_view(LeavePromptView())
         # Commands are registered per guild, and Discord rejects the whole
         # sync with a 403 if any target guild is one the bot is not in — so a
         # single stale guild id silently costs every command everywhere. Drop
@@ -290,6 +292,7 @@ extensions = [
     'Commands.rankcheck',
     'Commands.new_member',
     'Commands.reset_roles',
+    'Commands.honorifics',
     'Commands.raids',
     'Commands.graids',
     'Commands.manage',
