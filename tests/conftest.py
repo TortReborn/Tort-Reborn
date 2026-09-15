@@ -31,6 +31,7 @@ SHADOWED_TABLES = [
     "promotion_queue",
     "audit_log",
     "shells",
+    "management_exceptions",
 ]
 
 

@@ -156,3 +156,28 @@ def test_rejoin_lookup_skips_current_members(temp_db, monkeypatch):
     # Discord-only grant (never linked) is found by account.
     hon.grant(cur, discord_id=6, ign='B', honorific=hon.RETIRED_CHIEF, granted_by=0)
     assert omj._honorifics_on_record(6)[:2] == (False, True)
+
+
+# ── guild-owned accounts (TAQ-88) ────────────────────────────────────────
+
+def test_guild_account_leaving_gets_no_buttons(temp_db, monkeypatch):
+    from Helpers.guild_accounts import guild_account_uuids, is_guild_account
+    cur = temp_db.cursor
+    monkeypatch.setattr(lp, 'DB', lambda: temp_db)
+    cur.execute("INSERT INTO management_exceptions (ign, exception_type, minecraft_uuid) VALUES ('Woealer', 'guild_account', %s::uuid), ('Alt', 'alt', %s::uuid)", (U1, U2))
+    assert guild_account_uuids(cur) == {U1.replace('-', '')}
+    assert is_guild_account(cur, U1.upper()) and not is_guild_account(cur, U2)
+
+    cur.execute("INSERT INTO discord_links (discord_id, ign, uuid, rank) VALUES (2, 'human', %s::uuid, 'Piranha')", (U2,))
+    channel = FakeChannel(FakeGuild(present={2}))
+    import discord
+    posted = run(lp.post_leave_prompts(None, channel, [(U1, 'Woealer', 'chief'), (U2, 'human', 'recruit')],
+                                       fallback_embed=discord.Embed(title='batched')))
+
+    # Woealer: plain notice, no view, no prompt row. The human: the usual prompt.
+    assert len(channel.sent) == 2
+    woealer_embed, woealer_view = channel.sent[0]
+    assert woealer_embed.title == 'Guild Account Left' and woealer_view is None
+    assert posted == [9002]
+    cur.execute("SELECT ign FROM member_leave_prompts")
+    assert cur.fetchall() == [('human',)]

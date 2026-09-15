@@ -21,6 +21,7 @@ import discord
 
 from Helpers import honorifics as hon
 from Helpers.database import DB
+from Helpers.guild_accounts import guild_account_uuids, uuid_key
 from Helpers.logger import log, ERROR
 from Helpers.member_removal import check_reset_permission, record_grant_only, remove_member
 from Helpers.member_roles import EX_MEMBER_ROLE, removal_role_names, resolve_roles
@@ -125,8 +126,15 @@ async def post_leave_prompts(client, channel, leavers, *, fallback_embed, now=No
         return []
 
     guild = channel.guild
+    guild_accounts = await asyncio.to_thread(_with_db, guild_account_uuids)
     posted = []
     for uuid, ign, _in_game_rank in leavers:
+        if uuid_key(uuid) in guild_accounts:
+            # Guild-owned storage account (TAQ-88): nothing to reset, nobody to honour.
+            embed = discord.Embed(title='Guild Account Left', timestamp=now, color=0xFF0000,
+                                  description=f"**{discord.utils.escape_markdown(ign)}** — guild-owned account, no Discord roles to reset")
+            await channel.send(embed=embed)
+            continue
         discord_id, last_rank, hf, rc = await asyncio.to_thread(_with_db, _load_leaver_context, uuid)
         member = None
         if discord_id is not None:
