@@ -218,13 +218,16 @@ APPLICANT_IS_MEMBER_SQL = """EXISTS (
      WHERE dl.discord_id = CAST(a.discord_id AS BIGINT)
    )"""
 
-# "Has joined for this application": a membership stint that started once
-# the application was in (a week of slack covers players who joined in-game
-# just before applying, and the day granularity of backfilled stints). The
-# old ``linked = TRUE`` was a sticky has-joined marker; the roster alone is
-# not -- an applicant who joined and later left must not become "pending"
-# again. app_expiry, guild_leave, check_apps and the website's pending-joins
-# count all ask this question.
+# "Has joined for this application": an open stint (a current member -- the
+# roster sync opens the stint in the same transaction as the roster row, so
+# this never disagrees with guild_roster; an existing member who applies
+# again lands here), or a stint that started once the application was in (a
+# week of slack covers players who joined in-game just before applying, and
+# the day granularity of backfilled stints). The old ``linked = TRUE`` was a
+# sticky has-joined marker; the roster alone is not -- an applicant who
+# joined and later left must not become "pending" again. app_expiry,
+# guild_leave, check_apps and the website's pending-joins count all ask this
+# question.
 APPLICANT_HAS_JOINED_SQL = """EXISTS (
      SELECT 1 FROM discord_links dl
      JOIN membership_stints ms ON ms.uuid = dl.uuid
