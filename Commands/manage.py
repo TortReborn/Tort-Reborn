@@ -13,10 +13,11 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from Helpers.classes import LinkAccount, PlayerStats, PlayerShells
 from Helpers.database import DB, apply_shell_delta
 from Helpers.links import LinkConflictError
+from Helpers.member_roles import apply_rank_roles, rank_change_summary
 from Helpers.registration import upsert_identity
 from Helpers.functions import addLine, split_sentence, expand_image, getPlayerUUID, timed_get
 from Helpers.logger import log, ERROR
-from Helpers.variables import HOME_GUILD_IDS, discord_ranks, discord_rank_roles
+from Helpers.variables import HOME_GUILD_IDS, discord_ranks
 
 
 def _build_shell_modal_card(ign, operation, amount, reason, user_id, actor_name, actor_id):
@@ -335,24 +336,12 @@ class Manage(commands.Cog):
             await ctx.respond(':no_entry: You cannot assign a rank equal to or above your own.', ephemeral=True)
             return
 
-        added = 'Added Roles:'
-        removed = 'Removed Roles:'
-        all_roles = ctx.guild.roles
-
         if rows:
             await ctx.defer(ephemeral=True)
-            # Apply new rank roles
-            for role_name in discord_ranks[rank]['roles']:
-                role_obj = discord.utils.get(all_roles, name=role_name)
-                if role_obj and role_obj not in user.roles:
-                    await user.add_roles(role_obj)
-                    added += f"\n - {role_name}"
-            # Remove old rank roles
-            for role_name in [r for r in discord_rank_roles if r not in discord_ranks[rank]['roles']]:
-                role_obj = discord.utils.get(all_roles, name=role_name)
-                if role_obj and role_obj in user.roles:
-                    await user.remove_roles(role_obj)
-                    removed += f"\n - {role_name}"
+            # Same role planner as the modal path below (TAQ-86)
+            added, removed = await apply_rank_roles(
+                user, ctx.guild.roles, rank, reason=f'/manage rank (ran by {ctx.user.name})'
+            )
             # Persist the rank change (its own brief checkout)
             await asyncio.to_thread(_rank_update, user.id, rank)
             # Update nickname
@@ -363,15 +352,11 @@ class Manage(commands.Cog):
                 await user.edit(nick=f"{rank} {base}")
             except:
                 pass
-            await ctx.followup.send(f"{added}\n\n{removed}", ephemeral=True)
+            await ctx.followup.send(rank_change_summary(added, removed), ephemeral=True)
         else:
-            modal = LinkAccount(
-                title="Link User to Minecraft IGN",
-                user=user,
-                rank=rank,
-                added=added,
-                removed=removed
-            )
+            # No identity row yet: the modal links them, then applies the rank
+            # (roles + nickname + DB) exactly like the branch above.
+            modal = LinkAccount(title="Link User to Minecraft IGN", user=user, rank=rank)
             await ctx.interaction.response.send_modal(modal)
 
     @manage_group.command(name='shells', description='HR: Add or remove shells from a user')
