@@ -1322,7 +1322,7 @@ def check_milestones(user_id: int, collection: dict) -> list:
     for p in set_progress(collection):
         if p["complete"] and p["set"]["pearls"]:
             if db_award_once(user_id, f"set-{p['set']['id']}", p["set"]["pearls"]):
-                earned.append((f"set: {p['set']['name']}", p["set"]["pearls"]))
+                earned.append((p["set"]["name"], p["set"]["pearls"]))
 
     return earned
 

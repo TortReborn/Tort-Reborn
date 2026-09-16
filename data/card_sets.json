@@ -4,7 +4,7 @@
   {
    "id": "raid-pantheon",
    "name": "The Raid Pantheon",
-   "description": "The colossi at the end of Wynn's raids — the Wyrmling, Orphion and Anathema, the Colossus and the Anomaly.",
+   "description": "Every Wynn raid boss",
    "pearls": 20000,
    "slugs": [
     "grootslang-wyrmling",
@@ -17,7 +17,7 @@
   {
    "id": "fruman-crown",
    "name": "The Fruman Crown",
-   "description": "Her Majesty, Queen of Fruma, and the Sovereigns who rule her districts in her name.",
+   "description": "Fruma's queen and sovereigns",
    "pearls": 17500,
    "slugs": [
     "her-majesty",
@@ -32,7 +32,7 @@
   {
    "id": "fruman-resistance",
    "name": "The Fruman Resistance",
-   "description": "Leaves in the Wind, The Canopy and The Steel Feather — the cells that push back against the Crown.",
+   "description": "Fruma's rebel cells",
    "pearls": 12000,
    "slugs": [
     "syndra",
@@ -51,7 +51,7 @@
   {
    "id": "legends-of-the-provinces",
    "name": "Legends of the Provinces",
-   "description": "The names every adventurer learns long before Fruma: kings, heroes, villains and one very persistent Bob.",
+   "description": "Old kings, heroes and villains",
    "pearls": 12500,
    "slugs": [
     "aledar",
@@ -72,7 +72,7 @@
   {
    "id": "festival-spirits",
    "name": "Festival Spirits",
-   "description": "The faces of the Festival of the Spirits, the Heroes and the Bonfire.",
+   "description": "Festival hosts and guides",
    "pearls": 3000,
    "slugs": [
     "aster",
@@ -87,7 +87,7 @@
   {
    "id": "dungeon-keepers",
    "name": "Dungeon Keepers",
-   "description": "The bosses waiting at the bottom of Wynn's dungeons.",
+   "description": "Every final dungeon boss",
    "pearls": 3000,
    "slugs": [
     "witherhead",
