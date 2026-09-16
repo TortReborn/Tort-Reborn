@@ -84,9 +84,16 @@
    "name": "Dungeon Keepers",
    "description": "The bosses waiting at the bottom of Wynn's dungeons.",
    "slugs": [
-    "antikythera-supercomputer",
+    "witherhead",
+    "arakadicus",
+    "charon",
+    "garoth",
+    "hashr",
+    "theorick-twain",
     "slykaar",
-    "captain-redbeard"
+    "captain-redbeard",
+    "antikythera-supercomputer",
+    "the-eye"
    ]
   }
  ]

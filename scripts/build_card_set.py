@@ -25,7 +25,12 @@ from datetime import datetime, timezone
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORPUS = os.path.join(BASE, "data", "card_corpus.json")
-FABLED = os.path.join(BASE, "data", "fabled_cards.json")
+# Hand-curated bosses, each file at one tier. Bosses do not speak, so the
+# dialogue mining never sees them; they are merged in after tiering.
+CURATED = [
+    os.path.join(BASE, "data", "fabled_cards.json"),     # raid bosses, mythic
+    os.path.join(BASE, "data", "dungeon_bosses.json"),   # dungeon bosses, rare
+]
 OUT = os.path.join(BASE, "data", "cards.json")
 ART_CACHE = os.path.join(BASE, "images", "cards")
 
@@ -119,19 +124,21 @@ def main() -> int:
 
     with open(CORPUS, encoding="utf-8") as f:
         corpus = json.load(f)
-    with open(FABLED, encoding="utf-8") as f:
-        fab = json.load(f)
+    curated = []
+    for path in CURATED:
+        with open(path, encoding="utf-8") as f:
+            curated.append(json.load(f))
 
-    # A raid boss who also speaks gets mined like anyone else. The mythic
-    # entry wins: the same slug twice would let a unique reel hand out the
-    # mythic card, since the collection only stores the slug.
-    fabled_slugs = {c["slug"] for c in fab["cards"]}
+    # A boss who also speaks gets mined like anyone else. The curated entry
+    # wins: the same slug twice would let a unique reel hand out the boss
+    # card, since the collection only stores the slug.
+    curated_slugs = {c["slug"] for cur in curated for c in cur["cards"]}
     playable = []
     for c in corpus:
         if not c.get("image_url"):
             continue
-        if slugify(c["name"], set()) in fabled_slugs:
-            print(f"  {c['name']} is fabled, dropping the mined copy")
+        if slugify(c["name"], set()) in curated_slugs:
+            print(f"  {c['name']} is curated, dropping the mined copy")
             continue
         playable.append(c)
     if not playable:
@@ -151,11 +158,11 @@ def main() -> int:
     assign_tiers(cards)
     apply_overrides(cards)
 
-    # The raid bosses are hand-curated and sit above fabled, so they are
-    # merged in after tiering rather than ranked by dialogue like the rest.
-    for c in fab["cards"]:
-        cards.append({**c, "tier": fab["tier"], "lines": 0})
-    print(f"  merged {len(fab['cards'])} {fab['tier']} cards")
+    # Curated bosses take their file's tier rather than a dialogue rank.
+    for cur in curated:
+        for c in cur["cards"]:
+            cards.append({**c, "tier": cur["tier"], "lines": 0})
+        print(f"  merged {len(cur['cards'])} {cur['tier']} cards")
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -169,7 +176,7 @@ def main() -> int:
     print(f"wrote {OUT} — {len(cards)} cards "
           f"(dropped {len(corpus) - len(cards)} without art)")
     for tier, _ in TIER_CUM:
-        rs = [c for c in cards if c["tier"] == tier]
+        rs = [c for c in cards if c["tier"] == tier and c["lines"]]
         print(f"  {tier:10s} {len(rs):4d} ({len(rs) / len(cards) * 100:4.1f}%)  "
               f"lines {min(c['lines'] for c in rs)}-{max(c['lines'] for c in rs)}")
 

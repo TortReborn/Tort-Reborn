@@ -9,6 +9,7 @@ Re-tiering cards without handing anyone a free upgrade.
    and the same across all their stacks of that card
 4. --only-upgrades leaves cards that moved down alone
 5. data/card_sets.json loads with load_card_set() and only names real cards
+6. Dungeon bosses are curated rare cards and Dungeon Keepers holds every final boss
 """
 
 import json
@@ -103,3 +104,21 @@ def test_card_sets_load_and_every_member_exists():
         assert len(set(disk["slugs"])) == len(disk["slugs"])
         assert disk["name"] and disk["description"]
     assert len(loaded) == 6
+
+
+def test_dungeon_bosses_are_rare_cards_and_the_keepers_set_names_every_dungeon():
+    from Helpers import cards as cardlib
+    static = cardlib.load_card_set(force=True)
+    with open(build_card_set.CURATED[1], encoding="utf-8") as f:
+        bosses = json.load(f)
+    assert bosses["tier"] == "rare"
+    for c in bosses["cards"]:
+        assert static["by_slug"][c["slug"]]["tier"] == "rare", c["slug"]
+        assert c["dungeon"] and c["image_url"].startswith("https://wynncraft.wiki.gg/images/")
+    keepers = next(s for s in static["sets"] if s["id"] == "dungeon-keepers")
+    # Wynnston is a card but not a Keeper: Fallen Factory is represented by
+    # its final boss, the Antikythera Supercomputer
+    assert "wynnston" in static["by_slug"] and "wynnston" not in keepers["slugs"]
+    finals = {"witherhead", "arakadicus", "charon", "garoth", "hashr", "theorick-twain",
+              "slykaar", "captain-redbeard", "antikythera-supercomputer", "the-eye"}
+    assert set(keepers["slugs"]) == finals
