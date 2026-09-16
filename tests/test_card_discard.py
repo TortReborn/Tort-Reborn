@@ -3,7 +3,7 @@ Discard: a plain copy goes back and the tier below rolls in its place.
 
 1. Every yield points exactly one tier down, so discarding can only ever
    move down the list, and commons have nowhere to go
-2. Member 1/1s can never be discarded
+2. Member cards can never be discarded
 3. roll_in_tier stays inside the tier it was given, and wishes redirect
    inside it at the same rate a reel would
 """

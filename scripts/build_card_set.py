@@ -40,6 +40,12 @@ TIER_CUM = [
     ("common", 1.00),
 ]
 
+# Hand-placed tiers, applied after the line-count ranking. A character whose
+# dialogue count undersells them can be pinned where the guild wants them.
+TIER_OVERRIDES = {
+    "lari": "legendary",
+}
+
 UA = {"User-Agent": "TortRebornCards/1.0 (TAq guild bot)"}
 
 
@@ -68,6 +74,13 @@ def assign_tiers(cards: list) -> None:
                 idx += 1
             if idx >= limit and tier != "common":
                 break
+
+
+def apply_overrides(cards: list, overrides: dict = TIER_OVERRIDES) -> None:
+    """Pin any hand-placed tiers on top of the ranked ones."""
+    for c in cards:
+        if c["slug"] in overrides:
+            c["tier"] = overrides[c["slug"]]
 
 
 def download_art(cards: list) -> None:
@@ -128,6 +141,7 @@ def main() -> int:
             "image_url": c["image_url"],
         })
     assign_tiers(cards)
+    apply_overrides(cards)
 
     # The raid bosses are hand-curated and sit above legendary, so they are
     # merged in after tiering rather than ranked by dialogue like the rest.
