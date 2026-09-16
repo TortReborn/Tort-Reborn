@@ -274,6 +274,86 @@ def _wiki_line(card: dict) -> str | None:
     return ctext.wiki(card)
 
 
+def _card_description(card: dict) -> str | None:
+    """Wiki link plus the sets the card counts toward, if any."""
+    bits = [_wiki_line(card)]
+    if not card.get("member"):
+        names = [s["name"] for s in cardlib.sets_of(card["slug"])]
+        if names:
+            bits.append(f"-# {ctext.plural(len(names), 'set')}: {', '.join(names)}")
+    return "\n".join(b for b in bits if b) or None
+
+
+def _set_bar(owned: int, total: int, width: int = 10) -> str:
+    filled = round(width * owned / total) if total else 0
+    return "█" * filled + "░" * (width - filled)
+
+
+def _set_line(p: dict) -> str:
+    mark = "✓" if p["complete"] else " "
+    return (f"`{mark} {_set_bar(p['owned'], p['total'])} {p['owned']:>2}/{p['total']:<2}` "
+            f"**{p['set']['name']}**")
+
+
+class SetPickView(discord.ui.View):
+    """Pick a set to see its cards; the viewer's missing ones are dimmed."""
+
+    def __init__(self, owner_id: int, target: discord.abc.User, progress: list,
+                 owned: set):
+        super().__init__(timeout=300)
+        self.owner_id = owner_id
+        self.target = target
+        self.progress = {p["set"]["id"]: p for p in progress}
+        self.owned = owned
+        self.message = None
+        self.pick.options = [
+            discord.SelectOption(
+                label=p["set"]["name"], value=p["set"]["id"],
+                description=f"{p['owned']}/{p['total']}"
+                            + (" · complete" if p["complete"] else ""),
+                emoji="✅" if p["complete"] else None)
+            for p in progress]
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.owner_id:
+            await interaction.response.send_message(
+                "Run `/tank sets` for your own", ephemeral=True)
+            return False
+        return True
+
+    async def on_timeout(self):
+        for child in self.children:
+            child.disabled = True
+        try:
+            if self.message:
+                await self.message.edit(view=self)
+        except discord.HTTPException:
+            pass
+
+    @discord.ui.select(placeholder="Open a set", min_values=1, max_values=1)
+    async def pick(self, select: discord.ui.Select,
+                   interaction: discord.Interaction):
+        await interaction.response.defer()
+        p = self.progress[select.values[0]]
+        s = p["set"]
+        cards = [cardlib.get_card(x) for x in s["slugs"]]
+        file = await asyncio.to_thread(spread_file, cards, self.owned)
+        embed = discord.Embed(
+            title=s["name"],
+            description=s["description"],
+            color=_card_color(cards[0]))
+        embed.set_image(url=f"attachment://{file.filename}")
+        who = "you" if self.target.id == self.owner_id else self.target.display_name
+        if p["complete"]:
+            state = f"{who} {'have' if who == 'you' else 'has'} every card"
+        else:
+            names = ", ".join(cardlib.get_card(x)["name"] for x in p["missing"])
+            state = f"{who} {'are' if who == 'you' else 'is'} missing: {names}"
+        embed.add_field(name=f"{p['owned']}/{p['total']}", value=state, inline=False)
+        embed.set_footer(text=f"complete the set: +{s['pearls']:,} pearls")
+        await interaction.followup.send(embed=embed, file=file)
+
+
 def _credit(card: dict, *bits) -> str:
     """Footer text: what the command wants to report, nothing more."""
     return ctext.credit(*bits)
@@ -501,6 +581,9 @@ class TradeView(discord.ui.View):
             f"Trade done\n"
             f"{self.proposer.mention}: **{_star_name(self.want, self.want_star)}**\n"
             f"{self.target.mention}: **{_star_name(self.give, self.give_star)}**")
+        # Trading for the last missing card is how most sets will get finished.
+        for user in (self.proposer, self.target):
+            await _announce_and_reward(interaction.channel, user, None)
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.secondary)
     async def decline(self, button: discord.ui.Button,
@@ -733,6 +816,7 @@ class Cards(commands.Cog):
             value=("`/tank list` tank contents\n"
                    "`/tank view` one owned card\n"
                    "`/tank profile` balance and stats\n"
+                   "`/tank sets` set progress, pearls for a full set\n"
                    "`/tank discard` plain dupes into lower-tier rolls\n"
                    f"{_yield_line()}"),
             inline=False)
@@ -751,6 +835,7 @@ class Cards(commands.Cog):
         embed.add_field(
             name="Pool",
             value=("`/pool list` all drops\n"
+                   "`/pool sets` every set and its reward\n"
                    "`/pool view` preview a card\n"
                    "`/pool rates` odds"),
             inline=False)
@@ -791,7 +876,7 @@ class Cards(commands.Cog):
         file = await asyncio.to_thread(card_file, match, None, stars,
                                        cardlib.tier_max_stars(match))
         embed = discord.Embed(color=_card_color(match),
-                              description=_wiki_line(match))
+                              description=_card_description(match))
         embed.set_image(url=f"attachment://{file.filename}")
         held = "" if match.get("member") else " · ".join(
             f"{c}× {_level_label(match, st) or 'plain'}"
@@ -887,6 +972,35 @@ class Cards(commands.Cog):
         paginator = pages.Paginator(pages=page_list)
         add_paginator_buttons(paginator)
         await paginator.respond(ctx.interaction)
+
+    # ── /tank sets ───────────────────────────────────────────────────────────
+
+    @tank.command(name="sets", description="Set progress")
+    async def tank_sets(
+        self, ctx: discord.ApplicationContext,
+        member: discord.Option(
+            discord.Member,
+            description="Player",
+            required=False, default=None),
+    ):
+        await ctx.defer()
+        target = member or ctx.author
+        mine = target.id == ctx.author.id
+        owned = await asyncio.to_thread(cardlib.db_get_collection, target.id)
+        progress = cardlib.set_progress(owned)
+        if not progress:
+            return await ctx.followup.send("No sets yet", ephemeral=True)
+        progress.sort(key=lambda p: (not p["complete"],
+                                     -p["owned"] / p["total"], p["set"]["name"]))
+        done = sum(p["complete"] for p in progress)
+        embed = discord.Embed(
+            title=f"{'Your' if mine else target.display_name + chr(39) + 's'} sets",
+            description=f"**{done}/{len(progress)}** complete\n\n"
+                        + "\n".join(_set_line(p) for p in progress),
+            color=0x38C9BD)
+        embed.set_footer(text="pick a set below to see its cards")
+        view = SetPickView(ctx.author.id, target, progress, set(owned))
+        view.message = await ctx.followup.send(embed=embed, view=view)
 
     # ── /tank profile ────────────────────────────────────────────────────────
 
@@ -1277,7 +1391,7 @@ class Cards(commands.Cog):
                                        cardlib.tier_max_stars(card))
 
         embed = discord.Embed(color=_card_color(card),
-                              description=_wiki_line(card))
+                              description=_card_description(card))
         embed.set_image(url=f"attachment://{file.filename}")
 
         if member:
@@ -1294,6 +1408,23 @@ class Cards(commands.Cog):
             f"you own {entry['total']}" if entry
             else "not owned"))
         await ctx.followup.send(embed=embed, file=file)
+
+    @pool.command(name="sets", description="All sets")
+    async def pool_sets(self, ctx: discord.ApplicationContext):
+        await ctx.defer()
+        sets = cardlib.load_card_set()["sets"]
+        embed = discord.Embed(
+            title="Card sets",
+            description="own every card in a set once for a one-time pearl reward",
+            color=0x38C9BD)
+        for s in sets:
+            names = ", ".join(cardlib.get_card(x)["name"] for x in s["slugs"])
+            embed.add_field(
+                name=f"{s['name']} · {len(s['slugs'])} cards · +{s['pearls']:,} pearls",
+                value=f"{s['description']}\n-# {names}",
+                inline=False)
+        embed.set_footer(text="/tank sets for your progress")
+        await ctx.followup.send(embed=embed)
 
     @pool.command(name="list", description=ctext.POOL)
     async def pool_list(

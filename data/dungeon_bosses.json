@@ -1,0 +1,55 @@
+{
+ "note": "The dungeon bosses. Hand-curated like the raid bosses: they do not speak, so the dialogue mining never saw them. Merged into the playable set by scripts/build_card_set.py at the tier below.",
+ "tier": "rare",
+ "cards": [
+  {
+   "slug": "witherhead",
+   "name": "Witherhead",
+   "dungeon": "Decrepit Sewers",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Witherhead",
+   "image_url": "https://wynncraft.wiki.gg/images/Witherhead.png?6cfbd3"
+  },
+  {
+   "slug": "arakadicus",
+   "name": "Arakadicus",
+   "dungeon": "Infested Pit",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Arakadicus",
+   "image_url": "https://wynncraft.wiki.gg/images/Arakadicus.png?cd7a14"
+  },
+  {
+   "slug": "charon",
+   "name": "Charon",
+   "dungeon": "Underworld Crypt",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Charon",
+   "image_url": "https://wynncraft.wiki.gg/images/Charon.png?9b5175"
+  },
+  {
+   "slug": "garoth",
+   "name": "Garoth, Keeper of the Sanctum",
+   "dungeon": "Timelost Sanctum",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Garoth",
+   "image_url": "https://wynncraft.wiki.gg/images/Garoth%2CKeeperoftheSanctum%28Phase1%29.png?d700da"
+  },
+  {
+   "slug": "hashr",
+   "name": "Hashr",
+   "dungeon": "Sand-Swept Tomb",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hashr",
+   "image_url": "https://wynncraft.wiki.gg/images/Hashr%28Phase1%29.png?637f1d"
+  },
+  {
+   "slug": "the-eye",
+   "name": "The Eye",
+   "dungeon": "Eldritch Outlook",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Eye",
+   "image_url": "https://wynncraft.wiki.gg/images/TheEye%28Phase1%29.png?38f809"
+  },
+  {
+   "slug": "wynnston",
+   "name": "Wynnston",
+   "dungeon": "Fallen Factory",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Wynnston",
+   "image_url": "https://wynncraft.wiki.gg/images/Wynnston.png?4ffb03"
+  }
+ ]
+}

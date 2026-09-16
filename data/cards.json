@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-16T22:08:18+00:00",
+ "generated_at": "2026-09-16T22:45:17+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 551,
+ "count": 558,
  "cards": [
   {
    "slug": "tasim",
@@ -4415,6 +4415,69 @@
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Annihilation",
    "image_url": "https://wynncraft.wiki.gg/images/Annihilation.png?2f0714",
    "tier": "mythic",
+   "lines": 0
+  },
+  {
+   "slug": "witherhead",
+   "name": "Witherhead",
+   "dungeon": "Decrepit Sewers",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Witherhead",
+   "image_url": "https://wynncraft.wiki.gg/images/Witherhead.png?6cfbd3",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "arakadicus",
+   "name": "Arakadicus",
+   "dungeon": "Infested Pit",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Arakadicus",
+   "image_url": "https://wynncraft.wiki.gg/images/Arakadicus.png?cd7a14",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "charon",
+   "name": "Charon",
+   "dungeon": "Underworld Crypt",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Charon",
+   "image_url": "https://wynncraft.wiki.gg/images/Charon.png?9b5175",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "garoth",
+   "name": "Garoth, Keeper of the Sanctum",
+   "dungeon": "Timelost Sanctum",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Garoth",
+   "image_url": "https://wynncraft.wiki.gg/images/Garoth%2CKeeperoftheSanctum%28Phase1%29.png?d700da",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "hashr",
+   "name": "Hashr",
+   "dungeon": "Sand-Swept Tomb",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hashr",
+   "image_url": "https://wynncraft.wiki.gg/images/Hashr%28Phase1%29.png?637f1d",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "the-eye",
+   "name": "The Eye",
+   "dungeon": "Eldritch Outlook",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Eye",
+   "image_url": "https://wynncraft.wiki.gg/images/TheEye%28Phase1%29.png?38f809",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "wynnston",
+   "name": "Wynnston",
+   "dungeon": "Fallen Factory",
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Wynnston",
+   "image_url": "https://wynncraft.wiki.gg/images/Wynnston.png?4ffb03",
+   "tier": "rare",
    "lines": 0
   }
  ]

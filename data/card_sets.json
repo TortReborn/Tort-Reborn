@@ -1,10 +1,11 @@
 {
- "note": "Named groups of cards. Membership is by slug; a card may sit in any number of sets. Loaded by Helpers.cards.load_card_set() as \"sets\".",
+ "note": "Named groups of cards. Membership is by slug; a card may sit in any number of sets. pearls is the one-time reward for holding every card in the set. Loaded by Helpers.cards.load_card_set() as \"sets\".",
  "sets": [
   {
    "id": "raid-pantheon",
    "name": "The Raid Pantheon",
    "description": "The colossi at the end of Wynn's raids — the Wyrmling, Orphion and Anathema, the Colossus and the Anomaly.",
+   "pearls": 20000,
    "slugs": [
     "grootslang-wyrmling",
     "orphion",
@@ -17,6 +18,7 @@
    "id": "fruman-crown",
    "name": "The Fruman Crown",
    "description": "Her Majesty, Queen of Fruma, and the Sovereigns who rule her districts in her name.",
+   "pearls": 17500,
    "slugs": [
     "her-majesty",
     "tasim",
@@ -31,6 +33,7 @@
    "id": "fruman-resistance",
    "name": "The Fruman Resistance",
    "description": "Leaves in the Wind, The Canopy and The Steel Feather — the cells that push back against the Crown.",
+   "pearls": 12000,
    "slugs": [
     "syndra",
     "mora",
@@ -49,6 +52,7 @@
    "id": "legends-of-the-provinces",
    "name": "Legends of the Provinces",
    "description": "The names every adventurer learns long before Fruma: kings, heroes, villains and one very persistent Bob.",
+   "pearls": 12500,
    "slugs": [
     "aledar",
     "ava",
@@ -69,6 +73,7 @@
    "id": "festival-spirits",
    "name": "Festival Spirits",
    "description": "The faces of the Festival of the Spirits, the Heroes and the Bonfire.",
+   "pearls": 3000,
    "slugs": [
     "aster",
     "bonfire-keeper",
@@ -83,10 +88,18 @@
    "id": "dungeon-keepers",
    "name": "Dungeon Keepers",
    "description": "The bosses waiting at the bottom of Wynn's dungeons.",
+   "pearls": 3000,
    "slugs": [
-    "antikythera-supercomputer",
+    "witherhead",
+    "arakadicus",
+    "charon",
+    "garoth",
+    "hashr",
+    "theorick-twain",
     "slykaar",
-    "captain-redbeard"
+    "captain-redbeard",
+    "antikythera-supercomputer",
+    "the-eye"
    ]
   }
  ]
