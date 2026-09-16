@@ -9,26 +9,39 @@ from Helpers.classes import LinkAccount, PlayerStats, BasicPlayerStats
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID, determine_starting_rank
 from Helpers.links import LinkConflictError, assert_uuid_free
-from Helpers.member_roles import honorific_flags, registration_role_names
+from Helpers.member_roles import registration_role_names
+from Helpers.registration import record_registration
 from Helpers.variables import HOME_GUILD_IDS
 
 
 def _fetch_new_member_data(user_id, ign):
-    """Fetch the player's stats and existing link rows for registration.
+    """Fetch the player's stats and check the uuid is free to link.
     Blocking (HTTP + DB read) — always call via asyncio.to_thread. The DB is
     checked out only after the BasicPlayerStats HTTP has completed."""
     pdata = BasicPlayerStats(ign)
 
+    if not pdata.error:
+        db = DB(); db.connect()
+        try:
+            assert_uuid_free(db.cursor, pdata.UUID, user_id)
+        finally:
+            db.close()
+
+    return pdata
+
+
+def _record(user_id, ign, uuid, rank, wars, held_role_names, actor_id):
+    """Blocking DB write — call via asyncio.to_thread."""
     db = DB(); db.connect()
     try:
-        db.cursor.execute('SELECT * FROM discord_links WHERE discord_id = %s', (user_id,))
-        rows = db.cursor.fetchall()
-        if not pdata.error:
-            assert_uuid_free(db.cursor, pdata.UUID, user_id)
+        recorded = record_registration(
+            db.cursor, discord_id=user_id, ign=ign, uuid=uuid, rank=rank, wars_on_join=wars,
+            held_role_names=held_role_names, actor_id=actor_id,
+        )
+        db.connection.commit()
+        return recorded
     finally:
         db.close()
-
-    return rows, pdata
 
 
 class NewMember(commands.Cog):
@@ -41,7 +54,7 @@ class NewMember(commands.Cog):
         if message.interaction.user.guild_permissions.manage_roles:
             await message.defer(ephemeral=True)
             try:
-                rows, pdata = await asyncio.to_thread(_fetch_new_member_data, user.id, ign)
+                pdata = await asyncio.to_thread(_fetch_new_member_data, user.id, ign)
             except LinkConflictError as e:
                 await message.respond(e.user_message(), ephemeral=True)
                 return
@@ -53,7 +66,7 @@ class NewMember(commands.Cog):
                 return
 
             starting_rank = determine_starting_rank(user)
-            was_honored_fish, was_retired_chief = honorific_flags(r.name for r in user.roles)
+            held_role_names = [r.name for r in user.roles]
             to_add, to_remove = registration_role_names(starting_rank)
             roles_to_add = []
             roles_to_remove = []
@@ -95,22 +108,14 @@ class NewMember(commands.Cog):
             if roles_to_remove:
                 await user.remove_roles(*roles_to_remove, reason=f"New member registration (ran by {message.author.name})", atomic=True)
 
-            db = DB()
-            db.connect()
             try:
-                if len(rows) != 0:
-                    db.cursor.execute(
-                        'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s, linked = TRUE, '
-                        'was_honored_fish = %s, was_retired_chief = %s WHERE discord_id = %s',
-                        (starting_rank, ign, pdata.wars, pdata.UUID, was_honored_fish, was_retired_chief, user.id))
-                else:
-                    db.cursor.execute(
-                        'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join, was_honored_fish, was_retired_chief) '
-                        'VALUES (%s, %s, %s, True, %s, %s, %s, %s)',
-                        (user.id, pdata.username, pdata.UUID, starting_rank, pdata.wars, was_honored_fish, was_retired_chief))
-                db.connection.commit()
-            finally:
-                db.close()
+                await asyncio.to_thread(
+                    _record, user.id, pdata.username, pdata.UUID, starting_rank, pdata.wars,
+                    held_role_names, message.interaction.user.id,
+                )
+            except LinkConflictError as e:
+                await message.respond(e.user_message(), ephemeral=True)
+                return
             await user.edit(nick=f"{starting_rank} {ign}")
             embed = discord.Embed(title=':white_check_mark: New member registered', description=f'<@{user.id}> was linked to `{pdata.username}`', color=0x3ed63e)
             await message.respond(embed=embed)

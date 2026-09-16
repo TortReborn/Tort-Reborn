@@ -6,7 +6,7 @@ ever joins (no live discord_links row) must leave 'accepted', otherwise the
 website counts it as a pending join forever (TAQ-77).
 
 1. Accepted guild app runs the guarded UPDATE and reports whether it expired
-2. The SQL itself re-checks status/type and requires no live linked row,
+2. The SQL itself re-checks status/type and requires the applicant off the roster,
    so a race with the join flow cannot expire a joined player
 3. Non-guild and non-accepted applications never touch the database
 """
@@ -49,7 +49,9 @@ def test_sql_guards_against_join_race():
     assert "status = 'accepted'" in EXPIRE_UNJOINED_SQL
     assert "application_type = 'guild'" in EXPIRE_UNJOINED_SQL
     assert "NOT EXISTS" in EXPIRE_UNJOINED_SQL
-    assert "linked = TRUE" in EXPIRE_UNJOINED_SQL
+    # Membership is the roster, not a flag on the identity row (TAQ-76).
+    assert "JOIN membership_stints ms ON ms.uuid = dl.uuid" in EXPIRE_UNJOINED_SQL
+    assert "linked" not in EXPIRE_UNJOINED_SQL
 
 
 def test_non_guild_apps_never_query():

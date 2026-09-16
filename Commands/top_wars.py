@@ -99,7 +99,7 @@ def get_wars_in_range(start_date: datetime.date, end_date: datetime.date) -> Dic
 
             result[uuid] = {
                 'name': uuid_to_name.get(uuid, 'Unknown'),
-                'discord_rank': discord_info.get('rank', 'Unknown'),
+                'discord_rank': discord_info.get('rank') or 'Unknown',
                 'discord_id': discord_info.get('discord_id'),
                 'wars_delta': delta,
                 'uuid': uuid

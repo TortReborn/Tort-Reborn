@@ -2,7 +2,7 @@
 Test suite for the discord_links uuid guard (Helpers/links.py).
 
 A Minecraft uuid may be linked to at most one Discord account; these helpers
-back the partial unique index discord_links_linked_uuid_uq with up-front
+back the unique index discord_links_uuid_uq with up-front
 detection so commands can report the conflict instead of failing on the
 constraint.
 
@@ -10,9 +10,7 @@ constraint.
    linked elsewhere, and None when it is free / owned by the same account
 2. A falsy uuid never queries and never conflicts
 3. assert_uuid_free raises LinkConflictError carrying the conflicting account
-4. assert_row_linkable checks the stored uuid of an existing row, and passes
-   for rows without a uuid
-5. user_message mentions the conflicting Discord account
+4. user_message mentions the conflicting Discord account
 """
 
 import os
@@ -24,7 +22,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from Helpers.links import (
     LinkConflictError,
-    assert_row_linkable,
     assert_uuid_free,
     find_linked_uuid_conflict,
 )
@@ -51,7 +48,10 @@ def test_conflict_found():
     assert find_linked_uuid_conflict(cursor, UUID, 751) == (500, "Kenji121")
     (sql, params), = cursor.queries
     assert params == (UUID, 751)
-    assert "linked = TRUE" in sql
+    # Identity is unique outright now (TAQ-76): no partial "linked" filter,
+    # and the row's own account is excluded so a relink to itself is fine.
+    assert "linked" not in sql
+    assert "discord_id <> %s" in sql
 
 
 def test_no_conflict():
@@ -79,16 +79,3 @@ def test_assert_uuid_free_raises_with_conflict_details():
 
 def test_assert_uuid_free_passes_when_free():
     assert_uuid_free(FakeCursor([None]), UUID, 751)
-
-
-def test_assert_row_linkable_conflict():
-    # First fetch: the row's stored uuid; second: the conflicting link.
-    cursor = FakeCursor([(UUID,), (500, "Kenji121")])
-    with pytest.raises(LinkConflictError):
-        assert_row_linkable(cursor, 751)
-
-
-def test_assert_row_linkable_free_and_uuidless():
-    assert_row_linkable(FakeCursor([(UUID,), None]), 751)
-    assert_row_linkable(FakeCursor([(None,)]), 751)
-    assert_row_linkable(FakeCursor([None]), 751)

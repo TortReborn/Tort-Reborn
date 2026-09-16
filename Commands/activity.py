@@ -331,7 +331,7 @@ class Activity(commands.Cog):
                     if member_for < 2:
                         real_pt = 0
 
-                    discord_rank = uuid_to_rank.get(uuid, member.get('rank', 'unknown'))
+                    discord_rank = uuid_to_rank.get(uuid) or member.get('rank', 'unknown')
 
                     # Detect if lastJoin is private/unavailable
                     last_join_is_private = member.get('lastJoin') is None

@@ -7,6 +7,7 @@ from discord.ext import commands
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
 from Helpers.links import LinkConflictError, assert_uuid_free
+from Helpers.registration import set_rank, upsert_identity
 from Helpers.variables import HOME_GUILD_IDS
 
 
@@ -118,20 +119,13 @@ class Register(commands.Cog):
 
     @staticmethod
     def _upsert_ally_link(discord_id: int, ign: str, uuid: str, rank: str):
+        """Identity plus the ally rank (a 'kind = ally' row in rank_definitions,
+        so it is never mistaken for guild membership)."""
         db = DB()
         db.connect()
         try:
-            assert_uuid_free(db.cursor, uuid, discord_id)
-            db.cursor.execute(
-                """INSERT INTO discord_links (discord_id, ign, uuid, linked, rank)
-                   VALUES (%s, %s, %s, TRUE, %s)
-                   ON CONFLICT (discord_id) DO UPDATE
-                   SET ign = EXCLUDED.ign,
-                       uuid = EXCLUDED.uuid,
-                       linked = TRUE,
-                       rank = EXCLUDED.rank""",
-                (discord_id, ign, uuid, rank),
-            )
+            upsert_identity(db.cursor, discord_id=discord_id, ign=ign, uuid=uuid)
+            set_rank(db.cursor, discord_id, rank)
             db.connection.commit()
         finally:
             db.close()

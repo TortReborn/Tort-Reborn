@@ -15,7 +15,8 @@ from Helpers.database import (
 )
 from Helpers.functions import getPlayerUUID, getPlayerDatav3, getPlayerProfileDatav3, urlify, determine_starting_rank, timed_get, cap_playtime_window
 from Helpers.links import LinkConflictError, assert_uuid_free
-from Helpers.member_roles import honorific_flags, registration_role_names
+from Helpers.member_roles import apply_rank_roles, rank_change_summary, registration_role_names
+from Helpers.registration import record_registration, set_rank, upsert_identity
 from discord.ext.pages import Page as _Page
 
 from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID, discord_ranks
@@ -246,7 +247,10 @@ class PlayerStats:
         self.linked = discord_id is not None
         if self.linked:
             self.discord = discord_id
-            self.rank = discord_rank
+            # A linked account with no Discord rank (an ex-member, TAQ-76)
+            # keeps the Wynncraft rank set above so string callers never see None.
+            if discord_rank:
+                self.rank = discord_rank
             if background is not None:
                 self.background = background
                 self.backgrounds_owned = owned
@@ -462,11 +466,13 @@ class PlayerShells:
 
 
 class LinkAccount(Modal):
-    def __init__(self, user, added, removed, rank, *args, **kwargs) -> None:
+    """/manage rank on a target with no discord_links row: link them first,
+    then set the rank — roles, nickname and DB, the same as the linked path
+    (TAQ-86)."""
+
+    def __init__(self, user, rank, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.user = user
-        self.added = added
-        self.removed = removed
         self.rank = rank
         self.add_item(InputText(label="Player's Name", placeholder="Player's In-Game Name without rank"))
 
@@ -475,35 +481,52 @@ class LinkAccount(Modal):
         # window — defer first, respond via followups only.
         await interaction.response.defer(ephemeral=True)
 
-        # Resolve the Minecraft uuid up front — a row without one is invisible
-        # to every uuid-keyed join (shells snapshot, raid credit, profiles).
+        # Resolve the Minecraft uuid up front: discord_links is identity and a
+        # row without one cannot exist (TAQ-76).
         ign = self.children[0].value
         player_data = await asyncio.to_thread(getPlayerUUID, ign)
-        uuid = player_data[1] if player_data else None
-        canonical_ign = player_data[0] if player_data else ign
-
-        db = DB()
-        db.connect()
-        try:
-            if uuid:
-                assert_uuid_free(db.cursor, uuid, self.user.id)
-            db.cursor.execute(
-                'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank) VALUES (%s, %s, %s, %s, %s)',
-                (self.user.id, canonical_ign, uuid, False, self.rank)
+        if not player_data:
+            await interaction.followup.send(
+                f':no_entry: Could not resolve a Minecraft account for `{ign}` — check the spelling and try again.',
+                ephemeral=True,
             )
-            db.connection.commit()
+            return
+        canonical_ign, uuid = player_data
+
+        def _write():
+            db = DB()
+            db.connect()
+            try:
+                upsert_identity(db.cursor, discord_id=self.user.id, ign=canonical_ign, uuid=uuid,
+                                linked_by=interaction.user.id)
+                set_rank(db.cursor, self.user.id, self.rank)
+                db.connection.commit()
+            finally:
+                db.close()
+
+        try:
+            await asyncio.to_thread(_write)
         except LinkConflictError as e:
             await interaction.followup.send(e.user_message(), ephemeral=True)
             return
-        finally:
-            db.close()
-        message = f'{self.added}\n\n{self.removed}'
+
+        try:
+            added, removed = await apply_rank_roles(
+                self.user, interaction.guild.roles, self.rank,
+                reason=f'/manage rank (ran by {interaction.user.name})',
+            )
+        except (discord.Forbidden, discord.HTTPException):
+            await interaction.followup.send(
+                f':warning: Linked `{canonical_ign}` and recorded **{self.rank}**, but the rank roles could not be '
+                f'applied (missing permissions or Discord error) — run `/manage rank` again to retry.',
+                ephemeral=True,
+            )
+            return
+        message = rank_change_summary(added, removed)
         try:
             await self.user.edit(nick=f"{self.rank} {canonical_ign}")
         except (discord.Forbidden, discord.HTTPException):
             message += "\n\n:warning: Could not update the nickname (missing permissions) — set it manually."
-        if not uuid:
-            message += f"\n\n:warning: Could not resolve a Minecraft account for `{ign}` — linked without a uuid; re-link once the name is confirmed."
         await interaction.followup.send(message, ephemeral=True)
 
 
@@ -517,28 +540,30 @@ class NewMember(Modal):
         await interaction.response.send_message('Working on it', ephemeral=True)
         msg = await interaction.original_response()
 
-        db = DB()
-        db.connect()
-        db.cursor.execute('SELECT * FROM discord_links WHERE discord_id = %s', (self.user.id,))
-        rows = db.cursor.fetchall()
-        pdata = BasicPlayerStats(self.children[0].value)
-        if not pdata.error:
-            try:
-                assert_uuid_free(db.cursor, pdata.UUID, self.user.id)
-            except LinkConflictError as e:
-                db.close()
-                await msg.edit(content=e.user_message(), embed=None)
-                return
+        pdata = await asyncio.to_thread(BasicPlayerStats, self.children[0].value)
         if pdata.error:
-            db.close()
             embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
                                   description=f'Could not retrieve information of `{self.children[0].value}`.\nPlease check your spelling or try again later.',
                                   color=0xe33232)
             await msg.edit(embed=embed)
             return
 
+        def _check_free():
+            db = DB()
+            db.connect()
+            try:
+                assert_uuid_free(db.cursor, pdata.UUID, self.user.id)
+            finally:
+                db.close()
+
+        try:
+            await asyncio.to_thread(_check_free)
+        except LinkConflictError as e:
+            await msg.edit(content=e.user_message(), embed=None)
+            return
+
         starting_rank = determine_starting_rank(self.user)
-        was_honored_fish, was_retired_chief = honorific_flags(r.name for r in self.user.roles)
+        held_role_names = [r.name for r in self.user.roles]
         to_add, to_remove = registration_role_names(starting_rank)
         roles_to_add = []
         roles_to_remove = []
@@ -562,23 +587,24 @@ class NewMember(Modal):
                                          reason=f"New member registration (ran by {interaction.user.name})",
                                          atomic=True)
 
-        if len(rows) != 0:
-            db.cursor.execute(
-                'UPDATE discord_links SET rank = %s, ign = %s, wars_on_join = %s, uuid = %s, linked = TRUE, '
-                'was_honored_fish = %s, was_retired_chief = %s WHERE discord_id = %s',
-                (starting_rank, self.children[0].value, pdata.wars, pdata.UUID,
-                 was_honored_fish, was_retired_chief, self.user.id)
-            )
-            db.connection.commit()
-        else:
-            db.cursor.execute(
-                'INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, wars_on_join, was_honored_fish, was_retired_chief) '
-                'VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
-                (self.user.id, pdata.username, pdata.UUID, True, starting_rank, pdata.wars,
-                 was_honored_fish, was_retired_chief)
-            )
-            db.connection.commit()
-        db.close()
+        def _write():
+            db = DB()
+            db.connect()
+            try:
+                record_registration(
+                    db.cursor, discord_id=self.user.id, ign=pdata.username, uuid=pdata.UUID,
+                    rank=starting_rank, wars_on_join=pdata.wars, held_role_names=held_role_names,
+                    actor_id=interaction.user.id,
+                )
+                db.connection.commit()
+            finally:
+                db.close()
+
+        try:
+            await asyncio.to_thread(_write)
+        except LinkConflictError as e:
+            await msg.edit(content=e.user_message(), embed=None)
+            return
         await self.user.edit(nick=f"{starting_rank} {self.children[0].value}")
         embed = discord.Embed(title=':white_check_mark: New member registered',
                               description=f'<@{self.user.id}> was linked to `{pdata.username}`', color=0x3ed63e)

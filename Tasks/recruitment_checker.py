@@ -50,7 +50,8 @@ class RecruitmentChecker(commands.Cog):
             return 0
         max_level = 0
         for char_uuid, char_data in characters.items():
-            level = char_data.get('level', 0)
+            # The API sends "level": null for some characters, not a missing key
+            level = (char_data or {}).get('level') or 0
             if level > max_level:
                 max_level = level
         return max_level
@@ -129,16 +130,17 @@ class RecruitmentChecker(commands.Cog):
                                 first_join_raw = pdata.get('firstJoin', '')
                                 first_join = first_join_raw[:10] if first_join_raw else ''  # Extract YYYY-MM-DD
 
+                                global_data = pdata.get('globalData') or {}
                                 candidate = {
                                     'username': pdata.get('username', player_name),
                                     'uuid': pdata.get('uuid', ''),
                                     'server': self.extract_server_region(server_name),
                                     'rank': pdata.get('supportRank', ''),
-                                    'wars': pdata.get('globalData', {}).get('wars', 0),
+                                    'wars': global_data.get('wars') or 0,
                                     'first_join': first_join,
-                                    'playtime': pdata.get('playtime', 0),
-                                    'raids': pdata.get('globalData', {}).get('raids', {}).get('total', 0),
-                                    'max_level': self.get_max_character_level(pdata.get('characters', {}))
+                                    'playtime': pdata.get('playtime') or 0,
+                                    'raids': (global_data.get('raids') or {}).get('total') or 0,
+                                    'max_level': self.get_max_character_level(pdata.get('characters') or {})
                                 }
                                 candidates.append(candidate)
                                 break

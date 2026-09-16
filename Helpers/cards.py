@@ -31,7 +31,7 @@ REELS_PER_WINDOW = 3
 # ── Drop odds ────────────────────────────────────────────────────────────────
 # Worked backwards from what a month should feel like at 12 reels a day
 # (84 a week, 360 a month): an epic about weekly, a legendary about monthly,
-# and a 1-in-4 chance of a member 1/1 somewhere in those thirty days.
+# and a 1-in-4 chance of a member card somewhere in those thirty days.
 TIER_WEIGHTS = {
     "common": 43.61,
     "uncommon": 32.82,
@@ -110,7 +110,7 @@ TIER_MAX_STARS = {
 # Outputs pay no pearls: every card pays once, when it is reeled in, and a
 # chain of discards paying at every step would print them. Wishes apply, the
 # same way they do to a reel. Only unfused copies can be discarded, and never
-# a member 1/1.
+# a member card.
 DISCARD_YIELD = {
     "fabled": ("legendary", 2),
     "legendary": ("epic", 4),
@@ -152,12 +152,12 @@ MAX_BAIT_REELS = max(t["reels"] for t in DAILY_TIERS)
 # tier, so steering the pick inside a tier cannot change what a reel earns, no
 # matter what is wished or how often it changes.
 #
-# Every rarity can be wished for. Member 1/1s cannot — a single-copy card of a
+# Every rarity can be wished for. Member cards cannot — a single-copy card of a
 # named person should never be targetable.
 WISH_REDIRECT_CHANCE = 0.25
-WISHABLE_TIERS = tuple(CARD_TIERS)   # everything but a member 1/1
+WISHABLE_TIERS = tuple(CARD_TIERS)   # everything but a member card
 
-# ── Member 1/1 cards ─────────────────────────────────────────────────────────
+# ── Member cards ─────────────────────────────────────────────────────────────
 MEMBER_ELIGIBLE_RANKS = ["Swordfish", "Hammerhead", "Sailfish", "Dolphin",
                          "Narwhal", "Hydra"]
 
@@ -246,7 +246,7 @@ SCHEMA = [
         PRIMARY KEY ("user", card)
     );
     """,
-    # One row per eligible member, created the moment their 1/1 is minted.
+    # One row per eligible member, created the moment their card is minted.
     # A unique index on discord_id is what guarantees "one copy, ever".
     """
     CREATE TABLE IF NOT EXISTS card_members (
@@ -310,7 +310,7 @@ def tier_counts() -> dict:
 
 
 def get_card(slug: str) -> dict | None:
-    """Static card by slug. Member 1/1s live in the DB — see get_any_card."""
+    """Static card by slug. Member cards live in the DB — see get_any_card."""
     return load_card_set()["by_slug"].get(slug)
 
 
@@ -398,7 +398,7 @@ def base_copies_for(star: int) -> int:
 
 
 def tier_max_stars(card: dict | None) -> int:
-    """How far this card can be fused. Member 1/1s cannot be fused at all."""
+    """How far this card can be fused. Member cards cannot be fused at all."""
     if not card or card.get("member"):
         return 0
     return TIER_MAX_STARS.get(card.get("tier"), MAX_STARS)
@@ -1084,7 +1084,7 @@ def db_remove_wish(user_id: int, slug: str) -> bool:
 
 
 # =============================================================================
-# DB — member 1/1 cards
+# DB — member cards
 # =============================================================================
 
 def db_get_member_card(slug: str) -> dict | None:
@@ -1120,7 +1120,7 @@ def db_get_member_cards(slugs: list | None = None) -> dict:
 
 
 def db_mint_member_card(owner_id: int) -> dict | None:
-    """Mint the 1/1 of a random eligible member who doesn't have one yet.
+    """Mint the card of a random eligible member who doesn't have one yet.
 
     Returns None when every eligible member already has a card in circulation,
     in which case the caller should fall back to a normal card.
@@ -1131,7 +1131,7 @@ def db_mint_member_card(owner_id: int) -> dict | None:
         db.cursor.execute(
             'SELECT dl.discord_id, dl.ign, dl.uuid::text, dl.rank '
             'FROM discord_links dl '
-            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'  AND {ACTIVE_MEMBER_SQL} '
             '  AND dl.discord_id NOT IN (SELECT discord_id FROM card_members) '
             'ORDER BY RANDOM() LIMIT 1',
@@ -1176,7 +1176,7 @@ def pool_entry(ign: str, uuid: str, rank: str, discord_id: int,
 
 
 def db_get_pool() -> list:
-    """Everyone eligible for a 1/1, ranked highest first.
+    """Everyone eligible for a member card, ranked highest first.
 
     Left joins the minted cards so the list can show which are still up for
     grabs and who holds the rest.
@@ -1189,7 +1189,7 @@ def db_get_pool() -> list:
             '       cm.owner, COALESCE(cm.retired, FALSE) '
             'FROM discord_links dl '
             'LEFT JOIN card_members cm ON cm.discord_id = dl.discord_id '
-            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'  AND {ACTIVE_MEMBER_SQL} '
             'ORDER BY array_position(%s::text[], dl.rank) DESC, lower(dl.ign)',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS, MEMBER_ELIGIBLE_RANKS))
@@ -1199,7 +1199,7 @@ def db_get_pool() -> list:
 
 
 def db_count_eligible_members() -> tuple[int, int]:
-    """(minted, eligible) — how much of the 1/1 pool is already out there."""
+    """(minted, eligible) — how much of the member pool is already out there."""
     db = DB()
     db.connect()
     try:
@@ -1207,7 +1207,7 @@ def db_count_eligible_members() -> tuple[int, int]:
         minted = db.cursor.fetchone()[0]
         db.cursor.execute(
             'SELECT COUNT(*) FROM discord_links dl '
-            'WHERE dl.linked AND dl.uuid IS NOT NULL AND dl.rank = ANY(%s) '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'  AND {ACTIVE_MEMBER_SQL}',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         return minted, db.cursor.fetchone()[0]
@@ -1224,7 +1224,7 @@ def db_retire_departed_members() -> int:
             'UPDATE card_members SET retired = TRUE '
             'WHERE NOT retired AND discord_id NOT IN ('
             '  SELECT dl.discord_id FROM discord_links dl '
-            '  WHERE dl.linked AND dl.rank = ANY(%s) '
+            '  WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
             f'    AND {ACTIVE_MEMBER_SQL})',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
         n = db.cursor.rowcount

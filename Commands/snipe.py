@@ -17,6 +17,7 @@ from Helpers.database import DB, get_current_guild_data
 from Helpers.functions import addLine, generate_badge, get_guild_color, getPlayerUUID, vertical_gradient, round_corners, timed_get
 from Helpers.logger import log, ERROR
 from Helpers.snipe_utils import ALL_TERRITORY_NAMES, display_hq, is_dry, normalize_hq_for_storage
+from Helpers.pagination import respond_paginator
 from Helpers.variables import ALL_GUILD_IDS, HQ_TEAM_ROLE_ID, TAQ_GUILD_ID, SNIPE_LOG_CHANNEL_ID, discord_ranks
 
 ROLE_CHOICES    = ['Tank', 'Healer', 'DPS']
@@ -160,21 +161,22 @@ def _norm_uuid(value) -> str | None:
 
 def _resolve_uuid_db(db, ign: str) -> str | None:
     """Resolve a current IGN to a Minecraft uuid via discord_links (kept fresh
-    by the rename-sync loop). Only an unambiguous answer counts: several rows
-    may share a name (stale unlinked history), so return the single distinct
-    uuid, or the single LINKED row's uuid, and otherwise None so the caller
-    falls back to the Mojang lookup instead of guessing."""
+    by the rename-sync loop). Only an unambiguous answer counts: two accounts
+    can carry the same cached name across a rename, so return the single
+    distinct uuid, preferring a current guild member, and otherwise None so
+    the caller falls back to the Mojang lookup instead of guessing."""
     db.cursor.execute(
-        'SELECT uuid, linked FROM discord_links WHERE LOWER(ign) = LOWER(%s) AND uuid IS NOT NULL',
+        'SELECT dl.uuid, EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid)'
+        ' FROM discord_links dl WHERE LOWER(dl.ign) = LOWER(%s)',
         (ign,)
     )
     rows = db.cursor.fetchall()
     uuids = {str(row[0]) for row in rows}
     if len(uuids) == 1:
         return next(iter(uuids))
-    linked_uuids = {str(row[0]) for row in rows if row[1]}
-    if len(linked_uuids) == 1:
-        return next(iter(linked_uuids))
+    member_uuids = {str(row[0]) for row in rows if row[1]}
+    if len(member_uuids) == 1:
+        return next(iter(member_uuids))
     return None
 
 
@@ -1600,7 +1602,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'lb')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'lb')), ctx.interaction)
 
     # ── /snipe roles ──────────────────────────────────────────────────────────
 
@@ -1645,7 +1647,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'roles')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'roles')), ctx.interaction)
 
     # ── /snipe team ───────────────────────────────────────────────────────────
 
@@ -1778,7 +1780,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'duos')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'duos')), ctx.interaction)
 
     # ── /snipe overview ───────────────────────────────────────────────────────
 
@@ -1986,7 +1988,7 @@ class SnipeTracker(commands.Cog):
             )
             for i in range(total_pages)
         ]
-        await _make_paginator(_pages_from_cards(cards, 'snipe_list')).respond(ctx.interaction)
+        await respond_paginator(_make_paginator(_pages_from_cards(cards, 'snipe_list')), ctx.interaction)
 
     # ── /warseason ────────────────────────────────────────────────────────────
 

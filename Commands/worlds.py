@@ -11,7 +11,7 @@ import math
 
 from Helpers.functions import timed_get
 from Helpers.rate_limiter import external_rate_limit
-from Helpers.pagination import add_paginator_buttons
+from Helpers.pagination import add_paginator_buttons, respond_paginator
 
 
 class Worlds(commands.Cog):
@@ -68,7 +68,7 @@ class Worlds(commands.Cog):
 
         final_book = pages.Paginator(pages=book)
         add_paginator_buttons(final_book)
-        await final_book.respond(message.interaction)
+        await respond_paginator(final_book, message.interaction)
 
     @commands.Cog.listener()
     async def on_ready(self):

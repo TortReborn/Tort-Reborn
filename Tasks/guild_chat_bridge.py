@@ -7,6 +7,7 @@ from datetime import timezone
 
 import aiohttp
 import discord
+import emoji
 from discord.ext import commands, tasks
 
 from Helpers.database import DB
@@ -413,13 +414,11 @@ def _linked_member(discord_id: int) -> LinkedBridgeMember | None:
     with DB() as db:
         db.cursor.execute(
             """
-            SELECT discord_id, ign, rank, color_primary
-            FROM discord_links
-            WHERE discord_id = %s
-              AND linked = TRUE
-              AND uuid IS NOT NULL
-              AND ign IS NOT NULL
-              AND rank IS NOT NULL
+            SELECT dl.discord_id, dl.ign, dl.rank, dl.color_primary
+            FROM discord_links dl
+            JOIN guild_roster gr ON gr.uuid = dl.uuid
+            WHERE dl.discord_id = %s
+              AND dl.rank IS NOT NULL
             LIMIT 1
             """,
             (discord_id,),
@@ -442,11 +441,10 @@ def _linked_discord_id(ign: str) -> int | None:
     with DB() as db:
         db.cursor.execute(
             """
-            SELECT discord_id
-            FROM discord_links
-            WHERE linked = TRUE
-              AND ign IS NOT NULL
-              AND LOWER(ign) = LOWER(%s)
+            SELECT dl.discord_id
+            FROM discord_links dl
+            JOIN guild_roster gr ON gr.uuid = dl.uuid
+            WHERE LOWER(dl.ign) = LOWER(%s)
             LIMIT 1
             """,
             (ign,),
@@ -512,7 +510,8 @@ def _strip_rank_prefix(name: str) -> str:
 
 
 def _normalize_emoji(text: str) -> str:
-    return CUSTOM_EMOJI_PATTERN.sub(r":\1:", text)
+    text = CUSTOM_EMOJI_PATTERN.sub(r":\1:", text)
+    return emoji.demojize(text, language="en")
 
 
 def _discord_safe_text(text: str) -> str:

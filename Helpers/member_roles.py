@@ -121,6 +121,43 @@ def registration_role_names(starting_rank):
     return to_add, to_remove
 
 
+def rank_role_names(rank):
+    """(to_add, to_remove) role names for setting a member's rank to ``rank``.
+
+    Adds the rank's own roles and strips every other rank role (including
+    the moderator headers and the leader role). Membership, headers and
+    honorifics are not touched — this is a rank change, not a registration.
+    """
+    to_add = list(discord_ranks[rank]['roles'])
+    to_remove = [r for r in discord_rank_roles if r not in to_add]
+    return to_add, to_remove
+
+
+async def apply_rank_roles(member, all_roles, rank, *, reason=None):
+    """Give ``member`` the Discord roles for ``rank`` and take away the other
+    rank roles. Returns (added_names, removed_names) of what actually changed.
+
+    The one place /manage rank's two branches (linked target, and the
+    link-first modal for an unlinked target) apply roles, so they cannot
+    drift again (TAQ-86: the modal path recorded the rank but never touched
+    the roles).
+    """
+    to_add, to_remove = rank_role_names(rank)
+    roles_to_add = resolve_roles(all_roles, to_add, member, present=False)
+    roles_to_remove = resolve_roles(all_roles, to_remove, member, present=True)
+    if roles_to_add:
+        await member.add_roles(*roles_to_add, reason=reason)
+    if roles_to_remove:
+        await member.remove_roles(*roles_to_remove, reason=reason)
+    return [r.name for r in roles_to_add], [r.name for r in roles_to_remove]
+
+
+def rank_change_summary(added, removed):
+    """The ephemeral reply both /manage rank branches send."""
+    lines = ['Added Roles:'] + [f' - {n}' for n in added] + ['', 'Removed Roles:'] + [f' - {n}' for n in removed]
+    return '\n'.join(lines)
+
+
 def removal_role_names(was_honored_fish=False, was_retired_chief=False):
     """(to_add, to_remove) role names for turning a member into an ex-member.
 

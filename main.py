@@ -21,6 +21,7 @@ from Helpers import telemetry
 from Commands.generate import ApplicationButtonView
 from Commands.tickets import TicketCloseView, TicketOpenView
 from Helpers.views import ApplicationVoteView, ThreadVoteView, RecruitPaidView, RecruiterReviewView
+from Helpers.leave_prompts import LeavePromptView
 
 
 
@@ -78,6 +79,7 @@ async def on_ready():
         client.add_view(RecruiterReviewView())
         client.add_view(TicketOpenView())
         client.add_view(TicketCloseView())
+        client.add_view(LeavePromptView())
         # Commands are registered per guild, and Discord rejects the whole
         # sync with a 403 if any target guild is one the bot is not in — so a
         # single stale guild id silently costs every command everywhere. Drop
@@ -232,14 +234,23 @@ async def on_application_command_error(
         return
 
     options = ''
-    traceback_string = ''
-    tb_list = traceback.format_exception(error)
     if ctx.selected_options:
         for opt in ctx.selected_options:
             options += f' {opt["name"]}:{opt["value"]}'
-    traceback_string = ''.join(tb_list)[:1500]
-    if len(traceback_string) >= 1500:
-        traceback_string = "…(truncated)…\n" + traceback_string
+
+    # A 10062 on defer/respond means the 3-second ack window was missed (event
+    # loop lag, reconnect). Nothing in the command is at fault and the user
+    # just retries, so a log line beats a paged traceback.
+    cause = error.__cause__ if isinstance(error, discord.ApplicationCommandInvokeError) else error
+    if isinstance(cause, discord.NotFound) and cause.code == 10062:
+        log(WARN, f'/{ctx.command.qualified_name}{options} by {ctx.author}: interaction expired before the bot answered', context='commands')
+        return
+
+    # Keep the tail: the exception line and the innermost frames live there,
+    # and the first 1500 chars are just py-cord's dispatch plumbing.
+    traceback_string = ''.join(traceback.format_exception(error))
+    if len(traceback_string) > 1500:
+        traceback_string = "…(truncated)…\n" + traceback_string[-1500:]
 
     guild_info = f' in **{ctx.guild.name}**' if ctx.guild else ' in DMs'
 
@@ -290,6 +301,7 @@ extensions = [
     'Commands.rankcheck',
     'Commands.new_member',
     'Commands.reset_roles',
+    'Commands.honorifics',
     'Commands.raids',
     'Commands.graids',
     'Commands.manage',

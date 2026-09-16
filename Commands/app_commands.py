@@ -16,7 +16,8 @@ from Helpers.app_transcript import (
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3
-from Helpers.links import LinkConflictError, assert_row_linkable, assert_uuid_free
+from Helpers.links import LinkConflictError
+from Helpers.registration import upsert_identity
 from Helpers.openai_helper import parse_recruiter_source
 from Helpers.recruiting import record_pending_recruit, get_recruiter_stats, resolve_recruiter
 from Helpers.views import RecruiterReviewView
@@ -392,14 +393,24 @@ class WebAppCommands(commands.Cog):
         applicant = await self._resolve_member(channel, int(app["discord_id"]))
         mention = applicant.mention if applicant else f"<@{app['discord_id']}>"
 
-        await channel.send(
-            f"Hi {mention},\n\n"
-            f"We regret to inform you that your application to join our guild did not "
-            f"meet our current standards. We appreciate your interest and thank you "
-            f"for considering us.\n\n"
-            f"Best Regards,\n"
-            f"The Aquarium Applications Team"
-        )
+        if app["application_type"] == "guild":
+            await channel.send(
+                f"Hi {mention},\n\n"
+                f"We regret to inform you that your application to join our guild did not "
+                f"meet our current standards. We appreciate your interest and thank you "
+                f"for considering us.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
+        else:
+            await channel.send(
+                f"Hi {mention},\n\n"
+                f"We regret to inform you that your application to become a "
+                f"Community Member of The Aquarium has been denied. "
+                f"We appreciate your interest and thank you for considering us.\n\n"
+                f"Best Regards,\n"
+                f"The Aquarium Applications Team"
+            )
 
         # Update poll embed
         await update_web_poll_embed(self.client, channel.id, ":orange_circle: Denied", 0xFFE019)
@@ -649,44 +660,23 @@ class WebAppCommands(commands.Cog):
             db.cursor.execute(
                 """UPDATE applications
                    SET status = 'denied', guild_leave_pending = FALSE
-                   WHERE id = %s
-                   RETURNING discord_id""",
+                   WHERE id = %s""",
                 (app_id,)
             )
-            row = db.cursor.fetchone()
-            conflict = None
-            if row:
-                try:
-                    assert_row_linkable(db.cursor, int(row[0]))
-                    db.cursor.execute(
-                        """UPDATE discord_links SET linked = TRUE
-                           WHERE discord_id = %s AND linked = FALSE""",
-                        (int(row[0]),)
-                    )
-                except LinkConflictError as e:
-                    # Still record the denial; only the relink is blocked.
-                    conflict = e
             db.connection.commit()
-            return conflict
+            return None
         finally:
             db.close()
 
     @staticmethod
-    def _link_discord(discord_id, ign, uuid, app_channel, linked=False):
+    def _link_discord(discord_id, ign, uuid, app_channel=None, linked=False):
+        """Establish the applicant's identity. Application state (channel,
+        status) lives on the application row, not here (TAQ-76); the
+        ``app_channel``/``linked`` arguments are accepted for call-site
+        compatibility and ignored."""
         db = DB(); db.connect()
         try:
-            # Guard even the linked=False writes: a row seeded with another
-            # member's uuid gets flipped to linked later (rescind/auto-register).
-            assert_uuid_free(db.cursor, uuid, discord_id)
-            db.cursor.execute(
-                """INSERT INTO discord_links (discord_id, ign, uuid, linked, rank, app_channel)
-                   VALUES (%s, %s, %s, %s, '', %s)
-                   ON CONFLICT (discord_id) DO UPDATE
-                   SET ign = EXCLUDED.ign, uuid = EXCLUDED.uuid,
-                       app_channel = EXCLUDED.app_channel,
-                       linked = EXCLUDED.linked""",
-                (discord_id, ign, uuid, linked, app_channel)
-            )
+            upsert_identity(db.cursor, discord_id=discord_id, ign=ign, uuid=uuid)
             db.connection.commit()
         finally:
             db.close()
@@ -762,9 +752,8 @@ class WebAppCommands(commands.Cog):
             certainty = result.get("certainty", 0.0)
 
         # Old/returning members don't count as a fresh recruit. Based on a prior
-        # accepted guild application, not discord_links (_accept_guild already
-        # linked this applicant moments ago, so that'd flag everyone), plus roles
-        # for members who predate the website application system.
+        # accepted guild application or a closed membership stint, plus roles
+        # as a last resort for anyone the records predate.
         is_old_member = False
         if applicant_discord_id and app_id:
             is_old_member = await asyncio.to_thread(
@@ -829,6 +818,17 @@ class WebAppCommands(commands.Cog):
                      AND status = 'accepted' AND id != %s
                    LIMIT 1""",
                 (str(discord_id), current_app_id)
+            )
+            if db.cursor.fetchone() is not None:
+                return True
+            # A closed membership stint is the direct record of a prior stay
+            # (TAQ-76), covering members who predate the application system.
+            db.cursor.execute(
+                """SELECT 1 FROM membership_stints ms
+                   JOIN discord_links dl ON dl.uuid = ms.uuid
+                   WHERE dl.discord_id = %s AND ms.left_at IS NOT NULL
+                   LIMIT 1""",
+                (int(discord_id),)
             )
             return db.cursor.fetchone() is not None
         finally:
