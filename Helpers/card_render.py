@@ -15,7 +15,9 @@ from io import BytesIO
 import requests
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from Helpers.functions import generate_badge
 from Helpers.logger import WARN, log
+from Helpers.variables import discord_ranks
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_GAME = os.path.join(BASE, "images", "profile", "game.ttf")
@@ -31,52 +33,29 @@ RADIUS = 16
 BG_TOP = (26, 29, 36)
 BG_BOT = (18, 20, 26)
 PANEL = (35, 39, 48)
+LIMITED = "limited"
 
+# Wynncraft's own rarity colours, one rung longer than theirs; Limited sits outside the ladder.
 TIERS = {
-    "common": {"accent": (156, 163, 175), "glow": (110, 118, 132)},
-    "uncommon": {"accent": (52, 211, 153), "glow": (16, 140, 100)},
-    "rare": {"accent": (96, 165, 250), "glow": (30, 90, 190)},
-    "epic": {"accent": (192, 132, 252), "glow": (110, 50, 180)},
-    "legendary": {"accent": (251, 191, 36), "glow": (170, 110, 10)},
-    # The five raid bosses, above legendary. Red, which is what Wynncraft
-    # itself uses for Fabled, and well clear of legendary gold.
-    "fabled": {"accent": (255, 85, 85), "glow": (150, 25, 25)},
+    "normal": {"accent": (255, 255, 255), "glow": (140, 140, 140), "badge": "#ffffff"},
+    "unique": {"accent": (255, 255, 85), "glow": (150, 140, 30), "badge": "#ffff55"},
+    "rare": {"accent": (255, 85, 255), "glow": (140, 47, 140), "badge": "#ff55ff"},
+    "legendary": {"accent": (85, 255, 255), "glow": (51, 153, 153), "badge": "#55ffff"},
+    "fabled": {"accent": (255, 85, 85), "glow": (150, 25, 25), "badge": "#ff5555"},
+    "mythic": {"accent": (170, 0, 170), "glow": (110, 10, 110), "badge": "#aa00aa"},
 }
-
-# Member cards are tiered by the holder's guild rank rather than by
-# rarity, so a Hydra card reads differently from a Swordfish at a glance.
-RANK_TIERS = {
-    "Swordfish": {"accent": (24, 186, 241), "glow": (10, 120, 165)},
-    "Hammerhead": {"accent": (57, 106, 255), "glow": (25, 55, 180)},
-    "Sailfish": {"accent": (158, 107, 255), "glow": (85, 45, 175)},
-    "Dolphin": {"accent": (230, 107, 255), "glow": (150, 40, 180)},
-    "Narwhal": {"accent": (235, 34, 121), "glow": (165, 15, 80)},
-    "Hydra": {"accent": (176, 20, 68), "glow": (125, 10, 45)},
-}
-TIERS.update(RANK_TIERS)
-
-# Rarity and fusion are separate facts, so they get separate places. The outer
-# edge always carries the tier colour; fusion shows as an inner ring that
-# climbs bronze, silver, gold, and finally a prismatic edge at the top.
-#
-# The ladder is read as progress toward *this tier's* ceiling rather than as an
-# absolute star count, because the ceilings differ: a legendary maxes at 2★ and
-# an epic at 3★, and both should look every bit as finished as a 5★ common.
-FUSION_RING = [
-    (0.34, (205, 127, 50)),        # bronze
-    (0.67, (214, 216, 222)),       # silver
-    (0.99, (255, 196, 61)),        # gold
-    (1.00, (247, 251, 255)),       # maxed, paired with the prismatic edge
-]
-PRISMATIC = [(255, 120, 200), (150, 200, 255), (140, 255, 210), (255, 225, 140)]
+LIMITED_ENDS = (TIERS["fabled"]["accent"], TIERS["mythic"]["accent"])
+LIMITED_MID = tuple((a + b) // 2 for a, b in zip(*LIMITED_ENDS))
+TIERS[LIMITED] = {"accent": LIMITED_MID, "glow": tuple(c * 2 // 3 for c in LIMITED_MID),
+                  "badge": "#%02x%02x%02x" % LIMITED_MID}
 
 # How far a card can be fused, by tier. Copies triple each step, so these are
 # 81, 9 and 3 base copies respectively.
 # Stars count merges, so 0 is an unfused card. Copies behind a maxed card:
-# 81 for the common half, 9 for an epic, 3 for a legendary or a fabled.
+# 81 for the normal half, 9 for a legendary, 3 for a fabled or a mythic.
 MAX_STARS_BY_TIER = {
-    "common": 4, "uncommon": 4, "rare": 4, "epic": 2,
-    "legendary": 1, "fabled": 1,
+    "normal": 4, "unique": 4, "rare": 4, "legendary": 2,
+    "fabled": 1, "mythic": 1,
 }
 
 
@@ -85,18 +64,9 @@ def max_stars_for(tier: str) -> int:
     return MAX_STARS_BY_TIER.get(tier, 0)
 
 
-def _fusion_progress(stars: int, max_stars: int) -> float:
-    """0 for unfused, 1 at this tier's ceiling."""
-    if max_stars <= 0 or stars <= 0:
-        return 0.0
-    return min(1.0, stars / max_stars)
-
-
-def _ring_colour(progress: float):
-    for cutoff, colour in FUSION_RING:
-        if progress <= cutoff:
-            return colour
-    return FUSION_RING[-1][1]
+def _tier_level(stars: int, max_stars: int) -> int:
+    """0-3 readout for the tier indicator; shorter ladders start higher so their own max lands on 3."""
+    return min(3, stars + max(0, 3 - max_stars))
 
 _FONT_CACHE = {}
 
@@ -109,15 +79,6 @@ def _font(path, size):
         except OSError:
             _FONT_CACHE[key] = ImageFont.load_default()
     return _FONT_CACHE[key]
-
-
-def _readable(rgb, floor=0.42):
-    """Lift dark accents (Hydra red) so small label text stays legible."""
-    lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255
-    if lum >= floor:
-        return rgb
-    t = min(0.72, (floor - lum) * 1.5)
-    return tuple(int(c + (255 - c) * t) for c in rgb)
 
 
 def _vgrad(size, top, bot):
@@ -138,6 +99,79 @@ def _fit_font(draw, text, path, max_w, start, min_size=13):
             return f
         size -= 1
     return _font(path, min_size)
+
+
+def _mix(a, b, t: float):
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def _badge(text: str, color: str, max_w: int, scale: int = 2) -> Image.Image | None:
+    img = generate_badge(text=text.upper(), base_color=color, scale=scale)
+    if not img:
+        return None
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    if img.width > max_w:
+        ratio = max_w / img.width
+        img = img.resize((max_w, max(1, round(img.height * ratio))),
+                         Image.Resampling.NEAREST)
+    return img
+
+
+def _rank_badge(rank: str, max_w: int) -> Image.Image | None:
+    color = discord_ranks.get(rank, {}).get("color", "#a0aeb0")
+    return _badge(rank, color, max_w, scale=2)
+
+
+TIER_STAR_DIR = os.path.join(BASE, "images", "profile", "tiers")
+TIER_STAR_SCALE = 4
+_TIER_STAR_CACHE: dict[int, Image.Image] = {}
+
+
+def _tier_star(level: int) -> Image.Image:
+    if level not in _TIER_STAR_CACHE:
+        img = Image.open(os.path.join(TIER_STAR_DIR, f"tier_{level}.png")).convert("RGBA")
+        img = img.resize((img.width * TIER_STAR_SCALE, img.height * TIER_STAR_SCALE),
+                         Image.Resampling.NEAREST)
+        _TIER_STAR_CACHE[level] = img
+    return _TIER_STAR_CACHE[level]
+
+
+def _draw_tier_indicator(card: Image.Image, level: int, right: int, top: int, gap: int = 3):
+    """Three stars, right-aligned; the rightmost `level` of them carry that tier's colour."""
+    icons = [_tier_star(0)] * (3 - level) + [_tier_star(level)] * level
+    x = right
+    for icon in reversed(icons):
+        x -= icon.width
+        card.paste(icon, (x, top), icon)
+        x -= gap
+
+
+RAINBOW = [(255, 60, 60), (255, 165, 0), (255, 230, 0), (60, 200, 90),
+          (60, 160, 255), (140, 90, 255), (255, 90, 220)]
+
+
+def _rainbow_strip(width: int, height: int) -> Image.Image:
+    n = len(RAINBOW)
+    strip = Image.new("RGB", (width, 1))
+    d = ImageDraw.Draw(strip)
+    for x in range(width):
+        t = (x / max(1, width - 1)) * (n - 1)
+        a, b = RAINBOW[int(t)], RAINBOW[min(int(t) + 1, n - 1)]
+        f = t - int(t)
+        d.point((x, 0), tuple(int(a[c] + (b[c] - a[c]) * f) for c in range(3)))
+    return strip.resize((width, height))
+
+
+def _draw_rainbow_text(card: Image.Image, text: str, font, x: int, y: int):
+    """ImageDraw.text, but rainbow-filled instead of a flat colour."""
+    bbox = ImageDraw.Draw(card).textbbox((0, 0), text, font=font)
+    mask = Image.new("L", (bbox[2], bbox[3]), 0)
+    ImageDraw.Draw(mask).text((0, 0), text, font=font, fill=255)
+    fill = _rainbow_strip(bbox[2], bbox[3]).convert("RGBA")
+    fill.putalpha(mask)
+    card.paste(fill, (x, y), fill)
 
 
 def get_art(slug: str, image_url: str) -> Image.Image | None:
@@ -166,46 +200,36 @@ def get_art(slug: str, image_url: str) -> Image.Image | None:
         return None
 
 
-def _prismatic_border(card, box, radius, width=3):
-    """Paint a gradient through a rounded-rectangle outline mask.
-
-    Arcs would trace an ellipse rather than the card's rounded corners, so the
-    gradient is generated full-bleed and then masked down to just the border.
-    """
-    w, h = card.size
-    grad = Image.new("RGB", (w, h))
-    gd = ImageDraw.Draw(grad)
-    n = len(PRISMATIC)
-    for x in range(w):
-        t = (x / max(1, w - 1)) * n
-        a = PRISMATIC[int(t) % n]
-        b = PRISMATIC[(int(t) + 1) % n]
-        f = t % 1
-        gd.line([(x, 0), (x, h)],
-                fill=tuple(int(a[c] + (b[c] - a[c]) * f) for c in range(3)))
-
-    mask = Image.new("L", (w, h), 0)
-    ImageDraw.Draw(mask).rounded_rectangle(box, radius, outline=255, width=width)
-    card.paste(grad, (0, 0), mask)
-
-
 def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
                 badge: str | None = None, stars: int = 0,
                 max_stars: int | None = None) -> Image.Image:
     """Draw a single card. Falls back to a '?' panel when art is missing."""
-    style = TIERS.get(tier, TIERS["common"])
+    display_tier = LIMITED if badge else tier
+    style = TIERS.get(display_tier, TIERS["normal"])
     accent, glow = style["accent"], style["glow"]
     if max_stars is None:
         max_stars = max_stars_for(tier)
-    progress = _fusion_progress(stars, max_stars)
-    maxed = stars > 0 and progress >= 1.0
-    ring = _ring_colour(progress) if stars > 0 else None
+    tier_level = _tier_level(stars, max_stars)
+    maxed = max_stars > 0 and stars >= max_stars
+
+    top_hue, bot_hue = LIMITED_ENDS if display_tier == LIMITED else (accent, accent)
 
     card = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    body = _vgrad((W, H), BG_TOP, BG_BOT).convert("RGBA")
-    mask = Image.new("L", (W, H), 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, W - 1, H - 1], RADIUS, fill=255)
-    card.paste(body, (0, 0), mask)
+    outer = _vgrad((W, H), _mix(top_hue, (255, 255, 255), 0.2),
+                   _mix(bot_hue, (0, 0, 0), 0.62)).convert("RGBA")
+    outer_mask = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(outer_mask).rounded_rectangle(
+        [0, 0, W - 1, H - 1], RADIUS, fill=255)
+    card.paste(outer, (0, 0), outer_mask)
+
+    border = 7
+    body = _vgrad((W - border * 2, H - border * 2),
+                  _mix(BG_TOP, top_hue, 0.17),
+                  _mix(BG_BOT, bot_hue, 0.1)).convert("RGBA")
+    body_mask = Image.new("L", body.size, 0)
+    ImageDraw.Draw(body_mask).rounded_rectangle(
+        [0, 0, body.width - 1, body.height - 1], RADIUS - 5, fill=255)
+    card.paste(body, (border, border), body_mask)
 
     # art panel with the tier glow pooled behind the character
     ax0, ay0, ax1, ay1 = PAD, PAD, W - PAD, PAD + ART_H
@@ -231,61 +255,37 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
         d.text(((panel.size[0] - d.textlength("?", font=qf)) / 2,
                 panel.size[1] / 2 - 52), "?", font=qf, fill=(90, 98, 112))
     card.paste(panel, (ax0, ay0), pm)
+    _draw_tier_indicator(card, tier_level, right=ax1 - 10, top=ay0 + 10)
 
     d = ImageDraw.Draw(card)
 
-    # name plate, vertically centred in the space below the art
     ny = ay1 + 16
-    d.line([PAD + 6, ny, W - PAD - 6, ny], fill=accent + (70,), width=1)
 
     nf = _fit_font(d, name, FONT_GAME, W - 2 * PAD - 14, 29)
-    tier_font = _font(FONT_UI, 18)
-    level_font = _font(FONT_UI, 22)
+    rarity_badge = _badge(display_tier, style["badge"], W - 2 * PAD - 18)
+    rank_badge = _rank_badge(badge, W - 2 * PAD - 52) if badge else None
 
-    name_h, gap, tier_h, level_gap = 30, 15, 18, 9
-    level_h = 24 if stars > 0 else 0
-    block = name_h + gap + tier_h + (level_gap + level_h if level_h else 0)
-    top = ny + max(10, (H - ny - block) // 2)
+    name_h, gap, badge_gap = 30, 13, 6
+    rarity_h = rarity_badge.height if rarity_badge else 0
+    rank_h = rank_badge.height if rank_badge else 0
+    top = ny + 8
 
-    d.text(((W - d.textlength(name, font=nf)) / 2, top), name, font=nf,
-           fill=(240, 243, 248))
-
-    spaced = tier.upper()
-    tier_y = top + name_h + gap
-    d.text(((W - d.textlength(spaced, font=tier_font)) / 2, tier_y),
-           spaced, font=tier_font, fill=_readable(accent))
-
-    # Counting stars stops meaning anything at the ceiling, where the point is
-    # that there is nowhere left to go, so it says so.
-    if stars > 0:
-        row = "MAX" if maxed else "  ".join(["\u2605"] * stars)
-        d.text(((W - d.textlength(row, font=level_font)) / 2,
-                tier_y + tier_h + level_gap),
-               row, font=level_font, fill=_readable(ring if ring else accent))
-
-    # Outer edge: the tier, always, except at the ceiling, where the
-    # prismatic band takes over and the tier still reads from the label.
+    name_x = int((W - d.textlength(name, font=nf)) / 2)
     if maxed:
-        _prismatic_border(card, [0, 0, W - 1, H - 1], RADIUS, width=4)
+        _draw_rainbow_text(card, name, nf, name_x, top)
     else:
-        d.rounded_rectangle([0, 0, W - 1, H - 1], RADIUS,
-                            outline=accent + (235,), width=2)
-    d.rounded_rectangle([2, 2, W - 3, H - 3], RADIUS - 2,
-                        outline=(255, 255, 255, 16), width=1)
+        d.text((name_x, top), name, font=nf, fill=(240, 243, 248))
 
-    # Inner ring: how far up this tier's ladder the card has been fused.
-    if ring is not None:
-        inset = 6
-        d.rounded_rectangle([inset, inset, W - 1 - inset, H - 1 - inset],
-                            RADIUS - 4, outline=ring + (225,),
-                            width=2 if not maxed else 3)
-
-    if badge:
-        bf = _font(FONT_UI, 12)
-        bw = d.textlength(badge, font=bf)
-        d.rounded_rectangle([W - PAD - bw - 18, PAD + 8, W - PAD - 4, PAD + 30],
-                            9, fill=(12, 14, 18, 205), outline=accent + (170,))
-        d.text((W - PAD - bw - 11, PAD + 12), badge, font=bf, fill=accent)
+    badge_y = top + name_h + gap
+    if rarity_badge:
+        card.paste(rarity_badge, ((W - rarity_badge.width) // 2, badge_y),
+                   rarity_badge)
+    cursor_y = badge_y + rarity_h
+    if rank_badge:
+        cursor_y += badge_gap
+        card.paste(rank_badge, ((W - rank_badge.width) // 2, cursor_y),
+                   rank_badge)
+        cursor_y += rank_h
 
     return card
 
@@ -308,8 +308,9 @@ def render_spread(cards: list) -> Image.Image:
                                rows * ch + (rows + 1) * SPREAD_GAP),
                       BG_BOT + (255,))
     for i, card in enumerate(cards):
+        badge = card.get("rank") if card.get("member") else None
         img = render_card(card["name"], card["tier"], card.get("slug", ""),
-                          card.get("image_url", ""))
+                          card.get("image_url", ""), badge=badge)
         img = img.resize((cw, ch), Image.LANCZOS)
         x = SPREAD_GAP + (i % cols) * (cw + SPREAD_GAP)
         y = SPREAD_GAP + (i // cols) * (ch + SPREAD_GAP)
@@ -340,7 +341,7 @@ def card_file(card: dict, badge: str | None = None, stars: int = 0,
     import discord
 
     if card.get("member") and badge is None:
-        badge = "RETIRED" if card.get("retired") else "MEMBER"
+        badge = card.get("rank")
 
     img = render_card(card["name"], card["tier"], card.get("slug", ""),
                       card.get("image_url", ""), badge=badge, stars=stars,

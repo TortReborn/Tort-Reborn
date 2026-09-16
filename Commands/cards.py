@@ -1,8 +1,8 @@
 """Card collection commands for the main guild.
 
 The loop: /reel pulls cards and every pull pays pearls, duplicates included;
-pearls buy star fusion and tank upgrades. Wishes bias which epic or legendary
-you land. Nothing here touches shells; the two economies never meet.
+pearls buy star fusion and tank upgrades. Wishes bias which legendary or
+fabled you land. Nothing here touches shells; the two economies never meet.
 """
 
 import asyncio
@@ -282,7 +282,7 @@ def _credit(card: dict, *bits) -> str:
 def _card_color(card: dict) -> int:
     if card.get("member"):
         return cardlib.TIER_COLORS["member"]
-    return cardlib.TIER_COLORS.get(card["tier"], 0x9CA3AF)
+    return cardlib.TIER_COLORS.get(card["tier"], 0xFFFFFF)
 
 
 def _card_embed(card: dict, copies: int, remaining: int, filename: str,
@@ -309,7 +309,7 @@ def _history_content(history: list) -> str:
     if len(history) > HISTORY_LINES:
         lines.append(f"-# +{len(history) - HISTORY_LINES} earlier")
     for c in shown:
-        tier = "Member" if c.get("member") else _tier_label(c["tier"])
+        tier = "Limited" if c.get("member") else _tier_label(c["tier"])
         lines.append(f"-# {tier}: {c['name']}")
     refresh = cardlib.next_refresh_ts()
     lines.append(f"-# {ctext.next_line('next', refresh)}")
@@ -554,7 +554,7 @@ async def _do_discard(user_id: int, card: dict, count: int):
 
 
 class DiscardView(discord.ui.View):
-    """Confirm before a legendary or fabled goes. Owner only, one shot."""
+    """Confirm before a fabled or mythic goes. Owner only, one shot."""
 
     def __init__(self, owner_id: int, card: dict, count: int):
         super().__init__(timeout=120)
@@ -864,7 +864,7 @@ class Cards(commands.Cog):
             lines = []
             for c, e in chunk:
                 member = c.get("member")
-                tier = "Member" if member else _tier_label(c["tier"])
+                tier = "Limited" if member else _tier_label(c["tier"])
                 # A member card has no count worth printing: there is one,
                 # there was only ever going to be one, and it cannot be fused.
                 bits = []
@@ -1301,8 +1301,9 @@ class Cards(commands.Cog):
         tier: discord.Option(
             str, description="Tier",
             required=False, default=None,
-            choices=["member", "fabled", "legendary", "epic", "rare",
-                     "uncommon", "common"]),
+            choices=[discord.OptionChoice("Limited", "member"),
+                     "mythic", "fabled", "legendary", "rare",
+                     "unique", "normal"]),
     ):
         await ctx.defer()
         entries = await asyncio.to_thread(_pool_entries, tier)
@@ -1329,7 +1330,7 @@ class Cards(commands.Cog):
                         tail = f"held by <@{e['owner']}>"
                     else:
                         tail = "unminted"
-                    lines.append(f"`{'Member':9}` **{e['name']}**{mark} | {tail}")
+                    lines.append(f"`{'Limited':9}` **{e['name']}**{mark} | {tail}")
                 else:
                     lines.append(f"`{_tier_label(e['tier']):9}` "
                                  f"**{e['name']}**{mark}")
@@ -1357,10 +1358,10 @@ class Cards(commands.Cog):
 
         rows = []
         for tier in cardlib.TIER_ORDER:
-            weight = cardlib.TIER_WEIGHTS[tier]
             if tier == "member":
-                label, pool = "Member", unminted
+                weight, label, pool = cardlib.MEMBER_CHANCE, "Limited", unminted
             else:
+                weight = cardlib.TIER_WEIGHTS[tier]
                 label, pool = _tier_label(tier), counts.get(tier, 0)
             # Odds of one specific card: the tier has to land, then that card
             # has to be the pick inside it.
@@ -1379,7 +1380,7 @@ class Cards(commands.Cog):
             color=0x38C9BD)
         embed.add_field(
             name=f"{per_day}/day",
-            value="epic: weekly\nlegendary: monthly\nmember: 1 in 4 monthly",
+            value="legendary: weekly\nfabled: monthly\nlimited: 1 in 4 monthly",
             inline=False)
         embed.add_field(
             name="Wishlist",

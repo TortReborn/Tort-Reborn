@@ -33,17 +33,17 @@ ART_CACHE = os.path.join(BASE, "images", "cards")
 # shares the tiers were originally cut at so the ladder shape survives the
 # art-only filter.
 TIER_CUM = [
-    ("legendary", 0.02),
-    ("epic", 0.10),
+    ("fabled", 0.02),
+    ("legendary", 0.10),
     ("rare", 0.30),
-    ("uncommon", 0.60),
-    ("common", 1.00),
+    ("unique", 0.60),
+    ("normal", 1.00),
 ]
 
 # Hand-placed tiers, applied after the line-count ranking. A character whose
 # dialogue count undersells them can be pinned where the guild wants them.
 TIER_OVERRIDES = {
-    "lari": "legendary",
+    "lari": "fabled",
 }
 
 UA = {"User-Agent": "TortRebornCards/1.0 (TAq guild bot)"}
@@ -72,7 +72,7 @@ def assign_tiers(cards: list) -> None:
             while idx < n and cards[idx]["lines"] == lc:
                 cards[idx]["tier"] = tier
                 idx += 1
-            if idx >= limit and tier != "common":
+            if idx >= limit and tier != "normal":
                 break
 
 
@@ -114,9 +114,9 @@ def main() -> int:
     with open(FABLED, encoding="utf-8") as f:
         fab = json.load(f)
 
-    # A raid boss who also speaks gets mined like anyone else. The fabled
-    # entry wins: the same slug twice would let an uncommon reel hand out the
-    # fabled card, since the collection only stores the slug.
+    # A raid boss who also speaks gets mined like anyone else. The mythic
+    # entry wins: the same slug twice would let a unique reel hand out the
+    # mythic card, since the collection only stores the slug.
     fabled_slugs = {c["slug"] for c in fab["cards"]}
     playable = []
     for c in corpus:
@@ -143,7 +143,7 @@ def main() -> int:
     assign_tiers(cards)
     apply_overrides(cards)
 
-    # The raid bosses are hand-curated and sit above legendary, so they are
+    # The raid bosses are hand-curated and sit above fabled, so they are
     # merged in after tiering rather than ranked by dialogue like the rest.
     for c in fab["cards"]:
         cards.append({**c, "tier": fab["tier"], "lines": 0})

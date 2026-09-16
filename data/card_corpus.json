@@ -1,7 +1,7 @@
 [
  {
   "name": "Tasim",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 1138,
   "quests": 20,
   "aliases": "Sovereign Tasim",
@@ -13,7 +13,7 @@
  },
  {
   "name": "Sui",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 812,
   "quests": 11,
   "aliases": "",
@@ -25,7 +25,7 @@
  },
  {
   "name": "Ava",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 790,
   "quests": 4,
   "aliases": "",
@@ -37,7 +37,7 @@
  },
  {
   "name": "Rex",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 586,
   "quests": 10,
   "aliases": "",
@@ -49,7 +49,7 @@
  },
  {
   "name": "Zeph",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 548,
   "quests": 9,
   "aliases": "",
@@ -61,7 +61,7 @@
  },
  {
   "name": "Syndra",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 393,
   "quests": 7,
   "aliases": "",
@@ -73,7 +73,7 @@
  },
  {
   "name": "Aster",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 385,
   "quests": 6,
   "aliases": "",
@@ -85,7 +85,7 @@
  },
  {
   "name": "Aledar",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 373,
   "quests": 14,
   "aliases": "",
@@ -97,7 +97,7 @@
  },
  {
   "name": "Bonfire Keeper",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 369,
   "quests": 13,
   "aliases": "Bonfire Tender",
@@ -109,7 +109,7 @@
  },
  {
   "name": "The Traveler",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 368,
   "quests": 5,
   "aliases": "",
@@ -121,7 +121,7 @@
  },
  {
   "name": "Seaskipper Captain",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 363,
   "quests": 3,
   "aliases": "",
@@ -133,7 +133,7 @@
  },
  {
   "name": "Lari",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 361,
   "quests": 11,
   "aliases": "",
@@ -145,7 +145,7 @@
  },
  {
   "name": "Efena",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 301,
   "quests": 4,
   "aliases": "",
@@ -157,7 +157,7 @@
  },
  {
   "name": "Yusanu",
-  "tier": "legendary",
+  "tier": "fabled",
   "lines": 299,
   "quests": 7,
   "aliases": "",
@@ -169,7 +169,7 @@
  },
  {
   "name": "Olon",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 287,
   "quests": 2,
   "aliases": "",
@@ -181,7 +181,7 @@
  },
  {
   "name": "Yuman",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 272,
   "quests": 5,
   "aliases": "",
@@ -193,7 +193,7 @@
  },
  {
   "name": "Maxie",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 262,
   "quests": 7,
   "aliases": "",
@@ -205,7 +205,7 @@
  },
  {
   "name": "Dr. Picard",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 249,
   "quests": 5,
   "aliases": "",
@@ -217,7 +217,7 @@
  },
  {
   "name": "Elise",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 246,
   "quests": 1,
   "aliases": "",
@@ -229,7 +229,7 @@
  },
  {
   "name": "Rurie",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 244,
   "quests": 4,
   "aliases": "",
@@ -241,7 +241,7 @@
  },
  {
   "name": "Death",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 211,
   "quests": 2,
   "aliases": "",
@@ -253,7 +253,7 @@
  },
  {
   "name": "Sovereign Zhiraok",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 203,
   "quests": 10,
   "aliases": "Zhiraok",
@@ -265,7 +265,7 @@
  },
  {
   "name": "Her Majesty",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 200,
   "quests": 7,
   "aliases": "",
@@ -277,7 +277,7 @@
  },
  {
   "name": "Drale",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 196,
   "quests": 5,
   "aliases": "",
@@ -289,7 +289,7 @@
  },
  {
   "name": "Mora",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 189,
   "quests": 7,
   "aliases": "",
@@ -301,7 +301,7 @@
  },
  {
   "name": "Siegfried",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 180,
   "quests": 3,
   "aliases": "",
@@ -313,7 +313,7 @@
  },
  {
   "name": "Fichu",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 171,
   "quests": 1,
   "aliases": "",
@@ -325,7 +325,7 @@
  },
  {
   "name": "Quill",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 158,
   "quests": 5,
   "aliases": "",
@@ -337,7 +337,7 @@
  },
  {
   "name": "Sybil",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 157,
   "quests": 4,
   "aliases": "",
@@ -349,7 +349,7 @@
  },
  {
   "name": "Kelight",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 149,
   "quests": 2,
   "aliases": "",
@@ -361,7 +361,7 @@
  },
  {
   "name": "Axelus",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 147,
   "quests": 4,
   "aliases": "",
@@ -373,7 +373,7 @@
  },
  {
   "name": "Yulie",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 146,
   "quests": 5,
   "aliases": "",
@@ -385,7 +385,7 @@
  },
  {
   "name": "Teacher",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 144,
   "quests": 1,
   "aliases": "",
@@ -397,7 +397,7 @@
  },
  {
   "name": "The Guide",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 140,
   "quests": 4,
   "aliases": "",
@@ -409,7 +409,7 @@
  },
  {
   "name": "Honip",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 138,
   "quests": 2,
   "aliases": "",
@@ -421,7 +421,7 @@
  },
  {
   "name": "Afelis",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 136,
   "quests": 1,
   "aliases": "",
@@ -433,7 +433,7 @@
  },
  {
   "name": "Jofash Resident",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 136,
   "quests": 1,
   "aliases": "",
@@ -445,7 +445,7 @@
  },
  {
   "name": "Reynauld",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 136,
   "quests": 5,
   "aliases": "Scout Reynauld",
@@ -457,7 +457,7 @@
  },
  {
   "name": "Ope",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 131,
   "quests": 4,
   "aliases": "",
@@ -469,7 +469,7 @@
  },
  {
   "name": "Sovereign Majin",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 130,
   "quests": 5,
   "aliases": "",
@@ -481,7 +481,7 @@
  },
  {
   "name": "Zuett",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 129,
   "quests": 2,
   "aliases": "",
@@ -493,7 +493,7 @@
  },
  {
   "name": "Arnol",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 127,
   "quests": 2,
   "aliases": "",
@@ -505,7 +505,7 @@
  },
  {
   "name": "Sovereign Two",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 125,
   "quests": 3,
   "aliases": "",
@@ -517,7 +517,7 @@
  },
  {
   "name": "Canary",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 125,
   "quests": 1,
   "aliases": "",
@@ -529,7 +529,7 @@
  },
  {
   "name": "Relend",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 123,
   "quests": 3,
   "aliases": "",
@@ -541,7 +541,7 @@
  },
  {
   "name": "Santa",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 120,
   "quests": 4,
   "aliases": "",
@@ -553,7 +553,7 @@
  },
  {
   "name": "Dodegar",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 119,
   "quests": 3,
   "aliases": "",
@@ -565,7 +565,7 @@
  },
  {
   "name": "Maury",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 119,
   "quests": 1,
   "aliases": "",
@@ -577,7 +577,7 @@
  },
  {
   "name": "Hive Servant",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 118,
   "quests": 2,
   "aliases": "",
@@ -589,7 +589,7 @@
  },
  {
   "name": "Asher",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 114,
   "quests": 3,
   "aliases": "",
@@ -601,7 +601,7 @@
  },
  {
   "name": "Caid",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 113,
   "quests": 4,
   "aliases": "Sailor Caid",
@@ -613,7 +613,7 @@
  },
  {
   "name": "Nohno",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 113,
   "quests": 3,
   "aliases": "",
@@ -625,7 +625,7 @@
  },
  {
   "name": "Maddison",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 113,
   "quests": 1,
   "aliases": "",
@@ -637,7 +637,7 @@
  },
  {
   "name": "Corkus Citizen",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 107,
   "quests": 5,
   "aliases": "",
@@ -649,7 +649,7 @@
  },
  {
   "name": "Demma",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 107,
   "quests": 1,
   "aliases": "",
@@ -661,7 +661,7 @@
  },
  {
   "name": "Receptionist",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 103,
   "quests": 5,
   "aliases": "",
@@ -673,7 +673,7 @@
  },
  {
   "name": "King Draani",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 102,
   "quests": 4,
   "aliases": "King of Rodoroc",
@@ -685,7 +685,7 @@
  },
  {
   "name": "Jaspur",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 102,
   "quests": 1,
   "aliases": "",
@@ -697,7 +697,7 @@
  },
  {
   "name": "Gale",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 101,
   "quests": 3,
   "aliases": "",
@@ -709,7 +709,7 @@
  },
  {
   "name": "Arris",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 99,
   "quests": 1,
   "aliases": "",
@@ -721,7 +721,7 @@
  },
  {
   "name": "Korzim",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 98,
   "quests": 5,
   "aliases": "",
@@ -733,7 +733,7 @@
  },
  {
   "name": "Enzan",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 98,
   "quests": 4,
   "aliases": "",
@@ -745,7 +745,7 @@
  },
  {
   "name": "Burick",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 97,
   "quests": 1,
   "aliases": "",
@@ -757,7 +757,7 @@
  },
  {
   "name": "Orja",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 93,
   "quests": 1,
   "aliases": "",
@@ -769,7 +769,7 @@
  },
  {
   "name": "Malic",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 93,
   "quests": 1,
   "aliases": "",
@@ -781,7 +781,7 @@
  },
  {
   "name": "Elphaba",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 92,
   "quests": 3,
   "aliases": "",
@@ -793,7 +793,7 @@
  },
  {
   "name": "Telati",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 91,
   "quests": 1,
   "aliases": "",
@@ -805,7 +805,7 @@
  },
  {
   "name": "Llevigar Archivist",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 90,
   "quests": 2,
   "aliases": "",
@@ -817,7 +817,7 @@
  },
  {
   "name": "Caissop",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 89,
   "quests": 3,
   "aliases": "",
@@ -829,7 +829,7 @@
  },
  {
   "name": "Drucksh",
-  "tier": "epic",
+  "tier": "legendary",
   "lines": 89,
   "quests": 4,
   "aliases": "",
@@ -2557,7 +2557,7 @@
  },
  {
   "name": "Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 3,
   "aliases": "",
@@ -2569,7 +2569,7 @@
  },
  {
   "name": "\"Carl\"",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 2,
   "aliases": "Carl",
@@ -2581,7 +2581,7 @@
  },
  {
   "name": "Caravan Driver",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 6,
   "aliases": "",
@@ -2593,7 +2593,7 @@
  },
  {
   "name": "Legendary Attendant",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 2,
   "aliases": "",
@@ -2605,7 +2605,7 @@
  },
  {
   "name": "Chieftain Paku",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 4,
   "aliases": "Dogun Chieftain",
@@ -2617,7 +2617,7 @@
  },
  {
   "name": "Rohem",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 2,
   "aliases": "",
@@ -2629,7 +2629,7 @@
  },
  {
   "name": "Tiek",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 1,
   "aliases": "",
@@ -2641,7 +2641,7 @@
  },
  {
   "name": "Espren Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 1,
   "aliases": "",
@@ -2653,7 +2653,7 @@
  },
  {
   "name": "Ineos",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 1,
   "aliases": "",
@@ -2665,7 +2665,7 @@
  },
  {
   "name": "Adder",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 35,
   "quests": 1,
   "aliases": "",
@@ -2677,7 +2677,7 @@
  },
  {
   "name": "Arnod",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 34,
   "quests": 2,
   "aliases": "Anrod",
@@ -2689,7 +2689,7 @@
  },
  {
   "name": "Runo",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 34,
   "quests": 2,
   "aliases": "",
@@ -2701,7 +2701,7 @@
  },
  {
   "name": "Leif Pyle",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 34,
   "quests": 1,
   "aliases": "",
@@ -2713,7 +2713,7 @@
  },
  {
   "name": "The Assistant",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 34,
   "quests": 3,
   "aliases": "",
@@ -2725,7 +2725,7 @@
  },
  {
   "name": "Obsessor",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 2,
   "aliases": "",
@@ -2737,7 +2737,7 @@
  },
  {
   "name": "Mané",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 1,
   "aliases": "",
@@ -2749,7 +2749,7 @@
  },
  {
   "name": "Kreimu",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 1,
   "aliases": "",
@@ -2761,7 +2761,7 @@
  },
  {
   "name": "Customs Clerk",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 1,
   "aliases": "",
@@ -2773,7 +2773,7 @@
  },
  {
   "name": "Frank",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 3,
   "aliases": "",
@@ -2785,7 +2785,7 @@
  },
  {
   "name": "Mercenary Leader",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 2,
   "aliases": "Franza",
@@ -2797,7 +2797,7 @@
  },
  {
   "name": "Corkus City Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 33,
   "quests": 1,
   "aliases": "",
@@ -2809,7 +2809,7 @@
  },
  {
   "name": "Lucio",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 32,
   "quests": 1,
   "aliases": "",
@@ -2821,7 +2821,7 @@
  },
  {
   "name": "Gelibord Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 32,
   "quests": 4,
   "aliases": "",
@@ -2833,7 +2833,7 @@
  },
  {
   "name": "Bip",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 32,
   "quests": 2,
   "aliases": "",
@@ -2845,7 +2845,7 @@
  },
  {
   "name": "Brie",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 32,
   "quests": 3,
   "aliases": "",
@@ -2857,7 +2857,7 @@
  },
  {
   "name": "Kale",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 32,
   "quests": 3,
   "aliases": "",
@@ -2869,7 +2869,7 @@
  },
  {
   "name": "Kroac",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 31,
   "quests": 3,
   "aliases": "",
@@ -2881,7 +2881,7 @@
  },
  {
   "name": "Hyloch Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 30,
   "quests": 2,
   "aliases": "",
@@ -2893,7 +2893,7 @@
  },
  {
   "name": "Selchar Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 30,
   "quests": 2,
   "aliases": "",
@@ -2905,7 +2905,7 @@
  },
  {
   "name": "Herbert",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 30,
   "quests": 1,
   "aliases": "",
@@ -2917,7 +2917,7 @@
  },
  {
   "name": "Guardian of The Forest",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 30,
   "quests": 2,
   "aliases": "Guardian of the Forest",
@@ -2929,7 +2929,7 @@
  },
  {
   "name": "Nakoba",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 30,
   "quests": 3,
   "aliases": "",
@@ -2941,7 +2941,7 @@
  },
  {
   "name": "Rileen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 30,
   "quests": 3,
   "aliases": "",
@@ -2953,7 +2953,7 @@
  },
  {
   "name": "Elrund",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 2,
   "aliases": "",
@@ -2965,7 +2965,7 @@
  },
  {
   "name": "Mona",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 1,
   "aliases": "",
@@ -2977,7 +2977,7 @@
  },
  {
   "name": "Referick",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 2,
   "aliases": "",
@@ -2989,7 +2989,7 @@
  },
  {
   "name": "Dereg",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 3,
   "aliases": "",
@@ -3001,7 +3001,7 @@
  },
  {
   "name": "Enkser",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 3,
   "aliases": "",
@@ -3013,7 +3013,7 @@
  },
  {
   "name": "Old Mage",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 1,
   "aliases": "",
@@ -3025,7 +3025,7 @@
  },
  {
   "name": "Ormrod",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 29,
   "quests": 2,
   "aliases": "",
@@ -3037,7 +3037,7 @@
  },
  {
   "name": "Talking Mushroom",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 9,
   "aliases": "",
@@ -3049,7 +3049,7 @@
  },
  {
   "name": "Aunoa",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 2,
   "aliases": "",
@@ -3061,7 +3061,7 @@
  },
  {
   "name": "Dr. Urelix",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 3,
   "aliases": "",
@@ -3073,7 +3073,7 @@
  },
  {
   "name": "Irlok",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 2,
   "aliases": "",
@@ -3085,7 +3085,7 @@
  },
  {
   "name": "Thanos Dwarf",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3097,7 +3097,7 @@
  },
  {
   "name": "Elder Astal",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 2,
   "aliases": "",
@@ -3109,7 +3109,7 @@
  },
  {
   "name": "Edula",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 2,
   "aliases": "",
@@ -3121,7 +3121,7 @@
  },
  {
   "name": "Engineer Eric",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 2,
   "aliases": "",
@@ -3133,7 +3133,7 @@
  },
  {
   "name": "Forve",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3145,7 +3145,7 @@
  },
  {
   "name": "Espren Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 2,
   "aliases": "",
@@ -3157,7 +3157,7 @@
  },
  {
   "name": "Bory",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3169,7 +3169,7 @@
  },
  {
   "name": "Grandon",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3181,7 +3181,7 @@
  },
  {
   "name": "Nikoler",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3193,7 +3193,7 @@
  },
  {
   "name": "Skyraider Admirer",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3205,7 +3205,7 @@
  },
  {
   "name": "Gurix",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 28,
   "quests": 1,
   "aliases": "",
@@ -3217,7 +3217,7 @@
  },
  {
   "name": "Togak",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 2,
   "aliases": "",
@@ -3229,7 +3229,7 @@
  },
  {
   "name": "Mechanic",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 1,
   "aliases": "",
@@ -3241,7 +3241,7 @@
  },
  {
   "name": "Qunit",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 3,
   "aliases": "",
@@ -3253,7 +3253,7 @@
  },
  {
   "name": "C.S.S. Sunrise Captain",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 1,
   "aliases": "",
@@ -3265,7 +3265,7 @@
  },
  {
   "name": "Doubiss",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 3,
   "aliases": "",
@@ -3277,7 +3277,7 @@
  },
  {
   "name": "Silverbull Rank Expert",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 1,
   "aliases": "",
@@ -3289,7 +3289,7 @@
  },
  {
   "name": "Corkus Delegate",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 27,
   "quests": 2,
   "aliases": "",
@@ -3301,7 +3301,7 @@
  },
  {
   "name": "Almuj Bank Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 26,
   "quests": 2,
   "aliases": "",
@@ -3313,7 +3313,7 @@
  },
  {
   "name": "Dalben",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 26,
   "quests": 2,
   "aliases": "",
@@ -3325,7 +3325,7 @@
  },
  {
   "name": "Rymek Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 26,
   "quests": 2,
   "aliases": "",
@@ -3337,7 +3337,7 @@
  },
  {
   "name": "Homeless Mayor",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 26,
   "quests": 2,
   "aliases": "",
@@ -3349,7 +3349,7 @@
  },
  {
   "name": "Dwice",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 26,
   "quests": 1,
   "aliases": "",
@@ -3361,7 +3361,7 @@
  },
  {
   "name": "Bandit",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 4,
   "aliases": "",
@@ -3373,7 +3373,7 @@
  },
  {
   "name": "Thesead Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 1,
   "aliases": "",
@@ -3385,7 +3385,7 @@
  },
  {
   "name": "Barkeep Romu",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3397,7 +3397,7 @@
  },
  {
   "name": "Merchant Risch",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3409,7 +3409,7 @@
  },
  {
   "name": "Elderly Woman",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3421,7 +3421,7 @@
  },
  {
   "name": "Czytash",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3433,7 +3433,7 @@
  },
  {
   "name": "Prison Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3445,7 +3445,7 @@
  },
  {
   "name": "Rismor",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 1,
   "aliases": "",
@@ -3457,7 +3457,7 @@
  },
  {
   "name": "Old Siwel",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3469,7 +3469,7 @@
  },
  {
   "name": "Dado",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3481,7 +3481,7 @@
  },
  {
   "name": "Fisherman",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 2,
   "aliases": "",
@@ -3493,7 +3493,7 @@
  },
  {
   "name": "Coulmis",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 25,
   "quests": 1,
   "aliases": "",
@@ -3505,7 +3505,7 @@
  },
  {
   "name": "Bandit Leader",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 3,
   "aliases": "",
@@ -3517,7 +3517,7 @@
  },
  {
   "name": "Bylvis",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 2,
   "aliases": "",
@@ -3529,7 +3529,7 @@
  },
  {
   "name": "Bishop Kaideus",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 3,
   "aliases": "The Priest",
@@ -3541,7 +3541,7 @@
  },
  {
   "name": "List of Passive Mobs",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 2,
   "aliases": "Troms Citizen",
@@ -3553,7 +3553,7 @@
  },
  {
   "name": "Ahmsord Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 2,
   "aliases": "",
@@ -3565,7 +3565,7 @@
  },
  {
   "name": "Gendarme Soldier",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 2,
   "aliases": "",
@@ -3577,7 +3577,7 @@
  },
  {
   "name": "Omango",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 3,
   "aliases": "",
@@ -3589,7 +3589,7 @@
  },
  {
   "name": "Dejol",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 2,
   "aliases": "",
@@ -3601,7 +3601,7 @@
  },
  {
   "name": "Military Recruiter",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 24,
   "quests": 1,
   "aliases": "",
@@ -3613,7 +3613,7 @@
  },
  {
   "name": "Darnes",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 1,
   "aliases": "",
@@ -3625,7 +3625,7 @@
  },
  {
   "name": "Elder Prometheus",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 1,
   "aliases": "",
@@ -3637,7 +3637,7 @@
  },
  {
   "name": "Detective Hart",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 2,
   "aliases": "",
@@ -3649,7 +3649,7 @@
  },
  {
   "name": "Daxe",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 2,
   "aliases": "",
@@ -3661,7 +3661,7 @@
  },
  {
   "name": "Lodog",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 3,
   "aliases": "",
@@ -3673,7 +3673,7 @@
  },
  {
   "name": "Lieutenant Van",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 3,
   "aliases": "Vagrant Van",
@@ -3685,7 +3685,7 @@
  },
  {
   "name": "Mei",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 1,
   "aliases": "",
@@ -3697,7 +3697,7 @@
  },
  {
   "name": "Heliorion",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 1,
   "aliases": "",
@@ -3709,7 +3709,7 @@
  },
  {
   "name": "Fredris",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 2,
   "aliases": "",
@@ -3721,7 +3721,7 @@
  },
  {
   "name": "Mother Aris",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 23,
   "quests": 1,
   "aliases": "",
@@ -3733,7 +3733,7 @@
  },
  {
   "name": "Almuj Citizen (A Sandy Scandal)",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 4,
   "aliases": "Almuj Citizen",
@@ -3745,7 +3745,7 @@
  },
  {
   "name": "Duvale",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "",
@@ -3757,7 +3757,7 @@
  },
  {
   "name": "Big Butch",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "",
@@ -3769,7 +3769,7 @@
  },
  {
   "name": "Colonel Gailard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "",
@@ -3781,7 +3781,7 @@
  },
  {
   "name": "Slykaar",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 3,
   "aliases": "",
@@ -3793,7 +3793,7 @@
  },
  {
   "name": "Private",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 3,
   "aliases": "",
@@ -3805,7 +3805,7 @@
  },
  {
   "name": "Dohstaj",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 3,
   "aliases": "",
@@ -3817,7 +3817,7 @@
  },
  {
   "name": "Prisoner",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 1,
   "aliases": "",
@@ -3829,7 +3829,7 @@
  },
  {
   "name": "The Warden",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 1,
   "aliases": "",
@@ -3841,7 +3841,7 @@
  },
  {
   "name": "Harker",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 1,
   "aliases": "",
@@ -3853,7 +3853,7 @@
  },
  {
   "name": "Yodbon",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "",
@@ -3865,7 +3865,7 @@
  },
  {
   "name": "General Elix",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "",
@@ -3877,7 +3877,7 @@
  },
  {
   "name": "Jared Kids",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "Jared",
@@ -3889,7 +3889,7 @@
  },
  {
   "name": "Detective Lorias",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "Captain Lorias",
@@ -3901,7 +3901,7 @@
  },
  {
   "name": "Captain Olof",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 1,
   "aliases": "",
@@ -3913,7 +3913,7 @@
  },
  {
   "name": "Ooni",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 2,
   "aliases": "",
@@ -3925,7 +3925,7 @@
  },
  {
   "name": "Buendo",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 1,
   "aliases": "",
@@ -3937,7 +3937,7 @@
  },
  {
   "name": "Edwin",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 22,
   "quests": 3,
   "aliases": "",
@@ -3949,7 +3949,7 @@
  },
  {
   "name": "Volmor",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 2,
   "aliases": "Dramele",
@@ -3961,7 +3961,7 @@
  },
  {
   "name": "Robboss",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -3973,7 +3973,7 @@
  },
  {
   "name": "Captain Goruca",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 2,
   "aliases": "",
@@ -3985,7 +3985,7 @@
  },
  {
   "name": "Dusk Garden",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 3,
   "aliases": "",
@@ -3997,7 +3997,7 @@
  },
  {
   "name": "Wedyf",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4009,7 +4009,7 @@
  },
  {
   "name": "Takan",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 3,
   "aliases": "",
@@ -4021,7 +4021,7 @@
  },
  {
   "name": "Suspicious Cow",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4033,7 +4033,7 @@
  },
  {
   "name": "Tavern Owner",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4045,7 +4045,7 @@
  },
  {
   "name": "Telvu",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4057,7 +4057,7 @@
  },
  {
   "name": "Newspaper Merchant",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 2,
   "aliases": "",
@@ -4069,7 +4069,7 @@
  },
  {
   "name": "Alein",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4081,7 +4081,7 @@
  },
  {
   "name": "Scientist Ynnos",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4093,7 +4093,7 @@
  },
  {
   "name": "Batelu",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4105,7 +4105,7 @@
  },
  {
   "name": "Roughworks Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4117,7 +4117,7 @@
  },
  {
   "name": "Likeru",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 2,
   "aliases": "",
@@ -4129,7 +4129,7 @@
  },
  {
   "name": "Professor Eih",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4141,7 +4141,7 @@
  },
  {
   "name": "Skyraider Elie",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "Elie",
@@ -4153,7 +4153,7 @@
  },
  {
   "name": "Military Scout",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4165,7 +4165,7 @@
  },
  {
   "name": "Marseled",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 21,
   "quests": 1,
   "aliases": "",
@@ -4177,7 +4177,7 @@
  },
  {
   "name": "Elder Alder",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 1,
   "aliases": "",
@@ -4189,7 +4189,7 @@
  },
  {
   "name": "Onluk",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 1,
   "aliases": "",
@@ -4201,7 +4201,7 @@
  },
  {
   "name": "Cheese Merchant",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 2,
   "aliases": "",
@@ -4213,7 +4213,7 @@
  },
  {
   "name": "Nemract Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 2,
   "aliases": "",
@@ -4225,7 +4225,7 @@
  },
  {
   "name": "Karoc Miner",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 2,
   "aliases": "",
@@ -4237,7 +4237,7 @@
  },
  {
   "name": "Dobile",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 3,
   "aliases": "",
@@ -4249,7 +4249,7 @@
  },
  {
   "name": "Dorroc",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 3,
   "aliases": "",
@@ -4261,7 +4261,7 @@
  },
  {
   "name": "Eluzterp",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 2,
   "aliases": "",
@@ -4273,7 +4273,7 @@
  },
  {
   "name": "Jiro",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 4,
   "aliases": "",
@@ -4285,7 +4285,7 @@
  },
  {
   "name": "Syni",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 3,
   "aliases": "",
@@ -4297,7 +4297,7 @@
  },
  {
   "name": "Rynver",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 1,
   "aliases": "",
@@ -4309,7 +4309,7 @@
  },
  {
   "name": "Orphion",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 1,
   "aliases": "",
@@ -4321,7 +4321,7 @@
  },
  {
   "name": "Weaponsmith",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 1,
   "aliases": "",
@@ -4333,7 +4333,7 @@
  },
  {
   "name": "Niren",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 20,
   "quests": 1,
   "aliases": "",
@@ -4345,7 +4345,7 @@
  },
  {
   "name": "Child",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 5,
   "aliases": "",
@@ -4357,7 +4357,7 @@
  },
  {
   "name": "Tarod",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 2,
   "aliases": "",
@@ -4369,7 +4369,7 @@
  },
  {
   "name": "Javier",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 1,
   "aliases": "",
@@ -4381,7 +4381,7 @@
  },
  {
   "name": "Ranol",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 2,
   "aliases": "",
@@ -4393,7 +4393,7 @@
  },
  {
   "name": "Phinas",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 1,
   "aliases": "",
@@ -4405,7 +4405,7 @@
  },
  {
   "name": "Dwarf Salesman",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 1,
   "aliases": "",
@@ -4417,7 +4417,7 @@
  },
  {
   "name": "Elder",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 1,
   "aliases": "",
@@ -4429,7 +4429,7 @@
  },
  {
   "name": "Atisun",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 1,
   "aliases": "",
@@ -4441,7 +4441,7 @@
  },
  {
   "name": "Gana",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 19,
   "quests": 2,
   "aliases": "",
@@ -4453,7 +4453,7 @@
  },
  {
   "name": "Corkus Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 3,
   "aliases": "",
@@ -4465,7 +4465,7 @@
  },
  {
   "name": "Private Cob",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 3,
   "aliases": "",
@@ -4477,7 +4477,7 @@
  },
  {
   "name": "Troms Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 4,
   "aliases": "",
@@ -4489,7 +4489,7 @@
  },
  {
   "name": "Pirate",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 3,
   "aliases": "",
@@ -4501,7 +4501,7 @@
  },
  {
   "name": "Timasca Soldier",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 2,
   "aliases": "",
@@ -4513,7 +4513,7 @@
  },
  {
   "name": "Ollie",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4525,7 +4525,7 @@
  },
  {
   "name": "Sain",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4537,7 +4537,7 @@
  },
  {
   "name": "Reddy",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4549,7 +4549,7 @@
  },
  {
   "name": "Alchemist",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 2,
   "aliases": "",
@@ -4561,7 +4561,7 @@
  },
  {
   "name": "Roughworks Labourer",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4573,7 +4573,7 @@
  },
  {
   "name": "Skyraider Mercenary",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4585,7 +4585,7 @@
  },
  {
   "name": "Skyraider Lookout",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4597,7 +4597,7 @@
  },
  {
   "name": "Relic Hunter",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 18,
   "quests": 1,
   "aliases": "",
@@ -4609,7 +4609,7 @@
  },
  {
   "name": "????",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 5,
   "aliases": "",
@@ -4621,7 +4621,7 @@
  },
  {
   "name": "Blacksmith Dren",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "Dren",
@@ -4633,7 +4633,7 @@
  },
  {
   "name": "Representative Ernold",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 2,
   "aliases": "",
@@ -4645,7 +4645,7 @@
  },
  {
   "name": "Gracen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4657,7 +4657,7 @@
  },
  {
   "name": "Old Fisherman",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4669,7 +4669,7 @@
  },
  {
   "name": "Imperial Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4681,7 +4681,7 @@
  },
  {
   "name": "Gordon",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4693,7 +4693,7 @@
  },
  {
   "name": "Tesha",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 2,
   "aliases": "",
@@ -4705,7 +4705,7 @@
  },
  {
   "name": "Headmaster",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4717,7 +4717,7 @@
  },
  {
   "name": "Military Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4729,7 +4729,7 @@
  },
  {
   "name": "Ankou",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 17,
   "quests": 1,
   "aliases": "",
@@ -4741,7 +4741,7 @@
  },
  {
   "name": "Kansard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4753,7 +4753,7 @@
  },
  {
   "name": "Corak",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4765,7 +4765,7 @@
  },
  {
   "name": "Korben",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4777,7 +4777,7 @@
  },
  {
   "name": "Ahmas",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4789,7 +4789,7 @@
  },
  {
   "name": "Paxon",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4801,7 +4801,7 @@
  },
  {
   "name": "Bassow",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4813,7 +4813,7 @@
  },
  {
   "name": "Nawild",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4825,7 +4825,7 @@
  },
  {
   "name": "Nunexetor",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4837,7 +4837,7 @@
  },
  {
   "name": "Alekin Citizen",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4849,7 +4849,7 @@
  },
  {
   "name": "Lynn",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4861,7 +4861,7 @@
  },
  {
   "name": "Boat Captain",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4873,7 +4873,7 @@
  },
  {
   "name": "Zhight Tour Guide",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4885,7 +4885,7 @@
  },
  {
   "name": "Scavenger Hunt Participant",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 3,
   "aliases": "",
@@ -4897,7 +4897,7 @@
  },
  {
   "name": "Aldwell Guard",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4909,7 +4909,7 @@
  },
  {
   "name": "Racing Expert",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4921,7 +4921,7 @@
  },
  {
   "name": "Missing Child",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 3,
   "aliases": "",
@@ -4933,7 +4933,7 @@
  },
  {
   "name": "Excavator Placardus",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4945,7 +4945,7 @@
  },
  {
   "name": "Ferndor",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4957,7 +4957,7 @@
  },
  {
   "name": "Valimare",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -4969,7 +4969,7 @@
  },
  {
   "name": "Rensa",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -4981,7 +4981,7 @@
  },
  {
   "name": "Mysterious Figure",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 4,
   "aliases": "",
@@ -4993,7 +4993,7 @@
  },
  {
   "name": "Ticket Collector",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -5005,7 +5005,7 @@
  },
  {
   "name": "Royal Captain",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -5017,7 +5017,7 @@
  },
  {
   "name": "Disguised King",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -5029,7 +5029,7 @@
  },
  {
   "name": "Kyren",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -5041,7 +5041,7 @@
  },
  {
   "name": "Squidward",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -5053,7 +5053,7 @@
  },
  {
   "name": "Sayrr",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -5065,7 +5065,7 @@
  },
  {
   "name": "Master Oshman",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 1,
   "aliases": "",
@@ -5077,7 +5077,7 @@
  },
  {
   "name": "Traitor Amadel",
-  "tier": "uncommon",
+  "tier": "unique",
   "lines": 16,
   "quests": 2,
   "aliases": "",
@@ -5089,7 +5089,7 @@
  },
  {
   "name": "Avos Chief",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 2,
   "aliases": "",
@@ -5101,7 +5101,7 @@
  },
  {
   "name": "Librarian",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 3,
   "aliases": "",
@@ -5113,7 +5113,7 @@
  },
  {
   "name": "Leucsaa",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 2,
   "aliases": "",
@@ -5125,7 +5125,7 @@
  },
  {
   "name": "Egpla",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 2,
   "aliases": "",
@@ -5137,7 +5137,7 @@
  },
  {
   "name": "Captured Prisoner",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 2,
   "aliases": "",
@@ -5149,7 +5149,7 @@
  },
  {
   "name": "Ceyquin",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5161,7 +5161,7 @@
  },
  {
   "name": "Winie",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5173,7 +5173,7 @@
  },
  {
   "name": "Tirack",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 3,
   "aliases": "",
@@ -5185,7 +5185,7 @@
  },
  {
   "name": "Laen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 3,
   "aliases": "",
@@ -5197,7 +5197,7 @@
  },
  {
   "name": "Businessman",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5209,7 +5209,7 @@
  },
  {
   "name": "Clothes Merchant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5221,7 +5221,7 @@
  },
  {
   "name": "Harnort",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5233,7 +5233,7 @@
  },
  {
   "name": "Scavenger Hunt Collector",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 2,
   "aliases": "",
@@ -5245,7 +5245,7 @@
  },
  {
   "name": "Rayshyroth",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5257,7 +5257,7 @@
  },
  {
   "name": "Zhight",
-  "tier": "common",
+  "tier": "normal",
   "lines": 15,
   "quests": 1,
   "aliases": "",
@@ -5269,7 +5269,7 @@
  },
  {
   "name": "Achper",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5281,7 +5281,7 @@
  },
  {
   "name": "Fiona",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5293,7 +5293,7 @@
  },
  {
   "name": "Yunelsu",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5305,7 +5305,7 @@
  },
  {
   "name": "Piere",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5317,7 +5317,7 @@
  },
  {
   "name": "Hermit",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5329,7 +5329,7 @@
  },
  {
   "name": "Detlas Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5341,7 +5341,7 @@
  },
  {
   "name": "Maltic Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5353,7 +5353,7 @@
  },
  {
   "name": "Lusuco Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 3,
   "aliases": "",
@@ -5365,7 +5365,7 @@
  },
  {
   "name": "Veekhat",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5377,7 +5377,7 @@
  },
  {
   "name": "Eltom Guard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5389,7 +5389,7 @@
  },
  {
   "name": "Elder Desint",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5401,7 +5401,7 @@
  },
  {
   "name": "Marden",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "",
@@ -5413,7 +5413,7 @@
  },
  {
   "name": "Event Airship Pilot",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5425,7 +5425,7 @@
  },
  {
   "name": "Private Tylas",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 2,
   "aliases": "Tylas",
@@ -5437,7 +5437,7 @@
  },
  {
   "name": "Yobon",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 3,
   "aliases": "",
@@ -5449,7 +5449,7 @@
  },
  {
   "name": "Javen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5461,7 +5461,7 @@
  },
  {
   "name": "Espren Tourist",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5473,7 +5473,7 @@
  },
  {
   "name": "Marston",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5485,7 +5485,7 @@
  },
  {
   "name": "Imperial Captain",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5497,7 +5497,7 @@
  },
  {
   "name": "Narder",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5509,7 +5509,7 @@
  },
  {
   "name": "King Burtan",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5521,7 +5521,7 @@
  },
  {
   "name": "Dolem",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5533,7 +5533,7 @@
  },
  {
   "name": "Excavator Vade",
-  "tier": "common",
+  "tier": "normal",
   "lines": 14,
   "quests": 1,
   "aliases": "",
@@ -5545,7 +5545,7 @@
  },
  {
   "name": "Legolus",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5557,7 +5557,7 @@
  },
  {
   "name": "Damys",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5569,7 +5569,7 @@
  },
  {
   "name": "Scientist Urelix",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5581,7 +5581,7 @@
  },
  {
   "name": "Document Merchant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5593,7 +5593,7 @@
  },
  {
   "name": "Lieutenant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 2,
   "aliases": "",
@@ -5605,7 +5605,7 @@
  },
  {
   "name": "Witch",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 2,
   "aliases": "",
@@ -5617,7 +5617,7 @@
  },
  {
   "name": "Bricot",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 2,
   "aliases": "",
@@ -5629,7 +5629,7 @@
  },
  {
   "name": "Sasha The Apothecary",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "Sasha",
@@ -5641,7 +5641,7 @@
  },
  {
   "name": "Mysterious Leader",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5653,7 +5653,7 @@
  },
  {
   "name": "Adigard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5665,7 +5665,7 @@
  },
  {
   "name": "Lazing Dogun",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5677,7 +5677,7 @@
  },
  {
   "name": "Lumilda",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 2,
   "aliases": "",
@@ -5689,7 +5689,7 @@
  },
  {
   "name": "Shopkeeper",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 3,
   "aliases": "",
@@ -5701,7 +5701,7 @@
  },
  {
   "name": "Celuuse",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5713,7 +5713,7 @@
  },
  {
   "name": "Otenu",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5725,7 +5725,7 @@
  },
  {
   "name": "Imperial Inquisitor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5737,7 +5737,7 @@
  },
  {
   "name": "Jorkin",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5749,7 +5749,7 @@
  },
  {
   "name": "Trunan",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5761,7 +5761,7 @@
  },
  {
   "name": "Clomius",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5773,7 +5773,7 @@
  },
  {
   "name": "Tyko",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 2,
   "aliases": "",
@@ -5785,7 +5785,7 @@
  },
  {
   "name": "Alcohol Stand Merchant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5797,7 +5797,7 @@
  },
  {
   "name": "Tinemild",
-  "tier": "common",
+  "tier": "normal",
   "lines": 13,
   "quests": 1,
   "aliases": "",
@@ -5809,7 +5809,7 @@
  },
  {
   "name": "Elder Willow",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -5821,7 +5821,7 @@
  },
  {
   "name": "Agent",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5833,7 +5833,7 @@
  },
  {
   "name": "Mehme",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5845,7 +5845,7 @@
  },
  {
   "name": "Peli",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -5857,7 +5857,7 @@
  },
  {
   "name": "Avos Shaman",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 3,
   "aliases": "",
@@ -5869,7 +5869,7 @@
  },
  {
   "name": "Markus",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -5881,7 +5881,7 @@
  },
  {
   "name": "Banker",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "The Banker",
@@ -5893,7 +5893,7 @@
  },
  {
   "name": "The Blacksmith",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -5905,7 +5905,7 @@
  },
  {
   "name": "Bucie Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5917,7 +5917,7 @@
  },
  {
   "name": "Nesaak Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5929,7 +5929,7 @@
  },
  {
   "name": "Legendary Messenger",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5941,7 +5941,7 @@
  },
  {
   "name": "Hot Air Balloon Captain",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 3,
   "aliases": "",
@@ -5953,7 +5953,7 @@
  },
  {
   "name": "Relos Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5965,7 +5965,7 @@
  },
  {
   "name": "Marock",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -5977,7 +5977,7 @@
  },
  {
   "name": "C.S.S Wavebreaker Captain",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -5989,7 +5989,7 @@
  },
  {
   "name": "Lecade 2",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6001,7 +6001,7 @@
  },
  {
   "name": "Lalorie",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6013,7 +6013,7 @@
  },
  {
   "name": "Hrona",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 3,
   "aliases": "",
@@ -6025,7 +6025,7 @@
  },
  {
   "name": "Siwel",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6037,7 +6037,7 @@
  },
  {
   "name": "Phoenix Poacher",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6049,7 +6049,7 @@
  },
  {
   "name": "Mr. Caritat",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6061,7 +6061,7 @@
  },
  {
   "name": "Blackjack Dealer",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6073,7 +6073,7 @@
  },
  {
   "name": "Ostentatious Envoy",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6085,7 +6085,7 @@
  },
  {
   "name": "Mayor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 2,
   "aliases": "",
@@ -6097,7 +6097,7 @@
  },
  {
   "name": "Lacrona",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6109,7 +6109,7 @@
  },
  {
   "name": "Pottur",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6121,7 +6121,7 @@
  },
  {
   "name": "Jill",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6133,7 +6133,7 @@
  },
  {
   "name": "Twendle",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6145,7 +6145,7 @@
  },
  {
   "name": "Comor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6157,7 +6157,7 @@
  },
  {
   "name": "Lekal",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6169,7 +6169,7 @@
  },
  {
   "name": "Tea Stand Merchant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6181,7 +6181,7 @@
  },
  {
   "name": "Zoo Keeper",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6193,7 +6193,7 @@
  },
  {
   "name": "Seasum",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6205,7 +6205,7 @@
  },
  {
   "name": "Yvonne",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6217,7 +6217,7 @@
  },
  {
   "name": "Effal",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6229,7 +6229,7 @@
  },
  {
   "name": "Butler Hayn",
-  "tier": "common",
+  "tier": "normal",
   "lines": 12,
   "quests": 1,
   "aliases": "",
@@ -6241,7 +6241,7 @@
  },
  {
   "name": "Airbase Attendant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6253,7 +6253,7 @@
  },
  {
   "name": "Lieutenant Tolv",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6265,7 +6265,7 @@
  },
  {
   "name": "Xoeinbor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6277,7 +6277,7 @@
  },
  {
   "name": "Jixy",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6289,7 +6289,7 @@
  },
  {
   "name": "Grapes",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6301,7 +6301,7 @@
  },
  {
   "name": "Clan Member",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6313,7 +6313,7 @@
  },
  {
   "name": "Ibele",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6325,7 +6325,7 @@
  },
  {
   "name": "Construction Worker",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6337,7 +6337,7 @@
  },
  {
   "name": "Favian",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6349,7 +6349,7 @@
  },
  {
   "name": "Flodur",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6361,7 +6361,7 @@
  },
  {
   "name": "Wilted Camellia",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6373,7 +6373,7 @@
  },
  {
   "name": "Gendarme Commander",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6385,7 +6385,7 @@
  },
  {
   "name": "Espren Child",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6397,7 +6397,7 @@
  },
  {
   "name": "Fort Hegea Archer",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6409,7 +6409,7 @@
  },
  {
   "name": "Monte",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6421,7 +6421,7 @@
  },
  {
   "name": "Isfurus",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6433,7 +6433,7 @@
  },
  {
   "name": "Cabac",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6445,7 +6445,7 @@
  },
  {
   "name": "Tarek",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6457,7 +6457,7 @@
  },
  {
   "name": "Leacen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6469,7 +6469,7 @@
  },
  {
   "name": "Vesdar",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6481,7 +6481,7 @@
  },
  {
   "name": "Merloni",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6493,7 +6493,7 @@
  },
  {
   "name": "Damiral",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6505,7 +6505,7 @@
  },
  {
   "name": "Nedlom",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6517,7 +6517,7 @@
  },
  {
   "name": "Aelumia Guard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6529,7 +6529,7 @@
  },
  {
   "name": "Representative",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6541,7 +6541,7 @@
  },
  {
   "name": "Regular Humyn",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6553,7 +6553,7 @@
  },
  {
   "name": "Skyraider Guard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 3,
   "aliases": "",
@@ -6565,7 +6565,7 @@
  },
  {
   "name": "Xao",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6577,7 +6577,7 @@
  },
  {
   "name": "Adventuring Mage",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6589,7 +6589,7 @@
  },
  {
   "name": "Thesead Miner",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6601,7 +6601,7 @@
  },
  {
   "name": "Gerten Chief Lobo",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6613,7 +6613,7 @@
  },
  {
   "name": "Grenot",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6625,7 +6625,7 @@
  },
  {
   "name": "Food Stand Merchant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6637,7 +6637,7 @@
  },
  {
   "name": "Cousullo",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6649,7 +6649,7 @@
  },
  {
   "name": "Halbe",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6661,7 +6661,7 @@
  },
  {
   "name": "Calamaro",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 2,
   "aliases": "",
@@ -6673,7 +6673,7 @@
  },
  {
   "name": "Pete",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6685,7 +6685,7 @@
  },
  {
   "name": "Shaman Inrekei",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "Inrekei",
@@ -6697,7 +6697,7 @@
  },
  {
   "name": "Excavator Lykron",
-  "tier": "common",
+  "tier": "normal",
   "lines": 11,
   "quests": 1,
   "aliases": "",
@@ -6709,7 +6709,7 @@
  },
  {
   "name": "Mael Twain",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "Mael",
@@ -6721,7 +6721,7 @@
  },
  {
   "name": "Peculiar Old Man",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6733,7 +6733,7 @@
  },
  {
   "name": "Fruman Recruit",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6745,7 +6745,7 @@
  },
  {
   "name": "Teiren",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6757,7 +6757,7 @@
  },
  {
   "name": "Jankan",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6769,7 +6769,7 @@
  },
  {
   "name": "Cidre",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6781,7 +6781,7 @@
  },
  {
   "name": "Jungle Native",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6793,7 +6793,7 @@
  },
  {
   "name": "Iboju Shaman",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6805,7 +6805,7 @@
  },
  {
   "name": "Sergeant Klafson",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "Sergeant",
@@ -6817,7 +6817,7 @@
  },
  {
   "name": "Dejected Identifier",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6829,7 +6829,7 @@
  },
  {
   "name": "Plario",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6841,7 +6841,7 @@
  },
  {
   "name": "Calo",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 3,
   "aliases": "",
@@ -6853,7 +6853,7 @@
  },
  {
   "name": "Mafia Prisoner",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6865,7 +6865,7 @@
  },
  {
   "name": "Damien",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6877,7 +6877,7 @@
  },
  {
   "name": "Violent Heather",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6889,7 +6889,7 @@
  },
  {
   "name": "Ghostly Voice",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6901,7 +6901,7 @@
  },
  {
   "name": "Zenam",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6913,7 +6913,7 @@
  },
  {
   "name": "Head Engineer",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6925,7 +6925,7 @@
  },
  {
   "name": "Pastor Nitram",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "Nitram",
@@ -6937,7 +6937,7 @@
  },
  {
   "name": "Cinfras",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -6949,7 +6949,7 @@
  },
  {
   "name": "Kantor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6961,7 +6961,7 @@
  },
  {
   "name": "King of Troms",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6973,7 +6973,7 @@
  },
  {
   "name": "Prince of Troms",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "King's Son",
@@ -6985,7 +6985,7 @@
  },
  {
   "name": "Nami The Healer",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -6997,7 +6997,7 @@
  },
  {
   "name": "Snail Race Supervisor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7009,7 +7009,7 @@
  },
  {
   "name": "Karkun",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7021,7 +7021,7 @@
  },
  {
   "name": "Rinire",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7033,7 +7033,7 @@
  },
  {
   "name": "Elder Berusia",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -7045,7 +7045,7 @@
  },
  {
   "name": "Jamie",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7057,7 +7057,7 @@
  },
  {
   "name": "Siegfried Fan",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7069,7 +7069,7 @@
  },
  {
   "name": "Corrupted Scout (Lv. 3)",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "Scout",
@@ -7081,7 +7081,7 @@
  },
  {
   "name": "Grant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7093,7 +7093,7 @@
  },
  {
   "name": "Yuge",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 2,
   "aliases": "",
@@ -7105,7 +7105,7 @@
  },
  {
   "name": "Ghost Guide",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7117,7 +7117,7 @@
  },
  {
   "name": "Priscilla",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7129,7 +7129,7 @@
  },
  {
   "name": "Recruiter Strumon",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7141,7 +7141,7 @@
  },
  {
   "name": "Caras",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7153,7 +7153,7 @@
  },
  {
   "name": "Ka L'argwit",
-  "tier": "common",
+  "tier": "normal",
   "lines": 10,
   "quests": 1,
   "aliases": "",
@@ -7165,7 +7165,7 @@
  },
  {
   "name": "Soway",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7177,7 +7177,7 @@
  },
  {
   "name": "Employee",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7189,7 +7189,7 @@
  },
  {
   "name": "Espren Border Guard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7201,7 +7201,7 @@
  },
  {
   "name": "Espren Guard Captain",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7213,7 +7213,7 @@
  },
  {
   "name": "Ureietun",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7225,7 +7225,7 @@
  },
  {
   "name": "Lomoster",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7237,7 +7237,7 @@
  },
  {
   "name": "Mango",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "",
@@ -7249,7 +7249,7 @@
  },
  {
   "name": "Miliyus",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7261,7 +7261,7 @@
  },
  {
   "name": "Etemitoro",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7273,7 +7273,7 @@
  },
  {
   "name": "Blacksmith Dwarf",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7285,7 +7285,7 @@
  },
  {
   "name": "Eagle Tribesman",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 3,
   "aliases": "",
@@ -7297,7 +7297,7 @@
  },
  {
   "name": "Rodoroc Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "",
@@ -7309,7 +7309,7 @@
  },
  {
   "name": "Charlie",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7321,7 +7321,7 @@
  },
  {
   "name": "Salesman",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "",
@@ -7333,7 +7333,7 @@
  },
  {
   "name": "Hallfred",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7345,7 +7345,7 @@
  },
  {
   "name": "Jaybip",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7357,7 +7357,7 @@
  },
  {
   "name": "The Mayor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7369,7 +7369,7 @@
  },
  {
   "name": "Poclo Wabblebuff of Gelibord",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7381,7 +7381,7 @@
  },
  {
   "name": "Mayor Eoric",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "Eoric",
@@ -7393,7 +7393,7 @@
  },
  {
   "name": "Mister Caritat",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7405,7 +7405,7 @@
  },
  {
   "name": "Rynend",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "",
@@ -7417,7 +7417,7 @@
  },
  {
   "name": "Nybun",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7429,7 +7429,7 @@
  },
  {
   "name": "Mylo",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "",
@@ -7441,7 +7441,7 @@
  },
  {
   "name": "Xanthos",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7453,7 +7453,7 @@
  },
  {
   "name": "General Algard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7465,7 +7465,7 @@
  },
  {
   "name": "Thesead's Mayor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 2,
   "aliases": "",
@@ -7477,7 +7477,7 @@
  },
  {
   "name": "Fetu",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7489,7 +7489,7 @@
  },
  {
   "name": "Constable",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7501,7 +7501,7 @@
  },
  {
   "name": "Uniform Tailor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7513,7 +7513,7 @@
  },
  {
   "name": "Matilda",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7525,7 +7525,7 @@
  },
  {
   "name": "Wilton",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7537,7 +7537,7 @@
  },
  {
   "name": "Saldin",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7549,7 +7549,7 @@
  },
  {
   "name": "Royal Advisor Carlos",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7561,7 +7561,7 @@
  },
  {
   "name": "Traitor Thomas",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7573,7 +7573,7 @@
  },
  {
   "name": "Phief",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7585,7 +7585,7 @@
  },
  {
   "name": "Tirt",
-  "tier": "common",
+  "tier": "normal",
   "lines": 9,
   "quests": 1,
   "aliases": "",
@@ -7597,7 +7597,7 @@
  },
  {
   "name": "Waiter",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7609,7 +7609,7 @@
  },
  {
   "name": "Amadel",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7621,7 +7621,7 @@
  },
  {
   "name": "Agitated Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7633,7 +7633,7 @@
  },
  {
   "name": "Elio",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7645,7 +7645,7 @@
  },
  {
   "name": "Creinu",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7657,7 +7657,7 @@
  },
  {
   "name": "Peaches",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7669,7 +7669,7 @@
  },
  {
   "name": "Ario",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7681,7 +7681,7 @@
  },
  {
   "name": "Alekin Guard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7693,7 +7693,7 @@
  },
  {
   "name": "Avos Citizen",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7705,7 +7705,7 @@
  },
  {
   "name": "Popo",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 3,
   "aliases": "",
@@ -7717,7 +7717,7 @@
  },
  {
   "name": "Markque The Wizard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7729,7 +7729,7 @@
  },
  {
   "name": "Bored Farmer",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7741,7 +7741,7 @@
  },
  {
   "name": "Brank",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7753,7 +7753,7 @@
  },
  {
   "name": "Barkeep",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7765,7 +7765,7 @@
  },
  {
   "name": "Alfe",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7777,7 +7777,7 @@
  },
  {
   "name": "Angry Townsperson",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7789,7 +7789,7 @@
  },
  {
   "name": "Corrupted Townsperson",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "Townsperson",
@@ -7801,7 +7801,7 @@
  },
  {
   "name": "Relos Mechanic",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7813,7 +7813,7 @@
  },
  {
   "name": "Llevigar Professor",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7825,7 +7825,7 @@
  },
  {
   "name": "Private Walder",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7837,7 +7837,7 @@
  },
  {
   "name": "Nettik",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7849,7 +7849,7 @@
  },
  {
   "name": "Barden",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7861,7 +7861,7 @@
  },
  {
   "name": "Office Manager",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7873,7 +7873,7 @@
  },
  {
   "name": "Excited Fan",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7885,7 +7885,7 @@
  },
  {
   "name": "Clan Members",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7897,7 +7897,7 @@
  },
  {
   "name": "Keibon",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7909,7 +7909,7 @@
  },
  {
   "name": "Gerten Chief Snaga",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -7921,7 +7921,7 @@
  },
  {
   "name": "Gert",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7933,7 +7933,7 @@
  },
  {
   "name": "Amira",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7945,7 +7945,7 @@
  },
  {
   "name": "Sesad",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7957,7 +7957,7 @@
  },
  {
   "name": "Old Book",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7969,7 +7969,7 @@
  },
  {
   "name": "Rotating Game Expert",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7981,7 +7981,7 @@
  },
  {
   "name": "Aryn",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -7993,7 +7993,7 @@
  },
  {
   "name": "Baker",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -8005,7 +8005,7 @@
  },
  {
   "name": "Caritat Senior",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8017,7 +8017,7 @@
  },
  {
   "name": "Rontaid",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8029,7 +8029,7 @@
  },
  {
   "name": "Otium",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 2,
   "aliases": "",
@@ -8041,7 +8041,7 @@
  },
  {
   "name": "Prentiss",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8053,7 +8053,7 @@
  },
  {
   "name": "Todd",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8065,7 +8065,7 @@
  },
  {
   "name": "Martim",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8077,7 +8077,7 @@
  },
  {
   "name": "Bob",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8089,7 +8089,7 @@
  },
  {
   "name": "Red Fox Owner",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8101,7 +8101,7 @@
  },
  {
   "name": "Grandmaster Shaman",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8113,7 +8113,7 @@
  },
  {
   "name": "Thesead Coal Miner",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8125,7 +8125,7 @@
  },
  {
   "name": "Tasha",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8137,7 +8137,7 @@
  },
  {
   "name": "Kabo",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8149,7 +8149,7 @@
  },
  {
   "name": "Aluxander",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8161,7 +8161,7 @@
  },
  {
   "name": "Regulux",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8173,7 +8173,7 @@
  },
  {
   "name": "Maiden",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8185,7 +8185,7 @@
  },
  {
   "name": "Atila",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8197,7 +8197,7 @@
  },
  {
   "name": "Vagabond",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8209,7 +8209,7 @@
  },
  {
   "name": "Robyn",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8221,7 +8221,7 @@
  },
  {
   "name": "Gernald",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8233,7 +8233,7 @@
  },
  {
   "name": "Old Druid",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8245,7 +8245,7 @@
  },
  {
   "name": "Larry",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8257,7 +8257,7 @@
  },
  {
   "name": "Excavator Admin Uci",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8269,7 +8269,7 @@
  },
  {
   "name": "WynnExcavation Leader Amadel",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8281,7 +8281,7 @@
  },
  {
   "name": "Amadel's Assistant",
-  "tier": "common",
+  "tier": "normal",
   "lines": 8,
   "quests": 1,
   "aliases": "",
@@ -8293,7 +8293,7 @@
  },
  {
   "name": "Argus",
-  "tier": "common",
+  "tier": "normal",
   "lines": 4,
   "quests": 1,
   "aliases": "",
@@ -8305,7 +8305,7 @@
  },
  {
   "name": "Captain Redbeard",
-  "tier": "common",
+  "tier": "normal",
   "lines": 2,
   "quests": 1,
   "aliases": "Redbeard",

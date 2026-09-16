@@ -2,7 +2,7 @@
 Discard: a plain copy goes back and the tier below rolls in its place.
 
 1. Every yield points exactly one tier down, so discarding can only ever
-   move down the list, and commons have nowhere to go
+   move down the list, and normals have nowhere to go
 2. Member cards can never be discarded
 3. roll_in_tier stays inside the tier it was given, and wishes redirect
    inside it at the same rate a reel would
@@ -23,9 +23,9 @@ def test_every_yield_is_exactly_one_tier_down():
         assert n >= 1
 
 
-def test_common_has_nowhere_to_go():
-    assert "common" not in cardlib.DISCARD_YIELD
-    assert cardlib.discard_yield({"tier": "common"}) is None
+def test_normal_has_nowhere_to_go():
+    assert "normal" not in cardlib.DISCARD_YIELD
+    assert cardlib.discard_yield({"tier": "normal"}) is None
 
 
 def test_member_cards_cannot_be_discarded():
@@ -33,8 +33,8 @@ def test_member_cards_cannot_be_discarded():
     assert cardlib.discard_yield(None) is None
 
 
-def test_fabled_gives_two_legendaries():
-    assert cardlib.discard_yield({"tier": "fabled"}) == ("legendary", 2)
+def test_mythic_gives_two_fableds():
+    assert cardlib.discard_yield({"tier": "mythic"}) == ("fabled", 2)
 
 
 def test_roll_in_tier_stays_in_tier():
@@ -57,7 +57,7 @@ def test_roll_in_tier_honours_wishes_at_the_reel_rate():
 
 
 def test_wish_outside_the_tier_does_nothing():
-    legendary = cardlib.load_card_set()["by_tier"]["legendary"][0]["slug"]
+    fabled = cardlib.load_card_set()["by_tier"]["fabled"][0]["slug"]
     rng = random.Random(3)
     for _ in range(50):
-        assert cardlib.roll_in_tier("rare", {legendary}, rng)["tier"] == "rare"
+        assert cardlib.roll_in_tier("rare", {fabled}, rng)["tier"] == "rare"
