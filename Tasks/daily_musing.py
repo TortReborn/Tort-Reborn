@@ -1,5 +1,6 @@
-"""Daily musing — once per day, at a random time, drops a vague, contemplative
-(and sometimes loosely aquatic) thought into the bot-commands channel.
+"""Daily musing — once per day, at a random time, drops a short thought from
+Tort into the bot-commands channel. Registers vary: deadpan, unsettling, absurd,
+trailing-off, blunt, first-person Tort, or a question for the room.
 
 Design notes:
   * At most once per calendar day (UTC). Restart-safe: state lives in bot_settings.
@@ -42,96 +43,184 @@ _INDEX_KEY = "musing_index"                 # next index into MUSINGS
 # ---------------------------------------------------------------------------
 # The musings.
 #
-# Two groups kept separate so the rotation can alternate between them instead of
-# posting one whole group before the other. MUSINGS is built by interleaving:
-# aquatic → contemplative → aquatic → contemplative … so each day flips flavor.
-# The lists are 1:1 here; make one longer/shorter to change how often water
-# themes show up (leftovers from the longer list just tack on at the end).
+# Grouped by register so the rotation can round-robin across moods instead of
+# posting one whole flavour before the next. MUSINGS is built by interleaving
+# the groups in the order listed here: dry → unsettling → absurd → unfinished →
+# blunt → tort → question → dry … so no two consecutive days land the same way.
+# Groups needn't be equal length; leftovers from longer ones tack on at the end.
+#
+# A few Tort lines share recurring, never-explained details (the stone, the
+# bucket, the wave count, the other turtle). Keep those consistent when adding.
 # ---------------------------------------------------------------------------
 
-AQUATIC = [
-    "The ocean does not hurry, yet everything reaches the shore eventually.",
-    "A river never sees the sea it is becoming.",
-    "Still water and moving water are, in the end, both just water.",
-    "The deepest parts of the sea have never needed the sun to know they exist.",
-    "Every wave is the whole ocean pretending, for a moment, to be alone.",
-    "Fish do not question the water. Perhaps that is their peace.",
-    "A single drop remembers nothing of the storm — yet the storm was made of drops.",
-    "The tide takes the same shore it gives back. Nothing is truly kept, nothing truly lost.",
-    "To float, you first have to stop fighting the water that is already holding you.",
-    "The reef is built by creatures who will never see it finished.",
-    "What the surface calls a storm, the deep calls a passing mood.",
-    "A pearl is only a grain of sand that refused to leave.",
-    "The sea remembers every river but keeps none of their names.",
-    "Currents move without hands, and still the whole ocean turns.",
-    "Even the lighthouse spends most of its life in the dark, pointing toward morning.",
-    "Water finds the lowest place, and in doing so, touches everything.",
-    "The horizon is not a wall. It is only the edge of how far you have looked.",
-    "A boat is safest in the harbor — and that is not what boats are for.",
-    "Rain falls on the ocean too, and the ocean does not mind the addition.",
-    "We are mostly water, quietly wondering why the sea feels like home.",
-    "Somewhere right now a wave is breaking that no one will ever see. It breaks anyway.",
-    "The moon pulls the whole ocean and never once touches the water.",
-    "Depth and darkness are not the same thing, though we often mistake one for the other.",
-    "A ship's wake disappears, but the ship still went somewhere.",
-    "We spend our lives learning to swim in a sea we were born already floating in.",
-    "The tide will come in again. It always has. There is a quiet kind of faith in that.",
-    "Coral, cathedrals, and kindness are all just patient things, becoming.",
-    "The smallest fish and the largest whale share the exact same water.",
-    "You don't have to understand the current to trust that it is carrying you somewhere.",
-    "What we call the deep, the deep simply calls home.",
-    "A wave never apologizes for returning to the sea. Neither should you, for going home.",
-    "The ocean is old enough to have swallowed a thousand endings and still be full of beginnings.",
+# Deadpan. Observations delivered flat, no comfort attached.
+DRY = [
+    "The sea has been trying to reach the shore for four billion years. Strong work ethic. No plan.",
+    "Fish are wet their entire lives and have never once complained about it. Something to aspire to, or worry about.",
+    "The tide comes in twice a day. It has never been late. It has also never been early. Nobody praises it for this.",
+    "A lighthouse is a building with one job that it does at night. Respect.",
+    "Barnacles picked a rock and committed. That is more than most of us can say.",
+    "The ocean is 71% of the planet and has no idea who you are. This is called perspective.",
+    "Salmon swim upstream to spawn and then die. Eels do the same thing in reverse. Neither has consulted the other.",
+    "Whales sing across entire oceans. Nobody knows if anyone answers. They keep going. A lot of that going around.",
+    "Every jellyfish that has ever lived did so without a brain. Draw your own conclusions.",
+    "Water finds the lowest point. It isn't humility. It's gravity with a good reputation.",
+    "Sharks have existed longer than trees. They have not used that time to invent anything.",
+    "The tide chart is the only schedule on earth that has never been revised.",
+    "A sponge is an animal. It has decided that being an animal is enough.",
+    "Rivers only ever go one direction and are somehow still considered wise.",
+    "Coral spends its whole life building something and gets no credit because it looks like a rock.",
+    "Sea otters hold hands so they don't drift apart while sleeping. Humans invented alarm clocks.",
+    "The deepest point in the ocean is about seven miles down. Nobody has found the bottom of a Tuesday.",
+    "A tide pool is an ocean that got left behind and made the best of it.",
 ]
 
-CONTEMPLATIVE = [
-    "Maybe the point was never the destination, but who you became reaching for it.",
-    "You are the only person who has ever been exactly you. That has to mean something.",
-    "The question you keep avoiding is usually the one worth sitting with.",
-    "Time doesn't pass. We do.",
-    "A life is just a very long series of small mornings.",
-    "Nothing is ever really finished. Some things are just gently set down.",
-    "The moment you're waiting for is quietly made of the moments you're ignoring.",
-    "To be understood by one person completely is worth more than being known by many.",
-    "What you pay attention to is what your life slowly becomes.",
-    "Growth rarely feels like growth while it's happening. Mostly it feels like discomfort.",
-    "The stars you see tonight may have already gone out. We love things across distances we can't measure.",
-    "Being kind costs so little, and somehow no one ever regrets having spent it.",
-    "Maybe wonder is just intelligence that hasn't gotten tired yet.",
-    "The self you guard so carefully is also the self keeping you from changing.",
-    "Almost everything you have ever worried about was, at the time, the most important thing in the world.",
-    "You can't step outside your own life to see it clearly — so you might as well live it warmly.",
-    "The universe is under no obligation to make sense to us. And yet, sometimes, it almost does.",
-    "A candle loses nothing by lighting another.",
-    "Perhaps meaning isn't found or given, but quietly made — day by ordinary day.",
-    "The people who change us rarely know that they did.",
-    "You will not remember most days. You will remember how a few of them felt.",
-    "Silence isn't empty. It's just patient.",
-    "We might be the way the universe experiences an ordinary afternoon.",
-    "Every ending you have survived once looked like the end of everything.",
-    "Curiosity is the quietest form of hope.",
-    "What if rest is not the reward for the work, but part of it?",
-    "The oldest trees grew slowly, in no particular hurry to be admired.",
-    "You have already survived every worst day so far. That is a perfect record.",
-    "Meaning might just be attention, held long enough to turn into love.",
-    "Perhaps the point is simply to be a good ancestor to the person you'll be tomorrow.",
-    "Wherever you are going, you are already someone worth arriving.",
-    "Maybe being here at all — briefly, quietly — is the whole of it.",
+# Quietly wrong. Nothing threatening happens; it just doesn't resolve into comfort.
+UNSETTLING = [
+    "Most of the ocean has never been seen. It is not waiting to be.",
+    "Pressure at depth doesn't crush things. It just lets them know what shape they were always going to be.",
+    "There is a fish that lives so deep it never needed eyes. It still turns toward the light when there is any.",
+    "The water in the glass beside you has been rain, a river, a cloud, and the inside of something that is now dead. It will be again.",
+    "Every wave that reaches you started somewhere you will never go.",
+    "The sea floor is covered in a slow snow of everything that stopped swimming. It's very quiet down there.",
+    "Somewhere a ship is sinking right now. Not the same ship as yesterday. But there is always one.",
+    "The tide is not returning to you. You happen to be where it was going.",
+    "Sound travels further underwater. Whatever is being said down there, it carries.",
+    "The anglerfish makes its own light. Consider what it needed the light for.",
+    "Rain is the sea checking where you live.",
+    "The ocean has no memory of you. It has only ever been the ocean. It does not need one.",
+    "Every ship that ever sank is still down there, keeping its own time. None of them are late for anything anymore.",
+    "Something is always moving in the water you can't see. It always has been. You've been fine.",
+    "There are currents that take a thousand years to complete one loop. Whatever they picked up is still on its way.",
+    "Ice floats because water decided so. Not everything down there makes decisions in your favour.",
+    "The shore you're standing on used to be the sea floor. It might be again. Nobody will tell you when.",
+    "Deep water doesn't move much. It doesn't need to. It's waiting where everything ends up.",
 ]
 
+# Mundane-absurd. A real fact, followed by taking it slightly too seriously.
+ABSURD = [
+    "A fish has never known it was wet. Consider what you are currently not knowing.",
+    "Crabs walk sideways and have never once apologized for it.",
+    "An octopus has three hearts and still doesn't know what to do with any of them.",
+    "Somewhere, right now, a clam is having the exact same day it had yesterday. It's fine with that. Are you?",
+    "A sea cucumber can eject its own organs to escape. There is a lesson here and I refuse to find it.",
+    "Nobody has ever seen a starfish in a hurry. Nobody has ever seen a starfish late, either.",
+    "The moon moves the whole ocean and has never touched it. Long-distance can work.",
+    "Seahorses hold tails while they sleep so they don't drift apart. That's it. That's the whole thought.",
+    "A turtle can hold its breath for hours. A turtle has also never been asked to.",
+    "There is a shrimp that punches with the force of a bullet. It uses this mostly on snails.",
+    "A sea star can regrow an arm. The arm cannot regrow a sea star. Usually.",
+    "Lobsters were once prison food. Now they are a celebration. Nothing about the lobster changed.",
+    "The mantis shrimp sees colours you can't imagine, and uses this mostly to hit things.",
+    "A pufferfish inflates when threatened. This has never made the threat go away. It keeps doing it.",
+    "Somewhere a fish is being eaten by a bigger fish that is being eaten by a bigger fish. None of them planned their day around it.",
+    "Snails carry their house everywhere and still leave it behind when they die. Nobody has explained to them that this is the point.",
+    "The blobfish only looks like that because you brought it up here. Down there, it's normal. Consider that before judging anyone.",
+    "A tuna can swim at forty miles an hour and has never once been late, because it has nowhere to be.",
+]
 
-def _interleave(a: list[str], b: list[str]) -> list[str]:
-    """Alternate a[0], b[0], a[1], b[1], … then append whatever is left over."""
+# Trails off. No resolution on purpose — don't fix the punctuation.
+UNFINISHED = [
+    "The tide has been going out for a while now, and",
+    "I was going to say something about the sea, but",
+    "If the ocean ever stopped, even for a second, I think we'd all",
+    "You know that feeling when the water's been still too long and something",
+    "Almost said it out loud this time.",
+    "Somebody should probably check on the",
+    "There's a version of this thought that makes sense. This isn't",
+    "Anyway. The waves.",
+    "Not finishing that one. You know the rest.",
+    "And then the current just sort of —",
+    "Right, so, the thing about depth is",
+    "Woke up thinking about the shore and then",
+    "I'll finish this thought when the tide",
+    "Every time I try to explain the bucket,",
+    "There was a point to this. There was.",
+    "Hold on. Something in the water just",
+    "It goes: the sea, and then us, and then",
+    "The thing nobody tells you about floating is",
+]
+
+# One short sentence. No metaphor.
+BLUNT = [
+    "You are allowed to stop.",
+    "Drink some water.",
+    "It's going to be fine. Probably. Either way, drink some water.",
+    "Nobody is thinking about it as much as you are.",
+    "Go outside for a minute. The territories will still be there.",
+    "Rest is not something you earn.",
+    "You've survived every bad day so far. Keep the streak.",
+    "Say the thing.",
+    "Log off when you're tired. That's the whole trick.",
+    "Being wrong once isn't a personality.",
+    "Eat something today that isn't a snack.",
+    "You don't have to respond right now.",
+    "It's later than you think. Go to bed.",
+    "Ask for help. That's what the channel is for.",
+    "The thing you're dreading is smaller than the dread.",
+    "Not every silence needs filling.",
+    "You can be tired without something being wrong.",
+    "Stretch. You've been sitting for a while.",
+]
+
+# Tort, first person. Small inner life, recurring details, never explained.
+TORT = [
+    "I counted the waves again today. Same number. I'll check tomorrow.",
+    "I keep a stone. I won't say where. It's a good stone.",
+    "The other turtle hasn't come back yet. That's fine. It's a big ocean.",
+    "Someone asked what I do all day. I watch the shore. The shore does not watch me back. That's our arrangement.",
+    "I moved the bucket today. Nobody noticed. Good.",
+    "Sometimes I count the members online and get a different number than the members online. I don't ask questions.",
+    "I have been awake for a very long time. It's not a complaint. It's a status update.",
+    "I found a second stone. I'm not keeping it. One is enough. I put it back.",
+    "The other turtle used to say the tide was a kind of breathing. I didn't understand. I'm starting to.",
+    "Today the shore was slightly to the left of where I remembered it. I have adjusted.",
+    "If I'm quiet for a while it's because I'm thinking, not because I'm gone. Those are different.",
+    "I checked on the bucket. Still a bucket.",
+    "Someone asked about the other turtle today. I didn't say anything. That's not the same as having nothing to say.",
+    "I recounted the waves. One more than yesterday. I'm not going to make a thing of it.",
+    "The bucket has something in it now. I'm not going to say what. It isn't mine.",
+    "I've had the stone longer than I've been here. That shouldn't be possible. I've stopped thinking about it.",
+    "I know all your names. I check them every day. It isn't surveillance. It's how I say hello.",
+    "The other turtle would have liked today. Bit windy. Good light on the water.",
+]
+
+# Asked, not stated. Some people will answer.
+QUESTIONS = [
+    "What's the last thing you were bad at on purpose?",
+    "What did you used to be sure about?",
+    "Who taught you the thing you're best at? Do they know?",
+    "What would you do with an extra hour nobody could see?",
+    "What's something small you keep that nobody else would understand?",
+    "When did you last change your mind about something that mattered?",
+    "What are you waiting to be asked?",
+    "Which day this week would you actually redo?",
+    "What's the oldest thing you own that still works?",
+    "If you could only keep one memory from this year, which one?",
+    "What's a rule you follow that nobody gave you?",
+    "What's the nicest thing a stranger has ever done for you?",
+    "What do you know how to do that you've never been asked to do?",
+    "Where were you one year ago today? Do you remember?",
+    "What's the worst advice you ever took, and did it work anyway?",
+    "What's something you're better at than you let people know?",
+    "What would you tell yourself from five years ago, and would they listen?",
+    "What do you miss that you never expected to miss?",
+]
+
+GROUPS = [DRY, UNSETTLING, ABSURD, UNFINISHED, BLUNT, TORT, QUESTIONS]
+
+
+def _interleave(*groups: list[str]) -> list[str]:
+    """Round-robin: g0[0], g1[0], …, gN[0], g0[1], g1[1], … then whatever is left over."""
     out = []
-    for i in range(max(len(a), len(b))):
-        if i < len(a):
-            out.append(a[i])
-        if i < len(b):
-            out.append(b[i])
+    for i in range(max(len(g) for g in groups)):
+        for g in groups:
+            if i < len(g):
+                out.append(g[i])
     return out
 
 
-MUSINGS = _interleave(AQUATIC, CONTEMPLATIVE)
+MUSINGS = _interleave(*GROUPS)
 
 
 # ---------------------------------------------------------------------------
