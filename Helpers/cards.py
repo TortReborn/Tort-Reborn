@@ -144,9 +144,9 @@ TRICKLE_CAP_HOURS = 24  # offline pearls stop accruing after a day
 # band and the last one runs forever. Reels land in the bait pocket, held
 # apart from the bank -- see bait_reels.
 DAILY_TIERS = [
-    {"from_day": 1, "reels": 2, "pearls": 50},
-    {"from_day": 4, "reels": 4, "pearls": 100},
-    {"from_day": 7, "reels": 6, "pearls": 150},
+    {"from_day": 1, "reels": 3, "pearls": 50},
+    {"from_day": 2, "reels": 4, "pearls": 75},
+    {"from_day": 3, "reels": 5, "pearls": 100},
 ]
 MAX_BAIT_REELS = max(t["reels"] for t in DAILY_TIERS)
 
