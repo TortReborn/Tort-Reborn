@@ -24,6 +24,7 @@ FONT_GAME = os.path.join(BASE, "images", "profile", "game.ttf")
 FONT_UI = os.path.join(BASE, "images", "shell_exchange", "resources",
                        "Inter-VariableFont_opsz,wght.ttf")
 ART_CACHE = os.path.join(BASE, "images", "cards")
+PORTRAIT_DIR = os.path.join(BASE, "images", "card_portraits")
 
 W, H = 340, 500
 PAD = 13
@@ -176,6 +177,13 @@ def _draw_rainbow_text(card: Image.Image, text: str, font, x: int, y: int):
 
 def get_art(slug: str, image_url: str) -> Image.Image | None:
     """Cached card art. Downloads once, then reads from disk."""
+    portrait = os.path.join(PORTRAIT_DIR, f"{slug}.png")
+    if os.path.exists(portrait):
+        try:
+            return Image.open(portrait).convert("RGBA")
+        except Exception as e:
+            log(WARN, f"Card portrait unreadable for {slug}: {e}", context="cards")
+
     os.makedirs(ART_CACHE, exist_ok=True)
     path = os.path.join(ART_CACHE, f"{slug}.png")
 
