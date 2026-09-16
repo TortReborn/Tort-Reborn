@@ -15,7 +15,7 @@ from Helpers.database import (
 )
 from Helpers.functions import getPlayerUUID, getPlayerDatav3, getPlayerProfileDatav3, urlify, determine_starting_rank, timed_get, cap_playtime_window
 from Helpers.links import LinkConflictError, assert_uuid_free
-from Helpers.member_roles import registration_role_names
+from Helpers.member_roles import apply_rank_roles, rank_change_summary, registration_role_names
 from Helpers.registration import record_registration, set_rank, upsert_identity
 from discord.ext.pages import Page as _Page
 
@@ -466,11 +466,13 @@ class PlayerShells:
 
 
 class LinkAccount(Modal):
-    def __init__(self, user, added, removed, rank, *args, **kwargs) -> None:
+    """/manage rank on a target with no discord_links row: link them first,
+    then set the rank — roles, nickname and DB, the same as the linked path
+    (TAQ-86)."""
+
+    def __init__(self, user, rank, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.user = user
-        self.added = added
-        self.removed = removed
         self.rank = rank
         self.add_item(InputText(label="Player's Name", placeholder="Player's In-Game Name without rank"))
 
@@ -507,7 +509,20 @@ class LinkAccount(Modal):
         except LinkConflictError as e:
             await interaction.followup.send(e.user_message(), ephemeral=True)
             return
-        message = f'{self.added}\n\n{self.removed}'
+
+        try:
+            added, removed = await apply_rank_roles(
+                self.user, interaction.guild.roles, self.rank,
+                reason=f'/manage rank (ran by {interaction.user.name})',
+            )
+        except (discord.Forbidden, discord.HTTPException):
+            await interaction.followup.send(
+                f':warning: Linked `{canonical_ign}` and recorded **{self.rank}**, but the rank roles could not be '
+                f'applied (missing permissions or Discord error) — run `/manage rank` again to retry.',
+                ephemeral=True,
+            )
+            return
+        message = rank_change_summary(added, removed)
         try:
             await self.user.edit(nick=f"{self.rank} {canonical_ign}")
         except (discord.Forbidden, discord.HTTPException):
