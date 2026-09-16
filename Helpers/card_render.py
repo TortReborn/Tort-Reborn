@@ -30,6 +30,7 @@ W, H = 340, 500
 PAD = 13
 ART_H = 320
 RADIUS = 16
+BORDER = 7
 
 BG_TOP = (26, 29, 36)
 BG_BOT = (18, 20, 26)
@@ -230,14 +231,13 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
         [0, 0, W - 1, H - 1], RADIUS, fill=255)
     card.paste(outer, (0, 0), outer_mask)
 
-    border = 7
-    body = _vgrad((W - border * 2, H - border * 2),
+    body = _vgrad((W - BORDER * 2, H - BORDER * 2),
                   _mix(BG_TOP, top_hue, 0.17),
                   _mix(BG_BOT, bot_hue, 0.1)).convert("RGBA")
     body_mask = Image.new("L", body.size, 0)
     ImageDraw.Draw(body_mask).rounded_rectangle(
         [0, 0, body.width - 1, body.height - 1], RADIUS - 5, fill=255)
-    card.paste(body, (border, border), body_mask)
+    card.paste(body, (BORDER, BORDER), body_mask)
 
     # art panel with the tier glow pooled behind the character
     ax0, ay0, ax1, ay1 = PAD, PAD, W - PAD, PAD + ART_H
@@ -294,6 +294,11 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
         card.paste(rank_badge, ((W - rank_badge.width) // 2, cursor_y),
                    rank_badge)
         cursor_y += rank_h
+
+    from Helpers.foil import apply_foil, foil_tier_for
+    foil_tier = foil_tier_for(stars, max_stars)
+    if foil_tier:
+        card = apply_foil(card, foil_tier, seed=f"{slug}:{stars}")
 
     return card
 
