@@ -1319,4 +1319,39 @@ def check_milestones(user_id: int, collection: dict) -> list:
             if db_award_once(user_id, f"tier-{tier}", pearls):
                 earned.append((f"every {tier} card", pearls))
 
+    for p in set_progress(collection):
+        if p["complete"] and p["set"]["pearls"]:
+            if db_award_once(user_id, f"set-{p['set']['id']}", p["set"]["pearls"]):
+                earned.append((f"set: {p['set']['name']}", p["set"]["pearls"]))
+
     return earned
+
+
+# ── Sets ─────────────────────────────────────────────────────────────────────
+# A set is complete with one copy of every card at any level, the same rule
+# as a tier. Membership is by slug, so a card can count toward several sets.
+
+def sets_of(slug: str) -> list:
+    """The sets this card belongs to, in file order."""
+    return [s for s in load_card_set()["sets"] if slug in s["slugs"]]
+
+
+def set_progress(collection: dict) -> list:
+    """One entry per set: the set, what is owned, what is missing.
+
+    Empty sets are skipped: with nothing to collect they would read as
+    complete and pay out on the first pull.
+    """
+    out = []
+    for s in load_card_set()["sets"]:
+        if not s["slugs"]:
+            continue
+        missing = [x for x in s["slugs"] if x not in collection]
+        out.append({
+            "set": s,
+            "owned": len(s["slugs"]) - len(missing),
+            "total": len(s["slugs"]),
+            "missing": missing,
+            "complete": not missing,
+        })
+    return out

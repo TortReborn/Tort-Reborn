@@ -308,11 +308,24 @@ SPREAD_SCALE = 0.5
 SPREAD_GAP = 10
 
 
-def render_spread(cards: list) -> Image.Image:
+# A card the viewer lacks: drained of colour and faded, so a set sheet reads
+# as "have / have not" at a glance without hiding what the card looks like.
+DIM_ALPHA = 0.45
+
+
+def dim_card(img: Image.Image) -> Image.Image:
+    grey = img.convert("LA").convert("RGBA")
+    alpha = grey.getchannel("A").point(lambda a: int(a * DIM_ALPHA))
+    grey.putalpha(alpha)
+    return grey
+
+
+def render_spread(cards: list, owned: set | None = None) -> Image.Image:
     """Several plain cards on one sheet, five to a row at half size.
 
     A discard can turn one card into ten, and ten attachments is both
     Discord's ceiling and a wall of embeds. One sheet reads as one event.
+    With owned given, any card whose slug is not in it is drawn dimmed.
     """
     cw, ch = int(W * SPREAD_SCALE), int(H * SPREAD_SCALE)
     cols = min(SPREAD_COLS, max(1, len(cards)))
@@ -325,18 +338,20 @@ def render_spread(cards: list) -> Image.Image:
         img = render_card(card["name"], card["tier"], card.get("slug", ""),
                           card.get("image_url", ""), badge=badge)
         img = img.resize((cw, ch), Image.LANCZOS)
+        if owned is not None and card.get("slug") not in owned:
+            img = dim_card(img)
         x = SPREAD_GAP + (i % cols) * (cw + SPREAD_GAP)
         y = SPREAD_GAP + (i // cols) * (ch + SPREAD_GAP)
         sheet.paste(img, (x, y), img)
     return sheet
 
 
-def spread_file(cards: list):
+def spread_file(cards: list, owned: set | None = None):
     """render_spread as a discord.File."""
     import discord
 
     buf = BytesIO()
-    render_spread(cards).convert("RGB").save(buf, format="PNG")
+    render_spread(cards, owned).convert("RGB").save(buf, format="PNG")
     buf.seek(0)
     return discord.File(buf, filename=f"spread_{int(time.time())}.png")
 
