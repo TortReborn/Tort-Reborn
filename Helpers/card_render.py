@@ -250,20 +250,20 @@ def render_card(name: str, tier: str, slug: str = "", image_url: str = "",
     d.text(((W - d.textlength(name, font=nf)) / 2, top), name, font=nf,
            fill=(240, 243, 248))
 
-    spaced = " ".join(tier.upper())
+    spaced = tier.upper()
     tier_y = top + name_h + gap
     d.text(((W - d.textlength(spaced, font=tier_font)) / 2, tier_y),
            spaced, font=tier_font, fill=_readable(accent))
 
     # Counting stars stops meaning anything at the ceiling, where the point is
-    # that there is nowhere left to go — so it says so.
+    # that there is nowhere left to go, so it says so.
     if stars > 0:
-        row = "M A X" if maxed else "  ".join(["\u2605"] * stars)
+        row = "MAX" if maxed else "  ".join(["\u2605"] * stars)
         d.text(((W - d.textlength(row, font=level_font)) / 2,
                 tier_y + tier_h + level_gap),
                row, font=level_font, fill=_readable(ring if ring else accent))
 
-    # Outer edge: the tier, always — except at the ceiling, where the
+    # Outer edge: the tier, always, except at the ceiling, where the
     # prismatic band takes over and the tier still reads from the label.
     if maxed:
         _prismatic_border(card, [0, 0, W - 1, H - 1], RADIUS, width=4)
