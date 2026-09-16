@@ -43,7 +43,7 @@ TIERS = {
     "fabled": {"accent": (255, 85, 85), "glow": (150, 25, 25)},
 }
 
-# 1/1 member cards are tiered by the holder's guild rank rather than by
+# Member cards are tiered by the holder's guild rank rather than by
 # rarity, so a Hydra card reads differently from a Swordfish at a glance.
 RANK_TIERS = {
     "Swordfish": {"accent": (24, 186, 241), "glow": (10, 120, 165)},
@@ -81,7 +81,7 @@ MAX_STARS_BY_TIER = {
 
 
 def max_stars_for(tier: str) -> int:
-    """A member 1/1 has no ladder; everything else has its tier's ceiling."""
+    """A member card has no ladder; everything else has its tier's ceiling."""
     return MAX_STARS_BY_TIER.get(tier, 0)
 
 
@@ -334,13 +334,13 @@ def card_file(card: dict, badge: str | None = None, stars: int = 0,
     Stars default to none: a card out of a reel is unfused, and stars count
     merges behind it rather than the card itself.
 
-    Member 1/1s carry their own badge and are framed by guild rank, so the
-    badge defaults to 1 / 1 for them unless the caller says otherwise.
+    Member cards carry their own badge and are framed by guild rank, so the
+    badge defaults to MEMBER for them unless the caller says otherwise.
     """
     import discord
 
     if card.get("member") and badge is None:
-        badge = "RETIRED" if card.get("retired") else "1 / 1"
+        badge = "RETIRED" if card.get("retired") else "MEMBER"
 
     img = render_card(card["name"], card["tier"], card.get("slug", ""),
                       card.get("image_url", ""), badge=badge, stars=stars,

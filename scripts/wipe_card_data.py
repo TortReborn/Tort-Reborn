@@ -1,6 +1,6 @@
 """Wipe every card table so the collection starts from nothing.
 
-Wallets, collections, wishes, minted 1/1s and milestone awards are all keyed
+Wallets, collections, wishes, minted member cards and milestone awards are all keyed
 by user rather than by guild, so moving the system from the executive server
 to the main one would otherwise carry the whole testing period along with it.
 This drops all of it. The card channel setting is left alone: it is per guild
