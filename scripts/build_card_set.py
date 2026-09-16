@@ -42,9 +42,17 @@ TIER_CUM = [
 
 # Hand-placed tiers, applied after the line-count ranking. A character whose
 # dialogue count undersells them can be pinned where the guild wants them.
-TIER_OVERRIDES = {
-    "lari": "fabled",
-}
+# They live in data/tier_overrides.json so a proposal from the guild can be
+# dropped in without touching code; the mythics never pass through here.
+OVERRIDES_PATH = os.path.join(BASE, "data", "tier_overrides.json")
+
+
+def load_overrides(path: str = OVERRIDES_PATH) -> dict:
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)["overrides"]
+
+
+TIER_OVERRIDES = load_overrides()
 
 UA = {"User-Agent": "TortRebornCards/1.0 (TAq guild bot)"}
 

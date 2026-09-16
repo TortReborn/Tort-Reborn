@@ -1,0 +1,93 @@
+{
+ "note": "Named groups of cards. Membership is by slug; a card may sit in any number of sets. Loaded by Helpers.cards.load_card_set() as \"sets\".",
+ "sets": [
+  {
+   "id": "raid-pantheon",
+   "name": "The Raid Pantheon",
+   "description": "The colossi at the end of Wynn's raids — the Wyrmling, Orphion and Anathema, the Colossus and the Anomaly.",
+   "slugs": [
+    "grootslang-wyrmling",
+    "orphion",
+    "anathema",
+    "the-canyon-colossus",
+    "the-nameless-anomaly"
+   ]
+  },
+  {
+   "id": "fruman-crown",
+   "name": "The Fruman Crown",
+   "description": "Her Majesty, Queen of Fruma, and the Sovereigns who rule her districts in her name.",
+   "slugs": [
+    "her-majesty",
+    "tasim",
+    "sovereign-majin",
+    "sovereign-two",
+    "sovereign-zhiraok",
+    "sovereign-gikyo",
+    "sovereign-soosu"
+   ]
+  },
+  {
+   "id": "fruman-resistance",
+   "name": "The Fruman Resistance",
+   "description": "Leaves in the Wind, The Canopy and The Steel Feather — the cells that push back against the Crown.",
+   "slugs": [
+    "syndra",
+    "mora",
+    "rex",
+    "zeph",
+    "sui",
+    "master-azael",
+    "captain-cileon",
+    "captain-fuhue",
+    "yuman",
+    "elise",
+    "dr-picard"
+   ]
+  },
+  {
+   "id": "legends-of-the-provinces",
+   "name": "Legends of the Provinces",
+   "description": "The names every adventurer learns long before Fruma: kings, heroes, villains and one very persistent Bob.",
+   "slugs": [
+    "aledar",
+    "ava",
+    "lari",
+    "seaskipper-captain",
+    "elphaba",
+    "king-draani",
+    "siegfried",
+    "bak-al",
+    "caissop",
+    "chef-hamsey",
+    "dr-legendary",
+    "ragni-s-king",
+    "bob"
+   ]
+  },
+  {
+   "id": "festival-spirits",
+   "name": "Festival Spirits",
+   "description": "The faces of the Festival of the Spirits, the Heroes and the Bonfire.",
+   "slugs": [
+    "aster",
+    "bonfire-keeper",
+    "the-traveler",
+    "the-guide",
+    "the-envoy",
+    "the-seer",
+    "festival-worker"
+   ]
+  },
+  {
+   "id": "dungeon-keepers",
+   "name": "Dungeon Keepers",
+   "description": "The bosses waiting at the bottom of Wynn's dungeons.",
+   "slugs": [
+    "antikythera-supercomputer",
+    "slykaar",
+    "captain-redbeard"
+   ]
+  }
+ ]
+}

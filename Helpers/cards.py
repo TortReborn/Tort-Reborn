@@ -23,6 +23,7 @@ from Helpers.database import DB
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CARD_SET_PATH = os.path.join(BASE, "data", "cards.json")
+CARD_SETS_PATH = os.path.join(BASE, "data", "card_sets.json")
 
 # ── Reel budget ──────────────────────────────────────────────────────────────
 WINDOW_SECONDS = 6 * 60 * 60
@@ -299,7 +300,7 @@ _CHANNEL_CACHE = {}
 # =============================================================================
 
 def load_card_set(force: bool = False) -> dict:
-    """Load data/cards.json once and index it by slug and by tier."""
+    """Load data/cards.json once and index it by slug, by tier and by set."""
     global _CARD_SET
     if _CARD_SET is not None and not force:
         return _CARD_SET
@@ -308,14 +309,23 @@ def load_card_set(force: bool = False) -> dict:
         payload = json.load(f)
 
     cards = payload["cards"]
+    by_slug = {c["slug"]: c for c in cards}
     by_tier = {}
     for c in cards:
         by_tier.setdefault(c["tier"], []).append(c)
 
+    # Named groups from data/card_sets.json. A slug the set no longer has
+    # is dropped rather than left to break a completion check later.
+    with open(CARD_SETS_PATH, encoding="utf-8") as f:
+        sets = json.load(f)["sets"]
+    for s in sets:
+        s["slugs"] = [x for x in s["slugs"] if x in by_slug]
+
     _CARD_SET = {
         "cards": cards,
-        "by_slug": {c["slug"]: c for c in cards},
+        "by_slug": by_slug,
         "by_tier": by_tier,
+        "sets": sets,
         "generated_at": payload.get("generated_at", ""),
     }
     return _CARD_SET

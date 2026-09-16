@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-12T02:01:20+00:00",
+ "generated_at": "2026-09-16T22:08:18+00:00",
  "source": "data/card_corpus.json (art-only)",
  "count": 551,
  "cards": [
@@ -25,7 +25,7 @@
    "lines": 790,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ava",
    "image_url": "https://wynncraft.wiki.gg/images/Ava.png?54d7d7",
-   "tier": "fabled"
+   "tier": "legendary"
   },
   {
    "slug": "rex",
@@ -57,7 +57,7 @@
    "lines": 385,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Aster",
    "image_url": "https://wynncraft.wiki.gg/images/Aster.png?682f3c",
-   "tier": "fabled"
+   "tier": "legendary"
   },
   {
    "slug": "aledar",
@@ -73,7 +73,7 @@
    "lines": 369,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Bonfire_Keeper",
    "image_url": "https://wynncraft.wiki.gg/images/BonfireKeeper%28BattlefortheBonfire%29.png?3c2cbe",
-   "tier": "fabled"
+   "tier": "legendary"
   },
   {
    "slug": "the-traveler",
@@ -81,7 +81,7 @@
    "lines": 368,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Traveler",
    "image_url": "https://wynncraft.wiki.gg/images/TheTraveler.png?f4d766",
-   "tier": "fabled"
+   "tier": "legendary"
   },
   {
    "slug": "seaskipper-captain",
@@ -105,7 +105,7 @@
    "lines": 301,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Efena",
    "image_url": "https://wynncraft.wiki.gg/images/Efena.png?e1e4ed",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "olon",
@@ -113,7 +113,7 @@
    "lines": 287,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Olon",
    "image_url": "https://wynncraft.wiki.gg/images/Olon.png?7548f3",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "yuman",
@@ -137,7 +137,7 @@
    "lines": 249,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Dr._Picard",
    "image_url": "https://wynncraft.wiki.gg/images/Dr.Picard.png?f91eb7",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "elise",
@@ -153,7 +153,7 @@
    "lines": 211,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Death",
    "image_url": "https://wynncraft.wiki.gg/images/Death.png?650731",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "sovereign-zhiraok",
@@ -161,7 +161,7 @@
    "lines": 203,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Zhiraok",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignZhiraok.png?5a93a0",
-   "tier": "legendary"
+   "tier": "fabled"
   },
   {
    "slug": "her-majesty",
@@ -169,7 +169,7 @@
    "lines": 200,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Her_Majesty",
    "image_url": "https://wynncraft.wiki.gg/images/QueenOfFruma.png?fcfc1e",
-   "tier": "legendary"
+   "tier": "fabled"
   },
   {
    "slug": "drale",
@@ -177,7 +177,7 @@
    "lines": 196,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Drale",
    "image_url": "https://wynncraft.wiki.gg/images/Drale%28Cowfusion%29.png?318a09",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "mora",
@@ -201,7 +201,7 @@
    "lines": 171,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Fichu.png?d184a8",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "sybil",
@@ -209,7 +209,7 @@
    "lines": 157,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sybil",
    "image_url": "https://wynncraft.wiki.gg/images/Sybil%28Detlas%29.png?2c9c5d",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "kelight",
@@ -217,7 +217,7 @@
    "lines": 149,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Kelight",
    "image_url": "https://wynncraft.wiki.gg/images/Kelight.png?317768",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "axelus",
@@ -241,7 +241,7 @@
    "lines": 138,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Honip",
    "image_url": "https://wynncraft.wiki.gg/images/Honip%28Nemract%29.png?9b38f2",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "afelis",
@@ -249,7 +249,7 @@
    "lines": 136,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Afelis",
    "image_url": "https://wynncraft.wiki.gg/images/Afelis%28Ragni%29.png?739991",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "jofash-resident",
@@ -257,7 +257,7 @@
    "lines": 136,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/JofashResident.png?57c672",
-   "tier": "legendary"
+   "tier": "normal"
   },
   {
    "slug": "reynauld",
@@ -265,7 +265,7 @@
    "lines": 136,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Reynauld",
    "image_url": "https://wynncraft.wiki.gg/images/ScoutReynauld.png?fc65ba",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "ope",
@@ -273,7 +273,7 @@
    "lines": 131,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ope",
    "image_url": "https://wynncraft.wiki.gg/images/Ope.png?f0bb93",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "sovereign-majin",
@@ -281,7 +281,7 @@
    "lines": 130,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Majin",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignMajin.png?49cb7b",
-   "tier": "legendary"
+   "tier": "fabled"
   },
   {
    "slug": "zuett",
@@ -289,7 +289,7 @@
    "lines": 129,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Zuett",
    "image_url": "https://wynncraft.wiki.gg/images/Zuett.png?13546b",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "sovereign-two",
@@ -297,7 +297,7 @@
    "lines": 125,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Two",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignTwo%28Queen%27sRecruit%29.png?88f4af",
-   "tier": "legendary"
+   "tier": "fabled"
   },
   {
    "slug": "relend",
@@ -305,7 +305,7 @@
    "lines": 123,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Relend",
    "image_url": "https://wynncraft.wiki.gg/images/Relend.png?de69d2",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "santa",
@@ -329,7 +329,7 @@
    "lines": 118,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Hive_Servant.png?9fdfe1",
-   "tier": "legendary"
+   "tier": "normal"
   },
   {
    "slug": "asher",
@@ -337,7 +337,7 @@
    "lines": 114,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Asher",
    "image_url": "https://wynncraft.wiki.gg/images/Asher.png?aebea9",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "caid",
@@ -345,7 +345,7 @@
    "lines": 113,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Caid",
    "image_url": "https://wynncraft.wiki.gg/images/SailorCaid.png?17b2fb",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "nohno",
@@ -361,7 +361,7 @@
    "lines": 107,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/CorkusCitizen.png?2fb5b1",
-   "tier": "legendary"
+   "tier": "normal"
   },
   {
    "slug": "demma",
@@ -369,7 +369,7 @@
    "lines": 107,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Demma.png?f03c61",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "receptionist",
@@ -377,7 +377,7 @@
    "lines": 103,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Receptionist.png?16646e",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "king-draani",
@@ -385,7 +385,7 @@
    "lines": 102,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/King_Draani",
    "image_url": "https://wynncraft.wiki.gg/images/KingDraani.png?6c09fa",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "jaspur",
@@ -393,7 +393,7 @@
    "lines": 102,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Jaspur",
    "image_url": "https://wynncraft.wiki.gg/images/Jaspur.png?e9f099",
-   "tier": "legendary"
+   "tier": "unique"
   },
   {
    "slug": "gale",
@@ -401,7 +401,7 @@
    "lines": 101,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Gale",
    "image_url": "https://wynncraft.wiki.gg/images/SpiritofGale.png?bea6ba",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "korzim",
@@ -409,7 +409,7 @@
    "lines": 98,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Korzim",
    "image_url": "https://wynncraft.wiki.gg/images/Korzim.png?dec656",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "enzan",
@@ -425,7 +425,7 @@
    "lines": 93,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Orja",
    "image_url": "https://wynncraft.wiki.gg/images/Orja.png?c72a96",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "elphaba",
@@ -433,7 +433,7 @@
    "lines": 92,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Elphaba",
    "image_url": "https://wynncraft.wiki.gg/images/Elphaba%28AJourneyBeyond%29.png?50cbf5",
-   "tier": "legendary"
+   "tier": "rare"
   },
   {
    "slug": "llevigar-archivist",
@@ -441,7 +441,7 @@
    "lines": 90,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Llevigar_Archivist",
    "image_url": "https://wynncraft.wiki.gg/images/LlevigarArchivist.png?1904c1",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "caissop",
@@ -473,7 +473,7 @@
    "lines": 87,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Dr._Legendary",
    "image_url": "https://wynncraft.wiki.gg/images/DrLegendary.png?17e606",
-   "tier": "rare"
+   "tier": "legendary"
   },
   {
    "slug": "sovereign-soosu",
@@ -481,7 +481,7 @@
    "lines": 86,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Soosu",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignSoosu.png?1633cb",
-   "tier": "rare"
+   "tier": "fabled"
   },
   {
    "slug": "dogun",
@@ -489,7 +489,7 @@
    "lines": 86,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Dogun.png?1893be",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "korun",
@@ -513,7 +513,7 @@
    "lines": 85,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Mask_Salesman",
    "image_url": "https://wynncraft.wiki.gg/images/MaskSalesman.png?568a17",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "nick",
@@ -545,7 +545,7 @@
    "lines": 83,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ragni%27s_King",
    "image_url": "https://wynncraft.wiki.gg/images/Ragni%27sKing.png?278ac2",
-   "tier": "rare"
+   "tier": "legendary"
   },
   {
    "slug": "admiral-aegis",
@@ -561,7 +561,7 @@
    "lines": 82,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Angie",
    "image_url": "https://wynncraft.wiki.gg/images/Angie%28AuburnForest%29.png?33c4bd",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "captain-fuhue",
@@ -577,7 +577,7 @@
    "lines": 81,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Worker.png?541252",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "festival-worker",
@@ -585,7 +585,7 @@
    "lines": 81,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Festival_Worker",
    "image_url": "https://wynncraft.wiki.gg/images/FestivalWorker%28Performances%29.png?694cfa",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "garvan",
@@ -633,7 +633,7 @@
    "lines": 75,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Mastro",
    "image_url": "https://wynncraft.wiki.gg/images/Mastro.png?f3464a",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "linton",
@@ -673,7 +673,7 @@
    "lines": 71,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Garull",
    "image_url": "https://wynncraft.wiki.gg/images/Garull.png?85ee6c",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "orikal",
@@ -697,7 +697,7 @@
    "lines": 70,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/FestivalOrganizer.png?1d94a7",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "juggler",
@@ -705,7 +705,7 @@
    "lines": 69,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Juggler",
    "image_url": "https://wynncraft.wiki.gg/images/Juggler.png?b9518b",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "elder-birch",
@@ -721,7 +721,7 @@
    "lines": 68,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Farmer_Cevalus",
    "image_url": "https://wynncraft.wiki.gg/images/FarmerCevalus.png?d52139",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "gardener",
@@ -729,7 +729,7 @@
    "lines": 67,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Gardener",
    "image_url": "https://wynncraft.wiki.gg/images/Gardener.png?6098aa",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "detlas-soldier",
@@ -737,7 +737,7 @@
    "lines": 66,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Detlas_Soldier.png?961519",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "junes",
@@ -745,7 +745,7 @@
    "lines": 66,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Junes",
    "image_url": "https://wynncraft.wiki.gg/images/Junes.png?704a91",
-   "tier": "rare"
+   "tier": "legendary"
   },
   {
    "slug": "sayleros",
@@ -761,7 +761,7 @@
    "lines": 61,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Manager_Nasea",
    "image_url": "https://wynncraft.wiki.gg/images/ManagerNasea.png?197e72",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "dullahan",
@@ -809,7 +809,7 @@
    "lines": 58,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Lutho_Citizen",
    "image_url": "https://wynncraft.wiki.gg/images/LuthoCitizen.png?892870",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "festival-goer",
@@ -825,7 +825,7 @@
    "lines": 58,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ildan",
    "image_url": "https://wynncraft.wiki.gg/images/Ildan.png?14f380",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "souvenir-t-shirt-merchant",
@@ -849,7 +849,7 @@
    "lines": 57,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/SilverbullWorker%281%29.png?6812d3",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "captain-ackbar",
@@ -961,7 +961,7 @@
    "lines": 53,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/The_Cook",
    "image_url": "https://wynncraft.wiki.gg/images/TheCook.png?9d1d43",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "svin",
@@ -977,7 +977,7 @@
    "lines": 53,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Thomas",
    "image_url": "https://wynncraft.wiki.gg/images/Thomas.png?dd6648",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "therck",
@@ -985,7 +985,7 @@
    "lines": 52,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Therck",
    "image_url": "https://wynncraft.wiki.gg/images/Therck.png?359a98",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "tolem",
@@ -1009,7 +1009,7 @@
    "lines": 50,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Soldier",
    "image_url": "https://wynncraft.wiki.gg/images/Regular_Soldier.png?3cb51c",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "captain-cileon",
@@ -1049,7 +1049,7 @@
    "lines": 50,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Qira%2C_Mistress_of_the_Hive",
    "image_url": "https://wynncraft.wiki.gg/images/Qira%2CMistressoftheHive%28Phase1%29.png?28d3e1",
-   "tier": "rare"
+   "tier": "legendary"
   },
   {
    "slug": "fia",
@@ -1081,7 +1081,7 @@
    "lines": 47,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Amber.png?ebabf8",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "gawrick",
@@ -1129,7 +1129,7 @@
    "lines": 44,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Rusty_Bartender",
    "image_url": "https://wynncraft.wiki.gg/images/RustyBartender.png?a802d9",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "sensei-miyagi",
@@ -1161,7 +1161,7 @@
    "lines": 44,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Lighthouse_Keeper",
    "image_url": "https://wynncraft.wiki.gg/images/LighthouseKeeper.png?bbd115",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "the-hoarder",
@@ -1217,7 +1217,7 @@
    "lines": 42,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Island_Worker",
    "image_url": "https://wynncraft.wiki.gg/images/IslandWorker%28NPC%29.png?185cb5",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "llevigar-citizen",
@@ -1257,7 +1257,7 @@
    "lines": 41,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Jitak",
    "image_url": "https://wynncraft.wiki.gg/images/Jitak.png?6baf1c",
-   "tier": "rare"
+   "tier": "unique"
   },
   {
    "slug": "corkus-jeweler",
@@ -1273,7 +1273,7 @@
    "lines": 40,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sovereign_Gikyo",
    "image_url": "https://wynncraft.wiki.gg/images/SovereignGikyo.png?1052e0",
-   "tier": "rare"
+   "tier": "fabled"
   },
   {
    "slug": "gert-guard",
@@ -1281,7 +1281,7 @@
    "lines": 40,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/GertGuard.png?b7d53c",
-   "tier": "rare"
+   "tier": "normal"
   },
   {
    "slug": "yavlis",
@@ -1545,7 +1545,7 @@
    "lines": 33,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Customs_Clerk",
    "image_url": "https://wynncraft.wiki.gg/images/CustomsClerk.png?9791e4",
-   "tier": "unique"
+   "tier": "normal"
   },
   {
    "slug": "frank",
@@ -1873,7 +1873,7 @@
    "lines": 27,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Silverbull_Rank_Expert",
    "image_url": "https://wynncraft.wiki.gg/images/SilverbullRankExpert.png?5a693f",
-   "tier": "unique"
+   "tier": "normal"
   },
   {
    "slug": "corkus-delegate",
@@ -2161,7 +2161,7 @@
    "lines": 22,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Slykaar",
    "image_url": "https://wynncraft.wiki.gg/images/Slykaar%28Phase1%29.png?623693",
-   "tier": "unique"
+   "tier": "rare"
   },
   {
    "slug": "private",
@@ -2385,7 +2385,7 @@
    "lines": 20,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Karoc_Miner",
    "image_url": "https://wynncraft.wiki.gg/images/KarocMiner.png?a771e1",
-   "tier": "unique"
+   "tier": "normal"
   },
   {
    "slug": "dobile",
@@ -2441,7 +2441,7 @@
    "lines": 20,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Weaponsmith.png?433f91",
-   "tier": "unique"
+   "tier": "normal"
   },
   {
    "slug": "niren",
@@ -2457,7 +2457,7 @@
    "lines": 19,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Child.png?89a5f8",
-   "tier": "unique"
+   "tier": "normal"
   },
   {
    "slug": "tarod",
@@ -2657,7 +2657,7 @@
    "lines": 17,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ankou",
    "image_url": "https://wynncraft.wiki.gg/images/Ankou.png?24dcbd",
-   "tier": "unique"
+   "tier": "legendary"
   },
   {
    "slug": "kansard",
@@ -2801,7 +2801,7 @@
    "lines": 16,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "traitor-amadel",
@@ -2809,7 +2809,7 @@
    "lines": 16,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a",
-   "tier": "normal"
+   "tier": "rare"
   },
   {
    "slug": "avos-chief",
@@ -2817,7 +2817,7 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Avos_Chief",
    "image_url": "https://wynncraft.wiki.gg/images/AvosChief.png?5d464c",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "leucsaa",
@@ -2849,7 +2849,7 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Ceyquin",
    "image_url": "https://wynncraft.wiki.gg/images/Ceyquin.png?2a3aff",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "winie",
@@ -2889,7 +2889,7 @@
    "lines": 15,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Zhight",
    "image_url": "https://wynncraft.wiki.gg/images/Zhight.png?7796f4",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "achper",
@@ -2897,7 +2897,7 @@
    "lines": 14,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Achper",
    "image_url": "https://wynncraft.wiki.gg/images/Achper.png?3696f4",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "yunelsu",
@@ -3009,7 +3009,7 @@
    "lines": 14,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Marston",
    "image_url": "https://wynncraft.wiki.gg/images/Marston.png?dee48e",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "narder",
@@ -3041,7 +3041,7 @@
    "lines": 14,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Vade",
    "image_url": "https://wynncraft.wiki.gg/images/ExcavatorVade.png?6977b6",
-   "tier": "normal"
+   "tier": "rare"
   },
   {
    "slug": "legolus",
@@ -3097,7 +3097,7 @@
    "lines": 13,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/MysteriousLeader.png?47de73",
-   "tier": "normal"
+   "tier": "rare"
   },
   {
    "slug": "adigard",
@@ -3105,7 +3105,7 @@
    "lines": 13,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Adigard",
    "image_url": "https://wynncraft.wiki.gg/images/Adigard.png?5f87fe",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "lazing-dogun",
@@ -3665,7 +3665,7 @@
    "lines": 10,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Sergeant_Klafson",
    "image_url": "https://wynncraft.wiki.gg/images/SergeantKlafson.png?6bb55c",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "dejected-identifier",
@@ -3953,7 +3953,7 @@
    "lines": 9,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/PocloWabblebuffofGelibord.png?35268d",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "mayor-eoric",
@@ -3961,7 +3961,7 @@
    "lines": 9,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Mayor_Eoric",
    "image_url": "https://wynncraft.wiki.gg/images/Mayor_Eoric.png?ad23e4",
-   "tier": "normal"
+   "tier": "unique"
   },
   {
    "slug": "rynend",
@@ -4273,7 +4273,7 @@
    "lines": 8,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Bob",
    "image_url": "https://wynncraft.wiki.gg/images/Bob.png?230166",
-   "tier": "normal"
+   "tier": "fabled"
   },
   {
    "slug": "grandmaster-shaman",
@@ -4361,7 +4361,7 @@
    "lines": 2,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Redbeard",
    "image_url": "https://wynncraft.wiki.gg/images/CaptainRedbeard.png?1b7235",
-   "tier": "normal"
+   "tier": "rare"
   },
   {
    "slug": "orphion",
