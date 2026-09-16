@@ -1,6 +1,6 @@
 {
  "note": "The raid and world bosses. Hand-curated rather than mined: they are bosses, not speaking characters, so a dialogue line count says nothing useful about them. Merged into the playable set by scripts/build_card_set.py.",
- "tier": "fabled",
+ "tier": "mythic",
  "cards": [
   {
    "slug": "orphion",

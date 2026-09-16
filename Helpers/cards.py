@@ -30,30 +30,34 @@ REELS_PER_WINDOW = 3
 
 # ── Drop odds ────────────────────────────────────────────────────────────────
 # Worked backwards from what a month should feel like at 12 reels a day
-# (84 a week, 360 a month): an epic about weekly, a legendary about monthly,
+# (84 a week, 360 a month): a legendary about weekly, a fabled about monthly,
 # and a 1-in-4 chance of a member card somewhere in those thirty days.
+#
+# Member cards roll independently of the six tiers below, not sharing their pool.
+MEMBER_CHANCE = 0.08
+
+# Wynncraft's own rarity names, one rank longer than theirs (extra rung between Rare and Legendary).
 TIER_WEIGHTS = {
-    "common": 43.61,
-    "uncommon": 32.82,
+    "normal": 43.61,
+    "unique": 32.82,
     "rare": 21.88,
-    "epic": 1.19,
-    "legendary": 0.28,
-    "fabled": 0.14,     # half a legendary's chance: the five raid bosses
-    "member": 0.08,
+    "legendary": 1.19,
+    "fabled": 0.28,
+    "mythic": 0.14,     # half a fabled's chance: the five raid bosses
 }
 
-TIER_ORDER = ["member", "fabled", "legendary", "epic", "rare", "uncommon",
-              "common"]
-CARD_TIERS = ["fabled", "legendary", "epic", "rare", "uncommon", "common"]
+TIER_ORDER = ["member", "mythic", "fabled", "legendary", "rare", "unique",
+              "normal"]
+CARD_TIERS = ["mythic", "fabled", "legendary", "rare", "unique", "normal"]
 
 TIER_COLORS = {
-    "common": 0x9CA3AF,
-    "uncommon": 0x34D399,
-    "rare": 0x60A5FA,
-    "epic": 0xC084FC,
-    "legendary": 0xFBBF24,
+    "normal": 0xFFFFFF,
+    "unique": 0xFFFF55,
+    "rare": 0xFF55FF,
+    "legendary": 0x55FFFF,
     "fabled": 0xFF5555,
-    "member": 0xF2549A,
+    "mythic": 0xAA00AA,
+    "member": 0xD52B80,
 }
 
 # ── Pearls ───────────────────────────────────────────────────────────────────
@@ -62,12 +66,12 @@ TIER_COLORS = {
 # this averages roughly 460 pearls from pulls plus 150 from the daily, which
 # paces the tank ladder at about 3 days for a Reef and six months to an Abyss.
 PEARLS_PER_PULL = {
-    "common": 10,
-    "uncommon": 25,
+    "normal": 10,
+    "unique": 25,
     "rare": 60,
-    "epic": 500,
-    "legendary": 2500,
-    "fabled": 4000,
+    "legendary": 500,
+    "fabled": 2500,
+    "mythic": 4000,
     "member": 5000,
 }
 
@@ -86,40 +90,40 @@ def pull_value(card: dict) -> int:
 # Stars count fusions, so an unfused card is 0★ and one merge makes it 1★.
 FUSION_COPIES_PER_STEP = 3
 FUSION_PEARLS = {1: 100, 2: 300, 3: 900, 4: 2700}
-FUSION_TIER_MULT = {"fabled": 2.0}     # a fabled merge costs double
+FUSION_TIER_MULT = {"mythic": 2.0}     # a mythic merge costs double
 MAX_STARS = 4
 
 # Each tier stops at its own ceiling, because three-of-a-kind compounds fast
 # and the rare tiers simply do not drop often enough to feed it. Copies behind
-# a maxed card: 81 for the common half of the set, 9 for an epic, 3 for a
-# legendary. Every ceiling is meant to be reachable, and every one looks the
+# a maxed card: 81 for the normal half of the set, 9 for a legendary, 3 for a
+# fabled. Every ceiling is meant to be reachable, and every one looks the
 # same when you get there.
 TIER_MAX_STARS = {
-    "common": 4, "uncommon": 4, "rare": 4, "epic": 2,
-    "legendary": 1, "fabled": 1,
+    "normal": 4, "unique": 4, "rare": 4, "legendary": 2,
+    "fabled": 1, "mythic": 1,
 }
 
 # ── Discard ──────────────────────────────────────────────────────────────────
 # A plain copy goes back and the tier below rolls in its place, so the fourth
-# legendary that can never fuse anywhere still does something. The counts sit
-# just under the drop weights at the top (a legendary drops 2x as often as a
-# fabled, an epic 4.25x a legendary, a rare 18x an epic) so reeling stays the
-# main way in, and just over them at the bottom, where dupes pile up and the
-# point is a shot at something new. Commons have nowhere to go.
+# fabled that can never fuse anywhere still does something. The counts sit
+# just under the drop weights at the top (a fabled drops 2x as often as a
+# mythic, a legendary 4.25x a fabled, a rare 18x a legendary) so reeling stays
+# the main way in, and just over them at the bottom, where dupes pile up and
+# the point is a shot at something new. Normals have nowhere to go.
 #
 # Outputs pay no pearls: every card pays once, when it is reeled in, and a
 # chain of discards paying at every step would print them. Wishes apply, the
 # same way they do to a reel. Only unfused copies can be discarded, and never
 # a member card.
 DISCARD_YIELD = {
-    "fabled": ("legendary", 2),
-    "legendary": ("epic", 4),
-    "epic": ("rare", 10),
-    "rare": ("uncommon", 2),
-    "uncommon": ("common", 2),
+    "mythic": ("fabled", 2),
+    "fabled": ("legendary", 4),
+    "legendary": ("rare", 10),
+    "rare": ("unique", 2),
+    "unique": ("normal", 2),
 }
 # Losing one of these to a mis-click is a month of pulls, so they confirm.
-DISCARD_CONFIRM_TIERS = {"fabled", "legendary"}
+DISCARD_CONFIRM_TIERS = {"mythic", "fabled"}
 
 # ── Tank tiers ───────────────────────────────────────────────────────────────
 # Upgrading raises how many reels you can bank, not how many you earn, so the
@@ -140,9 +144,9 @@ TRICKLE_CAP_HOURS = 24  # offline pearls stop accruing after a day
 # band and the last one runs forever. Reels land in the bait pocket, held
 # apart from the bank -- see bait_reels.
 DAILY_TIERS = [
-    {"from_day": 1, "reels": 2, "pearls": 50},
-    {"from_day": 4, "reels": 4, "pearls": 100},
-    {"from_day": 7, "reels": 6, "pearls": 150},
+    {"from_day": 1, "reels": 3, "pearls": 50},
+    {"from_day": 2, "reels": 4, "pearls": 75},
+    {"from_day": 3, "reels": 5, "pearls": 100},
 ]
 MAX_BAIT_REELS = max(t["reels"] for t in DAILY_TIERS)
 
@@ -175,8 +179,8 @@ VISAGE_URL = "https://visage.surgeplay.com/bust/500/{uuid}"
 # ── Milestones ───────────────────────────────────────────────────────────────
 UNIQUE_MILESTONES = {25: 250, 50: 600, 100: 1500, 200: 4000, 300: 9000}
 TIER_COMPLETE_PEARLS = {
-    "common": 3000, "uncommon": 3500, "rare": 5000, "epic": 15000,
-    "legendary": 40000, "fabled": 25000,
+    "normal": 3000, "unique": 3500, "rare": 5000, "legendary": 15000,
+    "fabled": 40000, "mythic": 25000,
 }
 
 SCHEMA = [
@@ -268,6 +272,18 @@ SCHEMA = [
         awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY ("user", award)
     );
+    """,
+    # Self-limiting: old keys stop existing after this runs once.
+    """
+    UPDATE card_awards SET award = 'tier-' || CASE substring(award from 6)
+        WHEN 'common' THEN 'normal'
+        WHEN 'uncommon' THEN 'unique'
+        WHEN 'epic' THEN 'legendary'
+        WHEN 'legendary' THEN 'fabled'
+        WHEN 'fabled' THEN 'mythic'
+        ELSE substring(award from 6) END
+    WHERE award IN ('tier-common', 'tier-uncommon', 'tier-epic',
+                    'tier-legendary', 'tier-fabled');
     """,
 ]
 
@@ -434,16 +450,15 @@ def roll_tier(rng: random.Random | None = None) -> str:
 
 
 def roll_card(wishes: set | None = None, rng: random.Random | None = None) -> dict:
-    """Pick a tier by weight, then a card inside it.
+    """Roll for a member card first, then pick a tier by weight and a card inside it.
 
     Wishes only bias the choice *within* a tier, so the rarity curve is
     identical whether or not anything is wishlisted.
     """
     r = rng or random
-    tier = roll_tier(r)
-    if tier == "member":
+    if r.random() < MEMBER_CHANCE / 100:
         return {"tier": "member"}
-    return roll_in_tier(tier, wishes, r)
+    return roll_in_tier(roll_tier(r), wishes, r)
 
 
 def roll_in_tier(tier: str, wishes: set | None = None,

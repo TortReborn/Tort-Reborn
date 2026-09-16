@@ -5,7 +5,7 @@ shared moment worth marking. The loop fires on the same 00:00 / 06:00 / 12:00
 / 18:00 UTC boundaries the reel window is derived from (epoch // 21600), so
 the post lands exactly when balances actually top up.
 
-Guilds that have not set a card channel are skipped — configuring one with
+Guilds that have not set a card channel are skipped. Configuring one with
 /tank set-channel is what opts a server in.
 
 The post mentions the reel ping role, which people give themselves with
@@ -68,12 +68,12 @@ class CardReelRefresh(commands.Cog):
                     continue
 
                 embed = discord.Embed(
-                    title="Reels refreshed",
+                    title="Reels up",
                     description=(
-                        f"Everyone is topped up by **{cardlib.REELS_PER_WINDOW}** "
-                        f"reels. Next refresh <t:{nxt}:R>."),
+                        f"+**{cardlib.REELS_PER_WINDOW}** reels\n"
+                        f"next <t:{nxt}:R>"),
                     color=0x38C9BD)
-                embed.set_footer(text="/reel to cast")
+                embed.set_footer(text="/reel")
 
                 # The mention lives in the message content, not the embed:
                 # Discord never pings from inside an embed.

@@ -18,6 +18,8 @@ from Helpers.variables import (
     discord_ranks,
 )
 
+CHANNEL_MANAGEMENT_ENABLED = True
+
 TAQ_GUILD_TAG = "TAq"
 BRIDGE_WORKER_URL = "wss://verge-raid-tracker.wavelink.workers.dev/v1/bridge/ws"
 BRIDGE_CHANNEL_NAME = "🌊｜sea-coast"
@@ -259,6 +261,8 @@ class GuildChatBridge(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def rotate_bridge_channel(self):
+        if not CHANNEL_MANAGEMENT_ENABLED:
+            return
         if not self._configured() or self.channel_id == 0:
             return
 
@@ -344,9 +348,10 @@ class GuildChatBridge(commands.Cog):
             if anchor is None:
                 return None
             channel = await anchor.clone(name=BRIDGE_CHANNEL_NAME, reason="Create guild chat bridge channel")
-        if channel.name != BRIDGE_CHANNEL_NAME:
-            await channel.edit(name=BRIDGE_CHANNEL_NAME, reason="Sync guild chat bridge channel name")
-        await self._place_bridge_channel(channel)
+        if CHANNEL_MANAGEMENT_ENABLED:
+            if channel.name != BRIDGE_CHANNEL_NAME:
+                await channel.edit(name=BRIDGE_CHANNEL_NAME, reason="Sync guild chat bridge channel name")
+            await self._place_bridge_channel(channel)
         return channel
 
     async def _place_bridge_channel(self, channel: discord.TextChannel):

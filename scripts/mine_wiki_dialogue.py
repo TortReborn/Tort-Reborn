@@ -27,8 +27,8 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(HERE, ".wiki_search_cache.json")
 
 MIN_LINES = 8
-TIER_CUM = [("legendary", 0.02), ("epic", 0.10), ("rare", 0.30),
-            ("uncommon", 0.60), ("common", 1.00)]
+TIER_CUM = [("fabled", 0.02), ("legendary", 0.10), ("rare", 0.30),
+            ("unique", 0.60), ("normal", 1.00)]
 
 # Curation carried over from the first pass, all of it verified by hand.
 DROP = {"???"}                      # a generic label, not a character
@@ -239,7 +239,7 @@ def assign_tiers(cards):
             while idx < n and cards[idx]["lines"] == lc:
                 cards[idx]["tier"] = tier
                 idx += 1
-            if idx >= limit and tier != "common":
+            if idx >= limit and tier != "normal":
                 break
 
 
