@@ -1584,7 +1584,7 @@ class Cards(commands.Cog):
             description=table,
             color=ctext.ACCENT)
         embed.add_field(
-            name=f"Expected pulls with {per_day} reels a day:",
+            name=f"Expected rates with {per_day} reels a day:",
             value=("Legendary weekly\n"
                    "Fabled monthly\n"
                    "Mythic bi-monthly\n"
