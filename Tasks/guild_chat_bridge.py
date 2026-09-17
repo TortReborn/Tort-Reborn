@@ -4,6 +4,7 @@ import re
 from collections import deque
 from dataclasses import dataclass
 from datetime import timezone
+from io import BytesIO
 
 import aiohttp
 import discord
@@ -11,6 +12,7 @@ import emoji
 from discord.ext import commands, tasks
 
 from Helpers.database import DB
+from Helpers.item_tooltip import ItemTooltipBridge
 from Helpers.logger import ERROR, INFO, WARN, log
 from Helpers.variables import (
     GUILD_CHAT_BRIDGE_TOKEN,
@@ -59,6 +61,7 @@ class GuildChatBridge(commands.Cog):
         self.ws = None
         self.socket_task = None
         self.recent_discord_messages = deque(maxlen=RECENT_DISCORD_MESSAGES)
+        self.item_bridge = ItemTooltipBridge()
         self.rotate_bridge_channel.start()
 
     def cog_unload(self):
@@ -67,6 +70,7 @@ class GuildChatBridge(commands.Cog):
             self.socket_task.cancel()
         if self.session:
             asyncio.create_task(self.session.close())
+        asyncio.create_task(self.item_bridge.close())
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -187,14 +191,25 @@ class GuildChatBridge(commands.Cog):
             log(WARN, f"Dropped Minecraft bridge message; {username} did not resolve to a linked member.", context="guild_chat_bridge")
             return
 
-        content = _discord_safe_text(message)
+        try:
+            prepared = await self.item_bridge.prepare(message)
+        except ValueError as exc:
+            log(WARN, f"Item tooltip preparation failed: {exc}", context="guild_chat_bridge")
+            prepared = None
+        for error in prepared.errors if prepared else ():
+            log(WARN, error, context="guild_chat_bridge")
+
+        content = _discord_safe_text(prepared.content if prepared else message)
         content = await _resolve_ign_mentions(content)
+        attachments = prepared.attachments if prepared else ()
 
         async def post(hook: discord.Webhook):
             await hook.send(
                 content[:2000],
                 username=poster.name,
                 avatar_url=poster.avatar_url,
+                files=[discord.File(BytesIO(attachment.png), filename=attachment.filename)
+                       for attachment in attachments],
                 allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False),
             )
 
