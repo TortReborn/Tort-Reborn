@@ -69,7 +69,7 @@ def test_set_reward_pays_once_and_only_when_complete(monkeypatch):
     partial = {"sui": {"total": 1, "levels": {0: 1}}}
     assert cardlib.check_milestones(7, partial) == []
     full_a = {"bob": {"total": 1, "levels": {0: 1}}, "sui": {"total": 1, "levels": {0: 1}}}
-    assert cardlib.check_milestones(7, full_a) == [("set: Set A", 100)]
+    assert cardlib.check_milestones(7, full_a) == [("set", "Set A", 100)]
     assert cardlib.check_milestones(7, full_a) == [], "paid once"
     assert ("7", "set-empty") not in {(str(u), a) for u, a in given}
 
