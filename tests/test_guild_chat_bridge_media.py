@@ -75,17 +75,17 @@ def test_fallback_remains_complete_for_old_clients():
     )
 
     assert _fallback_message("meet there", reply, media) == (
-        "replied to TargetIgn: [image: map.png] [sent a video] meet there"
+        "replied to TargetIgn: [image] [sent a video] meet there"
     )
 
     prepared = DiscordBridgeMessage(
-        "replied to TargetIgn: [image: map.png] [sent a video] meet there",
+        "replied to TargetIgn: [image] [sent a video] meet there",
         "meet there",
         reply,
         media,
     )
     payload = prepared.payload(LinkedBridgeMember(42, "SenderIgn", 0x123456), 99)
-    assert payload["message"] == "replied to TargetIgn: [image: map.png] [sent a video] meet there"
+    assert payload["message"] == "replied to TargetIgn: [image] [sent a video] meet there"
     assert payload["content"] == "meet there"
     assert payload["reply"] == {"username": "TargetIgn", "excerpt": "earlier message"}
     assert payload["media"][1]["kind"] == "video"
