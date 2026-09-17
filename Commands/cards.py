@@ -272,18 +272,6 @@ def _set_choices() -> list:
             for s in cardlib.load_card_set()["sets"]]
 
 
-def _expectation_lines(per_day: int) -> str:
-    """How often the rare tiers land, read off the weights so the text
-    cannot drift when the odds are tuned."""
-    lines = []
-    for tier in ("legendary", "fabled", "mythic"):
-        days = 100 / (cardlib.TIER_WEIGHTS[tier] * per_day)
-        lines.append(f"a {tier} about every {round(days)} days")
-    monthly = 1 - (1 - cardlib.MEMBER_CHANCE / 100) ** (per_day * 30)
-    lines.append(f"a limited card: {round(monthly * 100)}% chance per month")
-    return "\n".join(lines)
-
-
 async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
     """Any card in the set. Member cards are never wishable."""
     typed = (ctx.value or "").lower()
@@ -1596,8 +1584,11 @@ class Cards(commands.Cog):
             description=table,
             color=ctext.ACCENT)
         embed.add_field(
-            name=f"With {per_day} reels a day:",
-            value=_expectation_lines(per_day),
+            name=f"Expected pulls with {per_day} reels a day:",
+            value=("Legendary weekly\n"
+                   "Fabled monthly\n"
+                   "Mythic bi-monthly\n"
+                   f"{ctext.LIMITED} every 4 months"),
             inline=False)
         embed.add_field(
             name="Wishlist",
