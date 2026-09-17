@@ -357,14 +357,14 @@ class SetPickView(discord.ui.View):
             discord.SelectOption(
                 label=p["set"]["name"], value=p["set"]["id"],
                 description=f"{p['owned']}/{p['total']}"
-                            + (" · complete" if p["complete"] else ""),
+                            + (" complete" if p["complete"] else ""),
                 emoji="✅" if p["complete"] else None)
             for p in progress]
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.owner_id:
             await interaction.response.send_message(
-                "Run `/tank sets` for your own", ephemeral=True)
+                "Use `/tank sets`", ephemeral=True)
             return False
         return True
 
@@ -377,7 +377,7 @@ class SetPickView(discord.ui.View):
         except discord.HTTPException:
             pass
 
-    @discord.ui.select(placeholder="Open a set", min_values=1, max_values=1)
+    @discord.ui.select(placeholder="Open set", min_values=1, max_values=1)
     async def pick(self, select: discord.ui.Select,
                    interaction: discord.Interaction):
         if select.values[0] == LANDING:
@@ -396,12 +396,12 @@ class SetPickView(discord.ui.View):
         embed.set_image(url=f"attachment://{file.filename}")
         who = "you" if self.target.id == self.owner_id else self.target.display_name
         if p["complete"]:
-            state = f"{who} {'have' if who == 'you' else 'has'} every card"
+            state = f"{who}: complete"
         else:
             names = ", ".join(cardlib.get_card(x)["name"] for x in p["missing"])
-            state = f"{who} {'are' if who == 'you' else 'is'} missing: {names}"
+            state = f"{who}: missing {names}"
         embed.add_field(name=f"{p['owned']}/{p['total']}", value=state, inline=False)
-        embed.set_footer(text=f"complete the set: +{s['pearls']:,} pearls")
+        embed.set_footer(text=f"+{s['pearls']:,} pearls")
         await interaction.edit_original_response(
             embed=embed, file=file, attachments=[], view=self)
 
@@ -880,7 +880,7 @@ class Cards(commands.Cog):
             value=("`/tank list` tank contents\n"
                    "`/tank view` one owned card\n"
                    "`/tank profile` balance and stats\n"
-                   "`/tank sets` set progress, pearls for a full set\n"
+                   "`/tank sets` set progress\n"
                    "`/tank discard` plain dupes into lower-tier rolls\n"
                    f"{_yield_line()}"),
             inline=False)
@@ -1080,7 +1080,7 @@ class Cards(commands.Cog):
             description=f"**{done}/{len(progress)}** complete\n\n"
                         + "\n".join(_set_line(p) for p in progress),
             color=ctext.ACCENT)
-        embed.set_footer(text="pick a set below to see its cards")
+        embed.set_footer(text="pick a set")
         view = SetPickView(ctx.author.id, target, progress, set(owned), embed)
         view.message = await ctx.followup.send(embed=embed, view=view)
 
