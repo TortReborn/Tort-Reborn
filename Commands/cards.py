@@ -1631,8 +1631,8 @@ class Cards(commands.Cog):
         pct = int(cardlib.WISH_REDIRECT_CHANCE * 100)
         used = len(await asyncio.to_thread(cardlib.db_get_wishes, ctx.author.id))
         await ctx.followup.send(
-            f"Wishing for **{match['name']}**, when you obtain a "
-            f"{_tier_label(match['tier']).lower()}, there is a {pct}% chance "
+            f"Wishing for **{match['name']}**. When you obtain a "
+            f"{_tier_label(match['tier']).lower()} there is a {pct}% chance "
             f"it will pull from your wishlist directly. {used}/{limit} "
             f"{ctext.plural(limit, 'slot')} used")
 
