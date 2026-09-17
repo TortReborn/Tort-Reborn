@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 import re
-from collections import deque
+from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import timezone
 from io import BytesIO
@@ -31,11 +31,15 @@ BRIDGE_ROTATION_HOURS = 24
 BRIDGE_IDLE_MINUTES = 5
 MAX_MESSAGE_LENGTH = 4000
 RECENT_DISCORD_MESSAGES = 256
+MAX_MEDIA_ITEMS = 3
+MAX_MEDIA_URL_LENGTH = 768
+MAX_REPLY_EXCERPT_LENGTH = 160
 BRIDGE_WEBHOOK_NAME = "Tort Guild Bridge"
 WEBHOOK_NAME_FORBIDDEN = ("discord", "clyde")
 CUSTOM_EMOJI_PATTERN = re.compile(r"<a?:(\w+):\d+>")
 IGN_MENTION_PATTERN = re.compile(r"(?<![\w@])@(\w{3,16})(?!\w)")
 RANK_TAG_PATTERN = re.compile(r"^(?:" + "|".join(re.escape(rank) for rank in discord_ranks) + r")\s+")
+URL_PATTERN = re.compile(r"https://[^\s<>]+", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -51,6 +55,74 @@ class BridgePoster:
     avatar_url: str
 
 
+@dataclass(frozen=True)
+class BridgeReply:
+    username: str
+    excerpt: str
+
+    def payload(self) -> dict:
+        data = {"username": self.username}
+        if self.excerpt:
+            data["excerpt"] = self.excerpt
+        return data
+
+
+@dataclass(frozen=True)
+class BridgeMedia:
+    kind: str
+    url: str
+    label: str
+    preview_url: str = ""
+    title: str = ""
+    description: str = ""
+    provider: str = ""
+    inline: bool = False
+    spoiler: bool = False
+
+    def payload(self) -> dict:
+        data = {
+            "kind": self.kind,
+            "url": self.url,
+            "label": self.label,
+            "inline": self.inline,
+            "spoiler": self.spoiler,
+        }
+        if self.preview_url:
+            data["previewUrl"] = self.preview_url
+        if self.title:
+            data["title"] = self.title
+        if self.description:
+            data["description"] = self.description
+        if self.provider:
+            data["provider"] = self.provider
+        return data
+
+
+@dataclass(frozen=True)
+class DiscordBridgeMessage:
+    message: str
+    content: str
+    reply: BridgeReply | None
+    media: tuple[BridgeMedia, ...]
+
+    def payload(self, member: LinkedBridgeMember, message_id: int) -> dict:
+        data = {
+            "guildTag": TAQ_GUILD_TAG,
+            "username": member.ign,
+            "message": self.message,
+            "color": member.color if member.color is not None else 0xFFFFFF,
+            "discordId": str(member.discord_id),
+            "messageId": str(message_id),
+        }
+        if self.reply is not None or any(not item.inline for item in self.media):
+            data["content"] = self.content
+        if self.reply is not None:
+            data["reply"] = self.reply.payload()
+        if self.media:
+            data["media"] = [item.payload() for item in self.media]
+        return data
+
+
 class GuildChatBridge(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -61,6 +133,7 @@ class GuildChatBridge(commands.Cog):
         self.ws = None
         self.socket_task = None
         self.recent_discord_messages = deque(maxlen=RECENT_DISCORD_MESSAGES)
+        self.bridge_message_authors = OrderedDict()
         self.item_bridge = ItemTooltipBridge()
         self.rotate_bridge_channel.start()
 
@@ -103,12 +176,13 @@ class GuildChatBridge(commands.Cog):
             return
         self.recent_discord_messages.append(message.id)
 
-        text = _message_text(message)
-        if not text:
-            return
         member = await asyncio.to_thread(_linked_member, message.author.id)
         if member is None:
             return
+        prepared = await self._prepare_discord_message(message)
+        if prepared is None:
+            return
+        self._remember_bridge_author(message.id, member.ign)
         if not self.ws or self.ws.closed:
             log(WARN, "Dropped Discord bridge message; Worker socket is offline.", context="guild_chat_bridge")
             return
@@ -116,14 +190,7 @@ class GuildChatBridge(commands.Cog):
         try:
             await self.ws.send_json({
                 "type": "discord chat message",
-                "data": {
-                    "guildTag": TAQ_GUILD_TAG,
-                    "username": member.ign,
-                    "message": text,
-                    "color": member.color if member.color is not None else 0xFFFFFF,
-                    "discordId": str(member.discord_id),
-                    "messageId": str(message.id),
-                },
+                "data": prepared.payload(member, message.id),
             })
         except Exception as exc:
             log(ERROR, f"Could not relay Discord message to Worker: {exc}", context="guild_chat_bridge")
@@ -204,14 +271,17 @@ class GuildChatBridge(commands.Cog):
         attachments = prepared.attachments if prepared else ()
 
         async def post(hook: discord.Webhook):
-            await hook.send(
+            sent = await hook.send(
                 content[:2000],
                 username=poster.name,
                 avatar_url=poster.avatar_url,
                 files=[discord.File(BytesIO(attachment.png), filename=attachment.filename)
                        for attachment in attachments],
                 allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False),
+                wait=True,
             )
+            if sent is not None:
+                self._remember_bridge_author(sent.id, username)
 
         try:
             await post(webhook)
@@ -228,6 +298,60 @@ class GuildChatBridge(commands.Cog):
                 log(ERROR, f"Could not resend Minecraft bridge message: {exc}", context="guild_chat_bridge")
         except discord.HTTPException as exc:
             log(ERROR, f"Could not relay Minecraft message to Discord: {exc}", context="guild_chat_bridge")
+
+    async def _prepare_discord_message(self, message: discord.Message) -> DiscordBridgeMessage | None:
+        content = _message_text(message)
+        reply = await self._reply_context(message)
+        embeds = message.embeds
+        if content and URL_PATTERN.search(message.content) and not embeds:
+            await asyncio.sleep(0.5)
+            try:
+                embeds = (await message.channel.fetch_message(message.id)).embeds
+            except discord.HTTPException:
+                pass
+        media = _bridge_media(message.attachments, embeds)
+        fallback = _fallback_message(content, reply, media)
+        if not fallback:
+            return None
+        return DiscordBridgeMessage(fallback[:MAX_MESSAGE_LENGTH], content, reply, media)
+
+    async def _reply_context(self, message: discord.Message) -> BridgeReply | None:
+        reference = message.reference
+        if reference is None or reference.message_id is None:
+            return None
+
+        username = self.bridge_message_authors.get(reference.message_id)
+        target = reference.resolved if isinstance(reference.resolved, discord.Message) else reference.cached_message
+        if target is None:
+            try:
+                target = await message.channel.fetch_message(reference.message_id)
+            except discord.HTTPException:
+                target = None
+        if target is not None and username is None:
+            username = await self._reply_username(message.guild, target)
+        if username is None:
+            username = "unknown"
+        return BridgeReply(_clip(username, 64), _reply_excerpt(target))
+
+    async def _reply_username(self, guild: discord.Guild, target: discord.Message) -> str:
+        if target.webhook_id is None and not target.author.bot:
+            linked = await asyncio.to_thread(_linked_member, target.author.id)
+            if linked is not None:
+                return linked.ign
+
+        display_name = _strip_rank_prefix(target.author.display_name)
+        matches = [member for member in guild.members if member.display_name == target.author.display_name]
+        if len(matches) == 1:
+            linked = await asyncio.to_thread(_linked_member, matches[0].id)
+            if linked is not None:
+                return linked.ign
+        return display_name or "unknown"
+
+    def _remember_bridge_author(self, message_id: int, ign: str):
+        self.bridge_message_authors[message_id] = ign
+        self.bridge_message_authors.move_to_end(message_id)
+        while len(self.bridge_message_authors) > RECENT_DISCORD_MESSAGES:
+            self.bridge_message_authors.popitem(last=False)
 
     async def _resolve_poster(self, guild: discord.Guild, ign: str) -> BridgePoster | None:
         discord_id = await asyncio.to_thread(_linked_discord_id, ign)
@@ -494,6 +618,99 @@ def _sanitize_webhook_username(name: str) -> str:
         cleaned = re.sub(re.escape(forbidden), "*" * len(forbidden), cleaned, flags=re.IGNORECASE)
     cleaned = cleaned[:80].strip()
     return cleaned or "Player"
+
+
+def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
+    media = []
+    attachment_urls = set()
+    for attachment in attachments:
+        if len(media) >= MAX_MEDIA_ITEMS:
+            break
+        content_type = (attachment.content_type or "").lower()
+        filename = attachment.filename
+        extension = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+        if content_type.startswith("video/"):
+            kind = "video"
+        elif content_type == "image/gif" or extension == "gif":
+            kind = "gif"
+        elif content_type.startswith("image/") or extension in {"png", "jpg", "jpeg", "webp"}:
+            kind = "image"
+        else:
+            continue
+        url = _media_url(attachment.url)
+        if not url:
+            continue
+        spoiler = attachment.is_spoiler()
+        preview_url = "" if spoiler or kind == "video" else _media_url(attachment.proxy_url)
+        media.append(BridgeMedia(
+            kind=kind,
+            url=url,
+            label=_clip(filename, 96),
+            preview_url=preview_url,
+            description=_clip(attachment.description or "", 160),
+            spoiler=spoiler,
+        ))
+        attachment_urls.add(url)
+
+    for embed in embeds:
+        if len(media) >= MAX_MEDIA_ITEMS:
+            break
+        url = _media_url(embed.url)
+        if not url or url in attachment_urls or any(item.url == url for item in media):
+            continue
+        image = embed.image or embed.thumbnail
+        preview_url = _media_url(getattr(image, "proxy_url", ""))
+        provider = _clip(getattr(embed.provider, "name", "") or "", 64)
+        kind = "gif" if embed.type == "gifv" else "link"
+        media.append(BridgeMedia(
+            kind=kind,
+            url=url,
+            label=_clip(embed.title or provider or "link", 96),
+            preview_url=preview_url,
+            title=_clip(embed.title or "", 96),
+            description=_clip(embed.description or "", 160),
+            provider=provider,
+            inline=True,
+        ))
+    return tuple(media)
+
+
+def _fallback_message(content: str, reply: BridgeReply | None, media: tuple[BridgeMedia, ...]) -> str:
+    parts = []
+    if reply is not None:
+        parts.append(f"replied to {reply.username}:")
+    for item in media:
+        if item.inline:
+            continue
+        if item.kind == "video":
+            parts.append("[sent a video]")
+        elif item.kind == "gif":
+            parts.append(f"[GIF: {item.label}]")
+        else:
+            prefix = "spoiler image" if item.spoiler else "image"
+            parts.append(f"[{prefix}: {item.label}]")
+    if content:
+        parts.append(content)
+    return " ".join(parts).strip()
+
+
+def _reply_excerpt(message: discord.Message | None) -> str:
+    if message is None:
+        return ""
+    text = " ".join(_message_text(message).split())
+    if not text:
+        media = _bridge_media(message.attachments, message.embeds)
+        text = _fallback_message("", None, media)
+    return _clip(text, MAX_REPLY_EXCERPT_LENGTH)
+
+
+def _media_url(value) -> str:
+    text = str(value or "").strip()
+    return text if text.startswith("https://") and len(text) <= MAX_MEDIA_URL_LENGTH else ""
+
+
+def _clip(value: str, limit: int) -> str:
+    return value.strip()[:limit]
 
 
 def _message_text(message: discord.Message) -> str:
