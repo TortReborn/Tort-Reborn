@@ -687,8 +687,7 @@ def _fallback_message(content: str, reply: BridgeReply | None, media: tuple[Brid
         elif item.kind == "gif":
             parts.append(f"[GIF: {item.label}]")
         else:
-            prefix = "spoiler image" if item.spoiler else "image"
-            parts.append(f"[{prefix}: {item.label}]")
+            parts.append("[spoiler image]" if item.spoiler else "[image]")
     if content:
         parts.append(content)
     return " ".join(parts).strip()
