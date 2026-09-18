@@ -14,6 +14,7 @@ Color = tuple[int, int, int]
 WHITE: Color = (255, 255, 255)
 GREEN: Color = (85, 255, 85)
 RED: Color = (255, 85, 85)
+CRAFTED: Color = (0, 170, 170)
 BACKGROUND: Color = (26, 10, 46)
 TIER_COLORS: dict[str, Color] = {
     "mythic": (170, 0, 170),
@@ -116,13 +117,11 @@ def calculate_custom_scales(item: Mapping[str, Any]) -> list[Scale]:
             if isinstance(weight, bool) or not isinstance(weight, (int, float)):
                 raise ValueError(f"Invalid scale weight: {key}")
             weight = _number(weight, key)
-            if weight < 0:
-                raise ValueError(f"Negative scale weight: {key}")
             if weight == 0:
                 continue
             rate = _rate(item["rate"].get(mapping.get(key, key)), f"{name}: {key}")
-            weighted_rolls.append(rate * weight)
-            total_weights.append(weight)
+            weighted_rolls.append((100 - rate if weight < 0 else rate) * abs(weight))
+            total_weights.append(abs(weight))
         total = math.fsum(total_weights)
         if total <= 0:
             raise ValueError(f"Empty scale: {name}")
@@ -263,8 +262,79 @@ def build_lines(item: Mapping[str, Any]) -> list[Line]:
     return lines
 
 
-def render_item_tooltip(item: Mapping[str, Any]) -> bytes:
-    lines = build_lines(item)
+def build_crafted_lines(item: Mapping[str, Any]) -> list[Line]:
+    name, gear_type = item.get("itemName"), item.get("gearType")
+    if not isinstance(name, str) or not name or not isinstance(gear_type, str) or not gear_type:
+        raise ValueError("Missing crafted item name or type")
+    lines = [Line((Segment(name, CRAFTED),), 22), Line((Segment(gear_type),), 14)]
+    damage = item.get("damage")
+    defense = item.get("defense")
+    if isinstance(damage, dict):
+        dps = damage.get("dps")
+        if dps is not None:
+            lines.append(Line((Segment(f"{_compact(_number(dps, 'DPS'))} DPS"),)))
+        lines.append(Line((Segment(f"{damage['attackSpeed']} Attack Speed"),)))
+        for damage_type, minimum, maximum in damage.get("damages", []):
+            lines.append(Line((Segment(
+                f"{damage_type} Damage: {_compact(_number(minimum, damage_type))}-"
+                f"{_compact(_number(maximum, damage_type))}"
+            ),)))
+    if isinstance(defense, dict):
+        health = _number(defense.get("health"), "Health")
+        if health:
+            lines.append(Line((Segment(f"{_signed(health)} Health", stat_value_color("Health", health)),)))
+        for element, value in defense.get("defenses", []):
+            value = _number(value, element)
+            lines.append(Line((Segment(
+                f"{_signed(value)} {element} Defence", stat_value_color(f"{element} Defence", value)
+            ),)))
+    identifications = item.get("identifications")
+    if not isinstance(identifications, list):
+        raise ValueError("Invalid crafted identifications")
+    if identifications:
+        lines.append(Line(size=8))
+        mapping = stat_names()
+        for key, raw_value in identifications:
+            label = mapping.get(key, key)
+            value = _number(raw_value, label)
+            percent = label.endswith(" %")
+            display_name = label[:-2] if percent else label
+            lines.append(Line((Segment(
+                _signed(value) + ("%" if percent else ""), stat_value_color(label, value)
+            ), Segment(f" {display_name}"))))
+    requirements = item.get("requirements")
+    if not isinstance(requirements, dict):
+        raise ValueError("Invalid crafted requirements")
+    lines.append(Line(size=8))
+    lines.append(Line((Segment(f"Combat Lv. Min: {requirements['level']}"),)))
+    if requirements.get("class"):
+        lines.append(Line((Segment(f"Class Req: {requirements['class']}"),)))
+    for skill, value in requirements.get("skills", {}).items():
+        value = _number(value, skill)
+        if value:
+            lines.append(Line((Segment(f"{skill} Min: {_compact(value)}"),)))
+    durability = item.get("durability")
+    if not isinstance(durability, dict):
+        raise ValueError("Invalid crafted durability")
+    lines.append(Line((Segment(
+        f"Durability: {_compact(_number(durability['current'], 'durability'))}/"
+        f"{_compact(_number(durability['max'], 'durability'))}"
+    ),)))
+    powders = item.get("powders")
+    if isinstance(powders, dict):
+        used = len(powders.get("powders", []))
+        lines.append(Line((Segment(f"Powder Slots: {used}/{powders['slots']}"),)))
+    lines.extend((Line(size=8), Line((Segment("Crafted Item", CRAFTED),), 13)))
+    if len(lines) > 160 or any(len(line.text) > 400 for line in lines):
+        raise ValueError("Tooltip exceeds rendering limits")
+    return lines
+
+
+def _signed(value: float) -> str:
+    return ("+" if value >= 0 else "") + _compact(value)
+
+
+def _render_lines(lines: list[Line], border_color: Color) -> bytes:
     supersample = 3
     fonts = {line.size: _font(line.size * supersample) for line in lines}
     widths = [
@@ -278,8 +348,8 @@ def render_item_tooltip(item: Mapping[str, Any]) -> bytes:
     size = (width * supersample, height * supersample)
     image = Image.new("RGBA", size, (*BACKGROUND, 255))
     border = ImageDraw.Draw(image)
-    border.rectangle((3, 3, size[0] - 4, size[1] - 4), outline=(85, 0, 170), width=6)
-    border.rectangle((9, 9, size[0] - 10, size[1] - 10), outline=(40, 0, 122), width=3)
+    border.rectangle((3, 3, size[0] - 4, size[1] - 4), outline=border_color, width=6)
+    border.rectangle((9, 9, size[0] - 10, size[1] - 10), outline=tuple(channel // 2 for channel in border_color), width=3)
     layer = Image.new("RGBA", size)
     draw = ImageDraw.Draw(layer)
     y = 14 * supersample
@@ -296,3 +366,11 @@ def render_item_tooltip(item: Mapping[str, Any]) -> bytes:
     output = BytesIO()
     rendered.save(output, format="PNG")
     return output.getvalue()
+
+
+def render_item_tooltip(item: Mapping[str, Any]) -> bytes:
+    return _render_lines(build_lines(item), (85, 0, 170))
+
+
+def render_crafted_tooltip(item: Mapping[str, Any]) -> bytes:
+    return _render_lines(build_crafted_lines(item), CRAFTED)

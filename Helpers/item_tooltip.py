@@ -8,10 +8,11 @@ from urllib.parse import quote
 
 import aiohttp
 
-from Helpers.item_tooltip_render import item_from_api, render_item_tooltip
+from Helpers.artemis_item import decode_crafted_gear, item_type
+from Helpers.item_tooltip_render import item_from_api, render_crafted_tooltip, render_item_tooltip
 
 PUA_RUN = re.compile(r"[\U000F0000-\U000FFFFD\U00100000-\U0010FFFD]+")
-START = re.compile(r"[\U000F0000\U000F0002]\U000F0100")
+START = re.compile(r"[\U000F0000-\U000F0002][\U000F0100\U000F0103]")
 NAME_SUFFIX = re.compile(r'\s?"([^"\n]*)"')
 MAX_RESPONSE = 2 * 1024 * 1024
 MAX_ITEMS = 4
@@ -108,6 +109,12 @@ class ItemTooltipBridge:
     async def _render(self, code: str, name_hint: str | None) -> tuple[str, bytes]:
         if len(code) > 1024:
             raise ValueError("Item code exceeds 1024 characters")
+        if item_type(code) == 3:
+            item = decode_crafted_gear(code, name_hint)
+            png = await asyncio.to_thread(render_crafted_tooltip, item)
+            if len(png) > 8 * 1024 * 1024:
+                raise ValueError("Tooltip PNG exceeds 8 MiB")
+            return item["itemName"], png
         decoded = await self._json_request("POST", WYNNPOOL_DECODE_URL, {"item": code})
         if not isinstance(decoded, dict) or not isinstance(decoded.get("original"), dict):
             raise ValueError("Invalid Wynnpool decode response")
