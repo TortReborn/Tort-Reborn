@@ -40,6 +40,16 @@ def embed(url, *, title="", description="", provider="", embed_type="rich", prev
     )
 
 
+def sticker(name, sticker_format, sticker_id=1):
+    base = "https://media.discordapp.net" if sticker_format is bridge_module.discord.StickerFormatType.gif \
+        else "https://cdn.discordapp.com"
+    return SimpleNamespace(
+        name=name,
+        format=sticker_format,
+        url=f"{base}/stickers/{sticker_id}.{sticker_format.file_extension}",
+    )
+
+
 def test_classifies_discord_attachments_without_inlining_video():
     media = _bridge_media((
         attachment("map.png", "image/png", description="Territory map"),
@@ -52,6 +62,47 @@ def test_classifies_discord_attachments_without_inlining_video():
     assert media[1].preview_url.startswith("https://media.discordapp.net/")
     assert media[2].preview_url == ""
     assert all(not item.inline for item in media)
+
+
+def test_classifies_discord_stickers_without_changing_media_contract():
+    formats = bridge_module.discord.StickerFormatType
+    media = _bridge_media((), (), (
+        sticker("Static", formats.png, 1),
+        sticker("Animated PNG", formats.apng, 2),
+        sticker("Animated GIF", formats.gif, 3),
+    ))
+
+    assert [item.kind for item in media] == ["image", "image", "gif"]
+    assert all(item.provider == "Discord Sticker" for item in media)
+    assert all(item.preview_url == item.url for item in media)
+
+    lottie = _bridge_media((), (), (sticker("Lottie", formats.lottie, 4),))
+    assert lottie[0].kind == "link"
+    assert lottie[0].preview_url == ""
+
+
+@pytest.mark.asyncio
+async def test_prepare_accepts_sticker_only_message():
+    formats = bridge_module.discord.StickerFormatType
+    message = SimpleNamespace(
+        id=42,
+        content="",
+        attachments=(),
+        embeds=(),
+        stickers=(sticker("Wave", formats.gif),),
+        mentions=(),
+        role_mentions=(),
+        channel_mentions=(),
+        reference=None,
+    )
+    bridge = object.__new__(GuildChatBridge)
+    bridge._reply_context = AsyncMock(return_value=None)
+
+    prepared = await bridge._prepare_discord_message(message)
+
+    assert prepared.message == "[sticker]"
+    assert prepared.content == ""
+    assert prepared.media[0].kind == "gif"
 
 
 def test_spoiler_image_has_no_preview_and_link_embed_is_inline():
@@ -111,6 +162,7 @@ async def test_prepare_waits_for_signed_embed_preview(monkeypatch):
         content=source,
         attachments=(),
         embeds=(),
+        stickers=(),
         mentions=(),
         role_mentions=(),
         channel_mentions=(),
@@ -136,20 +188,22 @@ def test_fallback_remains_complete_for_old_clients():
     media = (
         BridgeMedia("image", "https://cdn.discordapp.com/image.png", "map.png"),
         BridgeMedia("video", "https://cdn.discordapp.com/video.mp4", "video.mp4"),
+        BridgeMedia("gif", "https://media.discordapp.net/stickers/1.gif", "Wave",
+                    provider="Discord Sticker"),
     )
 
     assert _fallback_message("meet there", reply, media) == (
-        "replied to TargetIgn: [image] [sent a video] meet there"
+        "replied to TargetIgn: [image] [sent a video] [sticker] meet there"
     )
 
     prepared = DiscordBridgeMessage(
-        "replied to TargetIgn: [image] [sent a video] meet there",
+        "replied to TargetIgn: [image] [sent a video] [sticker] meet there",
         "meet there",
         reply,
         media,
     )
     payload = prepared.payload(LinkedBridgeMember(42, "SenderIgn", 0x123456), 99)
-    assert payload["message"] == "replied to TargetIgn: [image] [sent a video] meet there"
+    assert payload["message"] == "replied to TargetIgn: [image] [sent a video] [sticker] meet there"
     assert payload["content"] == "meet there"
     assert payload["reply"] == {"username": "TargetIgn", "excerpt": "earlier message"}
     assert payload["media"][1]["kind"] == "video"

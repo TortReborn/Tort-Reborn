@@ -36,6 +36,7 @@ MAX_MEDIA_ITEMS = 3
 MAX_MEDIA_URL_LENGTH = 768
 MAX_REPLY_EXCERPT_LENGTH = 160
 BRIDGE_WEBHOOK_NAME = "Tort Guild Bridge"
+STICKER_PROVIDER = "Discord Sticker"
 WEBHOOK_NAME_FORBIDDEN = ("discord", "clyde")
 CUSTOM_EMOJI_PATTERN = re.compile(r"<a?:(\w+):\d+>")
 IGN_MENTION_PATTERN = re.compile(r"(?<![\w@])@(\w{3,16})(?!\w)")
@@ -314,7 +315,7 @@ class GuildChatBridge(commands.Cog):
                     embeds = (await message.channel.fetch_message(message.id)).embeds
                 except discord.HTTPException:
                     break
-        media = _bridge_media(message.attachments, embeds)
+        media = _bridge_media(message.attachments, embeds, message.stickers)
         fallback = _fallback_message(content, reply, media)
         if not fallback:
             return None
@@ -625,7 +626,7 @@ def _sanitize_webhook_username(name: str) -> str:
     return cleaned or "Player"
 
 
-def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
+def _bridge_media(attachments, embeds, stickers=()) -> tuple[BridgeMedia, ...]:
     media = []
     attachment_urls = set()
     for attachment in attachments:
@@ -656,6 +657,27 @@ def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
             spoiler=spoiler,
         ))
         attachment_urls.add(url)
+
+    for sticker in stickers:
+        if len(media) >= MAX_MEDIA_ITEMS:
+            break
+        url = _media_url(sticker.url)
+        if not url:
+            continue
+        if sticker.format is discord.StickerFormatType.gif:
+            kind = "gif"
+        elif sticker.format is discord.StickerFormatType.lottie:
+            kind = "link"
+        else:
+            kind = "image"
+        media.append(BridgeMedia(
+            kind=kind,
+            url=url,
+            label=_clip(sticker.name, 96),
+            preview_url="" if kind == "link" else url,
+            title=_clip(sticker.name, 96),
+            provider=STICKER_PROVIDER,
+        ))
 
     for embed in embeds:
         if len(media) >= MAX_MEDIA_ITEMS:
@@ -695,7 +717,9 @@ def _fallback_message(content: str, reply: BridgeReply | None, media: tuple[Brid
     for item in media:
         if item.inline:
             continue
-        if item.kind == "video":
+        if item.provider == STICKER_PROVIDER:
+            parts.append("[sticker]")
+        elif item.kind == "video":
             parts.append("[sent a video]")
         elif item.kind == "gif":
             parts.append(f"[GIF: {item.label}]")
@@ -711,7 +735,7 @@ def _reply_excerpt(message: discord.Message | None) -> str:
         return ""
     text = " ".join(_message_text(message).split())
     if not text:
-        media = _bridge_media(message.attachments, message.embeds)
+        media = _bridge_media(message.attachments, message.embeds, message.stickers)
         text = _fallback_message("", None, media)
     return _clip(text, MAX_REPLY_EXCERPT_LENGTH)
 
