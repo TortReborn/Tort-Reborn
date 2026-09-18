@@ -27,8 +27,8 @@ def attachment(filename, content_type, *, spoiler=False, description=None):
     )
 
 
-def embed(url, *, title="", description="", provider="", embed_type="rich", preview=""):
-    image = SimpleNamespace(proxy_url=preview) if preview else None
+def embed(url, *, title="", description="", provider="", embed_type="rich", preview="", image_url=""):
+    image = SimpleNamespace(url=image_url, proxy_url=preview) if preview or image_url else None
     return SimpleNamespace(
         url=url,
         title=title,
@@ -78,15 +78,28 @@ def test_pasted_gif_preserves_signed_preview_url():
         "https://media.discordapp.net/attachments/1/2/togif.gif"
         "?ex=abc&is=def&hm=123&=&width=288&height=320"
     )
+    proxy = "https://cdn.discordapp.com/attachments/1/2/togif.gif"
     media = _bridge_media((), (embed(
         "https://cdn.discordapp.com/attachments/1/2/togif.gif",
-        preview=preview,
+        image_url=preview,
+        preview=proxy,
     ),))
 
     assert media[0].kind == "gif"
     assert media[0].preview_url == preview
     assert media[0].inline is True
-    assert _embed_has_preview((embed("https://example.com/gif", preview=preview),)) is True
+    assert _embed_has_preview((embed("https://example.com/gif", image_url=preview),)) is True
+
+
+def test_embed_preview_uses_discord_proxy_for_external_image_url():
+    proxy = "https://images-ext-1.discordapp.net/external/preview.gif"
+    media = _bridge_media((), (embed(
+        "https://example.com/gif",
+        image_url="https://media.example.com/preview.gif",
+        preview=proxy,
+    ),))
+
+    assert media[0].preview_url == proxy
 
 
 @pytest.mark.asyncio

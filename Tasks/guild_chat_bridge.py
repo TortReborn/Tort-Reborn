@@ -5,6 +5,7 @@ from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import timezone
 from io import BytesIO
+from urllib.parse import urlsplit
 
 import aiohttp
 import discord
@@ -663,7 +664,7 @@ def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
         if not url or url in attachment_urls or any(item.url == url for item in media):
             continue
         image = embed.image or embed.thumbnail
-        preview_url = _media_url(getattr(image, "proxy_url", ""))
+        preview_url = _embed_preview_url(image)
         provider = _clip(getattr(embed.provider, "name", "") or "", 64)
         kind = "gif" if embed.type == "gifv" or url.lower().split("?", 1)[0].endswith(".gif") else "link"
         media.append(BridgeMedia(
@@ -682,7 +683,7 @@ def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
 def _embed_has_preview(embeds) -> bool:
     for embed in embeds:
         image = embed.image or embed.thumbnail
-        if _media_url(getattr(image, "proxy_url", "")):
+        if _embed_preview_url(image):
             return True
     return False
 
@@ -718,6 +719,23 @@ def _reply_excerpt(message: discord.Message | None) -> str:
 def _media_url(value) -> str:
     text = str(value or "").strip()
     return text if text.startswith("https://") and len(text) <= MAX_MEDIA_URL_LENGTH else ""
+
+
+def _embed_preview_url(image) -> str:
+    for attribute in ("url", "proxy_url"):
+        url = _media_url(getattr(image, attribute, ""))
+        if not url:
+            continue
+        try:
+            host = urlsplit(url).hostname
+        except ValueError:
+            continue
+        if host and (
+            host in {"cdn.discordapp.com", "media.discordapp.net"}
+            or host.endswith(".discordapp.net")
+        ):
+            return url
+    return ""
 
 
 def _clip(value: str, limit: int) -> str:
