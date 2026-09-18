@@ -6,7 +6,16 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from Helpers.item_tooltip import ItemTooltipBridge, find_item_codes
-from Helpers.item_tooltip_render import build_lines, item_from_api, render_item_tooltip
+from Helpers.artemis_item import decode_crafted_gear
+from Helpers.item_tooltip_render import (
+    build_crafted_lines,
+    build_lines,
+    calculate_custom_scales,
+    item_from_api,
+    render_crafted_tooltip,
+    render_item_tooltip,
+    stat_names,
+)
 
 
 def _item_code(tag: int) -> str:
@@ -14,6 +23,12 @@ def _item_code(tag: int) -> str:
 
 
 ITEM_SHARE_WITH_NAME = f'{_item_code(1)} "Divzer qol"'
+CRAFTED_RING = (
+    "\U000F0002\U000F0103\U000F0705\U000F0886\U000F013A\U000F0967"
+    "\U000F0005\U000F0028\U000F0148\U000F0264\U000F0300\U000F0400"
+    "\U000F0C04\U000F3E08\U000F0723\U000F2F0C\U000F0611\U000F220C"
+    "\U000F0523\U000F480A\U000F0408\U0010FFEE"
+)
 
 
 class TestFindItemCodes:
@@ -43,6 +58,12 @@ class TestFindItemCodes:
         matches = find_item_codes(text)
         assert len(matches) == 2
         assert matches[0][2] != matches[1][2]
+
+    def test_crafted_item_and_name_are_detected(self):
+        matches = find_item_codes(f'{CRAFTED_RING} "Embodiment of Scam"')
+        assert len(matches) == 1
+        assert matches[0][2] == CRAFTED_RING
+        assert matches[0][3] == "Embodiment of Scam"
 
     def test_oversized_message_rejected(self):
         with pytest.raises(ValueError):
@@ -103,6 +124,38 @@ class TestItemFromApi:
         }
         with pytest.raises(ValueError):
             item_from_api(self._decoded(identifications=degenerate), self._weights())
+
+    def test_negative_scale_weight_inverts_roll(self):
+        item = item_from_api(self._decoded(), [{
+            "item_id": "Test Item",
+            "weight_name": "Main",
+            "identifications": {"rawHealth": -1, "rawStrength": 1},
+        }])
+        assert calculate_custom_scales(item)[0].score == pytest.approx(37.5)
+
+    def test_percent_stat_names(self):
+        mapping = stat_names()
+        assert mapping["reflection"] == "Reflection %"
+        assert mapping["thunderDamage"] == "Thunder Damage %"
+        assert mapping["criticalDamageBonus"] == "Critical Damage Bonus %"
+
+
+class TestCraftedItem:
+    def test_decodes_and_renders_logged_ring(self):
+        item = decode_crafted_gear(CRAFTED_RING, "Embodiment of Scam")
+        assert item["itemName"] == "Embodiment of Scam"
+        assert item["gearType"] == "Ring"
+        assert item["durability"] == {"effectStrength": 100, "max": 67, "current": 29}
+        assert item["requirements"]["level"] == 103
+        assert item["identifications"] == [
+            ("rawStrength", 4),
+            ("rawDexterity", 6),
+            ("manaRegen", 6),
+            ("spellDamage", 5),
+        ]
+        lines = build_crafted_lines(item)
+        assert any(line.text == "+5% Spell Damage" for line in lines)
+        assert render_crafted_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
 
 
 class TestItemTooltipBridgePrepare:
@@ -212,3 +265,15 @@ class TestRenderNameHint:
         bridge = self._stub_bridge(monkeypatch)
         name, _ = await bridge._render(_item_code(1), None)
         assert name == "Recipe Placeholder"
+
+    @pytest.mark.asyncio
+    async def test_crafted_item_does_not_call_wynnpool(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+
+        async def unexpected_request(*args, **kwargs):
+            raise AssertionError("crafted items must render locally")
+
+        monkeypatch.setattr(bridge, "_json_request", unexpected_request)
+        name, png = await bridge._render(CRAFTED_RING, "Embodiment of Scam")
+        assert name == "Embodiment of Scam"
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
