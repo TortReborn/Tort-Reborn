@@ -2,7 +2,9 @@
 Helpers/storage.py
 S3-compatible storage abstraction for profile backgrounds and shell
 exchange icons.
-Currently backed by Supabase Storage (S3-compatible API).
+Backed by Railway Buckets. Credentials are per bucket, so each environment
+configures S3_* for the one bucket it owns (storage-dev locally, storage-prod
+on the Railway service).
 """
 
 import io
@@ -19,15 +21,11 @@ from Helpers import telemetry
 
 
 class S3Storage:
-    """S3-compatible storage client for Supabase Storage."""
+    """S3-compatible storage client for Railway Buckets."""
 
     def __init__(self):
         self._client = None
-        test_mode = os.getenv("TEST_MODE", "").lower() in ("true", "1", "t")
-        if test_mode:
-            self._bucket = os.getenv("TEST_S3_BUCKET_NAME", "Tort-Reborn-Dev")
-        else:
-            self._bucket = os.getenv("S3_BUCKET_NAME", "Tort-Reborn-Prod")
+        self._bucket = os.getenv("S3_BUCKET_NAME", "")
 
     @property
     def _is_configured(self) -> bool:
