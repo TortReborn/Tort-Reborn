@@ -11,6 +11,9 @@ constraint.
 2. A falsy uuid never queries and never conflicts
 3. assert_uuid_free raises LinkConflictError carrying the conflicting account
 4. user_message mentions the conflicting Discord account
+5. link_change_refusal: the one rule /manage link and /manage unlink share --
+   the initiator needs a recognised rank and may only touch members strictly
+   below it. /manage link used to have no in-code check at all.
 """
 
 import os
@@ -24,6 +27,7 @@ from Helpers.links import (
     LinkConflictError,
     assert_uuid_free,
     find_linked_uuid_conflict,
+    link_change_refusal,
 )
 
 UUID = "065fc385-f9c1-4e7f-96b3-8674a65c509f"
@@ -79,3 +83,26 @@ def test_assert_uuid_free_raises_with_conflict_details():
 
 def test_assert_uuid_free_passes_when_free():
     assert_uuid_free(FakeCursor([None]), UUID, 751)
+
+
+@pytest.mark.parametrize("initiator", [None, "", "Guest"])
+def test_link_change_refused_without_a_recognised_rank(initiator):
+    assert link_change_refusal(initiator, None) is not None
+
+
+def test_link_change_allowed_on_unranked_target():
+    assert link_change_refusal("Hammerhead", None) is None
+    assert link_change_refusal("Starfish", "") is None
+
+
+def test_link_change_allowed_strictly_below_own_rank():
+    assert link_change_refusal("Narwhal", "Hammerhead") is None
+
+
+@pytest.mark.parametrize("initiator,target", [
+    ("Hammerhead", "Hammerhead"),  # equal
+    ("Hammerhead", "Narwhal"),     # above
+    ("Starfish", "Manatee"),
+])
+def test_link_change_refused_at_or_above_own_rank(initiator, target):
+    assert link_change_refusal(initiator, target) is not None
