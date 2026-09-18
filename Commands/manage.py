@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from Helpers.classes import LinkAccount, PlayerStats, PlayerShells
 from Helpers.database import DB, apply_shell_delta
-from Helpers.links import LinkConflictError
+from Helpers.links import LinkConflictError, link_change_refusal
 from Helpers.member_roles import apply_rank_roles, rank_change_summary
 from Helpers.registration import upsert_identity
 from Helpers.functions import addLine, split_sentence, expand_image, getPlayerUUID, timed_get
@@ -396,6 +396,14 @@ class Manage(commands.Cog):
         ign: str
     ):
         await ctx.defer(ephemeral=True)
+        # Same gate as rank/unlink. Linking says who an account *is*, and the
+        # website derives exec access from discord_links, so re-pointing a
+        # member's identity is at least as sensitive as changing their rank.
+        inv, tgt, _ = await asyncio.to_thread(_rank_lookup, ctx.user.id, user.id)
+        refusal = link_change_refusal(inv[0] if inv else None, tgt[0] if tgt else None)
+        if refusal:
+            await ctx.followup.send(refusal, ephemeral=True)
+            return
         try:
             result = await asyncio.to_thread(_link_user, user.id, ign, ctx.user.id)
         except LinkConflictError as e:
@@ -429,13 +437,10 @@ class Manage(commands.Cog):
     async def unlink(self, ctx: ApplicationContext, user: discord.Member):
         await ctx.defer(ephemeral=True)
         inv, tgt, _ = await asyncio.to_thread(_rank_lookup, ctx.user.id, user.id)
-        if not inv or inv[0] not in discord_ranks:
-            await ctx.followup.send(':no_entry: You must link your account first.', ephemeral=True)
+        refusal = link_change_refusal(inv[0] if inv else None, tgt[0] if tgt else None)
+        if refusal:
+            await ctx.followup.send(refusal, ephemeral=True)
             return
-        if tgt and tgt[0] in discord_ranks:
-            if list(discord_ranks).index(tgt[0]) >= list(discord_ranks).index(inv[0]):
-                await ctx.followup.send(':no_entry: You can only unlink members below your own rank.', ephemeral=True)
-                return
         row = await asyncio.to_thread(_unlink_user, user.id, ctx.user.id, ctx.user.name)
         if not row:
             await ctx.followup.send(f'**{discord.utils.escape_markdown(user.name)}** has no link.', ephemeral=True)
