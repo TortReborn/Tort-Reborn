@@ -40,6 +40,7 @@ CUSTOM_EMOJI_PATTERN = re.compile(r"<a?:(\w+):\d+>")
 IGN_MENTION_PATTERN = re.compile(r"(?<![\w@])@(\w{3,16})(?!\w)")
 RANK_TAG_PATTERN = re.compile(r"^(?:" + "|".join(re.escape(rank) for rank in discord_ranks) + r")\s+")
 URL_PATTERN = re.compile(r"https://[^\s<>]+", re.IGNORECASE)
+EMBED_REFRESH_DELAYS = (0.25, 0.5, 0.75)
 
 
 @dataclass(frozen=True)
@@ -303,12 +304,15 @@ class GuildChatBridge(commands.Cog):
         content = _message_text(message)
         reply = await self._reply_context(message)
         embeds = message.embeds
-        if content and URL_PATTERN.search(message.content) and not embeds:
-            await asyncio.sleep(0.5)
-            try:
-                embeds = (await message.channel.fetch_message(message.id)).embeds
-            except discord.HTTPException:
-                pass
+        if content and URL_PATTERN.search(message.content) and not message.attachments:
+            for delay in EMBED_REFRESH_DELAYS:
+                if _embed_has_preview(embeds):
+                    break
+                await asyncio.sleep(delay)
+                try:
+                    embeds = (await message.channel.fetch_message(message.id)).embeds
+                except discord.HTTPException:
+                    break
         media = _bridge_media(message.attachments, embeds)
         fallback = _fallback_message(content, reply, media)
         if not fallback:
@@ -661,7 +665,7 @@ def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
         image = embed.image or embed.thumbnail
         preview_url = _media_url(getattr(image, "proxy_url", ""))
         provider = _clip(getattr(embed.provider, "name", "") or "", 64)
-        kind = "gif" if embed.type == "gifv" else "link"
+        kind = "gif" if embed.type == "gifv" or url.lower().split("?", 1)[0].endswith(".gif") else "link"
         media.append(BridgeMedia(
             kind=kind,
             url=url,
@@ -673,6 +677,14 @@ def _bridge_media(attachments, embeds) -> tuple[BridgeMedia, ...]:
             inline=True,
         ))
     return tuple(media)
+
+
+def _embed_has_preview(embeds) -> bool:
+    for embed in embeds:
+        image = embed.image or embed.thumbnail
+        if _media_url(getattr(image, "proxy_url", "")):
+            return True
+    return False
 
 
 def _fallback_message(content: str, reply: BridgeReply | None, media: tuple[BridgeMedia, ...]) -> str:

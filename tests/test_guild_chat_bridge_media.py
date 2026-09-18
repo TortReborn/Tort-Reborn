@@ -1,11 +1,17 @@
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+import Tasks.guild_chat_bridge as bridge_module
 
 from Tasks.guild_chat_bridge import (
     BridgeMedia,
     BridgeReply,
     DiscordBridgeMessage,
+    GuildChatBridge,
     LinkedBridgeMember,
     _bridge_media,
+    _embed_has_preview,
     _fallback_message,
 )
 
@@ -65,6 +71,51 @@ def test_spoiler_image_has_no_preview_and_link_embed_is_inline():
     assert media[1].kind == "link"
     assert media[1].inline is True
     assert media[1].preview_url.startswith("https://images-ext-1.discordapp.net/")
+
+
+def test_pasted_gif_preserves_signed_preview_url():
+    preview = (
+        "https://media.discordapp.net/attachments/1/2/togif.gif"
+        "?ex=abc&is=def&hm=123&=&width=288&height=320"
+    )
+    media = _bridge_media((), (embed(
+        "https://cdn.discordapp.com/attachments/1/2/togif.gif",
+        preview=preview,
+    ),))
+
+    assert media[0].kind == "gif"
+    assert media[0].preview_url == preview
+    assert media[0].inline is True
+    assert _embed_has_preview((embed("https://example.com/gif", preview=preview),)) is True
+
+
+@pytest.mark.asyncio
+async def test_prepare_waits_for_signed_embed_preview(monkeypatch):
+    source = "https://cdn.discordapp.com/attachments/1/2/togif.gif"
+    preview = "https://media.discordapp.net/attachments/1/2/togif.gif?ex=abc&is=def&hm=123"
+    message = SimpleNamespace(
+        id=42,
+        content=source,
+        attachments=(),
+        embeds=(),
+        mentions=(),
+        role_mentions=(),
+        channel_mentions=(),
+        reference=None,
+    )
+    message.channel = SimpleNamespace(fetch_message=AsyncMock(side_effect=(
+        SimpleNamespace(embeds=()),
+        SimpleNamespace(embeds=()),
+        SimpleNamespace(embeds=(embed(source, preview=preview),)),
+    )))
+    bridge = object.__new__(GuildChatBridge)
+    bridge._reply_context = AsyncMock(return_value=None)
+    monkeypatch.setattr(bridge_module.asyncio, "sleep", AsyncMock())
+
+    prepared = await bridge._prepare_discord_message(message)
+
+    assert message.channel.fetch_message.call_count == 3
+    assert prepared.media[0].preview_url == preview
 
 
 def test_fallback_remains_complete_for_old_clients():
