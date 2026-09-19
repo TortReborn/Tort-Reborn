@@ -40,5 +40,5 @@ async def on_ready():
     print(f"Wrote {len(results)} bad embeds to scripts/bad_embeds.txt")
     await client.close()
 
-token = os.getenv("TEST_TOKEN")
+token = os.getenv("TOKEN")
 client.run(token)

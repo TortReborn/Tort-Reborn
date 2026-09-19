@@ -12,8 +12,8 @@ alone, as are wishes, which are keyed by slug and simply follow the card.
 Nothing is written without --apply, and the draw is seeded so the dry run
 shows exactly what --apply will do.
 
-    TEST_MODE=false python scripts/retier_swap.py --before main
-    TEST_MODE=false python scripts/retier_swap.py --before main --apply
+    python scripts/retier_swap.py --before main   # runs against DB_* in .env
+    python scripts/retier_swap.py --before main --apply
 
 --before is the old card set: a path to a cards.json, or a git ref to take
 data/cards.json from. --only-upgrades leaves people holding a card that
@@ -135,7 +135,7 @@ def main() -> int:
     db = DB(use_pool=False)
     db.connect()
     try:
-        print(f"database: {os.getenv('TEST_MODE', '').lower() == 'true' and 'TEST' or 'PROD'}")
+        print(f"database: {os.getenv('DB_HOST')}")
         db.cursor.execute(
             'SELECT "user", card, stars, count FROM card_collection WHERE count > 0')
         rows = db.cursor.fetchall()

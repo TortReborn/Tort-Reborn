@@ -123,13 +123,12 @@ def test_failing_execute_records_and_reraises():
 
 @pytest.fixture
 def _db_env(monkeypatch):
-    monkeypatch.setenv("TEST_MODE", "true")
-    monkeypatch.setenv("TEST_DB_LOGIN", "user")
-    monkeypatch.setenv("TEST_DB_PASS", "pass")
-    monkeypatch.setenv("TEST_DB_HOST", "localhost")
-    monkeypatch.setenv("TEST_DB_PORT", "5432")
-    monkeypatch.setenv("TEST_DB_DATABASE", "postgres")
-    monkeypatch.setenv("TEST_DB_SSLMODE", "disable")
+    monkeypatch.setenv("DB_LOGIN", "user")
+    monkeypatch.setenv("DB_PASS", "pass")
+    monkeypatch.setenv("DB_HOST", "localhost")
+    monkeypatch.setenv("DB_PORT", "5432")
+    monkeypatch.setenv("DB_DATABASE", "postgres")
+    monkeypatch.setenv("DB_SSLMODE", "disable")
     DB._pools.clear()
     FakePool.created.clear()
     yield

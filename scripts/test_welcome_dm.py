@@ -60,7 +60,7 @@ async def main():
             print(f"Failed: {e}")
         await client.close()
 
-    await client.start(os.getenv("TEST_TOKEN"))
+    await client.start(os.getenv("TOKEN"))
 
 
 if __name__ == "__main__":

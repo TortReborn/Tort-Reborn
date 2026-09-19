@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.commands import slash_command
 
 from Helpers.database import DB, get_current_guild_data, apply_shell_delta
-from Helpers.variables import IS_TEST_MODE, HOME_GUILD_IDS, SHELL_EMOJI, ANNOUNCEMENT_CHANNEL_ID
+from Helpers.variables import HOME_GUILD_IDS, SHELL_EMOJI, ANNOUNCEMENT_CHANNEL_ID
 
 # Leadership ranks that are deprioritized
 LEADERSHIP_RANKS = {'Hydra', 'Narwhal', 'Dolphin'}

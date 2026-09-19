@@ -1,13 +1,62 @@
+import base64
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # =============================================================================
-# Environment Detection
+# Profile resolution — who is this bot?
 # =============================================================================
+# A Discord bot token's first dot-segment is base64url of the application id,
+# so the config profile is derived from the credential itself: the prod token
+# cannot select test wiring and a dev token cannot resolve prod channels.
+# BOT_PROFILE is honored only when no TOKEN is present (pytest, offline
+# scripts); when both are set and disagree, that is a misconfiguration and we
+# refuse to start rather than guess.
 
-IS_TEST_MODE = os.getenv("TEST_MODE", "").lower() in ("true", "1", "t")
+_PROFILE_BY_APP_ID = {
+    "1364828461813862441": "prod",  # Tort
+    "1400600774031183982": "test",  # dev bot
+}
+
+
+def _app_id_from_token(token: str) -> str | None:
+    seg = token.split(".", 1)[0]
+    try:
+        decoded = base64.urlsafe_b64decode(seg + "=" * (-len(seg) % 4)).decode("ascii")
+    except Exception:
+        return None
+    return decoded if decoded.isdigit() else None
+
+
+def _resolve_profile() -> str:
+    token = os.getenv("TOKEN", "").strip()
+    override = os.getenv("BOT_PROFILE", "").strip().lower()
+    if token:
+        app_id = _app_id_from_token(token)
+        profile = _PROFILE_BY_APP_ID.get(app_id)
+        if profile is None:
+            raise RuntimeError(
+                f"TOKEN does not belong to a known bot application (app id {app_id!r}); "
+                "refusing to guess a config profile. Add the application id to "
+                "_PROFILE_BY_APP_ID in Helpers/variables.py if this is a new bot."
+            )
+        if override and override != profile:
+            raise RuntimeError(
+                f"BOT_PROFILE={override!r} disagrees with TOKEN's identity ({profile!r}); "
+                "unset one of them."
+            )
+        return profile
+    if override in ("prod", "test"):
+        return override
+    raise RuntimeError(
+        "No TOKEN set and no BOT_PROFILE override; cannot select a config profile."
+    )
+
+
+PROFILE = _resolve_profile()
+IS_TEST_PROFILE = PROFILE == "test"
+
 ERROR_PING_USER_ID = os.getenv("ERROR_PING_USER_ID")
 WYNNVENTORY_API_KEY = os.getenv("WYNNVENTORY_API_KEY", "")
 
@@ -158,7 +207,7 @@ _ENV_CONFIG = {
     },
 }
 
-_cfg = _ENV_CONFIG["test" if IS_TEST_MODE else "prod"]
+_cfg = _ENV_CONFIG[PROFILE]
 
 # =============================================================================
 # Guild IDs
@@ -171,7 +220,7 @@ DEV_GUILD_ID = 1364751619018850405  # always the same — used for error logs
 # ---- Server Buckets (DEV included only in test mode) ----
 PERSONAL_TEST_GUILD_ID = 1352901131977625631  # personal test server
 
-if IS_TEST_MODE:
+if IS_TEST_PROFILE:
     TAQ_GUILD_IDS = list(set([TAQ_GUILD_ID, DEV_GUILD_ID, PERSONAL_TEST_GUILD_ID]))
     EXEC_GUILD_IDS = list(set([EXEC_GUILD_ID, DEV_GUILD_ID, PERSONAL_TEST_GUILD_ID]))
     ALL_GUILD_IDS = list(set([TAQ_GUILD_ID, EXEC_GUILD_ID, DEV_GUILD_ID, PERSONAL_TEST_GUILD_ID]))
@@ -280,7 +329,7 @@ APP_ARCHIVE_CHANNEL_NAME = "applications-archive"
 # Misc Constants
 # =============================================================================
 
-WEBSITE_URL = "http://localhost:3000" if IS_TEST_MODE else "https://the-aquarium.com"
+WEBSITE_URL = "http://localhost:3000" if IS_TEST_PROFILE else "https://the-aquarium.com"
 GUILD_CHAT_BRIDGE_TOKEN = os.getenv("GUILD_CHAT_BRIDGE_TOKEN", "")
 TICKET_TOOL_BOT_ID = 557628352828014614
 LEGACY_WEBHOOK_URL = os.getenv("LEGACY_WEBHOOK_URL", "")

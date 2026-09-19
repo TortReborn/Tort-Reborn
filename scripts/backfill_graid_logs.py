@@ -278,5 +278,5 @@ if __name__ == "__main__":
         print(f"  Skipped (bad format):{bad_format}")
         await client.close()
 
-    token = os.getenv("TOKEN") if os.getenv("TEST_MODE", "").lower() != "true" else os.getenv("TEST_TOKEN")
+    token = os.getenv("TOKEN")
     client.run(token)

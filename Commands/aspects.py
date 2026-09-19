@@ -18,7 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
-from Helpers.variables import EXEC_GUILD_IDS, IS_TEST_MODE
+from Helpers.variables import EXEC_GUILD_IDS, IS_TEST_PROFILE
 from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers import aspect_db
 MAX_COLUMNS = 4
@@ -165,7 +165,7 @@ class AspectDistribution(commands.Cog):
             
             # Get guild for member lookup
             guild = Guild("The Aquarium")
-            cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=0 if IS_TEST_MODE else 7)
+            cutoff = datetime.datetime.now(timezone.utc) - timedelta(days=0 if IS_TEST_PROFILE else 7)
             
             # Build member map for 7-day check
             member_map = {}

@@ -82,7 +82,7 @@ python main.py
 # The Flask webhook server starts automatically alongside the bot
 ```
 
-Set `TEST_MODE=true` in `.env` to use test database/tokens during development.
+A local checkout's `.env` holds the dev bot token and local database; the config profile (test vs prod Discord wiring) is derived from the token's application id automatically. Prod credentials exist only in Railway.
 
 ---
 
@@ -96,7 +96,7 @@ Railway uses **shared variable groups** to manage secrets. Variables defined in 
 
 1. Go to your Railway project dashboard
 2. Click **Variables** in the top nav (project-level) or create a shared variable group
-3. Add all required env vars (`TOKEN`, `TEST_MODE`, `DB_HOST`, etc.)
+3. Add all required env vars (`TOKEN`, `DB_HOST`, etc.)
 4. Go to your **worker** service → **Variables** tab
 5. Click **Add Variable Reference** (or **Insert Reference**) and select the shared variable group
 6. The variables will now appear in the service's Variables tab — confirm they show without warning icons
@@ -104,5 +104,5 @@ Railway uses **shared variable groups** to manage secrets. Variables defined in 
 ### Notes
 
 - The Python version is pinned in `.python-version` (currently 3.12). Do not use Python 3.13 — `py-cord` depends on `audioop` which was removed in 3.13.
-- `TEST_MODE` defaults to production if unset. Set `TEST_MODE=true` only for test deployments.
+- The config profile comes from the token itself: the prod token selects prod wiring, the dev token selects test wiring, and an unknown token refuses to start.
 - Railway auto-deploys from the branch connected in your service settings. Push to that branch to trigger a deploy.

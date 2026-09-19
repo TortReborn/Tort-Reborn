@@ -1,11 +1,9 @@
 import os
 import requests
-from Helpers.variables import IS_TEST_MODE
-
-
 def _get_url():
-    if IS_TEST_MODE:
-        return os.getenv("TEST_SHEETS_SCRIPT_URL", "")
+    # Capability check, not a profile switch: the export runs wherever a
+    # script URL is configured. Local dev leaves it unset (or points at a
+    # test sheet) and the poster below no-ops.
     return os.getenv("SHEETS_SCRIPT_URL", "")
 
 
