@@ -204,12 +204,6 @@ class RankCheck(commands.Cog):
             links_map = {row[0]: (row[1], row[2], row[3]) for row in all_links}
             linked_uuids = set(links_map)
 
-            hdr = (
-                '```ansi\n'
-                ' \u001b[1;37m{:^16s}   {:^12s}   {:^23s}\n'
-                '╘═════════════════╪══════════════╪════════════════════════╛\n'
-            ).format('Player', 'In-Game Rank', 'Discord Rank')
-
             mismatch, linkage, usernames = [], [], []
 
             for member in data:
@@ -221,7 +215,7 @@ class RankCheck(commands.Cog):
                 # the guild API's current name for the same uuid.
                 registered = linked[2] if linked else None
                 if registered and registered != ign:
-                    usernames.append(f'[0;36m {registered:16} → {ign}')
+                    usernames.append(f'\u001b[0;36m {registered:16} → {ign}')
 
                 if linked and linked[1]:   # rank is NULL for linked non-members (TAQ-76)
                     discord_id, role = linked[0], linked[1]
@@ -230,15 +224,14 @@ class RankCheck(commands.Cog):
                         expected = discord_ranks[role]['in_game_rank']
                     except KeyError:
                         mismatch.append(
-                            f'\u001b[0;31m ERROR: {ign:16} no mapping for role "{role}"'
+                            f'\u001b[0;31m {ign:16} \u001b[1;37mrole   \u001b[0;0mno mapping "{role}"'
                         )
                         continue
 
                     if member['rank'].upper() != expected:
-                        dr = f'{role} ({expected})'
                         mismatch.append(
-                            f'\u001b[0;0m {ign:16} \u001b[1;37m│ \u001b[0;0m'
-                            f'{member["rank"].upper():12} \u001b[1;37m│ \u001b[0;0m{dr:23}'
+                            f'\u001b[0;31m {ign:16} \u001b[1;37mrank   '
+                            f'\u001b[0;0m{member["rank"].upper():10.10} \u001b[1;37m≠ \u001b[0;0m{expected}'
                         )
 
                     disc_mem = discord_members.get(discord_id)
@@ -250,27 +243,26 @@ class RankCheck(commands.Cog):
 
                         if prefix.lower() != role.lower():
                             mismatch.append(
-                                f'\u001b[0;33m PREFIX MISMATCH: "{prefix}" ≠ "{role}" for {ign}'
+                                f'\u001b[0;33m {ign:16} \u001b[1;37mprefix '
+                                f'\u001b[0;0m{prefix:10.10} \u001b[1;37m≠ \u001b[0;0m{role}'
                             )
                         if second and second != ign:
                             mismatch.append(
-                                f'\u001b[0;33m NICKNAME MISMATCH: "{second}" ≠ "{ign}"'
+                                f'\u001b[0;33m {ign:16} \u001b[1;37mnick   '
+                                f'\u001b[0;0m{second:10.10} \u001b[1;37m≠ \u001b[0;0m{ign}'
                             )
                 elif uuid_key(uuid) in guild_accounts:
-                    # Guild-owned storage account: in the guild, nobody to link (TAQ-88).
-                    linkage.append(
-                        f'[0;0m {ign:16} [1;37m│ [0;0m'
-                        f'{member["rank"].upper():12} [1;37m│ [0;35mGUILD ACCOUNT'
-                    )
+                    # Guild-owned storage account (TAQ-88): unlinked by design,
+                    # so it is not a linkage issue and is not reported.
+                    pass
                 else:
                     linkage.append(
-                        f'\u001b[0;0m {ign:16} \u001b[1;37m│ \u001b[0;0m'
-                        f'{member["rank"].upper():12} \u001b[1;37m│ \u001b[0;31mNOT LINKED'
+                        f'\u001b[0;31m {ign:16} \u001b[0;0m{member["rank"].upper():12} NOT LINKED'
                     )
 
-            # Only member-ranked orphans are actionable (stale links); the
-            # rank-NULL remainder is every ex-member ever (TAQ-76 keeps
-            # their links) and would blow past the embed limit as a list.
+            # Member-ranked links pointing outside the guild are stale and
+            # actionable. Rank-NULL ex-member links are normal (TAQ-76 keeps
+            # them) and are not reported at all.
             orphans = linked_uuids - guild_uuids
             ranked_orphans = sorted(
                 ((links_map[u][2] or u) for u in orphans if links_map[u][1]),
@@ -278,34 +270,43 @@ class RankCheck(commands.Cog):
             )
             if ranked_orphans:
                 linkage.append('')
-                linkage.append('[0;31mMember-ranked but not in guild (stale links):')
+                linkage.append('\u001b[0;31mMember-ranked but not in guild (stale links):')
                 for ign in ranked_orphans:
                     linkage.append(f'  {ign}')
-            unranked = len(orphans) - len(ranked_orphans)
-            if unranked:
-                linkage.append('')
-                linkage.append(f'[0;35m+{unranked} unranked ex-member links (expected, not listed)')
 
-            embed_mismatch = Embed(
-                title='Mismatch Issues',
-                description=hdr + '\n'.join(mismatch) + '```'
-            )
-            embed_linkage = Embed(
-                title='Linkage Issues',
-                description=hdr + '\n'.join(linkage) + '```'
-            )
-
-            hdr3 = (
+            hdr_mismatch = (
+                '```ansi\n'
+                ' \u001b[1;37m{:^16s} {:^6s} {:^24s}\n'
+                '╘═════════════════╪════════╪═════════════════════════╛\n'
+            ).format('Player', 'Issue', 'Found ≠ Expected')
+            hdr_linkage = (
+                '```ansi\n'
+                ' \u001b[1;37m{:^16s} {:^12s} {:^10s}\n'
+                '╘═════════════════╪══════════════╪═══════════╛\n'
+            ).format('Player', 'In-Game Rank', 'Status')
+            hdr_usernames = (
                 '```ansi\n'
                 ' \u001b[1;37m{:^16s} → {:^16s}\n'
                 '╘═════════════════╪════════════════════╛\n'
-            ).format('Linked IGN', 'Guild API Name')
+            ).format('Linked IGN', 'Guild Name')
+
+            embed_mismatch = Embed(
+                title='Mismatch Issues',
+                description=(hdr_mismatch + '\n'.join(mismatch) + '```') if mismatch
+                else '✅ All ranks, name prefixes and nicknames match.'
+            )
+            embed_linkage = Embed(
+                title='Linkage Issues',
+                description=(hdr_linkage + '\n'.join(linkage) + '```') if linkage
+                else '✅ Every guild member is linked and there are no stale links.'
+            )
             embed_usernames = Embed(
                 title='Username Mismatches',
-                description=hdr3 + '\n'.join(usernames) + '```'
+                description=(hdr_usernames + '\n'.join(usernames) + '```') if usernames
+                else '✅ No renames — every linked ign matches the guild roster.'
             )
 
-            footer = f'From cached guild data ({cache_age_s}s old) — no API calls'
+            footer = f'From cached guild data ({cache_age_s}s old)'
             for e in (embed_mismatch, embed_linkage, embed_usernames):
                 e.set_footer(text=footer)
 
