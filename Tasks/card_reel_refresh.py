@@ -69,7 +69,7 @@ class CardReelRefresh(commands.Cog):
                     continue
 
                 embed = discord.Embed(
-                    title="Reels refreshed",
+                    title="Reels up",
                     description=(
                         f"+**{cardlib.REELS_PER_WINDOW}** reels\n"
                         f"Next <t:{nxt}:R>"),
