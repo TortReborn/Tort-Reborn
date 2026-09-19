@@ -24,7 +24,6 @@ from Helpers.variables import (
     LEGACY_WEBHOOK_URL,
     RATES_PING_ROLE_ID,
     RATES_THREAD_ID,
-    IS_TEST_MODE,
     TAQ_EMBED_COLOR,
 )
 

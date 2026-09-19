@@ -14,7 +14,7 @@ from discord import Embed
 from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
 from Helpers.storage import warm_background_cache
-from Helpers.variables import IS_TEST_MODE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS, ERROR_PING_USER_ID
+from Helpers.variables import PROFILE, IS_TEST_PROFILE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS, ERROR_PING_USER_ID
 from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO, WARN
 from Helpers import logger
 from Helpers import telemetry
@@ -33,17 +33,14 @@ logging.basicConfig(
 logging.getLogger('discord').setLevel(logging.WARNING)
 logging.getLogger('httpx').setLevel(logging.WARNING)
 
-# get bot token
+# get bot token — the profile (test/prod wiring) is derived from the token's
+# own application id in Helpers/variables.py, so there is nothing to select here
 load_dotenv()
-if os.getenv("TEST_MODE", "").lower() == "true":
-    log(SYSTEM, "Starting in TEST mode...")
-    token = os.getenv("TEST_TOKEN")
-elif os.getenv("TEST_MODE", "").lower() == "false":
-    log(SYSTEM, "Starting in PRODUCTION mode...")
-    token = os.getenv("TOKEN")
-else:
+token = os.getenv("TOKEN")
+if not token:
     log(ERROR, "Could not get TOKEN. Please check your .env file.")
     sys.exit(-1)
+log(SYSTEM, f"Starting with the {PROFILE.upper()} profile...")
 
 # Discord intents
 intents = discord.Intents.default()
@@ -145,7 +142,7 @@ async def on_ready():
     for g in client.guilds:
         log(SYSTEM, f'Connected to guild: {g.name}')
 
-    if not IS_TEST_MODE:
+    if not IS_TEST_PROFILE:
         now = int(time.time())
         crash_report = get_last_online()
         downtime = now - crash_report['timestamp']

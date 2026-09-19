@@ -91,22 +91,22 @@ class DB:
 
     @staticmethod
     def _connection_kwargs() -> tuple[str, dict]:
-        test_mode = os.getenv("TEST_MODE").lower()
-        if test_mode == "true":
-            prefix = "TEST_DB"
-        elif test_mode == "false":
-            prefix = "DB"
-        else:
-            log(ERROR, "Problem logging into db", context="database")
+        # One DB_* set per environment: the local .env carries the dev
+        # database, the Railway service variables carry prod. Which world we
+        # are in is the config profile's job (Helpers/variables.py), not the
+        # connection layer's.
+        host = os.getenv("DB_HOST")
+        if not host:
+            log(ERROR, "DB_HOST is not set — check your .env", context="database")
             sys.exit(-1)
 
-        return test_mode, {
-            "user": os.getenv(f"{prefix}_LOGIN"),
-            "password": os.getenv(f"{prefix}_PASS"),
-            "host": os.getenv(f"{prefix}_HOST"),
-            "port": int(os.getenv(f"{prefix}_PORT")),
-            "database": os.getenv(f"{prefix}_DATABASE", "postgres"),
-            "sslmode": os.getenv(f"{prefix}_SSLMODE"),
+        return "default", {
+            "user": os.getenv("DB_LOGIN"),
+            "password": os.getenv("DB_PASS"),
+            "host": host,
+            "port": int(os.getenv("DB_PORT", "5432")),
+            "database": os.getenv("DB_DATABASE", "postgres"),
+            "sslmode": os.getenv("DB_SSLMODE"),
             "keepalives": 1,
             "keepalives_idle": 30,
             "keepalives_interval": 10,

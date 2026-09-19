@@ -8,7 +8,7 @@ and the main guild sets its own.
 
 Refuses to run without --yes, and says what it is about to delete first.
 
-    TEST_MODE=false python scripts/wipe_card_data.py --yes
+    python scripts/wipe_card_data.py --yes   # runs against DB_* in .env
 """
 
 import argparse
@@ -32,7 +32,7 @@ def main() -> int:
     db = DB()
     db.connect()
     try:
-        print(f"database: {os.getenv('TEST_MODE', '').lower() == 'true' and 'TEST' or 'PROD'}")
+        print(f"database: {os.getenv('DB_HOST')}")
         for t in TABLES:
             db.cursor.execute(f"SELECT COUNT(*) FROM {t}")
             print(f"  {t:16s} {db.cursor.fetchone()[0]:6d} rows")

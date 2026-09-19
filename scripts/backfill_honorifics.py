@@ -9,7 +9,7 @@ when they have a discord_links row, by discord_id alone otherwise (the
 uuid is attached when they link).
 
 Dry-run by default; nothing is written without --apply. Writes go to the
-database the bot's .env selects (TEST_MODE=true -> dev, false -> prod).
+database the .env's DB_* variables point at (local dev unless run on prod infra).
 
     venv/Scripts/python scripts/backfill_honorifics.py            # report only
     venv/Scripts/python scripts/backfill_honorifics.py --apply    # write

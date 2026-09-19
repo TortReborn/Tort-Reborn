@@ -107,7 +107,7 @@ _bg_cache: dict = {}
 
 def get_background(bg_id) -> Image.Image:
     """Profile background from memory, falling back to S3 (then default)."""
-    from Helpers.variables import IS_TEST_MODE
+    from Helpers.variables import IS_TEST_PROFILE
 
     cached = _bg_cache.get(bg_id)
     if cached is not None:
@@ -123,7 +123,7 @@ def get_background(bg_id) -> Image.Image:
             raise FileNotFoundError(
                 f"Background {bg_id} not found in S3 (fallback background 1 also missing)"
             ) from None
-    if IS_TEST_MODE:
+    if IS_TEST_PROFILE:
         return Image.open("images/profile_pictures/default.png")
     raise FileNotFoundError(f"Background {bg_id} not found in S3")
 

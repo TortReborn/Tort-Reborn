@@ -14,7 +14,7 @@ from Helpers.variables import (
     ANNIHILATION_ANNOUNCEMENT_CHANNEL_ID,
     ANNIHILATION_PING_ROLE_ID,
     HOME_GUILD_IDS,
-    IS_TEST_MODE,
+    IS_TEST_PROFILE,
 )
 
 WYNNCRAFT_WORLD_EVENTS_URL = "https://api.wynncraft.com/v3/map/world-events"
@@ -392,7 +392,7 @@ class AnnihilationAnnouncements(commands.Cog):
     async def _wait_until_ready(self):
         await self.client.wait_until_ready()
 
-    if IS_TEST_MODE:
+    if IS_TEST_PROFILE:
         @discord.slash_command(
             name="annihilation-smoke-test",
             description="TEMP: Send both Prelude to Annihilation test announcements",

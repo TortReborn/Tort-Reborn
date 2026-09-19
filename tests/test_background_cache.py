@@ -64,7 +64,7 @@ def test_double_missing_background_names_original_id():
     import Helpers.variables as variables
 
     with patch.object(storage.storage, "get_image", return_value=None), \
-         patch.object(variables, "IS_TEST_MODE", False):
+         patch.object(variables, "IS_TEST_PROFILE", False):
         with pytest.raises(FileNotFoundError, match="Background 7"):
             storage.get_background(7)
 

@@ -14,7 +14,7 @@ import certifi
 import requests
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
-from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows, IS_TEST_MODE
+from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows
 from Helpers.logger import log, WARN, ERROR
 from Helpers import telemetry
 
