@@ -24,7 +24,7 @@ from Helpers.variables import (
 CHANNEL_MANAGEMENT_ENABLED = True
 
 TAQ_GUILD_TAG = "TAq"
-BRIDGE_WORKER_URL = "wss://verge-raid-tracker.wavelink.workers.dev/v1/bridge/ws"
+BRIDGE_WORKER_URL = "wss://verge-api.the-aquarium.com/v1/bridge/ws"
 BRIDGE_CHANNEL_NAME = "🌊｜sea-coast"
 BRIDGE_PERMISSION_ANCHOR_CHANNEL_ID = 736920151081091122  # build-discussions
 BRIDGE_POSITION_ANCHOR_CHANNEL_ID = 748900470575071293  # guild-general
