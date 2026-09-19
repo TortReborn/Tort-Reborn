@@ -331,6 +331,10 @@ APP_ARCHIVE_CHANNEL_NAME = "applications-archive"
 
 WEBSITE_URL = "http://localhost:3000" if IS_TEST_PROFILE else "https://the-aquarium.com"
 GUILD_CHAT_BRIDGE_TOKEN = os.getenv("GUILD_CHAT_BRIDGE_TOKEN", "")
+GUILD_CHAT_BRIDGE_URL = os.getenv(
+    "GUILD_CHAT_BRIDGE_URL",
+    "wss://verge-api.the-aquarium.com/v1/bridge/ws",
+)
 TICKET_TOOL_BOT_ID = 557628352828014614
 LEGACY_WEBHOOK_URL = os.getenv("LEGACY_WEBHOOK_URL", "")
 LEGACY_MESSAGE_ID = 1135537781574205520

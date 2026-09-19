@@ -17,6 +17,7 @@ from Helpers.item_tooltip import ItemTooltipBridge
 from Helpers.logger import ERROR, INFO, WARN, log
 from Helpers.variables import (
     GUILD_CHAT_BRIDGE_TOKEN,
+    GUILD_CHAT_BRIDGE_URL,
     TAQ_GUILD_ID,
     discord_ranks,
 )
@@ -24,7 +25,6 @@ from Helpers.variables import (
 CHANNEL_MANAGEMENT_ENABLED = True
 
 TAQ_GUILD_TAG = "TAq"
-BRIDGE_WORKER_URL = "wss://verge-api.the-aquarium.com/v1/bridge/ws"
 BRIDGE_CHANNEL_NAME = "🌊｜sea-coast"
 BRIDGE_PERMISSION_ANCHOR_CHANNEL_ID = 736920151081091122  # build-discussions
 BRIDGE_POSITION_ANCHOR_CHANNEL_ID = 748900470575071293  # guild-general
@@ -204,7 +204,7 @@ class GuildChatBridge(commands.Cog):
             try:
                 self.session = aiohttp.ClientSession()
                 async with self.session.ws_connect(
-                    BRIDGE_WORKER_URL,
+                    GUILD_CHAT_BRIDGE_URL,
                     headers={"Authorization": f"Bearer {GUILD_CHAT_BRIDGE_TOKEN}"},
                     heartbeat=30,
                     max_msg_size=16384,
