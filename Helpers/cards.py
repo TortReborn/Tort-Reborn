@@ -1302,8 +1302,32 @@ def db_leaderboard(limit: int = 15) -> list:
         db.close()
 
 
+def db_leaderboard_rank(user_id: int) -> dict | None:
+    """Where one user sits in the same ordering db_leaderboard uses."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'SELECT rank, uniques FROM ('
+            '  SELECT c."user", COUNT(DISTINCT c.card) AS uniques, '
+            '         RANK() OVER (ORDER BY COUNT(DISTINCT c.card) DESC, '
+            '                      SUM(c.count) DESC) AS rank '
+            '  FROM card_collection c GROUP BY c."user"'
+            ') t WHERE t."user" = %s',
+            (user_id,))
+        row = db.cursor.fetchone()
+        return {"rank": row[0], "uniques": row[1]} if row else None
+    finally:
+        db.close()
+
+
 def check_milestones(user_id: int, collection: dict) -> list:
-    """Award unique-count and tier-completion milestones. Returns new awards."""
+    """Award unique-count, tier-completion and set milestones.
+
+    Returns the awards this call paid out as (kind, name, pearls), where kind
+    is "unique", "tier" or "set" and name is the threshold, the tier or the
+    set's display name. The caller decides how each kind is announced.
+    """
     earned = []
     static = load_card_set()
     owned_static = {s for s in collection if not is_member_slug(s)}
@@ -1311,18 +1335,18 @@ def check_milestones(user_id: int, collection: dict) -> list:
     for threshold, pearls in sorted(UNIQUE_MILESTONES.items()):
         if len(owned_static) >= threshold:
             if db_award_once(user_id, f"unique-{threshold}", pearls):
-                earned.append((f"{threshold} unique cards", pearls))
+                earned.append(("unique", threshold, pearls))
 
     for tier, pearls in TIER_COMPLETE_PEARLS.items():
         pool = static["by_tier"].get(tier, [])
         if pool and all(c["slug"] in owned_static for c in pool):
             if db_award_once(user_id, f"tier-{tier}", pearls):
-                earned.append((f"every {tier} card", pearls))
+                earned.append(("tier", tier, pearls))
 
     for p in set_progress(collection):
         if p["complete"] and p["set"]["pearls"]:
             if db_award_once(user_id, f"set-{p['set']['id']}", p["set"]["pearls"]):
-                earned.append((p["set"]["name"], p["set"]["pearls"]))
+                earned.append(("set", p["set"]["name"], p["set"]["pearls"]))
 
     return earned
 

@@ -21,6 +21,7 @@ import discord
 from discord.ext import commands, tasks
 
 from Helpers import cards as cardlib
+from Helpers import card_copy as ctext
 from Helpers.logger import ERROR, INFO, WARN, log
 from Helpers.variables import CARD_PING_ROLE_ID, TAQ_GUILD_IDS
 
@@ -71,8 +72,8 @@ class CardReelRefresh(commands.Cog):
                     title="Reels up",
                     description=(
                         f"+**{cardlib.REELS_PER_WINDOW}** reels\n"
-                        f"next <t:{nxt}:R>"),
-                    color=0x38C9BD)
+                        f"Next <t:{nxt}:R>"),
+                    color=ctext.ACCENT)
                 embed.set_footer(text="/reel")
 
                 # The mention lives in the message content, not the embed:
