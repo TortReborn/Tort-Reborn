@@ -139,11 +139,11 @@ DISCARD_CONFIRM_TIERS = {"mythic", "fabled"}
 # The number, not the name, is what a wallet stores, so rungs 1-3 are frozen:
 # their cost, bank, trickle and wishes are exactly what they were when the
 # ladder had five rungs, and the two extra buckets are inserted above them.
-# When this went in, every one of the 41 live wallets sat on rung 1, 2 or 3
-# and the richest player held 8,890 pearls, so nothing above rung 3 had ever
-# been bought and inserting there cost nobody anything. Moving a rung at or
-# below 3 later would silently hand out (or take back) a tank somebody paid
-# for — retire a rung instead of renumbering.
+# That was checked against live wallets before it went in — every one of them
+# sat on rung 1, 2 or 3 and nothing above rung 3 had ever been bought, so
+# inserting there cost nobody anything. Moving a rung at or below 3 later
+# would silently hand out (or take back) a tank somebody paid for — retire a
+# rung instead of renumbering.
 #
 # Not every rung pays in all three currencies; a step that widens the bank
 # and the trickle is a real upgrade without also granting a wish, which is
