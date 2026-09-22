@@ -6,7 +6,8 @@ are a contract with everyone who already bought one. These tests are what
 stops a later reshuffle from silently handing out or taking back a tank
 somebody paid pearls for.
 
-1. The rungs are the seven rank buckets, bottom to top
+1. The rungs are the seven rank buckets, bottom to top, spelled the way the
+   Discord roles and the role-info embed spell them
 2. Rungs 1-3 are frozen at what they cost when the ladder had five rungs
 3. Every rung up is worth buying, and the ladder only ever climbs
 4. The SQL the wallet refresh builds covers every rung
@@ -22,7 +23,7 @@ from Helpers import cards as cardlib
 
 # The buckets as data/embeds/guild_info/role_info/guild_ranks.json lists
 # them, lowest first. Hydra is the leader, not a bucket, so it is not here.
-BUCKETS = ["Reef", "Coastal Waters", "Azure Ocean", "Blue Ocean", "Deep Sea",
+BUCKETS = ["Reef", "Coastal Waters", "Azure Ocean", "Blue Sea", "Deep Sea",
            "Dark Sea", "Abyss Waters"]
 
 # What rungs 1-3 cost before the ladder grew to seven. Everyone on prod sat
@@ -38,6 +39,28 @@ def test_the_rungs_are_the_seven_rank_buckets_in_order():
     assert list(cardlib.TANK_TIERS) == list(range(1, 8))
     assert [s["name"] for s in cardlib.TANK_TIERS.values()] == BUCKETS
     assert cardlib.MAX_TANK == 7
+
+
+def test_every_bucket_is_a_real_discord_role():
+    """The bucket names are borrowed, not invented, so they have to keep
+    matching the roles the bot actually hands out. discord_rank_roles is the
+    source of truth for the spelling; the stars in front vary (some roles put
+    a space after them, some do not) and are not part of the name."""
+    from Helpers.variables import discord_rank_roles
+    live = {r.lstrip("★☆ ") for r in discord_rank_roles}
+    for name in BUCKETS:
+        assert name in live, f"{name} is not a rank role"
+
+
+def test_the_role_info_embed_spells_the_buckets_the_same_way():
+    """The embed members read is prose, so nothing stops it drifting from the
+    role it sits next to — it called Blue Sea "Blue Ocean" for a while."""
+    path = os.path.join(os.path.dirname(__file__), "..", "data", "embeds",
+                        "guild_info", "role_info", "guild_ranks.json")
+    with open(path, encoding="utf-8") as f:
+        blob = f.read()
+    for name in BUCKETS:
+        assert f"**{name}**" in blob, f"{name} is not in the rank embed"
 
 
 def test_the_bottom_three_rungs_never_move():

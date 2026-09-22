@@ -152,7 +152,7 @@ TANK_TIERS = {
     1: {"name": "Reef", "cost": 0, "bank": 6, "trickle": 0, "wishes": 1},
     2: {"name": "Coastal Waters", "cost": 2000, "bank": 8, "trickle": 3, "wishes": 2},
     3: {"name": "Azure Ocean", "cost": 8000, "bank": 10, "trickle": 6, "wishes": 3},
-    4: {"name": "Blue Ocean", "cost": 14000, "bank": 11, "trickle": 8, "wishes": 3},
+    4: {"name": "Blue Sea", "cost": 14000, "bank": 11, "trickle": 8, "wishes": 3},
     5: {"name": "Deep Sea", "cost": 22000, "bank": 12, "trickle": 10, "wishes": 4},
     6: {"name": "Dark Sea", "cost": 32000, "bank": 13, "trickle": 12, "wishes": 4},
     7: {"name": "Abyss Waters", "cost": 45000, "bank": 15, "trickle": 15, "wishes": 5},
