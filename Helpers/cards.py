@@ -65,7 +65,8 @@ TIER_COLORS = {
 # Every card pays out the moment it is reeled in, duplicates included, so
 # there is nothing to scrap and no decision to get wrong. At 12 reels a day
 # this averages roughly 460 pearls from pulls plus 150 from the daily, which
-# paces the tank ladder at about 3 days for a Reef and six months to an Abyss.
+# paces the tank ladder at about 3 days for Coastal Waters and six months to
+# the Abyss Waters.
 PEARLS_PER_PULL = {
     "normal": 10,
     "unique": 25,
@@ -129,12 +130,32 @@ DISCARD_CONFIRM_TIERS = {"mythic", "fabled"}
 # ── Tank tiers ───────────────────────────────────────────────────────────────
 # Upgrading raises how many reels you can bank, not how many you earn, so the
 # drop odds are untouched by progression.
+#
+# Named after the guild's own rank buckets (see data/embeds/guild_info/
+# role_info/guild_ranks.json), all seven of them in the same order, so a tank
+# reads like a rank: everyone starts in the Reef and the top tank is the
+# Abyss Waters.
+#
+# The number, not the name, is what a wallet stores, so rungs 1-3 are frozen:
+# their cost, bank, trickle and wishes are exactly what they were when the
+# ladder had five rungs, and the two extra buckets are inserted above them.
+# When this went in, every one of the 41 live wallets sat on rung 1, 2 or 3
+# and the richest player held 8,890 pearls, so nothing above rung 3 had ever
+# been bought and inserting there cost nobody anything. Moving a rung at or
+# below 3 later would silently hand out (or take back) a tank somebody paid
+# for — retire a rung instead of renumbering.
+#
+# Not every rung pays in all three currencies; a step that widens the bank
+# and the trickle is a real upgrade without also granting a wish, which is
+# what keeps the top at five wishes across seven rungs.
 TANK_TIERS = {
-    1: {"name": "Fishbowl", "cost": 0, "bank": 6, "trickle": 0, "wishes": 1},
-    2: {"name": "Reef", "cost": 2000, "bank": 8, "trickle": 3, "wishes": 2},
-    3: {"name": "Kelp Forest", "cost": 8000, "bank": 10, "trickle": 6, "wishes": 3},
-    4: {"name": "Deep Sea", "cost": 25000, "bank": 12, "trickle": 10, "wishes": 4},
-    5: {"name": "Abyss", "cost": 75000, "bank": 15, "trickle": 15, "wishes": 5},
+    1: {"name": "Reef", "cost": 0, "bank": 6, "trickle": 0, "wishes": 1},
+    2: {"name": "Coastal Waters", "cost": 2000, "bank": 8, "trickle": 3, "wishes": 2},
+    3: {"name": "Azure Ocean", "cost": 8000, "bank": 10, "trickle": 6, "wishes": 3},
+    4: {"name": "Blue Ocean", "cost": 14000, "bank": 11, "trickle": 8, "wishes": 3},
+    5: {"name": "Deep Sea", "cost": 22000, "bank": 12, "trickle": 10, "wishes": 4},
+    6: {"name": "Dark Sea", "cost": 32000, "bank": 13, "trickle": 12, "wishes": 4},
+    7: {"name": "Abyss Waters", "cost": 45000, "bank": 15, "trickle": 15, "wishes": 5},
 }
 MAX_TANK = max(TANK_TIERS)
 TRICKLE_CAP_HOURS = 24  # offline pearls stop accruing after a day
@@ -887,6 +908,28 @@ def db_get_collection(user_id: int) -> dict:
             e["levels"][stars] = count
             e["total"] += count
         return out
+    finally:
+        db.close()
+
+
+def db_get_owners(slug: str) -> list:
+    """Everyone holding this card, most copies first.
+
+    Copies are summed across star levels, so a 1★ counts as one card here
+    even though it is three plain ones fused; best is the top level held.
+    Member cards live in the same table, so the one holder shows up the same
+    way.
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'SELECT "user", SUM(count), MAX(stars) FROM card_collection '
+            'WHERE card = %s AND count > 0 GROUP BY "user" '
+            'ORDER BY SUM(count) DESC, MAX(stars) DESC, "user"',
+            (slug,))
+        return [{"user": r[0], "copies": int(r[1]), "best": r[2]}
+                for r in db.cursor.fetchall()]
     finally:
         db.close()
 

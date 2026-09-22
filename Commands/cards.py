@@ -77,6 +77,7 @@ def _tier_of(card: dict | None) -> str:
 TIER_CHOICES = [discord.OptionChoice(_tier_label(t), t)
                 for t in cardlib.TIER_ORDER]
 LEADERBOARD_SIZE = 15
+OWNERS_SHOWN = 20      # /pool owners lists this many holders before "+N more"
 
 
 def _notice(text: str) -> discord.Embed:
@@ -898,6 +899,7 @@ class Cards(commands.Cog):
             name="Pool",
             value=("`/pool list` all drops\n"
                    "`/pool view` preview a card\n"
+                   "`/pool owners` who holds a card\n"
                    "`/pool rates` odds"),
             inline=False)
         embed.add_field(
@@ -1508,11 +1510,57 @@ class Cards(commands.Cog):
                 state = "unminted"
             embed.add_field(name="Status", value=state, inline=False)
 
+        owners = await asyncio.to_thread(cardlib.db_get_owners, card["slug"])
         embed.set_footer(text=_credit(
             card,
-            f"you own {entry['total']}" if entry
-            else "not owned"))
+            f"you own {entry['total']}" if entry else "not owned",
+            ctext.count(len(owners), "owner")))
         await ctx.followup.send(embed=embed, file=file)
+
+    @pool.command(name="owners", description="Who holds a card")
+    async def pool_owners(
+        self, ctx: discord.ApplicationContext,
+        name: discord.Option(str, description="Card",
+                             autocomplete=_autocomplete_pool),
+    ):
+        await ctx.defer()
+        # Same lookup as /pool view, so an unminted member answers "nobody"
+        # rather than "no such card".
+        wanted = name.strip().lower()
+        entries = await asyncio.to_thread(cardlib.db_get_pool)
+        card = (next((p for p in entries if p["name"].lower() == wanted), None)
+                or _find_card(name))
+        if card is None:
+            return await ctx.followup.send(
+                embed=_notice(f"No drop named **{name.strip()}**"),
+                ephemeral=True)
+
+        owners = await asyncio.to_thread(cardlib.db_get_owners, card["slug"])
+        if not owners:
+            return await ctx.followup.send(
+                embed=_notice(f"Nobody holds **{card['name']}** yet"),
+                ephemeral=True)
+
+        lines = []
+        for i, o in enumerate(owners[:OWNERS_SHOWN], 1):
+            member = ctx.guild.get_member(o["user"]) if ctx.guild else None
+            who = member.display_name if member else f"<@{o['user']}>"
+            best = _level_label(card, o["best"])
+            copies = ctext.count(o["copies"], "copy", "copies")
+            lines.append(f"`{i:2}` **{who}**: {copies}"
+                         + (f" · best {best}" if best else ""))
+        if len(owners) > OWNERS_SHOWN:
+            lines.append(f"-# +{len(owners) - OWNERS_SHOWN} more")
+
+        total = sum(o["copies"] for o in owners)
+        embed = discord.Embed(
+            title=f"{card['name']} · {ctext.count(len(owners), 'owner')}",
+            description="\n".join(lines),
+            color=_card_color(card))
+        embed.set_footer(text=_credit(
+            card, _tier_label(_tier_of(card)),
+            f"{total} in circulation"))
+        await ctx.followup.send(embed=embed)
 
     @pool.command(name="list", description=ctext.POOL)
     async def pool_list(
