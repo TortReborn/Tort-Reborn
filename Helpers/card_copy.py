@@ -61,6 +61,14 @@ def render_failed() -> str:
     return "Render failed\nreel refunded"
 
 
+def reel_failed() -> str:
+    return "Reel failed\nreel refunded"
+
+
+def pull_unshown(name: str) -> str:
+    return f"**{name}** couldn't be shown\nit's in your collection"
+
+
 def copy_label(copies: int) -> str:
     """How a pull reads in the reel footer: New, then 2nd Copy, 3rd Copy ..."""
     return "New" if copies == 1 else f"{ordinal(copies)} Copy"

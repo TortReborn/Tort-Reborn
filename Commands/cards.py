@@ -446,43 +446,74 @@ async def _do_reel(user_id: int, who: str):
     """Spend a reel and roll a card.
 
     Returns (embed, file, remaining, card) on success, or (None, None, reason,
-    None) where reason is 'out' or 'render'. A failed render refunds the reel,
-    so a broken image never costs anything.
+    None) where reason is 'out', 'render' or 'failed'. Anything that goes
+    wrong before the card is banked refunds the reel and releases a member
+    card minted on the way, so a failed pull never costs anything. Once the
+    card is banked nothing is refunded: the pull happened.
     """
     spend = await asyncio.to_thread(cardlib.db_spend_reel, user_id)
     if spend is None:
         return None, None, "out", None
     remaining = spend["total"]
 
-    wishes = set(await asyncio.to_thread(cardlib.db_get_wishes, user_id))
-    card = cardlib.roll_card(wishes=wishes)
-
-    if card.get("tier") == "member":
-        minted = await asyncio.to_thread(cardlib.db_mint_member_card, user_id)
-        # Every eligible member already holds a card: fall back to a normal
-        # pull rather than silently eating the reel.
-        card = minted or cardlib.roll_card(wishes=wishes)
-        if card.get("tier") == "member":
-            card = cardlib.roll_card()
-
+    card, minted, stage = None, None, "roll"
     try:
+        wishes = set(await asyncio.to_thread(cardlib.db_get_wishes, user_id))
+        card = cardlib.roll_card(wishes=wishes)
+
+        if card.get("tier") == "member":
+            minted = await asyncio.to_thread(cardlib.db_mint_member_card,
+                                             user_id)
+            # Every eligible member already holds a card: fall back to a normal
+            # pull rather than silently eating the reel.
+            card = minted or cardlib.roll_card(wishes=wishes)
+            if card.get("tier") == "member":
+                card = cardlib.roll_card()
+
+        stage = "render"
         # Spelled out rather than left to defaults: a fresh pull is always
         # unfused, and that is worth saying at the call site.
         file = await asyncio.to_thread(card_file, card, None, 0,
                                        cardlib.tier_max_stars(card))
-    except Exception as e:
-        await asyncio.to_thread(cardlib.db_refund_reel, user_id,
-                                spend["used_bait"])
-        log(ERROR, f"Card render failed for {card.get('slug')}: {e}",
-            context="cards")
-        return None, None, "render", None
 
-    pearls = cardlib.pull_value(card)
-    result = await asyncio.to_thread(cardlib.db_add_card, user_id,
-                                     card["slug"], pearls)
+        stage = "grant"
+        pearls = cardlib.pull_value(card)
+        result = await asyncio.to_thread(cardlib.db_add_card, user_id,
+                                         card["slug"], pearls)
+    except Exception as e:
+        slug = card.get("slug") if card else None
+        log(ERROR, f"Reel failed at {stage} for {user_id} ({slug}): {e}",
+            context="cards")
+        await _undo_pull(user_id, spend["used_bait"], minted)
+        return None, None, ("render" if stage == "render" else "failed"), None
+
     embed = _card_embed(card, result["count"], remaining, file.filename, who,
                         gained=result["gained"])
     return embed, file, remaining, card
+
+
+async def _undo_pull(user_id: int, bait: bool, minted: dict | None):
+    """Give back what a failed pull took.
+
+    A refund that itself fails is logged with what the player is owed, so they
+    can be made whole by hand.
+    """
+    try:
+        await asyncio.to_thread(cardlib.db_refund_reel, user_id, bait)
+    except Exception as e:
+        log(ERROR, f"Reel refund failed for {user_id}; owed one "
+            f"{'bait ' if bait else ''}reel: {e}", context="cards")
+    if minted:
+        try:
+            await asyncio.to_thread(cardlib.db_release_member_card,
+                                    minted["slug"], user_id)
+        except Exception as e:
+            log(ERROR, f"Member card {minted['slug']} not released after a "
+                f"failed pull by {user_id}: {e}", context="cards")
+
+
+def _failure_text(reason: str) -> str:
+    return ctext.render_failed() if reason == "render" else ctext.reel_failed()
 
 
 def _milestone_embed(user, kind: str, name, pearls: int) -> discord.Embed:
@@ -565,18 +596,23 @@ class ReelView(discord.ui.View):
                        emoji="\N{FISHING POLE AND FISH}")
     async def reel_again(self, button: discord.ui.Button,
                          interaction: discord.Interaction):
+        # Acknowledge before any work. A pull renders an image and makes
+        # several database round trips, which at a reel refresh can outlast
+        # Discord's three-second window; a reply that fails after the card is
+        # banked makes a paid reel look eaten.
+        await interaction.response.defer()
         embed, file, info, card = await _do_reel(self.owner_id, self.owner_name)
 
         if embed is None:
             if info == "out":
                 self.set_exhausted(True)
                 refresh = cardlib.next_refresh_ts()
-                await interaction.response.edit_message(view=self)
+                await interaction.edit_original_response(view=self)
                 return await interaction.followup.send(
                     embed=_notice(ctext.no_reels(refresh)),
                     ephemeral=True)
-            return await interaction.response.send_message(
-                embed=_notice(ctext.render_failed()), ephemeral=True)
+            return await interaction.followup.send(
+                embed=_notice(_failure_text(info)), ephemeral=True)
 
         # The card being replaced becomes part of the session log above it.
         if self.current is not None:
@@ -584,10 +620,21 @@ class ReelView(discord.ui.View):
         self.current = card
 
         self.set_exhausted(info == 0)
-        # attachments=[] drops the previous card image; the new file replaces it.
-        await interaction.response.edit_message(
-            content=_history_content(self.history),
-            embed=embed, file=file, attachments=[], view=self)
+        try:
+            # attachments=[] drops the previous card image; the new file
+            # replaces it.
+            await interaction.edit_original_response(
+                content=_history_content(self.history),
+                embed=embed, file=file, attachments=[], view=self)
+        except discord.HTTPException as e:
+            log(ERROR, f"Reel reply failed for {self.owner_id}; "
+                f"{card['slug']} is banked: {e}", context="cards")
+            try:
+                await interaction.followup.send(
+                    embed=_notice(ctext.pull_unshown(card["name"])),
+                    ephemeral=True)
+            except discord.HTTPException:
+                pass
         await _announce_and_reward(interaction.channel, interaction.user, card)
 
 
@@ -802,7 +849,7 @@ class Cards(commands.Cog):
                     embed=_notice(ctext.no_reels(refresh)),
                     ephemeral=True)
             return await ctx.followup.send(
-                embed=_notice(ctext.render_failed()), ephemeral=True)
+                embed=_notice(_failure_text(info)), ephemeral=True)
 
         view = ReelView(ctx.author.id, who, card, exhausted=(info == 0))
         # wait=True so the view can disable its own button when it times out.
