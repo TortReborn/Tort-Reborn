@@ -1185,6 +1185,26 @@ def db_mint_member_card(owner_id: int) -> dict | None:
         db.close()
 
 
+def db_release_member_card(slug: str, owner_id: int) -> bool:
+    """Undo a mint whose pull never landed, so the member can be minted again.
+
+    Only a card that no collection holds is released: once a copy has landed
+    anywhere the mint is real, and it stays.
+    """
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'DELETE FROM card_members m WHERE m.slug = %s AND m.owner = %s '
+            '  AND NOT EXISTS (SELECT 1 FROM card_collection c WHERE c.card = m.slug)',
+            (slug, owner_id))
+        released = db.cursor.rowcount == 1
+        db.connection.commit()
+        return released
+    finally:
+        db.close()
+
+
 def pool_entry(ign: str, uuid: str, rank: str, discord_id: int,
                owner: int | None, retired: bool) -> dict:
     """A pool member shaped like a card so the renderer can draw them."""
