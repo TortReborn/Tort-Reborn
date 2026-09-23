@@ -26,7 +26,7 @@ import Commands.cards as cmd
 from Helpers import card_copy as ctext
 from Helpers import cards as cardlib
 
-OWNER = 482259310768947201
+OWNER = 111111111111111111
 CARD = {"slug": "charon", "name": "Charon", "tier": "rare"}
 MEMBER = {"slug": "member-someign", "name": "SomeIgn", "tier": "Hydra",
           "member": True}
@@ -106,7 +106,7 @@ def wallet(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_a_good_pull_banks_the_card_and_refunds_nothing(wallet):
-    embed, file, remaining, card = await cmd._do_reel(OWNER, "Bulkas")
+    embed, file, remaining, card = await cmd._do_reel(OWNER, "Player")
     assert embed == "EMBED" and card["slug"] == "charon"
     assert remaining == 2
     assert wallet.granted == ["charon"]
@@ -116,14 +116,14 @@ async def test_a_good_pull_banks_the_card_and_refunds_nothing(wallet):
 @pytest.mark.asyncio
 async def test_no_reels_spends_nothing(wallet):
     wallet.reels = 0
-    assert await cmd._do_reel(OWNER, "Bulkas") == (None, None, "out", None)
+    assert await cmd._do_reel(OWNER, "Player") == (None, None, "out", None)
     assert wallet.refunds == [] and wallet.granted == []
 
 
 @pytest.mark.asyncio
 async def test_a_failed_render_refunds(wallet, monkeypatch):
     monkeypatch.setattr(cmd, "card_file", boom)
-    assert await cmd._do_reel(OWNER, "Bulkas") == (None, None, "render", None)
+    assert await cmd._do_reel(OWNER, "Player") == (None, None, "render", None)
     assert wallet.refunds == [False] and wallet.reels == 3
     assert wallet.granted == []
 
@@ -132,7 +132,7 @@ async def test_a_failed_render_refunds(wallet, monkeypatch):
 @pytest.mark.asyncio
 async def test_a_failure_before_the_bank_refunds(wallet, monkeypatch, step):
     monkeypatch.setattr(cardlib, step, boom)
-    assert await cmd._do_reel(OWNER, "Bulkas") == (None, None, "failed", None)
+    assert await cmd._do_reel(OWNER, "Player") == (None, None, "failed", None)
     assert wallet.refunds == [False] and wallet.reels == 3
     assert wallet.granted == []
 
@@ -141,7 +141,7 @@ async def test_a_failure_before_the_bank_refunds(wallet, monkeypatch, step):
 async def test_a_bait_reel_goes_back_to_the_bait_pocket(wallet, monkeypatch):
     wallet.bait = 1
     monkeypatch.setattr(cardlib, "db_add_card", boom)
-    await cmd._do_reel(OWNER, "Bulkas")
+    await cmd._do_reel(OWNER, "Player")
     assert wallet.refunds == [True]
     assert (wallet.bait, wallet.reels) == (1, 3)
 
@@ -150,7 +150,7 @@ async def test_a_bait_reel_goes_back_to_the_bait_pocket(wallet, monkeypatch):
 async def test_a_failed_pull_releases_the_member_card_it_minted(wallet, monkeypatch):
     wallet.roll = {"slug": "member", "tier": "member"}
     monkeypatch.setattr(cmd, "card_file", boom)
-    assert await cmd._do_reel(OWNER, "Bulkas") == (None, None, "render", None)
+    assert await cmd._do_reel(OWNER, "Player") == (None, None, "render", None)
     assert wallet.minted == ["member-someign"]
     assert wallet.released == ["member-someign"]
     assert wallet.refunds == [False]
@@ -159,7 +159,7 @@ async def test_a_failed_pull_releases_the_member_card_it_minted(wallet, monkeypa
 @pytest.mark.asyncio
 async def test_a_good_member_pull_keeps_its_mint(wallet):
     wallet.roll = {"slug": "member", "tier": "member"}
-    *_, card = await cmd._do_reel(OWNER, "Bulkas")
+    *_, card = await cmd._do_reel(OWNER, "Player")
     assert card["slug"] == "member-someign"
     assert wallet.granted == ["member-someign"] and wallet.released == []
 
@@ -168,7 +168,7 @@ async def test_a_good_member_pull_keeps_its_mint(wallet):
 async def test_a_banked_card_is_never_refunded(wallet, monkeypatch):
     monkeypatch.setattr(cmd, "_card_embed", boom)
     with pytest.raises(RuntimeError):
-        await cmd._do_reel(OWNER, "Bulkas")
+        await cmd._do_reel(OWNER, "Player")
     assert wallet.granted == ["charon"]
     assert wallet.refunds == []
 
@@ -177,8 +177,53 @@ async def test_a_banked_card_is_never_refunded(wallet, monkeypatch):
 async def test_a_refund_that_fails_is_logged_with_what_is_owed(wallet, monkeypatch):
     monkeypatch.setattr(cardlib, "db_add_card", boom)
     monkeypatch.setattr(cardlib, "db_refund_reel", boom)
-    assert await cmd._do_reel(OWNER, "Bulkas") == (None, None, "failed", None)
+    assert await cmd._do_reel(OWNER, "Player") == (None, None, "failed", None)
     assert any("owed one reel" in m and str(OWNER) in m for m in wallet.logs)
+
+
+# ── db_release_member_card: the real SQL, on TEMP tables ─────────────────────
+
+@pytest.fixture
+def card_db(_dev_db, monkeypatch):
+    """TEMP card tables shadowing the real ones on the local dev connection, so
+    the release runs its real DELETE and nothing in the database is written."""
+    cur = _dev_db.cursor
+    for table in ("card_members", "card_collection"):
+        cur.execute(f"CREATE TEMP TABLE IF NOT EXISTS {table} "
+                    f"(LIKE public.{table} INCLUDING ALL)")
+        cur.execute(f"TRUNCATE {table}")
+    monkeypatch.setattr(cardlib, "DB", lambda: _dev_db)
+    return cur
+
+
+def _mint(cur, slug="member-someign", owner=OWNER):
+    cur.execute("INSERT INTO card_members (slug, discord_id, ign, rank, owner) "
+                "VALUES (%s, 7, 'SomeIgn', 'Hydra', %s)", (slug, owner))
+
+
+def _members(cur):
+    cur.execute("SELECT slug FROM card_members")
+    return [r[0] for r in cur.fetchall()]
+
+
+def test_release_frees_a_mint_that_never_landed(card_db):
+    _mint(card_db)
+    assert cardlib.db_release_member_card("member-someign", OWNER) is True
+    assert _members(card_db) == []
+
+
+def test_release_keeps_a_mint_that_landed_in_a_collection(card_db):
+    _mint(card_db)
+    card_db.execute('INSERT INTO card_collection ("user", card) VALUES (%s, %s)',
+                    (OWNER, "member-someign"))
+    assert cardlib.db_release_member_card("member-someign", OWNER) is False
+    assert _members(card_db) == ["member-someign"]
+
+
+def test_release_never_touches_another_owners_card(card_db):
+    _mint(card_db, owner=999)
+    assert cardlib.db_release_member_card("member-someign", OWNER) is False
+    assert _members(card_db) == ["member-someign"]
 
 
 def test_each_failure_has_its_own_words():
@@ -246,7 +291,7 @@ def pulling(monkeypatch, events, result):
 @pytest.mark.asyncio
 async def test_reel_again_acknowledges_before_it_pulls(monkeypatch, events):
     pulling(monkeypatch, events, ("EMBED", "FILE", 2, CARD))
-    view = cmd.ReelView(OWNER, "Bulkas", CARD)
+    view = cmd.ReelView(OWNER, "Player", CARD)
     await view.reel_again.callback(Click(events))
     assert events.index("defer") < events.index("pull")
     assert events[0] == "defer"
@@ -255,7 +300,7 @@ async def test_reel_again_acknowledges_before_it_pulls(monkeypatch, events):
 @pytest.mark.asyncio
 async def test_reel_again_shows_the_card_through_the_deferred_reply(monkeypatch, events):
     pulling(monkeypatch, events, ("EMBED", "FILE", 2, CARD))
-    view = cmd.ReelView(OWNER, "Bulkas", {"slug": "gale", "name": "Gale"})
+    view = cmd.ReelView(OWNER, "Player", {"slug": "gale", "name": "Gale"})
     click = Click(events)
     await view.reel_again.callback(click)
     [edit] = click.edits
@@ -268,7 +313,7 @@ async def test_reel_again_shows_the_card_through_the_deferred_reply(monkeypatch,
 @pytest.mark.asyncio
 async def test_a_reply_lost_after_the_bank_still_reaches_the_player(monkeypatch, events):
     pulling(monkeypatch, events, ("EMBED", "FILE", 0, CARD))
-    view = cmd.ReelView(OWNER, "Bulkas", CARD)
+    view = cmd.ReelView(OWNER, "Player", CARD)
     click = Click(events, edit_error=unknown_interaction())
     await view.reel_again.callback(click)
     [told] = click.followups
@@ -281,7 +326,7 @@ async def test_a_reply_lost_after_the_bank_still_reaches_the_player(monkeypatch,
 async def test_a_refunded_pull_says_so_without_touching_the_spent_response(monkeypatch, events):
     pulling(monkeypatch, events, (None, None, "failed", None))
     click = Click(events)
-    await cmd.ReelView(OWNER, "Bulkas", CARD).reel_again.callback(click)
+    await cmd.ReelView(OWNER, "Player", CARD).reel_again.callback(click)
     [told] = click.followups
     assert told["embed"].description == ctext.reel_failed()
     assert "reward" not in events
@@ -290,7 +335,7 @@ async def test_a_refunded_pull_says_so_without_touching_the_spent_response(monke
 @pytest.mark.asyncio
 async def test_out_of_reels_disables_the_button(monkeypatch, events):
     pulling(monkeypatch, events, (None, None, "out", None))
-    view = cmd.ReelView(OWNER, "Bulkas", CARD)
+    view = cmd.ReelView(OWNER, "Player", CARD)
     click = Click(events)
     await view.reel_again.callback(click)
     assert view.reel_again.disabled is True
