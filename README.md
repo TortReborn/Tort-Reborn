@@ -17,7 +17,6 @@ Discord bot for **The Aquarium [TAq]** Wynncraft guild. Built with [py-cord](htt
 | **OpenAI** | AI-powered application parsing — completeness checks, IGN extraction | `OPENAI_API_KEY` |
 | **Google Sheets** (Apps Script) | Recruitment tracking spreadsheet | `SHEETS_SCRIPT_URL` |
 | **Discord Webhooks** | Posting application embeds and shell exchange updates | `LEGACY_WEBHOOK_URL` |
-| **Flask + Waitress** | Web server receiving guild website application form submissions | Runs alongside the bot |
 | **Railway** | Cloud hosting — runs the bot as a worker service | Shared variables (see below) |
 
 All secrets live in `.env` — copy `.env.example` and fill in values (ask a contributor).
@@ -29,7 +28,6 @@ All secrets live in `.env` — copy `.env.example` and fill in values (ask a con
 ```
 Tort-Reborn/
 ├── main.py              # Bot entry point — loads cogs, starts the bot
-├── webhook.py           # Flask server for website application submissions
 │
 ├── Commands/            # Slash commands (~30 modules)
 ├── UserCommands/        # Right-click context menu commands
@@ -64,7 +62,7 @@ Tort-Reborn/
 
 **Helpers/** — Shared logic imported by commands, events, and tasks. This is where all external service clients live.
 
-**webhook.py** — Standalone Flask server. Receives `POST /application` from the guild website, validates the player, and forwards the application into Discord.
+**Website applications** arrive through the database, not over HTTP. The website saves each submission to the `applications` table; `Tasks/check_website_apps.py` claims new ones every minute and opens a Discord channel for each, and `Tasks/process_website_decisions.py` applies the accept/deny decisions made on the website.
 
 ---
 
@@ -78,8 +76,6 @@ pip install -r requirements.txt
 
 # Run the bot
 python main.py
-
-# The Flask webhook server starts automatically alongside the bot
 ```
 
 A local checkout's `.env` holds the dev bot token and local database; the config profile (test vs prod Discord wiring) is derived from the token's application id automatically. Prod credentials exist only in Railway.
