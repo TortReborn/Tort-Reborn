@@ -1,0 +1,77 @@
+{
+ "note": "The Boss Altar bosses (https://wynncraft.wiki.gg/wiki/Boss_Altar). Hand-curated like the raid and dungeon bosses: they do not speak, so the dialogue mining never saw them. Unlike those files each card carries its own tier, because the altars span the whole level curve: level 20-40 are unique, 70-95 rare, 99-101 legendary, Hyhet fabled. Only bosses with a wiki page of their own are here; the seven red-linked ones have no art to draw. Merged into the playable set by scripts/build_card_set.py.",
+ "cards": [
+  {
+   "slug": "durum-protector",
+   "name": "Durum Protector",
+   "tier": "unique",
+   "altar": "Bovine Barn",
+   "level": 20,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Durum_Protector",
+   "image_url": "https://wynncraft.wiki.gg/images/DurumProtector.png?b64fe1"
+  },
+  {
+   "slug": "haros",
+   "name": "Haros",
+   "tier": "unique",
+   "altar": "Rotten Passage",
+   "level": 25,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Haros",
+   "image_url": "https://wynncraft.wiki.gg/images/Haros.png?c18a1f"
+  },
+  {
+   "slug": "rymek-luke",
+   "name": "Rymek Luke",
+   "tier": "unique",
+   "altar": "Sunrise Canyon",
+   "level": 40,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Rymek_Luke",
+   "image_url": "https://wynncraft.wiki.gg/images/RymekLuke.png?b044b4"
+  },
+  {
+   "slug": "revenant-of-skien",
+   "name": "Revenant of Skien",
+   "tier": "rare",
+   "altar": "Altar of Sanctification",
+   "level": 70,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Revenant_of_Skien",
+   "image_url": "https://wynncraft.wiki.gg/images/RevenantofSkien%28Phase1%29.png?996c17"
+  },
+  {
+   "slug": "adamastor",
+   "name": "Adamastor",
+   "tier": "rare",
+   "altar": "Aerie of the Recluse",
+   "level": 95,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Adamastor",
+   "image_url": "https://wynncraft.wiki.gg/images/Adamastor.png?62ad08"
+  },
+  {
+   "slug": "orange-wybel",
+   "name": "Orange Wybel",
+   "tier": "legendary",
+   "altar": "Unknown Area",
+   "level": 99,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Orange_Wybel",
+   "image_url": "https://wynncraft.wiki.gg/images/OrangeWybel%28Boss%29.png?eec4f8"
+  },
+  {
+   "slug": "panic-zealot",
+   "name": "Panic Zealot",
+   "tier": "legendary",
+   "altar": "Bottomless Pit",
+   "level": 101,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Panic_Zealot_(Boss)",
+   "image_url": "https://wynncraft.wiki.gg/images/PanicZealot.png?5aed5c"
+  },
+  {
+   "slug": "hyhet",
+   "name": "Hyhet, the Apostate",
+   "tier": "fabled",
+   "altar": "Deserter's Refuge",
+   "level": 119,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Hyhet",
+   "image_url": "https://wynncraft.wiki.gg/images/Hyhet%2CtheApostate.png?ebfc45"
+  }
+ ]
+}

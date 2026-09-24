@@ -10,6 +10,7 @@ Re-tiering cards without handing anyone a free upgrade.
 4. --only-upgrades leaves cards that moved down alone
 5. data/card_sets.json loads with load_card_set() and only names real cards
 6. Dungeon bosses are curated rare cards and Dungeon Keepers holds every final boss
+7. Boss Altar bosses tier themselves card by card and Boss Altars names them all
 """
 
 import json
@@ -103,7 +104,7 @@ def test_card_sets_load_and_every_member_exists():
         assert live["slugs"] == disk["slugs"], f"{disk['id']} names a slug that is not a card"
         assert len(set(disk["slugs"])) == len(disk["slugs"])
         assert disk["name"] and disk["description"]
-    assert len(loaded) == 6
+    assert len(loaded) == 7
 
 
 def test_dungeon_bosses_are_rare_cards_and_the_keepers_set_names_every_dungeon():
@@ -122,3 +123,36 @@ def test_dungeon_bosses_are_rare_cards_and_the_keepers_set_names_every_dungeon()
     finals = {"witherhead", "arakadicus", "charon", "garoth", "hashr", "theorick-twain",
               "slykaar", "captain-redbeard", "antikythera-supercomputer", "the-eye"}
     assert set(keepers["slugs"]) == finals
+
+
+def test_boss_altars_carry_their_own_tiers_and_the_set_names_every_altar_boss():
+    """The altar bosses span the level curve, so the file tiers each card
+    itself instead of the whole file; the builder honours that."""
+    from Helpers import cards as cardlib
+    static = cardlib.load_card_set(force=True)
+    with open(build_card_set.CURATED[2], encoding="utf-8") as f:
+        altars = json.load(f)
+    assert "tier" not in altars, "tiers live on the cards"
+    wanted = {
+        "durum-protector": "unique", "haros": "unique", "rymek-luke": "unique",
+        "revenant-of-skien": "rare", "adamastor": "rare",
+        "orange-wybel": "legendary", "panic-zealot": "legendary",
+        "hyhet": "fabled",
+    }
+    assert {c["slug"]: c["tier"] for c in altars["cards"]} == wanted
+    for c in altars["cards"]:
+        assert static["by_slug"][c["slug"]]["tier"] == c["tier"], c["slug"]
+        assert c["altar"] and c["image_url"].startswith("https://wynncraft.wiki.gg/images/")
+    boss_set = next(s for s in static["sets"] if s["id"] == "boss-altars")
+    assert boss_set["name"] == "Boss Altars"
+    assert set(boss_set["slugs"]) == set(wanted)
+
+
+def test_curated_tier_prefers_the_card_and_rejects_nothing():
+    assert build_card_set.curated_tier({"tier": "fabled"}, {"tier": "rare"}) == "fabled"
+    assert build_card_set.curated_tier({}, {"tier": "rare"}) == "rare"
+    import pytest
+    with pytest.raises(ValueError):
+        build_card_set.curated_tier({"slug": "x"}, {})
+    with pytest.raises(ValueError):
+        build_card_set.curated_tier({"slug": "x", "tier": "epic"}, {})
