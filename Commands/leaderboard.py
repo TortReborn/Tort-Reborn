@@ -128,7 +128,7 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                 return 0, False
 
         # ---------------------------
-        # Raids use graid_logs as source of truth (consistent with /graid leaderboard).
+        # Raids use graid_logs as source of truth (consistent with Helpers/graid_stats.py).
         # Offsets are historical corrections and only apply all-time.
         # ---------------------------
         graid_totals: Dict[str, int] = {}

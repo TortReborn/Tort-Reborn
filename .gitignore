@@ -6,6 +6,8 @@ gen
 
 # Environment file
 .env
+.env.*
+!.env.example
 venv
 
 # Python cache files

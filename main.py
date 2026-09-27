@@ -313,6 +313,7 @@ extensions = [
     'Commands.map',
     'Commands.graidevent',
     'Commands.graidlog',
+    'Commands.graidstats',
     'Commands.treasury',
     'Commands.recruitment',
     'Commands.top_wars',
