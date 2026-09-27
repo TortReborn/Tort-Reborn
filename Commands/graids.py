@@ -1,11 +1,18 @@
-from typing import Tuple
+import asyncio
+from typing import Dict, List, Tuple
 
 import discord
 from discord.ext import commands
 from discord.commands import slash_command, Option
+from PIL import Image
 
+from Helpers.database import DB
+from Helpers.graid_cards import GraidPlayerCard
+from Helpers.graid_stats import RaidRange, has_tracked_raids, player_raid_stats
+from Helpers.logger import log, ERROR
 from Helpers.raid_card import RaidCardBase
 from Helpers.rate_limiter import external_rate_limit
+from Helpers.roster import is_member
 
 
 class GuildRaids(RaidCardBase, commands.Cog):
@@ -34,6 +41,46 @@ class GuildRaids(RaidCardBase, commands.Cog):
                      ctx: discord.ApplicationContext,
                      name: Option(str, "Minecraft username", required=True)):
         await self._run(ctx, name)
+
+    async def _extra_cards(self, ctx: discord.ApplicationContext, player: Dict,
+                           player_stats) -> List[Image.Image]:
+        """The raids we tracked, for a caller on the roster. Everyone else gets
+        page 1 alone, with no hint that more exists."""
+        uuid = player.get("uuid")
+        if not uuid:
+            return []
+        try:
+            return await asyncio.to_thread(self._tracked_cards, ctx.author.id, uuid, player, player_stats)
+        except Exception as e:
+            log(ERROR, f"Tracked graid pages failed for {player.get('username')}: {e}", context="graids")
+            return []
+
+    def _tracked_cards(self, author_id: int, uuid: str, player: Dict,
+                       player_stats) -> List[Image.Image]:
+        db = DB()
+        db.connect()
+        try:
+            cursor = db.cursor
+            if not is_member(cursor, discord_id=author_id):
+                return []
+            if not has_tracked_raids(cursor, uuid):
+                return []
+            raid_range = RaidRange(label="All-Time")
+            stats = player_raid_stats(cursor, uuid, player.get("username") or "", raid_range)
+        finally:
+            db.close()
+
+        if stats is None:
+            return []
+
+        card = GraidPlayerCard(
+            player,
+            player_stats,
+            player_stats.tag_color,
+            *player_stats.gradient,
+            player_stats.background,
+        )
+        return card.render(stats, raid_range.label)
 
 
 def setup(client: commands.Bot):
