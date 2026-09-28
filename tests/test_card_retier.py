@@ -136,8 +136,8 @@ def test_boss_altars_carry_their_own_tiers_and_the_set_names_every_altar_boss():
     wanted = {
         "durum-protector": "unique", "haros": "unique", "rymek-luke": "unique",
         "revenant-of-skien": "rare", "adamastor": "rare",
-        "orange-wybel": "legendary", "panic-zealot": "legendary",
-        "hyhet": "fabled",
+        "orange-wybel": "fabled", "panic-zealot": "legendary",
+        "hyhet": "legendary",
     }
     assert {c["slug"]: c["tier"] for c in altars["cards"]} == wanted
     for c in altars["cards"]:

@@ -888,7 +888,7 @@ class Cards(commands.Cog):
             value=(f"`/tank fuse` merge **{cardlib.FUSION_COPIES_PER_STEP}** "
                    "matching copies\n"
                    f"MAX costs: {_max_costs()}\n"
-                   "`/tank upgrade` bigger bank, passive pearls, more wishes"),
+                   "`/tank upgrade` bigger bank, Passive Pearls, more wishes"),
             inline=False)
         embed.add_field(
             name="Wishes",
@@ -959,6 +959,12 @@ class Cards(commands.Cog):
         tier: discord.Option(
             str, description="Tier",
             required=False, default=None, choices=TIER_CHOICES),
+        sort: discord.Option(
+            str, description="Order",
+            required=False, default="tier",
+            choices=[discord.OptionChoice("Tier", "tier"),
+                     discord.OptionChoice("Copies", "copies"),
+                     discord.OptionChoice("Name", "name")]),
     ):
         await ctx.defer()
         target = member or ctx.author
@@ -1004,11 +1010,18 @@ class Cards(commands.Cog):
             if c:
                 rows.append((c, entry))
 
-        def sort_key(r):
-            t = _tier_of(r[0])
-            idx = cardlib.TIER_ORDER.index(t) if t in cardlib.TIER_ORDER else 9
-            return (idx, r[0]["name"])
-        rows.sort(key=sort_key)
+        def tier_idx(card):
+            t = _tier_of(card)
+            return cardlib.TIER_ORDER.index(t) if t in cardlib.TIER_ORDER else 9
+
+        if sort == "copies":
+            # Most copies first, so the stacks worth fusing or trading are on
+            # page one; rarity breaks ties, then the name.
+            rows.sort(key=lambda r: (-r[1]["total"], tier_idx(r[0]), r[0]["name"]))
+        elif sort == "name":
+            rows.sort(key=lambda r: r[0]["name"].lower())
+        else:
+            rows.sort(key=lambda r: (tier_idx(r[0]), r[0]["name"]))
 
         total_copies = sum(e["total"] for _, e in rows)
         if tier == "member":
@@ -1041,6 +1054,10 @@ class Cards(commands.Cog):
                     for st, n in sorted(e["levels"].items()):
                         label = _level_label(c, st)
                         bits.append(f"{label}×{n}" if label else f"×{n}")
+                    # Sorting by copies orders on the total, which a split
+                    # stack does not show; a single level already reads as one.
+                    if sort == "copies" and len(e["levels"]) > 1:
+                        bits.append(f"({e['total']} total)")
                 line = f"`{label_col:9}` {c['name']}"
                 lines.append(f"{line} {' '.join(bits)}" if bits else line)
             embed = discord.Embed(
@@ -1122,10 +1139,10 @@ class Cards(commands.Cog):
             embed.add_field(
                 name="Sets",
                 value=f"{sum(p['complete'] for p in progress)}/{len(progress)}")
-        if spec["trickle"]:
-            embed.add_field(
-                name="Passive",
-                value=f"{spec['trickle']}/h\ncap {cardlib.TRICKLE_CAP_HOURS}h")
+        embed.add_field(
+            name="Passive Pearls",
+            value=ctext.passive_value(spec["trickle"],
+                                      cardlib.TRICKLE_CAP_HOURS))
         embed.add_field(
             name=f"Wishes ({len(wishes)}/{spec['wishes']})",
             value=", ".join((cardlib.get_card(w) or {"name": w})["name"]
@@ -1196,7 +1213,7 @@ class Cards(commands.Cog):
         embed = discord.Embed(
             title=f"Tank: {nxt['name']}",
             description=(f"bank **{nxt['bank']}**\n"
-                         f"passive **{nxt['trickle']}/h**\n"
+                         f"Passive Pearls **{ctext.per_hour(nxt['trickle'])}**\n"
                          f"wishes **{nxt['wishes']}**"),
             color=ctext.ACCENT)
         if tier + 1 < cardlib.MAX_TANK:

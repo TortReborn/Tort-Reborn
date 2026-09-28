@@ -625,7 +625,7 @@
    "lines": 77,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Farcor",
    "image_url": "https://wynncraft.wiki.gg/images/Farcor%28Portrait%29.png?d0715f",
-   "tier": "rare"
+   "tier": "legendary"
   },
   {
    "slug": "mastro",
@@ -1525,7 +1525,7 @@
   },
   {
    "slug": "man",
-   "name": "Mané",
+   "name": "Man",
    "lines": 33,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/Man%C3%A9.png?bacdae",
@@ -3321,7 +3321,7 @@
    "lines": 12,
    "wiki_url": "",
    "image_url": "https://wynncraft.wiki.gg/images/BlackjackDealer.png?e7d518",
-   "tier": "normal"
+   "tier": "fabled"
   },
   {
    "slug": "ostentatious-envoy",
@@ -4533,7 +4533,7 @@
   {
    "slug": "orange-wybel",
    "name": "Orange Wybel",
-   "tier": "legendary",
+   "tier": "fabled",
    "altar": "Unknown Area",
    "level": 99,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Orange_Wybel",
@@ -4553,7 +4553,7 @@
   {
    "slug": "hyhet",
    "name": "Hyhet, the Apostate",
-   "tier": "fabled",
+   "tier": "legendary",
    "altar": "Deserter's Refuge",
    "level": 119,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Hyhet",
