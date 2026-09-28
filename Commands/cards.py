@@ -1141,8 +1141,7 @@ class Cards(commands.Cog):
                 value=f"{sum(p['complete'] for p in progress)}/{len(progress)}")
         embed.add_field(
             name="Passive Pearls",
-            value=ctext.passive_value(spec["trickle"],
-                                      cardlib.TRICKLE_CAP_HOURS))
+            value=ctext.passive_value(spec["trickle"]))
         embed.add_field(
             name=f"Wishes ({len(wishes)}/{spec['wishes']})",
             value=", ".join((cardlib.get_card(w) or {"name": w})["name"]

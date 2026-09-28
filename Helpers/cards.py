@@ -158,7 +158,6 @@ TANK_TIERS = {
     7: {"name": "Abyss Waters", "cost": 45000, "bank": 15, "trickle": 15, "wishes": 5},
 }
 MAX_TANK = max(TANK_TIERS)
-TRICKLE_CAP_HOURS = 24  # offline pearls stop accruing after a day
 
 # ── Daily ────────────────────────────────────────────────────────────────────
 # Bait pays in bands rather than a per-day drip, so there is a rung to aim at
@@ -582,8 +581,8 @@ def _refresh_sql() -> str:
         'UPDATE card_wallet SET '
         f'  reels = LEAST({cap}, reels + GREATEST(0, %(w)s - window_idx) * %(per)s), '
         '  window_idx = %(w)s, '
-        f'  pearls = pearls + {rate} * LEAST(%(cap_h)s, '
-        '      FLOOR(EXTRACT(EPOCH FROM (NOW() - last_trickle)) / 3600))::bigint, '
+        f'  pearls = pearls + {rate} * '
+        '      FLOOR(EXTRACT(EPOCH FROM (NOW() - last_trickle)) / 3600)::bigint, '
         '  last_trickle = last_trickle + make_interval(hours => '
         '      FLOOR(EXTRACT(EPOCH FROM (NOW() - last_trickle)) / 3600)::int) '
         'WHERE "user" = %(uid)s '
@@ -599,8 +598,7 @@ def db_get_wallet(user_id: int) -> dict:
     try:
         _ensure_wallet(db, user_id, window)
         db.cursor.execute(_refresh_sql(), {
-            "w": window, "per": REELS_PER_WINDOW,
-            "cap_h": TRICKLE_CAP_HOURS, "uid": user_id,
+            "w": window, "per": REELS_PER_WINDOW, "uid": user_id,
         })
         row = db.cursor.fetchone()
         db.connection.commit()
@@ -801,8 +799,7 @@ def db_claim_daily(user_id: int) -> dict:
         # Bring the bank and the passive pearls current first, in the same
         # transaction, so the numbers reported back are the real ones.
         db.cursor.execute(_refresh_sql(), {
-            "w": window, "per": REELS_PER_WINDOW,
-            "cap_h": TRICKLE_CAP_HOURS, "uid": user_id,
+            "w": window, "per": REELS_PER_WINDOW, "uid": user_id,
         })
         db.cursor.execute(
             'UPDATE card_wallet SET '
