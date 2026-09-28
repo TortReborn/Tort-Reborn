@@ -73,14 +73,14 @@ class CardReelRefresh(commands.Cog):
 
         if with_bait:
             title = "Reels up and bait refilled"
-            description = (f"+**{cardlib.REELS_PER_WINDOW}** reels\n"
-                           f"+**1** bait\n"
-                           f"Next reels <t:{nxt}:R>\n"
-                           f"Next bait <t:{next_bait}:R>")
+            description = (f"+**{cardlib.REELS_PER_WINDOW}** Reels\n"
+                           f"+**1** Bait\n"
+                           f"Next Reels <t:{nxt}:R>\n"
+                           f"Next Bait <t:{next_bait}:R>")
             footer = "/reel\n/bait"
         else:
             title = "Reels up"
-            description = (f"+**{cardlib.REELS_PER_WINDOW}** reels\n"
+            description = (f"+**{cardlib.REELS_PER_WINDOW}** Reels\n"
                            f"Next <t:{nxt}:R>")
             footer = "/reel"
 

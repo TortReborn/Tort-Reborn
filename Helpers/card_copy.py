@@ -50,6 +50,8 @@ def wiki(card: dict) -> str | None:
 
 
 def next_line(label: str, ts: int) -> str:
+    """A countdown, no colon: Discord renders the stamp as "in an hour", so
+    the label runs straight into it as a phrase -- "Next in an hour"."""
     return f"{label} <t:{ts}:R>"
 
 
@@ -58,15 +60,15 @@ def no_reels(ts: int) -> str:
 
 
 def render_failed() -> str:
-    return "Render failed\nreel refunded"
+    return "Render failed\nReel refunded"
 
 
 def reel_failed() -> str:
-    return "Reel failed\nreel refunded"
+    return "Reel failed\nReel refunded"
 
 
 def pull_unshown(name: str) -> str:
-    return f"**{name}** couldn't be shown\nit's in your collection"
+    return f"**{name}** couldn't be shown\nIt's in your collection"
 
 
 def copy_label(copies: int) -> str:
@@ -85,7 +87,7 @@ def passive_value(rate: int) -> str:
 
 
 def level_name(label: str) -> str:
-    return label or "plain"
+    return label or "Plain"
 
 
 def stack_name(card: dict, level: str) -> str:
