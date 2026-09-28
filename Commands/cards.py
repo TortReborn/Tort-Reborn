@@ -122,10 +122,11 @@ def _max_costs() -> str:
 
     parts = []
     for copies, tiers in groups.items():
-        if len(tiers) > 1:
-            names = f"{', '.join(tiers[:-1])} or {tiers[-1]}"
+        labels = [_tier_label(t) for t in tiers]
+        if len(labels) > 1:
+            names = f"{', '.join(labels[:-1])} or {labels[-1]}"
         else:
-            names = tiers[0]
+            names = labels[0]
         parts.append(f"**{copies}** {names}")
     return " · ".join(parts)
 
@@ -310,7 +311,7 @@ def _card_description(card: dict) -> str | None:
     if not card.get("member"):
         names = [s["name"] for s in cardlib.sets_of(card["slug"])]
         if names:
-            bits.append(f"-# {ctext.plural(len(names), 'set')}: {', '.join(names)}")
+            bits.append(f"-# {ctext.plural(len(names), 'Set')}: {', '.join(names)}")
     return "\n".join(b for b in bits if b) or None
 
 
@@ -352,7 +353,7 @@ class SetPickView(discord.ui.View):
             discord.SelectOption(
                 label=p["set"]["name"], value=p["set"]["id"],
                 description=f"{p['owned']}/{p['total']}"
-                            + (" complete" if p["complete"] else ""),
+                            + (" Complete" if p["complete"] else ""),
                 emoji="✅" if p["complete"] else None)
             for p in progress]
 
@@ -389,14 +390,14 @@ class SetPickView(discord.ui.View):
             description=s["description"],
             color=_card_color(cards[0]))
         embed.set_image(url=f"attachment://{file.filename}")
-        who = "you" if self.target.id == self.owner_id else self.target.display_name
+        who = "You" if self.target.id == self.owner_id else self.target.display_name
         if p["complete"]:
             state = f"{who}: complete"
         else:
             names = ", ".join(cardlib.get_card(x)["name"] for x in p["missing"])
             state = f"{who}: missing {names}"
         embed.add_field(name=f"{p['owned']}/{p['total']}", value=state, inline=False)
-        embed.set_footer(text=f"+{s['pearls']:,} pearls")
+        embed.set_footer(text=f"+{s['pearls']:,} Pearls")
         await interaction.edit_original_response(
             embed=embed, file=file, attachments=[], view=self)
 
@@ -424,8 +425,8 @@ def _card_embed(card: dict, copies: int, remaining: int, filename: str,
     embed.set_footer(text=_credit(
         card,
         ctext.copy_label(copies),
-        f"+{gained:,} pearls" if gained else None,
-        f"{ctext.count(remaining, 'reel')} left"))
+        f"+{gained:,} Pearls" if gained else None,
+        f"{ctext.count(remaining, 'Reel')} left"))
     return embed
 
 
@@ -526,13 +527,13 @@ def _milestone_embed(user, kind: str, name, pearls: int) -> discord.Embed:
     if kind == "set":
         title, color = f"Set complete · {name}", ctext.ACCENT
     elif kind == "tier":
-        title = f"Every {_tier_label(name).lower()} card"
+        title = f"Every {_tier_label(name)} card"
         color = cardlib.TIER_COLORS.get(name, ctext.ACCENT)
     else:
         title, color = f"{name} unique cards", ctext.ACCENT
     return discord.Embed(
         title=title,
-        description=f"{user.mention} · **+{pearls:,}** pearls",
+        description=f"{user.mention} · **+{pearls:,}** Pearls",
         color=color)
 
 
@@ -574,7 +575,7 @@ class ReelView(discord.ui.View):
 
     def set_exhausted(self, exhausted: bool):
         self.reel_again.disabled = exhausted
-        self.reel_again.label = "No reels" if exhausted else "Reel again"
+        self.reel_again.label = "No Reels" if exhausted else "Reel again"
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.owner_id:
@@ -706,7 +707,7 @@ class TradeView(discord.ui.View):
 
 def _yield_line() -> str:
     """The discard table in one line, read off DISCARD_YIELD."""
-    return " · ".join(f"{t} → {n} {below}"
+    return " · ".join(f"{_tier_label(t)} → {n} {_tier_label(below)}"
                       for t, (below, n) in cardlib.DISCARD_YIELD.items())
 
 
@@ -732,20 +733,20 @@ async def _do_discard(user_id: int, card: dict, count: int):
     by_slug = {c["slug"]: c for c in outputs}
     lines = []
     for slug, n in sorted(tally.items(), key=lambda kv: by_slug[kv[0]]["name"]):
-        mark = " new" if slug in result["new"] else ""
+        mark = " New" if slug in result["new"] else ""
         lines.append(f"{n}× **{by_slug[slug]['name']}**{mark}")
 
     embed = discord.Embed(
         title=f"Discarded {count}× {card['name']}",
-        description=(f"**{len(outputs)}** {_tier_label(below).lower()}"
+        description=(f"**{len(outputs)}** {_tier_label(below)}"
                      f"{'' if len(outputs) == 1 else 's'}\n"
                      + "\n".join(lines)),
         color=cardlib.TIER_COLORS[below])
     embed.set_image(url=f"attachment://{file.filename}")
     embed.set_footer(text=_credit(
         card,
-        f"{result['left']} plain left",
-        f"{len(result['new'])} new" if result["new"] else None))
+        f"{result['left']} Plain left",
+        f"{len(result['new'])} New" if result["new"] else None))
     return embed, file, outputs
 
 
@@ -893,8 +894,8 @@ class Cards(commands.Cog):
         else:
             embed.set_footer(text="Max Streak")
         reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
-        await ctx.followup.send(content=f"-# Bait refresh <t:{reset}:R>",
-                                embed=embed)
+        await ctx.followup.send(
+            content=f"-# {ctext.next_line('Bait refresh', reset)}", embed=embed)
 
     @tank.command(name="help", description=ctext.HELP)
     async def tank_help(self, ctx: discord.ApplicationContext):
@@ -908,60 +909,60 @@ class Cards(commands.Cog):
             title="Tank help",
             description=(
                 f"**{len(cs['cards'])}** Wynncraft cards\n"
-                "pulls pay pearls"),
+                "Pulls pay Pearls"),
             color=ctext.ACCENT)
 
         embed.add_field(
             name="Start here",
-            value=(f"`/reel` pull a card\n"
-                   f"**{cardlib.REELS_PER_WINDOW}** reels every 6h\n"
-                   f"bank: **{cap}**\n\n"
-                   "`/bait` daily reels and pearls\n"
-                   f"caps at **{cardlib.MAX_BAIT_REELS}** reels and "
-                   f"**{cardlib.DAILY_TIERS[-1]['pearls']}** pearls\n\n"
-                   "`/tank ping` toggle refresh pings"),
+            value=(f"`/reel` Pull a card\n"
+                   f"**{cardlib.REELS_PER_WINDOW}** Reels every 6h\n"
+                   f"Bank: **{cap}**\n\n"
+                   "`/bait` Daily Reels and Pearls\n"
+                   f"Caps at **{cardlib.MAX_BAIT_REELS}** Reels and "
+                   f"**{cardlib.DAILY_TIERS[-1]['pearls']}** Pearls\n\n"
+                   "`/tank ping` Toggle refresh pings"),
             inline=False)
         embed.add_field(
             name="Your tank",
-            value=("`/tank list` tank contents\n"
-                   "`/tank view` one owned card\n"
-                   "`/tank profile` balance and stats\n"
-                   "`/tank sets` set progress\n"
-                   "`/tank discard` plain dupes into lower-tier rolls\n"
+            value=("`/tank list` Tank contents\n"
+                   "`/tank view` One owned card\n"
+                   "`/tank profile` Balance and stats\n"
+                   "`/tank sets` Set progress\n"
+                   "`/tank discard` Plain dupes into lower-tier rolls\n"
                    f"{_yield_line()}"),
             inline=False)
         embed.add_field(
             name="Pearls",
-            value=(f"`/tank fuse` merge **{cardlib.FUSION_COPIES_PER_STEP}** "
+            value=(f"`/tank fuse` Merge **{cardlib.FUSION_COPIES_PER_STEP}** "
                    "matching copies\n"
                    f"MAX costs: {_max_costs()}\n"
-                   "`/tank upgrade` bigger bank, Passive Pearls, more wishes"),
+                   "`/tank upgrade` Bigger bank, Passive Pearls, more wishes"),
             inline=False)
         embed.add_field(
             name="Wishes",
-            value=(f"`/tank wishlist add` target a card\n"
+            value=(f"`/tank wishlist add` Target a card\n"
                    f"**{pct}%** of that tier can become it"),
             inline=False)
         embed.add_field(
             name="Pool",
-            value=("`/pool list` all drops\n"
-                   "`/pool view` preview a card\n"
-                   "`/pool owners` who holds a card\n"
-                   "`/pool rates` odds"),
+            value=("`/pool list` All drops\n"
+                   "`/pool view` Preview a card\n"
+                   "`/pool owners` Who holds a card\n"
+                   "`/pool rates` Odds"),
             inline=False)
         embed.add_field(
             name="Trade",
-            value=("`/tank trade` swap cards\n"
-                   "`/tank leaderboard` top tanks"),
+            value=("`/tank trade` Swap cards\n"
+                   "`/tank leaderboard` Top tanks"),
             inline=False)
 
         refresh = cardlib.next_refresh_ts()
         embed.set_footer(
-            text=f"{wallet['total_reels']} reel"
-                 f"{'' if wallet['total_reels'] == 1 else 's'} | "
-                 f"{wallet['pearls']:,} pearls")
+            text=f"{wallet['total_reels']} Reel"
+                 f"{'' if wallet['total_reels'] == 1 else 's'} · "
+                 f"{wallet['pearls']:,} Pearls")
         await ctx.followup.send(
-            content=f"-# next <t:{refresh}:R>", embed=embed)
+            content=f"-# {ctext.next_line('Next', refresh)}", embed=embed)
 
     # ── /tank view ───────────────────────────────────────────────────────────
 
@@ -989,7 +990,7 @@ class Cards(commands.Cog):
                               description=_card_description(match))
         embed.set_image(url=f"attachment://{file.filename}")
         held = "" if match.get("member") else " · ".join(
-            f"{c}× {_level_label(match, st) or 'plain'}"
+            f"{c}× {ctext.level_name(_level_label(match, st))}"
             for st, c in sorted(entry["levels"].items()))
         embed.set_footer(text=_credit(match, held))
         await ctx.followup.send(embed=embed, file=file)
@@ -1035,7 +1036,7 @@ class Cards(commands.Cog):
             if tier:
                 whose = "your" if mine else f"{target.display_name}'s"
                 return await ctx.followup.send(
-                    embed=_notice(f"No {_tier_label(tier).lower()} cards "
+                    embed=_notice(f"No {_tier_label(tier)} cards "
                                   f"in {whose} tank"),
                     ephemeral=True)
             if not mine:
@@ -1043,7 +1044,7 @@ class Cards(commands.Cog):
                     embed=_notice(f"{target.display_name} has no cards"),
                     ephemeral=True)
             return await ctx.followup.send(
-                embed=_notice(f"Empty tank\n{wallet['total_reels']} reel"
+                embed=_notice(f"Empty tank\n{wallet['total_reels']} Reel"
                               f"{'' if wallet['total_reels'] == 1 else 's'} ready"),
                 ephemeral=True)
 
@@ -1077,11 +1078,11 @@ class Cards(commands.Cog):
             of = cardlib.tier_counts().get(tier, 0)
         else:
             of = len(cs["cards"])
-        what = f"{_tier_label(tier).lower()} cards" if tier else "cards"
+        what = f"{_tier_label(tier)} Cards" if tier else "Cards"
         header = f"**{len(rows)}/{of}** {what}\n{total_copies} copies"
         if mine:
-            header += (f"\n{wallet['pearls']:,} pearls\n"
-                       f"{wallet['total_reels']} reel"
+            header += (f"\n{wallet['pearls']:,} Pearls\n"
+                       f"{wallet['total_reels']} Reel"
                        f"{'' if wallet['total_reels'] == 1 else 's'}")
         else:
             spares = sum(e["total"] - 1 for _, e in rows if e["total"] > 1)
@@ -1147,7 +1148,7 @@ class Cards(commands.Cog):
             description=f"**{done}/{len(progress)}** complete\n\n"
                         + "\n".join(_set_line(p) for p in progress),
             color=ctext.ACCENT)
-        embed.set_footer(text="pick a set")
+        embed.set_footer(text="Pick a set")
         view = SetPickView(ctx.author.id, target, progress, set(owned), embed)
         view.message = await ctx.followup.send(embed=embed, view=view)
 
@@ -1168,11 +1169,11 @@ class Cards(commands.Cog):
 
         embed = discord.Embed(title=f"{ctx.author.display_name}'s tank",
                               color=ctext.ACCENT)
-        embed.add_field(name="Tank", value=f"{spec['name']} (tier {tier})")
+        embed.add_field(name="Tank", value=f"{spec['name']} (Tier {tier})")
         embed.add_field(name="Pearls", value=f"{wallet['pearls']:,}")
         reels_value = f"{wallet['reels']}/{spec['bank']}"
         if wallet["bait_reels"]:
-            reels_value += f" + {wallet['bait_reels']} bait"
+            reels_value += f" + {wallet['bait_reels']} Bait"
         embed.add_field(name="Reels", value=reels_value)
         embed.add_field(
             name="Cards",
@@ -1192,12 +1193,12 @@ class Cards(commands.Cog):
         embed.add_field(
             name=f"Wishes ({len(wishes)}/{spec['wishes']})",
             value=", ".join((cardlib.get_card(w) or {"name": w})["name"]
-                            for w in wishes) or "none",
+                            for w in wishes) or "None",
             inline=False)
         if tier < cardlib.MAX_TANK:
             nxt = cardlib.TANK_TIERS[tier + 1]
             embed.set_footer(
-                text=f"next: {nxt['name']} | {nxt['cost']:,} pearls")
+                text=f"Next: {nxt['name']} · {nxt['cost']:,} Pearls")
         await ctx.followup.send(embed=embed)
 
     # ── /tank ping ───────────────────────────────────────────────────────────
@@ -1227,7 +1228,8 @@ class Cards(commands.Cog):
                 embed=_notice(f"I can't hand out {role.mention}"))
         refresh = cardlib.next_refresh_ts()
         await ctx.followup.send(
-            embed=_notice(f"Reel pings on\nnext <t:{refresh}:R>"))
+            embed=_notice("Reel pings on\n"
+                          + ctext.next_line("Next", refresh)))
 
     # ── /tank upgrade ────────────────────────────────────────────────────────
 
@@ -1246,25 +1248,26 @@ class Cards(commands.Cog):
         if wallet["pearls"] < nxt["cost"]:
             return await ctx.followup.send(
                 embed=_notice(
-                    f"{nxt['name']} costs {nxt['cost']:,} pearls — you have "
+                    f"{nxt['name']} costs {nxt['cost']:,} Pearls — you have "
                     f"{wallet['pearls']:,}"), ephemeral=True)
 
         ok = await asyncio.to_thread(cardlib.db_upgrade_tank, ctx.author.id,
                                      tier + 1)
         if not ok:
             return await ctx.followup.send(
-                embed=_notice("Upgrade changed\ntry again"),
+                embed=_notice("Upgrade changed\nTry again"),
                 ephemeral=True)
 
         embed = discord.Embed(
             title=f"Tank: {nxt['name']}",
-            description=(f"bank **{nxt['bank']}**\n"
-                         f"Passive Pearls **{ctext.per_hour(nxt['trickle'])}**\n"
-                         f"wishes **{nxt['wishes']}**"),
+            description=(f"Bank: **{nxt['bank']}**\n"
+                         f"Passive Pearls: **{ctext.per_hour(nxt['trickle'])}**\n"
+                         f"Wishes: **{nxt['wishes']}**"),
             color=ctext.ACCENT)
         if tier + 1 < cardlib.MAX_TANK:
             after = cardlib.TANK_TIERS[tier + 2]
-            embed.set_footer(text=f"next: {after['name']} · {after['cost']:,} pearls")
+            embed.set_footer(
+                text=f"Next: {after['name']} · {after['cost']:,} Pearls")
         await ctx.followup.send(embed=embed)
 
     # ── /tank leaderboard ────────────────────────────────────────────────────
@@ -1283,12 +1286,12 @@ class Cards(commands.Cog):
             member = ctx.guild.get_member(r["user"]) if ctx.guild else None
             name = member.display_name if member else f"User {r['user']}"
             lines.append(f"`{i:2}` **{name}**: {r['uniques']}/{len(cs['cards'])}, "
-                         f"{r['copies']} copies, {r['pearls']:,} pearls")
+                         f"{r['copies']} copies, {r['pearls']:,} Pearls")
         embed = discord.Embed(title="Top tanks", description="\n".join(lines),
                               color=ctext.ACCENT)
         mine = await asyncio.to_thread(cardlib.db_leaderboard_rank, ctx.author.id)
         if mine and mine["rank"] > LEADERBOARD_SIZE:
-            embed.set_footer(text=f"you: #{mine['rank']} · "
+            embed.set_footer(text=f"You: #{mine['rank']} · "
                                   f"{mine['uniques']}/{len(cs['cards'])}")
         await ctx.followup.send(embed=embed)
 
@@ -1334,11 +1337,11 @@ class Cards(commands.Cog):
         have = (entry or {}).get("levels", {}).get(from_star, 0)
         wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
 
-        level = _level_label(match, from_star) or "plain"
+        level = ctext.level_name(_level_label(match, from_star))
         possible = have // per_merge
         if possible < 1:
             return await ctx.followup.send(
-                embed=_notice(f"Need **{per_merge}** {level}\nyou have {have}"),
+                embed=_notice(f"Need **{per_merge}** {level}\nYou have {have}"),
                 ephemeral=True)
         if count > possible:
             return await ctx.followup.send(
@@ -1347,15 +1350,15 @@ class Cards(commands.Cog):
         need, pearls = per_merge * count, per_pearls * count
         if wallet["pearls"] < pearls:
             return await ctx.followup.send(
-                embed=_notice(f"Need **{pearls:,}** pearls\n"
-                              f"you have {wallet['pearls']:,}"),
+                embed=_notice(f"Need **{pearls:,}** Pearls\n"
+                              f"You have {wallet['pearls']:,}"),
                 ephemeral=True)
 
         result = await asyncio.to_thread(cardlib.db_fuse, ctx.author.id, slug,
                                          to_star, need, pearls, count)
         if result is None:
             return await ctx.followup.send(
-                embed=_notice("Merge changed\ntry again"),
+                embed=_notice("Merge changed\nTry again"),
                 ephemeral=True)
 
         file = await asyncio.to_thread(card_file, match, None, to_star,
@@ -1363,8 +1366,8 @@ class Cards(commands.Cog):
         into = _level_label(match, to_star)
         summary = (f"{count}× {into}\n"
                    f"-{need} {level}\n"
-                   f"-{pearls:,} pearls\n"
-                   f"{result['pearls']:,} pearls left")
+                   f"-{pearls:,} Pearls\n"
+                   f"{result['pearls']:,} Pearls left")
         if to_star >= ceiling:
             summary = f"**MAX**\n{summary}"
         line = _wiki_line(match)
@@ -1411,7 +1414,7 @@ class Cards(commands.Cog):
         if star != 0:
             return await ctx.followup.send(
                 embed=_notice(
-                    f"Only plain copies\n{_level_label(match, star)} holds "
+                    f"Only Plain copies\n{_level_label(match, star)} holds "
                     f"{cardlib.base_copies_for(star)} base copies"),
                 ephemeral=True)
         yld = cardlib.discard_yield(match)
@@ -1428,7 +1431,7 @@ class Cards(commands.Cog):
                 ephemeral=True)
         if count > have:
             return await ctx.followup.send(
-                embed=_notice(f"Only **{have}** plain "
+                embed=_notice(f"Only **{have}** Plain "
                               f"cop{'y' if have == 1 else 'ies'}"),
                 ephemeral=True)
 
@@ -1438,7 +1441,7 @@ class Cards(commands.Cog):
             view.message = await ctx.followup.send(
                 embed=_notice(
                     f"Discard **{count}× {match['name']}**\n"
-                    f"get **{total}** {_tier_label(below).lower()}"
+                    f"Get **{total}** {_tier_label(below)}"
                     f"{'' if total == 1 else 's'}"),
                 view=view, wait=True)
             return
@@ -1507,7 +1510,7 @@ class Cards(commands.Cog):
                 f"{member.mention}: **{_star_name(want_card, want_star)}**"),
             color=ctext.ACCENT)
         embed.set_footer(
-            text="recipient only | 5 min")
+            text="Recipient only · 5 min")
 
         view = TradeView(ctx.author, member, give_card, give_star,
                          want_card, want_star)
@@ -1566,17 +1569,17 @@ class Cards(commands.Cog):
 
         if member:
             if card["retired"]:
-                state = "retired"
+                state = "Retired"
             elif card["minted"]:
-                state = f"held by <@{card['owner']}>"
+                state = f"Held by <@{card['owner']}>"
             else:
-                state = "unminted"
+                state = "Unminted"
             embed.add_field(name="Status", value=state, inline=False)
 
         owners = await asyncio.to_thread(cardlib.db_get_owners, card["slug"])
         embed.set_footer(text=_credit(
             card,
-            f"you own {entry['total']}" if entry else "not owned",
+            f"You own {entry['total']}" if entry else "Not owned",
             ctext.count(len(owners), "owner")))
         await ctx.followup.send(embed=embed, file=file)
 
@@ -1611,7 +1614,7 @@ class Cards(commands.Cog):
             best = _level_label(card, o["best"])
             copies = ctext.count(o["copies"], "copy", "copies")
             lines.append(f"`{i:2}` **{who}**: {copies}"
-                         + (f" · best {best}" if best else ""))
+                         + (f" · Best {best}" if best else ""))
         if len(owners) > OWNERS_SHOWN:
             lines.append(f"-# +{len(owners) - OWNERS_SHOWN} more")
 
@@ -1654,10 +1657,10 @@ class Cards(commands.Cog):
 
         have = sum(1 for e in entries if e["slug"] in owned)
         members = sum(1 for e in entries if e.get("member"))
-        header = (f"**{len(entries)}** cards · you own {have}"
-                  + (f"\n{ctext.count(members, 'limited card')}"
+        header = (f"**{len(entries)}** Cards · You own {have}"
+                  + (f"\n{ctext.count(members, ctext.LIMITED + ' card')}"
                      if members else "")
-                  + "\nrarest first")
+                  + "\nRarest first")
 
         page_list = []
         for i in range(0, len(entries), POOL_PER_PAGE):
@@ -1666,12 +1669,12 @@ class Cards(commands.Cog):
                 mark = " ✓" if e["slug"] in owned else ""
                 if e.get("member"):
                     if e["retired"]:
-                        tail = "retired"
+                        tail = "Retired"
                     elif e["minted"]:
-                        tail = f"held by <@{e['owner']}>"
+                        tail = f"Held by <@{e['owner']}>"
                     else:
-                        tail = "unminted"
-                    lines.append(f"`{ctext.LIMITED:9}` **{e['name']}**{mark} | {tail}")
+                        tail = "Unminted"
+                    lines.append(f"`{ctext.LIMITED:9}` **{e['name']}**{mark} · {tail}")
                 else:
                     lines.append(f"`{_tier_label(e['tier']):9}` "
                                  f"**{e['name']}**{mark}")
@@ -1716,7 +1719,7 @@ class Cards(commands.Cog):
             description=table,
             color=ctext.ACCENT)
         embed.add_field(
-            name=f"Expected rates with {per_day} reels a day:",
+            name=f"Expected rates with {per_day} Reels a day:",
             value=("Legendary weekly\n"
                    "Fabled monthly\n"
                    "Mythic bi-monthly\n"
@@ -1728,7 +1731,7 @@ class Cards(commands.Cog):
                    f"{ctext.LIMITED} cards cannot be wished for"),
             inline=False)
         embed.set_footer(
-            text=f"{unminted}/{len(entries)} limited cards available")
+            text=f"{unminted}/{len(entries)} {ctext.LIMITED} cards available")
         await ctx.followup.send(embed=embed)
 
     # ── /tank wishlist ───────────────────────────────────────────────────────
@@ -1765,7 +1768,7 @@ class Cards(commands.Cog):
         used = len(await asyncio.to_thread(cardlib.db_get_wishes, ctx.author.id))
         await ctx.followup.send(embed=_notice(
             f"Wishing for **{match['name']}**. When you obtain a "
-            f"{_tier_label(match['tier']).lower()} there is a {pct}% chance "
+            f"{_tier_label(match['tier'])} there is a {pct}% chance "
             f"it will pull from your wishlist directly. {used}/{limit} "
             f"{ctext.plural(limit, 'slot')} used"))
 
