@@ -50,7 +50,9 @@ def wiki(card: dict) -> str | None:
 
 
 def next_line(label: str, ts: int) -> str:
-    return f"{label}: <t:{ts}:R>"
+    """A countdown, no colon: Discord renders the stamp as "in an hour", so
+    the label runs straight into it as a phrase -- "Next in an hour"."""
+    return f"{label} <t:{ts}:R>"
 
 
 def no_reels(ts: int) -> str:

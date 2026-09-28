@@ -75,13 +75,13 @@ class CardReelRefresh(commands.Cog):
             title = "Reels up and bait refilled"
             description = (f"+**{cardlib.REELS_PER_WINDOW}** Reels\n"
                            f"+**1** Bait\n"
-                           f"Next Reels: <t:{nxt}:R>\n"
-                           f"Next Bait: <t:{next_bait}:R>")
+                           f"Next Reels <t:{nxt}:R>\n"
+                           f"Next Bait <t:{next_bait}:R>")
             footer = "/reel\n/bait"
         else:
             title = "Reels up"
             description = (f"+**{cardlib.REELS_PER_WINDOW}** Reels\n"
-                           f"Next: <t:{nxt}:R>")
+                           f"Next <t:{nxt}:R>")
             footer = "/reel"
 
         for guild_id in TAQ_GUILD_IDS:
