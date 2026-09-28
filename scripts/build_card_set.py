@@ -25,11 +25,13 @@ from datetime import datetime, timezone
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORPUS = os.path.join(BASE, "data", "card_corpus.json")
-# Hand-curated bosses, each file at one tier. Bosses do not speak, so the
-# dialogue mining never sees them; they are merged in after tiering.
+# Hand-curated bosses. Bosses do not speak, so the dialogue mining never sees
+# them; they are merged in after tiering. A file names one tier for all of
+# its cards, or leaves that out and tiers each card itself.
 CURATED = [
     os.path.join(BASE, "data", "fabled_cards.json"),     # raid bosses, mythic
     os.path.join(BASE, "data", "dungeon_bosses.json"),   # dungeon bosses, rare
+    os.path.join(BASE, "data", "boss_altars.json"),      # altar bosses, per card
 ]
 OUT = os.path.join(BASE, "data", "cards.json")
 ART_CACHE = os.path.join(BASE, "images", "cards")
@@ -87,6 +89,15 @@ def assign_tiers(cards: list) -> None:
                 idx += 1
             if idx >= limit and tier != "normal":
                 break
+
+
+def curated_tier(card: dict, file: dict) -> str:
+    """The tier a curated card ships at. Per-card wins over per-file; a card
+    with neither is a data error, not a normal."""
+    tier = card.get("tier") or file.get("tier")
+    if tier not in {t for t, _ in TIER_CUM} | {"mythic"}:
+        raise ValueError(f"{card.get('slug')}: no valid tier ({tier!r})")
+    return tier
 
 
 def apply_overrides(cards: list, overrides: dict = TIER_OVERRIDES) -> None:
@@ -158,11 +169,12 @@ def main() -> int:
     assign_tiers(cards)
     apply_overrides(cards)
 
-    # Curated bosses take their file's tier rather than a dialogue rank.
+    # Curated bosses take a hand-placed tier rather than a dialogue rank:
+    # the card's own if it has one, else the file's.
     for cur in curated:
         for c in cur["cards"]:
-            cards.append({**c, "tier": cur["tier"], "lines": 0})
-        print(f"  merged {len(cur['cards'])} {cur['tier']} cards")
+            cards.append({**c, "tier": curated_tier(c, cur), "lines": 0})
+        print(f"  merged {len(cur['cards'])} {cur.get('tier', 'mixed-tier')} cards")
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

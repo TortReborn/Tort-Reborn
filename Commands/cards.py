@@ -77,6 +77,7 @@ def _tier_of(card: dict | None) -> str:
 TIER_CHOICES = [discord.OptionChoice(_tier_label(t), t)
                 for t in cardlib.TIER_ORDER]
 LEADERBOARD_SIZE = 15
+OWNERS_SHOWN = 20      # /pool owners lists this many holders before "+N more"
 
 
 def _notice(text: str) -> discord.Embed:
@@ -934,7 +935,7 @@ class Cards(commands.Cog):
             value=(f"`/tank fuse` merge **{cardlib.FUSION_COPIES_PER_STEP}** "
                    "matching copies\n"
                    f"MAX costs: {_max_costs()}\n"
-                   "`/tank upgrade` bigger bank, passive pearls, more wishes"),
+                   "`/tank upgrade` bigger bank, Passive Pearls, more wishes"),
             inline=False)
         embed.add_field(
             name="Wishes",
@@ -945,6 +946,7 @@ class Cards(commands.Cog):
             name="Pool",
             value=("`/pool list` all drops\n"
                    "`/pool view` preview a card\n"
+                   "`/pool owners` who holds a card\n"
                    "`/pool rates` odds"),
             inline=False)
         embed.add_field(
@@ -1004,6 +1006,12 @@ class Cards(commands.Cog):
         tier: discord.Option(
             str, description="Tier",
             required=False, default=None, choices=TIER_CHOICES),
+        sort: discord.Option(
+            str, description="Order",
+            required=False, default="tier",
+            choices=[discord.OptionChoice("Tier", "tier"),
+                     discord.OptionChoice("Copies", "copies"),
+                     discord.OptionChoice("Name", "name")]),
     ):
         await ctx.defer()
         target = member or ctx.author
@@ -1049,11 +1057,18 @@ class Cards(commands.Cog):
             if c:
                 rows.append((c, entry))
 
-        def sort_key(r):
-            t = _tier_of(r[0])
-            idx = cardlib.TIER_ORDER.index(t) if t in cardlib.TIER_ORDER else 9
-            return (idx, r[0]["name"])
-        rows.sort(key=sort_key)
+        def tier_idx(card):
+            t = _tier_of(card)
+            return cardlib.TIER_ORDER.index(t) if t in cardlib.TIER_ORDER else 9
+
+        if sort == "copies":
+            # Most copies first, so the stacks worth fusing or trading are on
+            # page one; rarity breaks ties, then the name.
+            rows.sort(key=lambda r: (-r[1]["total"], tier_idx(r[0]), r[0]["name"]))
+        elif sort == "name":
+            rows.sort(key=lambda r: r[0]["name"].lower())
+        else:
+            rows.sort(key=lambda r: (tier_idx(r[0]), r[0]["name"]))
 
         total_copies = sum(e["total"] for _, e in rows)
         if tier == "member":
@@ -1086,6 +1101,10 @@ class Cards(commands.Cog):
                     for st, n in sorted(e["levels"].items()):
                         label = _level_label(c, st)
                         bits.append(f"{label}×{n}" if label else f"×{n}")
+                    # Sorting by copies orders on the total, which a split
+                    # stack does not show; a single level already reads as one.
+                    if sort == "copies" and len(e["levels"]) > 1:
+                        bits.append(f"({e['total']} total)")
                 line = f"`{label_col:9}` {c['name']}"
                 lines.append(f"{line} {' '.join(bits)}" if bits else line)
             embed = discord.Embed(
@@ -1167,10 +1186,9 @@ class Cards(commands.Cog):
             embed.add_field(
                 name="Sets",
                 value=f"{sum(p['complete'] for p in progress)}/{len(progress)}")
-        if spec["trickle"]:
-            embed.add_field(
-                name="Passive",
-                value=f"{spec['trickle']}/h\ncap {cardlib.TRICKLE_CAP_HOURS}h")
+        embed.add_field(
+            name="Passive Pearls",
+            value=ctext.passive_value(spec["trickle"]))
         embed.add_field(
             name=f"Wishes ({len(wishes)}/{spec['wishes']})",
             value=", ".join((cardlib.get_card(w) or {"name": w})["name"]
@@ -1241,7 +1259,7 @@ class Cards(commands.Cog):
         embed = discord.Embed(
             title=f"Tank: {nxt['name']}",
             description=(f"bank **{nxt['bank']}**\n"
-                         f"passive **{nxt['trickle']}/h**\n"
+                         f"Passive Pearls **{ctext.per_hour(nxt['trickle'])}**\n"
                          f"wishes **{nxt['wishes']}**"),
             color=ctext.ACCENT)
         if tier + 1 < cardlib.MAX_TANK:
@@ -1555,11 +1573,57 @@ class Cards(commands.Cog):
                 state = "unminted"
             embed.add_field(name="Status", value=state, inline=False)
 
+        owners = await asyncio.to_thread(cardlib.db_get_owners, card["slug"])
         embed.set_footer(text=_credit(
             card,
-            f"you own {entry['total']}" if entry
-            else "not owned"))
+            f"you own {entry['total']}" if entry else "not owned",
+            ctext.count(len(owners), "owner")))
         await ctx.followup.send(embed=embed, file=file)
+
+    @pool.command(name="owners", description="Who holds a card")
+    async def pool_owners(
+        self, ctx: discord.ApplicationContext,
+        name: discord.Option(str, description="Card",
+                             autocomplete=_autocomplete_pool),
+    ):
+        await ctx.defer()
+        # Same lookup as /pool view, so an unminted member answers "nobody"
+        # rather than "no such card".
+        wanted = name.strip().lower()
+        entries = await asyncio.to_thread(cardlib.db_get_pool)
+        card = (next((p for p in entries if p["name"].lower() == wanted), None)
+                or _find_card(name))
+        if card is None:
+            return await ctx.followup.send(
+                embed=_notice(f"No drop named **{name.strip()}**"),
+                ephemeral=True)
+
+        owners = await asyncio.to_thread(cardlib.db_get_owners, card["slug"])
+        if not owners:
+            return await ctx.followup.send(
+                embed=_notice(f"Nobody holds **{card['name']}** yet"),
+                ephemeral=True)
+
+        lines = []
+        for i, o in enumerate(owners[:OWNERS_SHOWN], 1):
+            member = ctx.guild.get_member(o["user"]) if ctx.guild else None
+            who = member.display_name if member else f"<@{o['user']}>"
+            best = _level_label(card, o["best"])
+            copies = ctext.count(o["copies"], "copy", "copies")
+            lines.append(f"`{i:2}` **{who}**: {copies}"
+                         + (f" · best {best}" if best else ""))
+        if len(owners) > OWNERS_SHOWN:
+            lines.append(f"-# +{len(owners) - OWNERS_SHOWN} more")
+
+        total = sum(o["copies"] for o in owners)
+        embed = discord.Embed(
+            title=f"{card['name']} · {ctext.count(len(owners), 'owner')}",
+            description="\n".join(lines),
+            color=_card_color(card))
+        embed.set_footer(text=_credit(
+            card, _tier_label(_tier_of(card)),
+            f"{total} in circulation"))
+        await ctx.followup.send(embed=embed)
 
     @pool.command(name="list", description=ctext.POOL)
     async def pool_list(

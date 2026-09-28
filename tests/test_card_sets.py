@@ -78,7 +78,7 @@ def test_shipped_sets_are_well_formed():
     static = cardlib.load_card_set(force=True)
     with open(cardlib.CARD_SETS_PATH, encoding="utf-8") as f:
         on_disk = json.load(f)["sets"]
-    assert len(on_disk) == 6
+    assert len(on_disk) == 7
     for s in on_disk:
         assert s["name"] and s["description"]
         assert isinstance(s["pearls"], int) and s["pearls"] > 0

@@ -1,6 +1,7 @@
 {
  "note": "Hand-placed tiers applied by scripts/build_card_set.py after the dialogue-line ranking. A character whose line count undersells (or oversells) them is pinned where the guild wants them. Mythics are curated in fabled_cards.json and never pass through here.",
  "overrides": {
+  "blackjack-dealer": "fabled",
   "bob": "fabled",
   "her-majesty": "fabled",
   "lari": "fabled",
@@ -14,6 +15,7 @@
   "ava": "legendary",
   "bonfire-keeper": "legendary",
   "dr-legendary": "legendary",
+  "farcor": "legendary",
   "junes": "legendary",
   "qira-mistress-of-the-hive": "legendary",
   "ragni-s-king": "legendary",

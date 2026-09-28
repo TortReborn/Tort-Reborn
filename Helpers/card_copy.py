@@ -74,6 +74,16 @@ def copy_label(copies: int) -> str:
     return "New" if copies == 1 else f"{ordinal(copies)} Copy"
 
 
+def per_hour(rate: int) -> str:
+    """Passive Pearls as a rate. A tank that earns nothing says so."""
+    return f"{rate} per hour" if rate else "None"
+
+
+def passive_value(rate: int) -> str:
+    """The profile field. Passive Pearls never stop, so the rate is all of it."""
+    return per_hour(rate)
+
+
 def level_name(label: str) -> str:
     return label or "plain"
 

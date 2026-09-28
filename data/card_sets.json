@@ -101,6 +101,22 @@
     "antikythera-supercomputer",
     "the-eye"
    ]
+  },
+  {
+   "id": "boss-altars",
+   "name": "Boss Altars",
+   "description": "Bosses found in the provinces",
+   "pearls": 8000,
+   "slugs": [
+    "durum-protector",
+    "haros",
+    "rymek-luke",
+    "revenant-of-skien",
+    "adamastor",
+    "orange-wybel",
+    "panic-zealot",
+    "hyhet"
+   ]
   }
  ]
 }
