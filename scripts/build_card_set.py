@@ -53,6 +53,13 @@ TIER_CUM = [
 # dropped in without touching code; the mythics never pass through here.
 OVERRIDES_PATH = os.path.join(BASE, "data", "tier_overrides.json")
 
+# Hand-placed names, for a character the game spells differently from the
+# wiki the corpus was mined out of. Keyed by slug and applied after the slug
+# is cut, so the name can change without moving anyone's cards. It lives in a
+# file for the same reason the tiers do: a name edited straight into
+# data/cards.json looks right and is reverted by the next rebuild.
+NAME_OVERRIDES_PATH = os.path.join(BASE, "data", "name_overrides.json")
+
 
 def load_overrides(path: str = OVERRIDES_PATH) -> dict:
     with open(path, encoding="utf-8") as f:
@@ -60,6 +67,7 @@ def load_overrides(path: str = OVERRIDES_PATH) -> dict:
 
 
 TIER_OVERRIDES = load_overrides()
+NAME_OVERRIDES = load_overrides(NAME_OVERRIDES_PATH)
 
 UA = {"User-Agent": "TortRebornCards/1.0 (TAq guild bot)"}
 
@@ -105,6 +113,13 @@ def apply_overrides(cards: list, overrides: dict = TIER_OVERRIDES) -> None:
     for c in cards:
         if c["slug"] in overrides:
             c["tier"] = overrides[c["slug"]]
+
+
+def apply_name_overrides(cards: list, overrides: dict = NAME_OVERRIDES) -> None:
+    """Pin any hand-placed names on top of the mined and curated ones."""
+    for c in cards:
+        if c["slug"] in overrides:
+            c["name"] = overrides[c["slug"]]
 
 
 def download_art(cards: list) -> None:
@@ -175,6 +190,8 @@ def main() -> int:
         for c in cur["cards"]:
             cards.append({**c, "tier": curated_tier(c, cur), "lines": 0})
         print(f"  merged {len(cur['cards'])} {cur.get('tier', 'mixed-tier')} cards")
+
+    apply_name_overrides(cards)
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

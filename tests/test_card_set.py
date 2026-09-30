@@ -1,12 +1,16 @@
 """
-The card set: hand-placed tiers and what a wish does when a card moves.
+The card set: hand-placed tiers and names, and what a wish does when a card
+moves.
 
 1. Lari sits in fabled, both in the shipped set and in the builder's
    override so a rebuild cannot drop her back to legendary
 2. Wishes are keyed by slug, so a wish for a card that moved tier follows
    the card: it redirects inside the new tier and is inert in the old one
+3. Man keeps the name the game shows, through a rebuild, because the pin
+   lives in a data file rather than in data/cards.json
 """
 
+import json
 import os
 import random
 import sys
@@ -27,6 +31,28 @@ def test_builder_pins_lari_to_fabled():
     build_card_set.apply_overrides(cards)
     assert cards[0]["tier"] == "fabled"
     assert cards[1]["tier"] == "legendary"
+
+
+def test_man_keeps_the_name_the_game_shows_through_a_rebuild():
+    """The wiki transcribes the raw string the resource pack remaps to the
+    quest-marker glyph, so the mined name and the nameplate disagree. The
+    corpus stays faithful to the wiki and the override carries the fix, which
+    is what stops a rebuild reverting it the way an edit to cards.json was.
+    """
+    assert cardlib.get_card("man")["name"] == "Man"
+    assert build_card_set.NAME_OVERRIDES["man"] == "Man"
+    with open(build_card_set.CORPUS, encoding="utf-8") as f:
+        corpus = json.load(f)
+    mined = next(c["name"] for c in corpus if c["name"].startswith("Man")
+                 and c["lines"] == 33)
+    assert mined != "Man", "the corpus keeps the wiki's spelling"
+    assert build_card_set.slugify(mined, set()) == "man", "the slug is unmoved"
+
+
+def test_name_override_applies_by_slug_and_leaves_the_rest():
+    cards = [{"slug": "man", "name": "Mane"}, {"slug": "sui", "name": "Sui"}]
+    build_card_set.apply_name_overrides(cards, {"man": "Man"})
+    assert [c["name"] for c in cards] == ["Man", "Sui"]
 
 
 def test_wish_for_a_moved_card_follows_it():

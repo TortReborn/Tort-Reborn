@@ -1,0 +1,9 @@
+{
+ "note": "Hand-placed card names, applied by scripts/build_card_set.py after the corpus name is read and the slug is cut from it. The corpus stays a faithful transcription of the wiki; this file is what the card ships as, for a character the game spells differently on screen. Keyed by slug, so the name survives a rebuild and a re-mine both — an edit made straight to data/cards.json does not.",
+ "overrides": {
+  "man": "Man"
+ },
+ "why": {
+  "man": "The wiki transcribes the raw string 'Mane' with a trailing accented e. Wynncraft's resource pack remaps that character to the green quest-marker glyph, so the nameplate in game reads 'Man'."
+ }
+}
