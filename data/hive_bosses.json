@@ -1,0 +1,38 @@
+{
+ "note": "The Division Leaders of The Qira Hive (https://wynncraft.wiki.gg/wiki/The_Qira_Hive_(Quest)). Hand-curated like the raid, dungeon and altar bosses: they do not speak, so the dialogue mining never saw them. Four of the five are here; Gale leads the Air Division but talks the player through the fight, so she is mined like any other character and pinned to the same tier in data/tier_overrides.json. Qira herself is not a Division Leader and sits a tier above them. Merged into the playable set by scripts/build_card_set.py at the tier below.",
+ "tier": "rare",
+ "cards": [
+  {
+   "slug": "psychomancer",
+   "name": "Psychomancer",
+   "division": "Thunder",
+   "level": 95,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Psychomancer",
+   "image_url": "https://wynncraft.wiki.gg/images/Psychomancer.png?2b4063"
+  },
+  {
+   "slug": "genesis-revorse",
+   "name": "Genesis-Revorse",
+   "division": "Earth",
+   "level": 107,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Genesis-Revorse",
+   "image_url": "https://wynncraft.wiki.gg/images/Genesis-Revorse.png?9e8a7a"
+  },
+  {
+   "slug": "oceanic-judge",
+   "name": "Oceanic Judge",
+   "division": "Water",
+   "level": 113,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Oceanic_Judge",
+   "image_url": "https://wynncraft.wiki.gg/images/OceanicJudge.png?d5ca8a"
+  },
+  {
+   "slug": "solar-vanguard",
+   "name": "Solar Vanguard",
+   "division": "Fire",
+   "level": 120,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Solar_Vanguard",
+   "image_url": "https://wynncraft.wiki.gg/images/SolarVanguard%28Phase2%29.png?407e2b"
+  }
+ ]
+}

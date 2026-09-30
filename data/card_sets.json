@@ -103,6 +103,21 @@
    ]
   },
   {
+   "id": "the-qira-hive",
+   "name": "The Qira Hive",
+   "description": "Qira, her five Division Leaders and her servant",
+   "pearls": 4000,
+   "slugs": [
+    "qira-mistress-of-the-hive",
+    "psychomancer",
+    "gale",
+    "genesis-revorse",
+    "oceanic-judge",
+    "solar-vanguard",
+    "yansur"
+   ]
+  },
+  {
    "id": "boss-altars",
    "name": "Boss Altars",
    "description": "Bosses found in the provinces",

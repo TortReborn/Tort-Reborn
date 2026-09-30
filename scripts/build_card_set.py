@@ -32,6 +32,7 @@ CURATED = [
     os.path.join(BASE, "data", "fabled_cards.json"),     # raid bosses, mythic
     os.path.join(BASE, "data", "dungeon_bosses.json"),   # dungeon bosses, rare
     os.path.join(BASE, "data", "boss_altars.json"),      # altar bosses, per card
+    os.path.join(BASE, "data", "hive_bosses.json"),      # Hive leaders, rare
 ]
 OUT = os.path.join(BASE, "data", "cards.json")
 ART_CACHE = os.path.join(BASE, "images", "cards")
