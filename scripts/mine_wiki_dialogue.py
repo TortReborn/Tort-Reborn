@@ -48,6 +48,23 @@ REJECT = {"Tunnel Dweller Chieftain", "Garoth's Journal", "Sol", "Blueberry",
 # categories miss, for someone the wiki files away from NPCs.
 KEEP = {"Argus", "Captain Redbeard"}
 EXTRA_PAGES = {"Captain Redbeard"}
+# One character the wiki credits under several names as their story turns: a
+# disguise, a job title, a boss form, or a reveal the quest was holding back
+# behind ???. The page-resolution merge below only catches speakers whose
+# names resolve to the same wiki page, and these do not -- most of them have
+# no page at all -- so they are folded in by hand. The value is the name the
+# card ships under; the others survive in the corpus as aliases.
+SAME_AS = {
+    # Amadel runs WynnExcavation, poses as the rebel leader the player is
+    # sent to help, and is the final boss of Site D in two corrupted forms.
+    "Traitor Amadel": "Amadel",
+    "WynnExcavation Leader Amadel": "Amadel",
+    "Corrupted Amadel": "Amadel",
+    "Shadow Amadel": "Amadel",
+    # Site C holds the name back for two lines, then spends the second one
+    # on "I am Amadel, leader of the rebellion".
+    "??? (WynnExcavation Site C)": "Amadel",
+}
 
 QUEST_RE = re.compile(r"^\*+\s*'''(.{1,120}?)'''", re.M)
 TMPL_RE = re.compile(r"\{\{\s*Dialogue\s*\|[^|}]*\|([^|}]*)\|", re.I)
@@ -273,7 +290,7 @@ def main():
         texts = fetch_wikitext(pages)
         json.dump(texts, open(cache_file, "w", encoding="utf-8"))
 
-    counts, sources, removed_only, fmt = {}, {}, {}, {}
+    counts, sources, removed_only, fmt, spoken = {}, {}, {}, {}, {}
     for title, text in texts.items():
         is_removed = "{{removed" in text[:400].lower()
         found = [(m, "quest") for m in QUEST_RE.findall(text)]
@@ -283,6 +300,9 @@ def main():
             if not name:
                 continue
             name = qmark_name(name, title)
+            if name in SAME_AS:
+                spoken.setdefault(SAME_AS[name], set()).add(name)
+                name = SAME_AS[name]
             counts[name] = counts.get(name, 0) + 1
             sources.setdefault(name, set()).add(title)
             fmt.setdefault(name, set()).add(kind)
@@ -315,6 +335,7 @@ def main():
                                     "fmt": set()})
         e["lines"] += counts[n]
         e["names"].append(n)
+        e["names"] += sorted(spoken.get(n, ()))
         e["sources"] |= sources[n]
         e["fmt"] |= fmt[n]
         e["removed"] = e["removed"] and removed_only[n]

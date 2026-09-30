@@ -11,6 +11,11 @@ Re-tiering cards without handing anyone a free upgrade.
 5. data/card_sets.json loads with load_card_set() and only names real cards
 6. Dungeon bosses are curated rare cards and Dungeon Keepers holds every final boss
 7. Boss Altar bosses tier themselves card by card and Boss Altars names them all
+8. A card the rebuild dropped is retired, and its holders are swapped out of
+   it whatever --only-upgrades or --skip says
+9. The Qira Hive's Division Leaders are curated rare cards, and the set holds
+   all five of them plus Qira and Yansur
+10. Amadel is one card, not one per name the wiki credits him under
 """
 
 import json
@@ -37,7 +42,7 @@ def test_overrides_come_from_the_data_file():
 
 
 def test_moved_cards_pairs_old_and_new_tier():
-    before = {"bob": "normal", "sui": "fabled", "gone": "rare"}
+    before = {"bob": "normal", "sui": "fabled"}
     after = {"bob": "fabled", "sui": "fabled", "aster": "legendary"}
     assert retier_swap.moved_cards(before, after, False) == {"bob": ("normal", "fabled")}
 
@@ -47,6 +52,41 @@ def test_only_upgrades_skips_cards_that_moved_down():
     after = {"bob": "fabled", "efena": "unique"}
     assert retier_swap.moved_cards(before, after, True) == {"bob": ("normal", "fabled")}
     assert set(retier_swap.moved_cards(before, after, False)) == {"bob", "efena"}
+
+
+def test_a_card_the_new_set_dropped_is_retired():
+    before = {"bob": "normal", "gone": "rare"}
+    after = {"bob": "normal"}
+    assert retier_swap.moved_cards(before, after, False) == {"gone": ("rare", None)}
+
+
+def test_only_upgrades_cannot_spare_a_retired_card():
+    """There is no card left to leave the holder with, so the flag is moot."""
+    before = {"efena": "legendary", "gone": "rare"}
+    after = {"efena": "unique"}
+    assert retier_swap.moved_cards(before, after, True) == {"gone": ("rare", None)}
+
+
+def test_skip_leaves_a_named_card_with_its_owners():
+    before = {"bob": "normal", "efena": "legendary"}
+    after = {"bob": "rare", "efena": "unique"}
+    assert retier_swap.moved_cards(before, after, False, {"bob"}) == {
+        "efena": ("legendary", "unique")}
+
+
+def test_skip_cannot_spare_a_retired_card():
+    before = {"gone": "rare"}
+    assert retier_swap.moved_cards(before, {}, False, {"gone"}) == {
+        "gone": ("rare", None)}
+
+
+def test_a_retired_card_is_replaced_from_the_tier_it_sat_at():
+    rows = [(1, "angie", 0, 2), (2, "angie", 1, 1)]
+    plan = retier_swap.plan_swaps(rows, {"angie": ("rare", None)}, BY_TIER,
+                                  random.Random(3))
+    assert len(plan) == 2
+    assert all(new in {"amber", "thomas"} for _, _, new, _, _ in plan)
+    assert [(u, s, c) for u, _, _, s, c in plan] == [(1, 0, 2), (2, 1, 1)]
 
 
 def test_swap_keeps_stars_and_count_and_stays_in_the_old_tier():
@@ -104,7 +144,7 @@ def test_card_sets_load_and_every_member_exists():
         assert live["slugs"] == disk["slugs"], f"{disk['id']} names a slug that is not a card"
         assert len(set(disk["slugs"])) == len(disk["slugs"])
         assert disk["name"] and disk["description"]
-    assert len(loaded) == 7
+    assert len(loaded) == 8
 
 
 def test_dungeon_bosses_are_rare_cards_and_the_keepers_set_names_every_dungeon():
@@ -146,6 +186,44 @@ def test_boss_altars_carry_their_own_tiers_and_the_set_names_every_altar_boss():
     boss_set = next(s for s in static["sets"] if s["id"] == "boss-altars")
     assert boss_set["name"] == "Boss Altars"
     assert set(boss_set["slugs"]) == set(wanted)
+
+
+def test_hive_leaders_are_curated_rare_cards_and_the_set_names_the_whole_hive():
+    """Four of the five Division Leaders are curated; Gale is the fifth and is
+    mined instead, because unlike them she talks the player through her fight."""
+    from Helpers import cards as cardlib
+    static = cardlib.load_card_set(force=True)
+    with open(build_card_set.CURATED[3], encoding="utf-8") as f:
+        hive = json.load(f)
+    assert hive["tier"] == "rare"
+    divisions = {c["division"] for c in hive["cards"]}
+    assert divisions == {"Thunder", "Earth", "Water", "Fire"}, "Air is Gale's"
+    for c in hive["cards"]:
+        assert static["by_slug"][c["slug"]]["tier"] == "rare", c["slug"]
+        assert c["level"] and c["image_url"].startswith("https://wynncraft.wiki.gg/images/")
+    hive_set = next(s for s in static["sets"] if s["id"] == "the-qira-hive")
+    leaders = {"psychomancer", "gale", "genesis-revorse", "oceanic-judge",
+               "solar-vanguard"}
+    assert set(hive_set["slugs"]) == leaders | {"qira-mistress-of-the-hive", "yansur"}
+    assert all(static["by_slug"][s]["tier"] == "rare" for s in leaders | {"yansur"})
+    # Qira is not a Division Leader and sits a tier above the five
+    assert static["by_slug"]["qira-mistress-of-the-hive"]["tier"] == "legendary"
+
+
+def test_amadel_is_one_card_under_every_name_the_wiki_gives_him():
+    """The disguise, the job title and the two boss forms are one character,
+    so the miner folds them together and only Amadel ships."""
+    from Helpers import cards as cardlib
+    from scripts import mine_wiki_dialogue as miner
+    static = cardlib.load_card_set(force=True)
+    assert set(miner.SAME_AS.values()) == {"Amadel"}
+    assert "Traitor Amadel" in miner.SAME_AS
+    for alias in miner.SAME_AS:
+        slug = build_card_set.slugify(alias, set())
+        assert slug not in static["by_slug"], alias
+    assert static["by_slug"]["amadel"]["tier"] == "rare", "keeps the traitor's pin"
+    assert build_card_set.TIER_OVERRIDES["amadel"] == "rare"
+    assert "traitor-amadel" not in build_card_set.TIER_OVERRIDES
 
 
 def test_curated_tier_prefers_the_card_and_rejects_nothing():

@@ -2556,6 +2556,18 @@
   "appears_in": "The Mercenary | The Mercenary (2.0.4)"
  },
  {
+  "name": "Amadel",
+  "tier": "rare",
+  "lines": 36,
+  "quests": 3,
+  "aliases": "??? (WynnExcavation Site C); Corrupted Amadel; Shadow Amadel; Traitor Amadel; WynnExcavation Leader Amadel",
+  "removed_content_only": false,
+  "formats": "quest",
+  "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel",
+  "image_url": "https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a",
+  "appears_in": "A Hunter's Calling | WynnExcavation Site C | WynnExcavation Site D"
+ },
+ {
   "name": "Citizen",
   "tier": "unique",
   "lines": 35,
@@ -5074,18 +5086,6 @@
   "wiki_url": "",
   "image_url": "https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb",
   "appears_in": "Undersupply"
- },
- {
-  "name": "Traitor Amadel",
-  "tier": "unique",
-  "lines": 16,
-  "quests": 2,
-  "aliases": "",
-  "removed_content_only": false,
-  "formats": "quest",
-  "wiki_url": "",
-  "image_url": "https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a",
-  "appears_in": "WynnExcavation Site C | WynnExcavation Site D"
  },
  {
   "name": "Avos Chief",
@@ -7608,18 +7608,6 @@
   "appears_in": "Acquiring Credentials | Overture to Despair"
  },
  {
-  "name": "Amadel",
-  "tier": "normal",
-  "lines": 8,
-  "quests": 2,
-  "aliases": "",
-  "removed_content_only": false,
-  "formats": "quest",
-  "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel",
-  "image_url": "https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a",
-  "appears_in": "A Hunter's Calling | WynnExcavation Site D"
- },
- {
   "name": "Agitated Citizen",
   "tier": "normal",
   "lines": 8,
@@ -8265,18 +8253,6 @@
   "formats": "quest",
   "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci",
   "image_url": "https://wynncraft.wiki.gg/images/ExcavatorAdminUci.png?757c6e",
-  "appears_in": "WynnExcavation Site D"
- },
- {
-  "name": "WynnExcavation Leader Amadel",
-  "tier": "normal",
-  "lines": 8,
-  "quests": 1,
-  "aliases": "",
-  "removed_content_only": false,
-  "formats": "quest",
-  "wiki_url": "",
-  "image_url": "",
   "appears_in": "WynnExcavation Site D"
  },
  {

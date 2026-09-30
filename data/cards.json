@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-21T22:12:53+00:00",
+ "generated_at": "2026-09-30T18:18:16+00:00",
  "source": "data/card_corpus.json (art-only)",
- "count": 566,
+ "count": 569,
  "cards": [
   {
    "slug": "tasim",
@@ -1420,6 +1420,14 @@
    "tier": "unique"
   },
   {
+   "slug": "amadel",
+   "name": "Amadel",
+   "lines": 36,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel",
+   "image_url": "https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a",
+   "tier": "rare"
+  },
+  {
    "slug": "citizen",
    "name": "Citizen",
    "lines": 35,
@@ -2804,14 +2812,6 @@
    "tier": "unique"
   },
   {
-   "slug": "traitor-amadel",
-   "name": "Traitor Amadel",
-   "lines": 16,
-   "wiki_url": "",
-   "image_url": "https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a",
-   "tier": "rare"
-  },
-  {
    "slug": "avos-chief",
    "name": "Avos Chief",
    "lines": 15,
@@ -4028,14 +4028,6 @@
    "tier": "normal"
   },
   {
-   "slug": "amadel",
-   "name": "Amadel",
-   "lines": 8,
-   "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel",
-   "image_url": "https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a",
-   "tier": "normal"
-  },
-  {
    "slug": "agitated-citizen",
    "name": "Agitated Citizen",
    "lines": 8,
@@ -4558,6 +4550,46 @@
    "level": 119,
    "wiki_url": "https://wynncraft.wiki.gg/wiki/Hyhet",
    "image_url": "https://wynncraft.wiki.gg/images/Hyhet%2CtheApostate.png?ebfc45",
+   "lines": 0
+  },
+  {
+   "slug": "psychomancer",
+   "name": "Psychomancer",
+   "division": "Thunder",
+   "level": 95,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Psychomancer",
+   "image_url": "https://wynncraft.wiki.gg/images/Psychomancer.png?2b4063",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "genesis-revorse",
+   "name": "Genesis-Revorse",
+   "division": "Earth",
+   "level": 107,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Genesis-Revorse",
+   "image_url": "https://wynncraft.wiki.gg/images/Genesis-Revorse.png?9e8a7a",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "oceanic-judge",
+   "name": "Oceanic Judge",
+   "division": "Water",
+   "level": 113,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Oceanic_Judge",
+   "image_url": "https://wynncraft.wiki.gg/images/OceanicJudge.png?d5ca8a",
+   "tier": "rare",
+   "lines": 0
+  },
+  {
+   "slug": "solar-vanguard",
+   "name": "Solar Vanguard",
+   "division": "Fire",
+   "level": 120,
+   "wiki_url": "https://wynncraft.wiki.gg/wiki/Solar_Vanguard",
+   "image_url": "https://wynncraft.wiki.gg/images/SolarVanguard%28Phase2%29.png?407e2b",
+   "tier": "rare",
    "lines": 0
   }
  ]

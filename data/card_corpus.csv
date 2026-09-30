@@ -210,6 +210,7 @@ Norsten,rare,36,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Norsten
 Girazh,rare,36,1,,False,quest,,https://wynncraft.wiki.gg/images/Girazh.png?461e30,A People's Sovereign
 Aihan,rare,36,1,,False,quest,,,Solidarity of Steel
 Admiral Amerigo,rare,36,2,Amerigo,False,"quest,template",https://wynncraft.wiki.gg/wiki/Admiral_Amerigo,https://wynncraft.wiki.gg/images/AdmiralAmerigo.png?e8d3d8,The Mercenary | The Mercenary (2.0.4)
+Amadel,rare,36,3,??? (WynnExcavation Site C); Corrupted Amadel; Shadow Amadel; Traitor Amadel; WynnExcavation Leader Amadel,False,quest,https://wynncraft.wiki.gg/wiki/Amadel,https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a,A Hunter's Calling | WynnExcavation Site C | WynnExcavation Site D
 Citizen,uncommon,35,3,,False,quest,https://wynncraft.wiki.gg/wiki/Citizen,https://wynncraft.wiki.gg/images/AlekinCitizen%28NPC1%29.png?44649a,A Hunter's Calling | Echoes of Change | Pottery Wheel
 """Carl""",uncommon,35,2,Carl,False,"quest,template",https://wynncraft.wiki.gg/wiki/%22Carl%22,https://wynncraft.wiki.gg/images/Carl.png?7642aa,"""Carl"" | The Feathers Fly Part II"
 Caravan Driver,uncommon,35,6,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Caravan_Driver,https://wynncraft.wiki.gg/images/CaravanDriver.png?143534,A Journey Home | King's Recruit | King's Recruit (1.13) | King's Recruit (1.17) | King's Recruit (1.18) | King's Recruit (2.1)
@@ -420,7 +421,6 @@ Kyren,uncommon,16,1,,False,quest,,,The Strong Survive
 Squidward,uncommon,16,2,,False,quest,https://wynncraft.wiki.gg/wiki/Squidward,https://wynncraft.wiki.gg/images/Squidward.png?f18db3,Underice | Underice (1.14)
 Sayrr,uncommon,16,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Sayrr,https://wynncraft.wiki.gg/images/Sayrr.png?35c75e,Underwater | Underwater (1.19)
 Master Oshman,uncommon,16,1,,False,quest,,https://wynncraft.wiki.gg/images/MasterOshman.png?6822bb,Undersupply
-Traitor Amadel,uncommon,16,2,,False,quest,,https://wynncraft.wiki.gg/images/TraitorAmadel.png?1b668a,WynnExcavation Site C | WynnExcavation Site D
 Avos Chief,common,15,2,,False,quest,https://wynncraft.wiki.gg/wiki/Avos_Chief,https://wynncraft.wiki.gg/images/AvosChief.png?5d464c,A Hunter's Calling | The Feathers Fly Part I
 Librarian,common,15,3,,False,"quest,template",,,"Citizen | Librarian (NPC, Llevigar) | The Grand Archive"
 Leucsaa,common,15,2,,False,template,https://wynncraft.wiki.gg/wiki/Leucsaa,https://wynncraft.wiki.gg/images/Leucsaa.png?dd6382,Dwelling Walls | Leucsaa
@@ -632,7 +632,6 @@ Traitor Thomas,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Traitor_Th
 Phief,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Phief,https://wynncraft.wiki.gg/images/Phief.png?f26a5e,Zhight Island (Quest)
 Tirt,common,9,1,,False,quest,https://wynncraft.wiki.gg/wiki/Tirt,https://wynncraft.wiki.gg/images/Tirt.png?2bc49e,Zhight Island (Quest)
 Waiter,common,8,2,,False,quest,,,Acquiring Credentials | Overture to Despair
-Amadel,common,8,2,,False,quest,https://wynncraft.wiki.gg/wiki/Amadel,https://wynncraft.wiki.gg/images/WynnExcavationLeaderAmadel%28NPC%29.png?3e0c0a,A Hunter's Calling | WynnExcavation Site D
 Agitated Citizen,common,8,2,,False,"quest,template",https://wynncraft.wiki.gg/wiki/Agitated_Citizen,https://wynncraft.wiki.gg/images/AgitatedCitizen.png?4e87f1,Agitated Citizen | Citizen
 Elio,common,8,1,,True,quest,https://wynncraft.wiki.gg/wiki/Elio,https://wynncraft.wiki.gg/images/Elio.png?970793,An Iron Heart Part II (1.19)
 Creinu,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Creinu,https://wynncraft.wiki.gg/images/Creinu.png?6916e7,All Roads to Peace
@@ -687,5 +686,4 @@ Gernald,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Gernald,https://w
 Old Druid,common,8,1,,False,quest,,,World Encounters
 Larry,common,8,1,,False,quest,,https://wynncraft.wiki.gg/images/Larry.png?c40d1a,World Encounters
 Excavator Admin Uci,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci,https://wynncraft.wiki.gg/images/ExcavatorAdminUci.png?757c6e,WynnExcavation Site D
-WynnExcavation Leader Amadel,common,8,1,,False,quest,,,WynnExcavation Site D
 Amadel's Assistant,common,8,1,,False,quest,https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant,https://wynncraft.wiki.gg/images/Amadel%27sAssistant.png?580e2c,WynnExcavation Site D
