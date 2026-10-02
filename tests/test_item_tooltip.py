@@ -104,6 +104,38 @@ class TestItemFromApi:
         png = render_item_tooltip(item)
         assert png[:8] == b"\x89PNG\r\n\x1a\n"
 
+    def test_rounds_negative_stat_before_range_validation(self):
+        decoded = self._decoded(
+            identifications={"manaRegen": {"min": -58, "raw": -45, "max": -31}},
+            rolled={"manaRegen": 129},
+        )
+        weights = [{
+            "item_id": "Test Item",
+            "weight_name": "Main",
+            "identifications": {"manaRegen": 1},
+        }]
+
+        item = item_from_api(decoded, weights)
+
+        assert item["stats"]["Mana Regen"] == -58
+        assert item["rate"]["Mana Regen"] == 0
+        assert render_item_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_uses_inverted_rounding_for_spell_costs(self):
+        decoded = self._decoded(
+            identifications={"raw1stSpellCost": {"min": -13, "raw": -10, "max": -7}},
+            rolled={"raw1stSpellCost": 75},
+        )
+        weights = [{
+            "item_id": "Test Item",
+            "weight_name": "Main",
+            "identifications": {"raw1stSpellCost": 1},
+        }]
+
+        item = item_from_api(decoded, weights)
+
+        assert item["stats"]["1st Spell Cost"] == -8
+
     def test_mismatched_wynnpool_item_id_rejected(self):
         with pytest.raises(ValueError):
             item_from_api(self._decoded(), self._weights(item_id="Other Item"))

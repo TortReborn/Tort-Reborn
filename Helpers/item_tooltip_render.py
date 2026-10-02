@@ -4,6 +4,7 @@ import os
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from decimal import ROUND_HALF_DOWN, ROUND_HALF_UP, Decimal
 from functools import lru_cache
 from io import BytesIO
 from typing import Any
@@ -29,6 +30,11 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_PATH = os.path.join(BASE, "images", "profile", "game.ttf")
 STAT_NAMES_PATH = os.path.join(BASE, "data", "stat-names.json")
 _FONT_CACHE: dict[int, ImageFont.FreeTypeFont] = {}
+INVERTED_ROLL_STATS = {
+    f"{prefix}{spell}SpellCost"
+    for prefix in ("", "raw")
+    for spell in ("1st", "2nd", "3rd", "4th")
+}
 
 
 def _font(size: int) -> ImageFont.FreeTypeFont:
@@ -61,6 +67,19 @@ def _rate(value: Any, label: str) -> float:
     if not 0 <= rate <= 100:
         raise ValueError(f"Roll percentage outside 0..100 for {label}")
     return rate
+
+
+def _rolled_stat_value(percent_of_nominal: Any, raw_value: float, key: str) -> int:
+    internal_roll = _number(percent_of_nominal, key)
+    inverted = key in INVERTED_ROLL_STATS
+    rounding = ROUND_HALF_UP if (raw_value > 0) != inverted else ROUND_HALF_DOWN
+    value = (
+        Decimal(str(raw_value)) * Decimal(str(internal_roll)) / Decimal(100)
+    ).quantize(Decimal(1), rounding=rounding)
+    result = int(value)
+    if result == 0:
+        return 1 if raw_value > 0 else -1 if raw_value < 0 else 0
+    return result
 
 
 ROLL_COLOR_STOPS: tuple[tuple[float, Color], ...] = (
@@ -162,7 +181,7 @@ def item_from_api(decode_response: Mapping[str, Any], wynnpool_weights: list[dic
         raw_value = _number(stat_range.get("raw"), key)
         if max_value == min_value:
             raise ValueError(f"Degenerate roll range for {key}")
-        actual_value = _number(percent_of_nominal, key) / 100 * raw_value
+        actual_value = _rolled_stat_value(percent_of_nominal, raw_value, key)
         rate = (actual_value - min_value) / (max_value - min_value) * 100
         label = mapping.get(key, key)
         if label in stats:
