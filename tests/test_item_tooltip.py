@@ -26,6 +26,10 @@ def _item_code(tag: int) -> str:
 
 
 ITEM_SHARE_WITH_NAME = f'{_item_code(1)} "Divzer qol"'
+PROWESS_CODE = (
+    "\U000F0002\U000F0100\U000F0250\U000F726F\U000F7765\U000F7373"
+    "\U000F00FF"
+)
 VOLATILITY_CODE = (
     "\U000F0002\U000F0100\U000F0256\U000F6F6C\U000F6174\U000F696C"
     "\U000F6974\U000F7900\U000F0306\U000F0075\U000F1904\U000F141E"
@@ -84,6 +88,23 @@ WILD_GROWTH_ENTRY = {
         "spellDamage": {"min": 6, "raw": 19, "max": 25},
         "healthRegenRaw": {"min": 76, "raw": 252, "max": 328},
         "rawEarthDamage": {"min": 41, "raw": 138, "max": 179},
+    },
+}
+PROWESS_ENTRY = {
+    "displayName": "Prowess",
+    "internalName": "Prowess",
+    "type": "accessory",
+    "subType": "bracelet",
+    "tier": "legendary",
+    "restriction": "untradable",
+    "identified": True,
+    "requirements": {"level": 100, "quest": "The Qira Hive"},
+    "identifications": {
+        "rawAgility": 4,
+        "rawDefence": 4,
+        "rawStrength": 4,
+        "rawDexterity": 4,
+        "rawIntelligence": 4,
     },
 }
 CRAFTED_RING = (
@@ -412,6 +433,20 @@ class TestItemFromGear:
         assert build_lines(item)[0].text.startswith("Volatility")
         assert render_item_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
 
+    def test_fully_static_item_renders_from_database_identifications(self):
+        decoded = decode_gear(PROWESS_CODE)
+        item = item_from_gear(decoded, PROWESS_ENTRY, [])
+
+        assert decoded["identifications"] == []
+        assert [(stat["key"], stat["value"]) for stat in item["renderStats"]] == [
+            ("rawAgility", 4),
+            ("rawDefence", 4),
+            ("rawStrength", 4),
+            ("rawDexterity", 4),
+            ("rawIntelligence", 4),
+        ]
+        assert render_item_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
+
     def test_missing_range_raises(self):
         with pytest.raises(ValueError, match="Missing roll range"):
             item_from_gear(decode_gear(VOLATILITY_CODE), IONIC_SPARK_ENTRY, [])
@@ -443,7 +478,7 @@ class TestItemFromGear:
 class TestRenderNameHint:
     def _stub_bridge(self, monkeypatch):
         bridge = ItemTooltipBridge()
-        bridge._items.load([VOLATILITY_ENTRY, WILD_GROWTH_ENTRY])
+        bridge._items.load([VOLATILITY_ENTRY, WILD_GROWTH_ENTRY, PROWESS_ENTRY])
 
         async def fake_json_request(method, url, payload=None, **kwargs):
             raise AssertionError("gear items must resolve from the cached item index")
@@ -473,6 +508,14 @@ class TestRenderNameHint:
         bridge = self._stub_bridge(monkeypatch)
         name, _ = await bridge._render(WILD_GROWTH_CODE, None)
         assert name == "Wild Growth"
+
+    @pytest.mark.asyncio
+    async def test_fully_static_gear_renders_through_bridge(self, monkeypatch):
+        bridge = self._stub_bridge(monkeypatch)
+        name, png = await bridge._render(PROWESS_CODE, None)
+
+        assert name == "Prowess"
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
 
     @pytest.mark.asyncio
     async def test_crafted_item_does_not_call_wynnpool(self, monkeypatch):

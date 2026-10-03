@@ -219,7 +219,7 @@ def item_from_gear(
         raise ValueError("Missing item name or rarity")
     identifications = decoded.get("identifications")
     ranges = entry.get("identifications")
-    if not isinstance(identifications, list) or not identifications or not isinstance(ranges, dict):
+    if not isinstance(identifications, list) or not isinstance(ranges, dict):
         raise ValueError("Incomplete item identification data")
     if not isinstance(wynnpool_weights, list) or not all(
         isinstance(scale, dict) and scale.get("item_id") == display_name for scale in wynnpool_weights
