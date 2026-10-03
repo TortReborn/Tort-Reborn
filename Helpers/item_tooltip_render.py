@@ -230,6 +230,14 @@ def item_from_gear(
     for identification in identifications:
         key, kind = identification.get("key"), identification.get("kind")
         if kind == "fixed":
+            actual_value = _number(identification.get("value"), str(key))
+            actual_value = int(actual_value)
+            render_stats.append({
+                "key": key,
+                "label": mapping.get(key, key),
+                "value": actual_value,
+                "rate": None,
+            })
             continue
         stat_range = ranges.get(key)
         if not isinstance(stat_range, dict):
@@ -258,8 +266,6 @@ def item_from_gear(
             "value": actual_value,
             "rate": mapped_rates[label],
         })
-    if not stats:
-        raise ValueError("Item has no rolled identifications")
     variable_keys = {str(identification.get("key")) for identification in identifications}
     for key, value in ranges.items():
         if key in variable_keys or isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -307,17 +313,16 @@ def build_lines(item: Mapping[str, Any]) -> list[Line]:
     if not isinstance(name, str) or not name or not isinstance(tier, str) or not tier:
         raise ValueError("Missing item name or rarity")
     stats, rates = item.get("stats"), item.get("rate")
-    if not isinstance(stats, dict) or not stats or not isinstance(rates, dict):
+    if not isinstance(stats, dict) or not isinstance(rates, dict):
         raise ValueError("Missing item stats or roll percentages")
-    average = math.fsum(_rate(rates.get(key), key) for key in stats) / len(stats)
     shiny = item.get("shiny")
     is_shiny = isinstance(shiny, dict)
     title = ("✨ Shiny " if is_shiny else "") + name
-    lines = [
-        Line((Segment(title + " ", TIER_COLORS.get(tier.lower(), WHITE)),
-              Segment(f"[{average:.2f}%]", roll_color(average))), 22),
-        Line(size=4),
-    ]
+    title_segments = [Segment(title, TIER_COLORS.get(tier.lower(), WHITE))]
+    if stats:
+        average = math.fsum(_rate(rates.get(key), key) for key in stats) / len(stats)
+        title_segments.extend((Segment(" "), Segment(f"[{average:.2f}%]", roll_color(average))))
+    lines = [Line(tuple(title_segments), 22), Line(size=4)]
     for scale in calculate_custom_scales(item):
         lines.append(Line((Segment(f" - {scale.name} Scale "),
                            Segment(f"[{scale.score:.2f}%]", roll_color(scale.score))), 14))

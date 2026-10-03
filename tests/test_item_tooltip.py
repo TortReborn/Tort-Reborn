@@ -17,6 +17,7 @@ from Helpers.item_tooltip_render import (
     render_item_tooltip,
     stat_names,
 )
+from Helpers.minecraft_tooltip import _stats
 from Helpers.wynn_items import WynnItemIndex
 
 
@@ -419,6 +420,24 @@ class TestItemFromGear:
         weights = [{"item_id": "Ionic Spark", "weight_name": "Main", "identifications": {"damage": 1}}]
         with pytest.raises(ValueError, match="belonging to another item"):
             item_from_gear(decode_gear(VOLATILITY_CODE), VOLATILITY_ENTRY, weights)
+
+    def test_skill_stat_icon_only_prefixes_negative_values(self):
+        item = {
+            "tier": "rare",
+            "renderStats": [
+                {"key": "rawDexterity", "label": "Dexterity", "value": 5, "rate": None},
+                {"key": "rawStrength", "label": "Strength", "value": -5, "rate": None},
+            ],
+        }
+
+        negative, positive = _stats(item, {}, False)
+
+        assert positive.draw is None
+        assert positive.final_draw is None
+        assert positive.left[0].value == "Dexterity"
+        assert negative.draw is not None
+        assert negative.final_draw is not None
+        assert negative.right[0].value == "-5"
 
 
 class TestRenderNameHint:

@@ -809,7 +809,7 @@ def _stats(item: Mapping[str, Any], entry: Mapping[str, Any], include_reroll: bo
             if rate is not None:
                 rate_value = float(rate)
                 right.extend((Text(" "), Text(f"[{rate_value:.1f}%]", _roll_color(rate_value))))
-            icon_index = SKILL_STAT_ICONS.get(key)
+            icon_index = SKILL_STAT_ICONS.get(key) if value < 0 else None
             if icon_index is None:
                 lines.append(Line(left=(Text(label),), right=tuple(right)))
                 continue
@@ -906,6 +906,8 @@ def _render(lines: list[Line], tier: str) -> bytes:
         positions.append((line, y))
         if line.draw:
             line.draw(image, width, y)
+            if line.right:
+                _draw_segments(image, width - 10 - _segments_width(line.right), y, line.right)
         elif line.center:
             line_width = _segments_width(line.center)
             _draw_segments(image, (width - line_width) // 2, y, line.center)
