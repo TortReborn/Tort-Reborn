@@ -8,11 +8,23 @@ from urllib.parse import quote
 
 import aiohttp
 
-from Helpers.artemis_item import decode_crafted_gear, item_type
-from Helpers.item_tooltip_render import item_from_api, render_crafted_tooltip, render_item_tooltip
+from Helpers.artemis_item import (
+    CRAFTED_GEAR_ITEM_TYPE,
+    GEAR_ITEM_TYPE,
+    decode_crafted_gear,
+    decode_gear,
+    item_type,
+)
+from Helpers.item_tooltip_render import (
+    item_from_api,
+    item_from_gear,
+    render_crafted_tooltip,
+    render_item_tooltip,
+)
+from Helpers.wynn_items import MAX_DATABASE_RESPONSE, WYNN_ITEM_DATABASE_URL, WynnItemIndex
 
 PUA_RUN = re.compile(r"[\U000F0000-\U000FFFFD\U00100000-\U0010FFFD]+")
-START = re.compile(r"[\U000F0000-\U000F0002][\U000F0100\U000F0103]")
+START = re.compile(r"[\U000F0000-\U000F0002][\U000F0100-\U000F0103]")
 NAME_SUFFIX = re.compile(r'\s?"([^"\n]*)"')
 MAX_RESPONSE = 2 * 1024 * 1024
 MAX_ITEMS = 4
@@ -21,6 +33,7 @@ WYNNPOOL_WEIGHT_URL = "https://api.wynnpool.com/item/{}/weight"
 WEIGHT_CACHE_TTL_SECONDS = 300
 WEIGHT_CACHE_MAX_ENTRIES = 128
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=15)
+DATABASE_TIMEOUT = aiohttp.ClientTimeout(total=120)
 
 
 @dataclass(frozen=True)
@@ -57,6 +70,8 @@ class ItemTooltipBridge:
         self._slots = asyncio.Semaphore(2)
         self._session: aiohttp.ClientSession | None = None
         self._weights: OrderedDict[str, tuple[float, list[dict]]] = OrderedDict()
+        self._items = WynnItemIndex()
+        self._items_lock = asyncio.Lock()
 
     async def close(self):
         if self._session is not None and not self._session.closed:
@@ -109,12 +124,15 @@ class ItemTooltipBridge:
     async def _render(self, code: str, name_hint: str | None) -> tuple[str, bytes]:
         if len(code) > 1024:
             raise ValueError("Item code exceeds 1024 characters")
-        if item_type(code) == 3:
+        kind = item_type(code)
+        if kind == CRAFTED_GEAR_ITEM_TYPE:
             item = decode_crafted_gear(code, name_hint)
             png = await asyncio.to_thread(render_crafted_tooltip, item)
             if len(png) > 8 * 1024 * 1024:
                 raise ValueError("Tooltip PNG exceeds 8 MiB")
             return item["itemName"], png
+        if kind == GEAR_ITEM_TYPE:
+            return await self._render_gear(code, name_hint)
         decoded = await self._json_request("POST", WYNNPOOL_DECODE_URL, {"item": code})
         if not isinstance(decoded, dict) or not isinstance(decoded.get("original"), dict):
             raise ValueError("Invalid Wynnpool decode response")
@@ -129,6 +147,30 @@ class ItemTooltipBridge:
         if len(png) > 8 * 1024 * 1024:
             raise ValueError("Tooltip PNG exceeds 8 MiB")
         return item["itemName"], png
+
+    async def _render_gear(self, code: str, name_hint: str | None) -> tuple[str, bytes]:
+        decoded = decode_gear(code)
+        entry = (await self._item_index()).resolve(decoded["itemName"], decoded["identifications"])
+        weights = await self._get_weights(entry["displayName"])
+        item = item_from_gear(decoded, entry, weights)
+        if name_hint:
+            item["itemName"] = name_hint
+        png = await asyncio.to_thread(render_item_tooltip, item)
+        if len(png) > 8 * 1024 * 1024:
+            raise ValueError("Tooltip PNG exceeds 8 MiB")
+        return item["itemName"], png
+
+    async def _item_index(self) -> WynnItemIndex:
+        if self._items.fresh:
+            return self._items
+        async with self._items_lock:
+            if not self._items.fresh:
+                entries = await self._json_request(
+                    "GET", WYNN_ITEM_DATABASE_URL,
+                    max_bytes=MAX_DATABASE_RESPONSE, timeout=DATABASE_TIMEOUT,
+                )
+                self._items.load(entries)
+        return self._items
 
     async def _get_weights(self, name: str) -> list[dict]:
         cached = self._weights.get(name)
@@ -146,16 +188,21 @@ class ItemTooltipBridge:
             self._weights.popitem(last=False)
         return weights
 
-    async def _json_request(self, method: str, url: str, payload: dict[str, str] | None = None):
+    async def _json_request(
+        self, method: str, url: str, payload: dict[str, str] | None = None,
+        max_bytes: int = MAX_RESPONSE, timeout: aiohttp.ClientTimeout = REQUEST_TIMEOUT,
+    ):
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession(timeout=REQUEST_TIMEOUT)
         async with self._session.request(
-            method, url, json=payload,
+            method, url, json=payload, timeout=timeout,
             headers={"Accept": "application/json"},
         ) as response:
             if response.status not in (200, 201):
                 raise ValueError(f"Item API returned HTTP {response.status}")
-            body = await response.content.read(MAX_RESPONSE + 1)
-            if len(body) > MAX_RESPONSE:
-                raise ValueError("Item API response exceeds 2 MiB")
+            body = bytearray()
+            async for chunk in response.content.iter_chunked(65536):
+                body.extend(chunk)
+                if len(body) > max_bytes:
+                    raise ValueError("Item API response exceeds its size limit")
         return json.loads(body.decode("utf-8-sig"))
