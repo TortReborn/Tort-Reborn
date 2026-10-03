@@ -80,7 +80,17 @@ TYPE_SPRITES = {
     "armor_tome": 26,
     "guild_tome": 26,
     "lootrun_tome": 26,
-    "charm": 32,
+    "charm": 28,
+}
+REWARD_EMBLEMS = {
+    "tome": ("square", 5),
+    "charm": ("circle", 4),
+}
+RESTRICTION_BANNER_ROWS = {
+    "untradable": 2,
+    "untradable item": 2,
+    "quest": 3,
+    "quest item": 3,
 }
 SKILLS = ("strength", "dexterity", "intelligence", "defence", "agility")
 CLASS_NAMES = {
@@ -437,6 +447,12 @@ def _draw_attribute_sprite(image: Image.Image, x: int, y: int, index: int) -> No
     )
 
 
+def _draw_requirement_mark(image: Image.Image, x: int, y: int, index: int) -> None:
+    mark = _crop_grid("font/tooltip/requirement/linear.png", 3, 1, index)
+    mark = mark.resize((16, 16), Image.Resampling.NEAREST)
+    image.alpha_composite(mark, (x, y))
+
+
 def _roll_color(value: float) -> Color:
     stops = (
         (0, (255, 85, 85)),
@@ -487,17 +503,24 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
         else "CHARM" if category == "charm"
         else str(entry.get("subType") or entry.get("type") or "item").upper()
     )
-    emblem = str(entry.get("emblem") or "diamond_1").lower().split("_")
-    shape_index = {"diamond": 0, "square": 1, "hexagon": 2, "shield": 3, "sticker": 4, "circle": 5}.get(emblem[0], 0)
-    try:
-        variant = max(1, min(6, int(emblem[1])))
-    except (IndexError, ValueError):
-        variant = 1
+    reward_emblem = REWARD_EMBLEMS.get(category)
+    if reward_emblem:
+        shape, variant = reward_emblem
+    else:
+        emblem = str(entry.get("emblem") or "diamond_1").lower().split("_")
+        shape = emblem[0]
+        try:
+            variant = max(1, min(6, int(emblem[1])))
+        except (IndexError, ValueError):
+            variant = 1
+    shape_index = {"diamond": 0, "square": 1, "hexagon": 2, "shield": 3, "sticker": 4, "circle": 5}.get(shape, 0)
     frame = _crop_grid("font/tooltip/emblem/frame.png", 6, 6, (variant - 1) * 6 + shape_index)
     sprite_index = TYPE_SPRITES.get(str(entry.get("subType") or "").lower(), 6)
     sprite = _crop_grid("font/tooltip/emblem/sprite.png", 9, 5, sprite_index)
     tier_color = TIER_COLORS.get(tier, WHITE)
     divider_color = DIVIDER_COLORS.get(tier, WHITE)
+    restriction = str(entry.get("restriction") or "none").lower().replace("_", " ")
+    restriction_row = RESTRICTION_BANNER_ROWS.get(restriction)
 
     def name_line(image: Image.Image, width: int, y: int) -> None:
         x = 48
@@ -512,11 +535,18 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
         x += tier_banner.width + 1
         type_banner = _banner(item_type, divider_color)
         image.alpha_composite(type_banner, (x, y))
-        x += type_banner.width + 1
-        if str(entry.get("restriction") or "none").lower() != "none":
-            restriction = Image.new("RGBA", (7, 7), (255, 66, 66, 255))
-            ImageDraw.Draw(restriction).rectangle((2, 2, 4, 4), fill=(128, 60, 30, 255))
-            image.alpha_composite(restriction, (x, y))
+
+    def restriction_icon(image: Image.Image, width: int, y: int) -> None:
+        if restriction_row is None:
+            return
+        atlas = _asset("font/tooltip/banner.png")
+        background = atlas.crop((0, restriction_row * 12, 24, (restriction_row + 1) * 12))
+        overlay = atlas.crop((24, restriction_row * 12, 48, (restriction_row + 1) * 12))
+        background = _tinted(background.resize((28, 14), Image.Resampling.NEAREST), (255, 66, 66))
+        overlay = overlay.resize((28, 14), Image.Resampling.NEAREST)
+        x = (48 + _banner(tier.upper(), tier_color).width + _banner(item_type, divider_color).width + 2) * 2
+        image.alpha_composite(background, (x, y))
+        image.alpha_composite(overlay, (x, y))
 
     def tags_line(image: Image.Image, width: int, y: int) -> None:
         elements = sorted(
@@ -542,12 +572,15 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
         name_width += FONT.width(" ") + FONT.width(f"[{average:.1f}%]")
 
     def header_line(image: Image.Image, width: int, y: int) -> None:
-        image.alpha_composite(frame, (-6, y - 18))
-        sprite_position = (11, y) if tier == "crafted" else (10, y - 1)
-        image.alpha_composite(sprite, sprite_position)
+        image.alpha_composite(frame, (-6, y - 24))
+        image.alpha_composite(sprite, (10, y - 7))
         name_line(image, width, y)
 
-    lines = [Line(), Line(draw=header_line, minimum_width=name_width), Line(draw=type_line)]
+    lines = [
+        Line(),
+        Line(draw=header_line, minimum_width=name_width),
+        Line(draw=type_line, final_draw=restriction_icon if restriction_row is not None else None),
+    ]
     if entry.get("elements"):
         lines.append(Line(final_draw=tags_line))
     if category in {"weapon", "armor", "accessory"}:
@@ -680,10 +713,7 @@ def _requirements(entry: Mapping[str, Any], tier: str) -> list[Line]:
                 text = str(value)
                 content_width = 7 + FONT.width(text)
                 x = start + index * 27 + (24 - content_width) // 2
-                icon = _crop_grid("font/tooltip/requirement/linear.png", 3, 1, 1 if value else 0)
-                icon = icon.resize((12, 12), Image.Resampling.NEAREST)
-                image.alpha_composite(icon, (x * 2 + 4, y + 3))
-                image.alpha_composite(icon, (x * 2 + 2, y + 1))
+                _draw_requirement_mark(image, x * 2 + 2, y + 1, 1 if value else 0)
 
         lines.extend((Line(draw=skill_numbers, final_draw=skill_number_icons), Line()))
     class_requirement = requirements.get("classRequirement")
@@ -691,23 +721,25 @@ def _requirements(entry: Mapping[str, Any], tier: str) -> list[Line]:
         class_name = CLASS_NAMES.get(str(class_requirement).lower(), str(class_requirement))
 
         def class_line(image: Image.Image, width: int, y: int) -> None:
-            icon = _crop_grid("font/tooltip/requirement/linear.png", 3, 1, 1)
-            _paste(image, icon, (10, y + 1), (5, 5))
-            FONT.draw(image, (17, y), "Class Type")
+            FONT.draw(image, (18, y), "Class Type")
             FONT.draw(image, (width - 10 - FONT.width(class_name), y), class_name, GRAY)
 
-        lines.append(Line(draw=class_line))
+        def class_icon(image: Image.Image, width: int, y: int) -> None:
+            _draw_requirement_mark(image, 20, y - 1, 1)
+
+        lines.append(Line(draw=class_line, final_draw=class_icon))
     level = requirements.get("level")
     if isinstance(level, (int, float)) and level > 0:
         level_text = str(int(level))
 
         def level_line(image: Image.Image, width: int, y: int) -> None:
-            icon = _crop_grid("font/tooltip/requirement/linear.png", 3, 1, 1)
-            _paste(image, icon, (10, y + 1), (5, 5))
-            FONT.draw(image, (17, y), "Combat Level")
+            FONT.draw(image, (18, y), "Combat Level")
             FONT.draw(image, (width - 10 - FONT.width(level_text), y), level_text, GRAY)
 
-        lines.append(Line(draw=level_line))
+        def level_icon(image: Image.Image, width: int, y: int) -> None:
+            _draw_requirement_mark(image, 20, y - 1, 1)
+
+        lines.append(Line(draw=level_line, final_draw=level_icon))
     return lines
 
 
