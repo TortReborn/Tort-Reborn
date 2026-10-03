@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "key": "mobsKilled",
+    "displayName": "Mobs Killed",
+    "statUnit": "raw"
+  },
+  {
+    "id": 2,
+    "key": "raidsWon",
+    "displayName": "Raids Won",
+    "statUnit": "raw"
+  },
+  {
+    "id": 3,
+    "key": "chestsOpened",
+    "displayName": "Chests Opened",
+    "statUnit": "raw"
+  },
+  {
+    "id": 4,
+    "key": "warsWon",
+    "displayName": "Wars Won",
+    "statUnit": "raw"
+  },
+  {
+    "id": 5,
+    "key": "playersKilled",
+    "displayName": "Players Killed",
+    "statUnit": "raw"
+  },
+  {
+    "id": 6,
+    "key": "dungeonsWon",
+    "displayName": "Dungeons Won",
+    "statUnit": "raw"
+  },
+  {
+    "id": 7,
+    "key": "deaths",
+    "displayName": "Deaths",
+    "statUnit": "raw"
+  },
+  {
+    "id": 8,
+    "key": "lootrunsCompleted",
+    "displayName": "Lootruns Completed",
+    "statUnit": "raw"
+  },
+  {
+    "id": 9,
+    "key": "bossAltarsWon",
+    "displayName": "Boss Altars Won",
+    "statUnit": "raw"
+  },
+  {
+    "id": 10,
+    "key": "guildRaidsWon",
+    "displayName": "Guild Raids Won",
+    "statUnit": "raw"
+  },
+  {
+    "id": 11,
+    "key": "worldEventsWon",
+    "displayName": "World Events Won",
+    "statUnit": "raw"
+  },
+  {
+    "id": 12,
+    "key": "majorWorldEventsWon",
+    "displayName": "Major World Events Won",
+    "statUnit": "raw"
+  }
+]

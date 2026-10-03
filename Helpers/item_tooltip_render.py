@@ -6,17 +6,15 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import ROUND_HALF_DOWN, ROUND_HALF_UP, Decimal
 from functools import lru_cache
-from io import BytesIO
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont
+from Helpers.minecraft_tooltip import render_crafted, render_item
 
 Color = tuple[int, int, int]
 WHITE: Color = (255, 255, 255)
 GREEN: Color = (85, 255, 85)
 RED: Color = (255, 85, 85)
 CRAFTED: Color = (0, 170, 170)
-BACKGROUND: Color = (26, 10, 46)
 TIER_COLORS: dict[str, Color] = {
     "mythic": (170, 0, 170),
     "fabled": (255, 85, 85),
@@ -27,21 +25,12 @@ TIER_COLORS: dict[str, Color] = {
 }
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FONT_PATH = os.path.join(BASE, "images", "profile", "game.ttf")
 STAT_NAMES_PATH = os.path.join(BASE, "data", "stat-names.json")
-_FONT_CACHE: dict[int, ImageFont.FreeTypeFont] = {}
 INVERTED_ROLL_STATS = {
     f"{prefix}{spell}SpellCost"
     for prefix in ("", "raw")
     for spell in ("1st", "2nd", "3rd", "4th")
 }
-
-
-def _font(size: int) -> ImageFont.FreeTypeFont:
-    if size not in _FONT_CACHE:
-        _FONT_CACHE[size] = ImageFont.truetype(FONT_PATH, size)
-    return _FONT_CACHE[size]
-
 
 @lru_cache(maxsize=1)
 def stat_names() -> dict[str, str]:
@@ -171,7 +160,7 @@ def item_from_api(decode_response: Mapping[str, Any], wynnpool_weights: list[dic
     ):
         raise ValueError("Invalid weights or scales belonging to another item")
     mapping = stat_names()
-    stats, mapped_rates = {}, {}
+    stats, mapped_rates, render_stats = {}, {}, []
     for key, percent_of_nominal in rolled_stats.items():
         stat_range = ranges.get(key)
         if not isinstance(stat_range, dict):
@@ -188,6 +177,17 @@ def item_from_api(decode_response: Mapping[str, Any], wynnpool_weights: list[dic
             raise ValueError(f"Duplicate mapped stat: {label}")
         stats[label] = actual_value
         mapped_rates[label] = _rate(rate, key)
+        render_stats.append({
+            "key": key,
+            "label": label,
+            "value": actual_value,
+            "rate": mapped_rates[label],
+        })
+    for key, value in ranges.items():
+        if key in rolled_stats or isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        label = mapping.get(key, key)
+        render_stats.append({"key": key, "label": label, "value": value, "rate": None})
     item = {
         "itemName": full_name,
         "internalName": internal_name,
@@ -197,8 +197,88 @@ def item_from_api(decode_response: Mapping[str, Any], wynnpool_weights: list[dic
         "reroll": rolled.get("rerollCount"),
         "shiny": None,
         "wynnpoolWeights": sorted(wynnpool_weights, key=lambda scale: scale.get("weight_name") != "Main"),
+        "entry": dict(original),
+        "powders": rolled.get("powders"),
+        "renderStats": render_stats,
     }
-    calculate_custom_scales(item)
+    item["calculatedScales"] = [scale.__dict__ for scale in calculate_custom_scales(item)]
+    return item
+
+
+def item_from_gear(
+    decoded: Mapping[str, Any], entry: Mapping[str, Any], wynnpool_weights: list[dict[str, Any]]
+) -> dict[str, Any]:
+    name = decoded.get("itemName")
+    display_name = entry.get("displayName")
+    tier = entry.get("tier")
+    if (
+        not isinstance(name, str) or not name
+        or not isinstance(display_name, str) or not display_name
+        or not isinstance(tier, str) or not tier
+    ):
+        raise ValueError("Missing item name or rarity")
+    identifications = decoded.get("identifications")
+    ranges = entry.get("identifications")
+    if not isinstance(identifications, list) or not identifications or not isinstance(ranges, dict):
+        raise ValueError("Incomplete item identification data")
+    if not isinstance(wynnpool_weights, list) or not all(
+        isinstance(scale, dict) and scale.get("item_id") == display_name for scale in wynnpool_weights
+    ):
+        raise ValueError("Invalid weights or scales belonging to another item")
+    mapping = stat_names()
+    stats, mapped_rates, render_stats = {}, {}, []
+    for identification in identifications:
+        key, kind = identification.get("key"), identification.get("kind")
+        if kind == "fixed":
+            continue
+        stat_range = ranges.get(key)
+        if not isinstance(stat_range, dict):
+            raise ValueError(f"Missing roll range for {key}")
+        min_value = _number(stat_range.get("min"), key)
+        max_value = _number(stat_range.get("max"), key)
+        raw_value = _number(stat_range.get("raw"), key)
+        if max_value == min_value:
+            raise ValueError(f"Degenerate roll range for {key}")
+        if kind == "roll":
+            actual_value = _rolled_stat_value(identification.get("value"), raw_value, key)
+        else:
+            actual_value = _number(identification.get("value"), key)
+            if key in INVERTED_ROLL_STATS:
+                actual_value = -actual_value
+            actual_value = int(actual_value)
+        rate = (actual_value - min_value) / (max_value - min_value) * 100
+        label = mapping.get(key, key)
+        if label in stats:
+            raise ValueError(f"Duplicate mapped stat: {label}")
+        stats[label] = actual_value
+        mapped_rates[label] = _rate(rate, key)
+        render_stats.append({
+            "key": key,
+            "label": label,
+            "value": actual_value,
+            "rate": mapped_rates[label],
+        })
+    if not stats:
+        raise ValueError("Item has no rolled identifications")
+    variable_keys = {str(identification.get("key")) for identification in identifications}
+    for key, value in ranges.items():
+        if key in variable_keys or isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        render_stats.append({"key": key, "label": mapping.get(key, key), "value": value, "rate": None})
+    item = {
+        "itemName": name,
+        "internalName": display_name,
+        "tier": tier,
+        "stats": stats,
+        "rate": mapped_rates,
+        "reroll": decoded.get("rerollCount"),
+        "shiny": decoded.get("shiny"),
+        "wynnpoolWeights": sorted(wynnpool_weights, key=lambda scale: scale.get("weight_name") != "Main"),
+        "entry": dict(entry),
+        "powders": decoded.get("powders"),
+        "renderStats": render_stats,
+    }
+    item["calculatedScales"] = [scale.__dict__ for scale in calculate_custom_scales(item)]
     return item
 
 
@@ -353,43 +433,17 @@ def _signed(value: float) -> str:
     return ("+" if value >= 0 else "") + _compact(value)
 
 
-def _render_lines(lines: list[Line], border_color: Color) -> bytes:
-    supersample = 3
-    fonts = {line.size: _font(line.size * supersample) for line in lines}
-    widths = [
-        sum(fonts[line.size].getlength(segment.text) for segment in line.segments) / supersample
-        for line in lines
-    ]
-    width = max(270, math.ceil(max(widths) + 48))
-    height = 28 + sum(line.size + 4 for line in lines)
-    if width > 2048 or height > 4096:
-        raise ValueError("Tooltip exceeds image size limit")
-    size = (width * supersample, height * supersample)
-    image = Image.new("RGBA", size, (*BACKGROUND, 255))
-    border = ImageDraw.Draw(image)
-    border.rectangle((3, 3, size[0] - 4, size[1] - 4), outline=border_color, width=6)
-    border.rectangle((9, 9, size[0] - 10, size[1] - 10), outline=tuple(channel // 2 for channel in border_color), width=3)
-    layer = Image.new("RGBA", size)
-    draw = ImageDraw.Draw(layer)
-    y = 14 * supersample
-    for line in lines:
-        font = fonts[line.size]
-        x = 14 * supersample
-        for segment in line.segments:
-            draw.text((x, y), segment.text, font=font, fill=(*segment.color, 199), anchor="la")
-            x += font.getlength(segment.text)
-        y += (line.size + 4) * supersample
-    rendered = Image.alpha_composite(image, layer).convert("RGB").resize(
-        (width, height), Image.Resampling.LANCZOS
-    )
-    output = BytesIO()
-    rendered.save(output, format="PNG")
-    return output.getvalue()
-
-
 def render_item_tooltip(item: Mapping[str, Any]) -> bytes:
-    return _render_lines(build_lines(item), (85, 0, 170))
+    build_lines(item)
+    return render_item(item)
 
 
 def render_crafted_tooltip(item: Mapping[str, Any]) -> bytes:
-    return _render_lines(build_crafted_lines(item), CRAFTED)
+    lines = build_crafted_lines(item)
+    crafted = dict(item)
+    mapping = stat_names()
+    crafted["renderStats"] = [
+        {"key": key, "label": mapping.get(key, key), "value": value, "rate": None}
+        for key, value in item.get("identifications", [])
+    ]
+    return render_crafted(crafted, lines)

@@ -6,16 +6,18 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from Helpers.item_tooltip import ItemTooltipBridge, find_item_codes
-from Helpers.artemis_item import decode_crafted_gear
+from Helpers.artemis_item import decode_crafted_gear, decode_gear
 from Helpers.item_tooltip_render import (
     build_crafted_lines,
     build_lines,
     calculate_custom_scales,
     item_from_api,
+    item_from_gear,
     render_crafted_tooltip,
     render_item_tooltip,
     stat_names,
 )
+from Helpers.wynn_items import WynnItemIndex
 
 
 def _item_code(tag: int) -> str:
@@ -23,6 +25,66 @@ def _item_code(tag: int) -> str:
 
 
 ITEM_SHARE_WITH_NAME = f'{_item_code(1)} "Divzer qol"'
+VOLATILITY_CODE = (
+    "\U000F0002\U000F0100\U000F0256\U000F6F6C\U000F6174\U000F696C"
+    "\U000F6974\U000F7900\U000F0306\U000F0075\U000F1904\U000F141E"
+    "\U000FC705\U000F0416\U000F1174\U000F0415\U000F6658\U000F0423"
+    "\U000F0132\U000F041F\U000F0226\U000F0419\U000F0403\U000F0005"
+    "\U000F02FF"
+)
+WILD_GROWTH_CODE = (
+    "\U000F0002\U000F0100\U000F0257\U000F696C\U000F6420\U000F4772"
+    "\U000F6F77\U000F7468\U000F0003\U000F0500\U000F220E\U000F040D"
+    "\U000F1980\U000F0504\U000F1F30\U000FC401\U000F040D\U000F482A"
+    "\U000F0419\U000F511B\U000F041D\U000F0403\U000F0005\U000F03FF"
+)
+TOME_CODE = (
+    "\U000F0002\U000F0101\U000F0249\U000F6E66\U000F6572\U000F6E61"
+    "\U000F6C20\U000F546F\U000F6D65\U000F206F\U000F6620\U000F436F"
+    "\U000F6D62\U000F6174\U000F204D\U000F6173\U000F7465\U000F7279"
+    "\U000F2049\U000F4949\U000F0003\U000F0200\U000F660A\U000F0423"
+    "\U000F1210\U000F041C\U000F0502\U0010FFEE"
+)
+IONIC_SPARK_ENTRY = {
+    "displayName": "Ionic Spark",
+    "internalName": "Volatility",
+    "tier": "unique",
+    "identifications": {
+        "exploding": {"min": 6, "raw": 20, "max": 26},
+        "manaRegen": {"min": -8, "raw": -6, "max": -4},
+        "walkSpeed": {"min": 6, "raw": 20, "max": 26},
+        "healthRegen": {"min": -32, "raw": -25, "max": -17},
+        "waterDamage": {"min": 8, "raw": 27, "max": 35},
+        "rawDexterity": 8,
+        "thunderDamage": {"min": 8, "raw": 27, "max": 35},
+    },
+}
+VOLATILITY_ENTRY = {
+    "displayName": "Volatility",
+    "internalName": "Volatility2",
+    "tier": "fabled",
+    "identifications": {
+        "damage": {"min": 10, "raw": 34, "max": 44},
+        "exploding": {"min": 18, "raw": 60, "max": 78},
+        "lifeSteal": {"min": -520, "raw": -400, "max": -280},
+        "rawDefence": 10,
+        "rawMaxMana": {"min": -18, "raw": -14, "max": -10},
+        "2ndSpellCost": {"min": -6, "raw": -20, "max": -26},
+        "3rdSpellCost": {"min": -5, "raw": -18, "max": -23},
+    },
+}
+WILD_GROWTH_ENTRY = {
+    "displayName": "Wild Growth",
+    "internalName": "Wild Growth",
+    "tier": "rare",
+    "identifications": {
+        "manaRegen": {"min": 3, "raw": 10, "max": 13},
+        "walkSpeed": {"min": -23, "raw": -18, "max": -13},
+        "spellDamage": {"min": 6, "raw": 19, "max": 25},
+        "healthRegenRaw": {"min": 76, "raw": 252, "max": 328},
+        "rawEarthDamage": {"min": 41, "raw": 138, "max": 179},
+    },
+}
 CRAFTED_RING = (
     "\U000F0002\U000F0103\U000F0705\U000F0886\U000F013A\U000F0967"
     "\U000F0005\U000F0028\U000F0148\U000F0264\U000F0300\U000F0400"
@@ -64,6 +126,11 @@ class TestFindItemCodes:
         assert len(matches) == 1
         assert matches[0][2] == CRAFTED_RING
         assert matches[0][3] == "Embodiment of Scam"
+
+    def test_tome_is_detected(self):
+        matches = find_item_codes(TOME_CODE)
+        assert len(matches) == 1
+        assert matches[0][2] == TOME_CODE
 
     def test_oversized_message_rejected(self):
         with pytest.raises(ValueError):
@@ -265,38 +332,128 @@ class TestItemTooltipBridgePrepare:
         bridge._slots.release()
 
 
-class TestRenderNameHint:
-    def _stub_bridge(self, monkeypatch, decoded_name="Recipe Placeholder"):
-        bridge = ItemTooltipBridge()
+class TestDecodeGear:
+    def test_decodes_actual_values_and_reroll_count(self):
+        decoded = decode_gear(VOLATILITY_CODE)
+        assert decoded["itemName"] == "Volatility"
+        assert decoded["rerollCount"] == 2
+        assert decoded["powders"] == {"slots": 3, "powders": []}
+        assert decoded["shiny"] is None
+        assert [(stat["key"], stat["value"]) for stat in decoded["identifications"]] == [
+            ("rawMaxMana", -13),
+            ("lifeSteal", -356),
+            ("exploding", 58),
+            ("damage", 44),
+            ("2ndSpellCost", 25),
+            ("3rdSpellCost", 19),
+        ]
+        assert all(stat["kind"] == "actual" for stat in decoded["identifications"])
 
-        async def fake_json_request(method, url, payload=None):
-            if "full-decode" in url:
-                return {
-                    "original": {
-                        "id": decoded_name,
-                        "displayName": decoded_name,
-                        "tier": "legendary",
-                        "identifications": {"rawHealth": {"min": 0, "raw": 100, "max": 200}},
-                    },
-                    "input": {"identifications": {"rawHealth": 100}, "rerollCount": 0},
-                }
-            return [{"item_id": decoded_name, "weight_name": "Main", "identifications": {"rawHealth": 1}}]
+    def test_rejects_unsupported_version(self):
+        with pytest.raises(ValueError, match="version"):
+            decode_gear("\U000F0000\U000F0100\U000F0011")
+
+    def test_rejects_crafted_code(self):
+        with pytest.raises(ValueError):
+            decode_gear(CRAFTED_RING)
+
+
+class TestWynnItemIndex:
+    def _index(self, *entries):
+        index = WynnItemIndex()
+        index.load(list(entries))
+        return index
+
+    def test_reused_internal_name_resolves_by_stat_set(self):
+        index = self._index(IONIC_SPARK_ENTRY, VOLATILITY_ENTRY)
+        decoded = decode_gear(VOLATILITY_CODE)
+        entry = index.resolve(decoded["itemName"], decoded["identifications"])
+        assert entry["internalName"] == "Volatility2"
+
+    def test_unique_name_resolves_without_stat_set(self):
+        index = self._index(IONIC_SPARK_ENTRY, VOLATILITY_ENTRY)
+        assert index.resolve("Ionic Spark", [])["internalName"] == "Volatility"
+
+    def test_unknown_name_raises(self):
+        index = self._index(VOLATILITY_ENTRY)
+        with pytest.raises(ValueError, match="No Wynncraft item"):
+            index.resolve("Nonexistent", [])
+
+    def test_ambiguous_name_raises(self):
+        twin = {**VOLATILITY_ENTRY, "internalName": "Volatility3"}
+        index = self._index(VOLATILITY_ENTRY, twin)
+        decoded = decode_gear(VOLATILITY_CODE)
+        with pytest.raises(ValueError, match="Ambiguous"):
+            index.resolve(decoded["itemName"], decoded["identifications"])
+
+    def test_rejects_empty_database(self):
+        with pytest.raises(ValueError):
+            WynnItemIndex().load([])
+
+
+class TestItemFromGear:
+    def test_builds_stats_and_inverts_spell_cost_sign(self):
+        item = item_from_gear(decode_gear(VOLATILITY_CODE), VOLATILITY_ENTRY, [])
+        assert item["itemName"] == "Volatility"
+        assert item["internalName"] == "Volatility"
+        assert item["tier"] == "fabled"
+        assert item["reroll"] == 2
+        assert item["stats"]["2nd Spell Cost %"] == -25
+        assert item["stats"]["3rd Spell Cost %"] == -19
+        assert item["stats"]["Life Steal"] == -356
+        assert round(item["rate"]["2nd Spell Cost %"], 2) == 95.0
+        assert round(item["rate"]["Max Mana"], 2) == 62.5
+        assert item["stats"]["Damage %"] == 44
+        assert item["rate"]["Damage %"] == 100
+
+    def test_renders_png(self):
+        item = item_from_gear(decode_gear(VOLATILITY_CODE), VOLATILITY_ENTRY, [])
+        assert build_lines(item)[0].text.startswith("Volatility")
+        assert render_item_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_missing_range_raises(self):
+        with pytest.raises(ValueError, match="Missing roll range"):
+            item_from_gear(decode_gear(VOLATILITY_CODE), IONIC_SPARK_ENTRY, [])
+
+    def test_weights_for_another_item_rejected(self):
+        weights = [{"item_id": "Ionic Spark", "weight_name": "Main", "identifications": {"damage": 1}}]
+        with pytest.raises(ValueError, match="belonging to another item"):
+            item_from_gear(decode_gear(VOLATILITY_CODE), VOLATILITY_ENTRY, weights)
+
+
+class TestRenderNameHint:
+    def _stub_bridge(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+        bridge._items.load([VOLATILITY_ENTRY, WILD_GROWTH_ENTRY])
+
+        async def fake_json_request(method, url, payload=None, **kwargs):
+            raise AssertionError("gear items must resolve from the cached item index")
+
+        async def fake_weights(name):
+            return []
 
         monkeypatch.setattr(bridge, "_json_request", fake_json_request)
+        monkeypatch.setattr(bridge, "_get_weights", fake_weights)
         return bridge
 
     @pytest.mark.asyncio
     async def test_name_hint_overrides_decoded_name(self, monkeypatch):
         bridge = self._stub_bridge(monkeypatch)
-        name, png = await bridge._render(_item_code(1), "Divzer qol")
-        assert name == "Divzer qol"
+        name, png = await bridge._render(VOLATILITY_CODE, "Volatility qol")
+        assert name == "Volatility qol"
         assert png[:8] == b"\x89PNG\r\n\x1a\n"
 
     @pytest.mark.asyncio
     async def test_no_hint_keeps_decoded_name(self, monkeypatch):
         bridge = self._stub_bridge(monkeypatch)
-        name, _ = await bridge._render(_item_code(1), None)
-        assert name == "Recipe Placeholder"
+        name, _ = await bridge._render(VOLATILITY_CODE, None)
+        assert name == "Volatility"
+
+    @pytest.mark.asyncio
+    async def test_gear_render_does_not_call_wynnpool_decode(self, monkeypatch):
+        bridge = self._stub_bridge(monkeypatch)
+        name, _ = await bridge._render(WILD_GROWTH_CODE, None)
+        assert name == "Wild Growth"
 
     @pytest.mark.asyncio
     async def test_crafted_item_does_not_call_wynnpool(self, monkeypatch):

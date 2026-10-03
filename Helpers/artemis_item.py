@@ -5,6 +5,12 @@ from functools import lru_cache
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STAT_ID_KEYS_PATH = os.path.join(BASE, "data", "stat-id-keys.json")
+SHINY_STATS_PATH = os.path.join(BASE, "data", "shiny-stats.json")
+
+GEAR_ITEM_TYPE = 0
+CRAFTED_GEAR_ITEM_TYPE = 3
+VANILLA_METER_FLAG = 4
+MAX_VANILLA_METER_OFFSET = 0x23
 
 GEAR_TYPES = {
     0: "Spear",
@@ -43,6 +49,26 @@ def stat_id_keys() -> tuple[str, ...]:
     if not isinstance(keys, list) or not keys or not all(isinstance(key, str) and key for key in keys):
         raise ValueError("Invalid stat-id-keys.json")
     return tuple(keys)
+
+
+@lru_cache(maxsize=1)
+def shiny_stat_names() -> dict:
+    with open(SHINY_STATS_PATH, encoding="utf-8-sig") as file:
+        entries = json.load(file)
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("Invalid shiny-stats.json")
+    names = {}
+    for entry in entries:
+        if (
+            not isinstance(entry, dict)
+            or isinstance(entry.get("id"), bool)
+            or not isinstance(entry.get("id"), int)
+            or not isinstance(entry.get("displayName"), str)
+            or not entry["displayName"]
+        ):
+            raise ValueError("Invalid shiny-stats.json")
+        names[entry["id"]] = entry["displayName"]
+    return names
 
 
 class _Reader:
@@ -186,6 +212,90 @@ def _powders(reader: _Reader) -> dict:
             raise ValueError("Invalid crafted item powder")
         powders.append(f"{ELEMENTS[element]} {tier}")
     return {"slots": slots, "powders": powders}
+
+
+def _gear_identifications(reader: _Reader, version: int) -> list[dict]:
+    keys = stat_id_keys()
+    count = reader.read()
+    extended = reader.read() == 1
+    pre_identified_count = reader.read() if extended else 0
+    identifications = []
+    for index in range(pre_identified_count + count):
+        stat_id = reader.read()
+        if stat_id >= len(keys):
+            raise ValueError(f"Unknown gear identification id: {stat_id}")
+        base_value = reader.variable_integer() if extended else None
+        if index < pre_identified_count:
+            identifications.append({"key": keys[stat_id], "value": base_value, "kind": "fixed"})
+            continue
+        if version == 2:
+            value = reader.variable_integer()
+            flags = reader.read()
+            if flags & VANILLA_METER_FLAG and reader.read() > MAX_VANILLA_METER_OFFSET:
+                raise ValueError("Invalid gear identification meter offset")
+            kind = "actual"
+        else:
+            value = reader.read()
+            kind = "roll"
+        identifications.append({"key": keys[stat_id], "value": value, "kind": kind})
+    return identifications
+
+
+def _shiny(reader: _Reader) -> dict:
+    names = shiny_stat_names()
+    shiny_id = reader.read()
+    if shiny_id not in names:
+        raise ValueError(f"Unknown shiny stat id: {shiny_id}")
+    reader.read()
+    return {"key": names[shiny_id], "value": reader.variable_integer()}
+
+
+def decode_gear(code: str) -> dict:
+    reader = _Reader(_encoded_bytes(code))
+    if reader.read() != 0:
+        raise ValueError("Artemis item is missing its start block")
+    version = reader.read()
+    if version != 2:
+        raise ValueError(f"Unsupported Artemis gear version: {version + 1}")
+
+    item = {
+        "itemName": None,
+        "identifications": [],
+        "powders": None,
+        "rerollCount": 0,
+        "shiny": None,
+    }
+    item_type_id = None
+    found_end = False
+    while reader.position < len(reader.data):
+        block = reader.read()
+        if block == 255:
+            found_end = True
+            break
+        if block == 1:
+            item_type_id = reader.read()
+        elif block == 2:
+            item["itemName"] = reader.ascii_string()
+        elif block == 3:
+            item["identifications"] = _gear_identifications(reader, version)
+        elif block == 4:
+            item["powders"] = _powders(reader)
+        elif block == 5:
+            item["rerollCount"] = reader.read()
+        elif block == 6:
+            item["shiny"] = _shiny(reader)
+        else:
+            raise ValueError(f"Unsupported gear item data block: {block}")
+
+    if not found_end or reader.position != len(reader.data):
+        raise ValueError("Invalid Artemis item end block")
+    if item_type_id != GEAR_ITEM_TYPE:
+        raise ValueError("Artemis item is not gear")
+    if not isinstance(item["itemName"], str) or not item["itemName"] or len(item["itemName"]) > 200:
+        raise ValueError("Missing or invalid gear item name")
+    if not item["identifications"]:
+        raise ValueError("Gear item has no identifications")
+    return item
 
 
 def decode_crafted_gear(code: str, name_hint: str | None) -> dict:
