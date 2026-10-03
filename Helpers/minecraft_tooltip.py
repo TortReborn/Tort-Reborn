@@ -906,6 +906,8 @@ def _render(lines: list[Line], tier: str) -> bytes:
         positions.append((line, y))
         if line.draw:
             line.draw(image, width, y)
+            if line.right:
+                _draw_segments(image, width - 10 - _segments_width(line.right), y, line.right)
         elif line.center:
             line_width = _segments_width(line.center)
             _draw_segments(image, (width - line_width) // 2, y, line.center)
