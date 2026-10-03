@@ -293,8 +293,6 @@ def decode_gear(code: str) -> dict:
         raise ValueError("Artemis item is not gear")
     if not isinstance(item["itemName"], str) or not item["itemName"] or len(item["itemName"]) > 200:
         raise ValueError("Missing or invalid gear item name")
-    if not item["identifications"]:
-        raise ValueError("Gear item has no identifications")
     return item
 
 
