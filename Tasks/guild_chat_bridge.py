@@ -43,6 +43,16 @@ IGN_MENTION_PATTERN = re.compile(r"(?<![\w@])@(\w{3,16})(?!\w)")
 RANK_TAG_PATTERN = re.compile(r"^(?:" + "|".join(re.escape(rank) for rank in discord_ranks) + r")\s+")
 URL_PATTERN = re.compile(r"https://[^\s<>]+", re.IGNORECASE)
 EMBED_REFRESH_DELAYS = (0.25, 0.5, 0.75)
+MASKED_LINK_PATTERN = re.compile(r"\[([^\]\n]{1,96})\]\(<?(https://[^\s>)]+)>?\)")
+BUILD_LINK_HOSTS = {"wynnbuilder.github.io", "wynnbuilder-beta.github.io"}
+BUILD_LINK_LABEL = "build link"
+LINK_TRAILING_PUNCTUATION = ".,!?;:)]}"
+GIF_EXTENSIONS = {"gif"}
+IMAGE_EXTENSIONS = {
+    "png", "apng", "jpg", "jpeg", "jpe", "jfif", "pjpeg", "pjp", "webp", "bmp", "dib",
+    "tif", "tiff", "ico", "tga", "avif", "heic", "heif",
+}
+VIDEO_EXTENSIONS = {"mp4", "m4v", "webm", "mov", "mkv", "avi", "wmv", "flv"}
 
 
 @dataclass(frozen=True)
@@ -635,11 +645,11 @@ def _bridge_media(attachments, embeds, stickers=()) -> tuple[BridgeMedia, ...]:
         content_type = (attachment.content_type or "").lower()
         filename = attachment.filename
         extension = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
-        if content_type.startswith("video/"):
+        if content_type.startswith("video/") or extension in VIDEO_EXTENSIONS:
             kind = "video"
-        elif content_type == "image/gif" or extension == "gif":
+        elif content_type == "image/gif" or extension in GIF_EXTENSIONS:
             kind = "gif"
-        elif content_type.startswith("image/") or extension in {"png", "jpg", "jpeg", "webp"}:
+        elif content_type.startswith("image/") or extension in IMAGE_EXTENSIONS:
             kind = "image"
         else:
             continue
@@ -734,6 +744,8 @@ def _reply_excerpt(message: discord.Message | None) -> str:
     if message is None:
         return ""
     text = " ".join(_message_text(message).split())
+    if message.webhook_id is not None:
+        text = MASKED_LINK_PATTERN.sub(r"\1", text)
     if not text:
         media = _bridge_media(message.attachments, message.embeds, message.stickers)
         text = _fallback_message("", None, media)
@@ -800,8 +812,31 @@ def _normalize_emoji(text: str) -> str:
 
 
 def _discord_safe_text(text: str) -> str:
+    parts = []
+    cursor = 0
+    for match in URL_PATTERN.finditer(text):
+        url = match.group(0).rstrip(LINK_TRAILING_PUNCTUATION)
+        if not url:
+            continue
+        parts.append(_escape_chat_text(text[cursor:match.start()]))
+        parts.append(f"[{BUILD_LINK_LABEL}](<{url}>)" if _is_build_link(url) else url)
+        cursor = match.start() + len(url)
+    parts.append(_escape_chat_text(text[cursor:]))
+    return "".join(parts)
+
+
+def _escape_chat_text(text: str) -> str:
     safe = discord.utils.escape_mentions(text)
     return discord.utils.escape_markdown(safe, as_needed=True)
+
+
+def _is_build_link(url: str) -> bool:
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return (parts.hostname or "").lower() in BUILD_LINK_HOSTS \
+        and parts.path in ("/builder", "/builder/") and bool(parts.fragment)
 
 
 def _color_value(value) -> int | None:

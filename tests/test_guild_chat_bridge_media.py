@@ -11,8 +11,10 @@ from Tasks.guild_chat_bridge import (
     GuildChatBridge,
     LinkedBridgeMember,
     _bridge_media,
+    _discord_safe_text,
     _embed_has_preview,
     _fallback_message,
+    _reply_excerpt,
 )
 
 
@@ -208,3 +210,51 @@ def test_fallback_remains_complete_for_old_clients():
     assert payload["reply"] == {"username": "TargetIgn", "excerpt": "earlier message"}
     assert payload["media"][1]["kind"] == "video"
     assert "previewUrl" not in payload["media"][1]
+
+
+def test_classifies_attachments_by_file_ending_without_content_type():
+    media = _bridge_media((
+        attachment("scan.tiff", None),
+        attachment("shot.webp", None),
+        attachment("clip.mov", None),
+    ), ())
+
+    assert [item.kind for item in media] == ["image", "image", "video"]
+
+
+def test_build_link_reaches_discord_as_a_masked_link():
+    build_link = ("https://wynnbuilder.github.io/builder/"
+                  "#CY0o2tuHWeYeIfHfHDYfHWY4iH-8e6971DnY1ZX8vGH2seF+QseV44XOcaMsKV3j0")
+
+    assert _discord_safe_text(f"look at {build_link} pls") == (
+        f"look at [build link](<{build_link}>) pls"
+    )
+    assert _discord_safe_text(build_link + ".") == f"[build link](<{build_link}>)."
+
+
+def test_plain_links_stay_unescaped_and_unlabelled():
+    link = "https://example.com/a_path_with_underscores"
+
+    assert _discord_safe_text(f"see {link} now") == f"see {link} now"
+
+
+def bridged_message(content):
+    return SimpleNamespace(
+        content=content,
+        webhook_id=123,
+        mentions=(),
+        role_mentions=(),
+        channel_mentions=(),
+        attachments=(),
+        embeds=(),
+        stickers=(),
+    )
+
+
+def test_reply_excerpt_unwraps_our_own_masked_build_link():
+    build_link = ("https://wynnbuilder.github.io/builder/"
+                  "#CY0o2tuHWeYeIfHfHDYfHWY4iH-8e6971DnY1ZX8vGH2seF+QseV44XOcaMsKV3j0")
+
+    assert _reply_excerpt(bridged_message(f"look at [build link](<{build_link}>) pls")) == (
+        "look at build link pls"
+    )
