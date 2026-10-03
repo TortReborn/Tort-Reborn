@@ -193,6 +193,25 @@ class TestItemFromApi:
         png = render_item_tooltip(item)
         assert png[:8] == b"\x89PNG\r\n\x1a\n"
 
+    def test_all_tome_subtypes_use_the_tome_sprite(self):
+        item = item_from_api(
+            self._decoded(original_overrides={"type": "tome", "subType": "weapon_tome"}),
+            self._weights(),
+        )
+        expected = render_item_tooltip(item)
+
+        for subtype in (
+            "armour_tome",
+            "expertise_tome",
+            "guild_tome",
+            "lootrun_tome",
+            "marathon_tome",
+            "mysticism_tome",
+            "weapon_tome",
+        ):
+            candidate = {**item, "entry": {**item["entry"], "subType": subtype}}
+            assert render_item_tooltip(candidate) == expected
+
     def test_rounds_negative_stat_before_range_validation(self):
         decoded = self._decoded(
             identifications={"manaRegen": {"min": -58, "raw": -45, "max": -31}},
