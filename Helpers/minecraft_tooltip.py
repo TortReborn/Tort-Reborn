@@ -76,10 +76,6 @@ TYPE_SPRITES = {
     "ring": 13,
     "bracelet": 14,
     "necklace": 15,
-    "weapon_tome": 26,
-    "armor_tome": 26,
-    "guild_tome": 26,
-    "lootrun_tome": 26,
     "charm": 28,
 }
 REWARD_EMBLEMS = {
@@ -515,7 +511,7 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
             variant = 1
     shape_index = {"diamond": 0, "square": 1, "hexagon": 2, "shield": 3, "sticker": 4, "circle": 5}.get(shape, 0)
     frame = _crop_grid("font/tooltip/emblem/frame.png", 6, 6, (variant - 1) * 6 + shape_index)
-    sprite_index = TYPE_SPRITES.get(str(entry.get("subType") or "").lower(), 6)
+    sprite_index = 26 if category == "tome" else TYPE_SPRITES.get(str(entry.get("subType") or "").lower(), 6)
     sprite = _crop_grid("font/tooltip/emblem/sprite.png", 9, 5, sprite_index)
     tier_color = TIER_COLORS.get(tier, WHITE)
     divider_color = DIVIDER_COLORS.get(tier, WHITE)
