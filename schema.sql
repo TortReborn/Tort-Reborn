@@ -1159,16 +1159,17 @@ CREATE TABLE IF NOT EXISTS card_wallet (
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- One row per user per card, with a copy count, since duplicates are kept
--- rather than discarded. card references the slug in data/cards.json, or a
--- card_members slug for a 1/1. stars is the fusion level (1-5).
+-- One row per user per card per star level, with a copy count, since
+-- duplicates are kept rather than discarded. card references the slug in
+-- data/cards.json, or a card_members slug for a 1/1. stars is the fusion level
+-- (0-4), 0 for an unfused card.
 CREATE TABLE IF NOT EXISTS card_collection (
     "user"   BIGINT      NOT NULL,
     card     VARCHAR(64) NOT NULL,
     count    INT         NOT NULL DEFAULT 1,
-    stars    SMALLINT    NOT NULL DEFAULT 1,
+    stars    SMALLINT    NOT NULL DEFAULT 0,
     first_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY ("user", card)
+    PRIMARY KEY ("user", card, stars)
 );
 
 -- Wishes bias which card lands inside a tier, never the tier odds themselves.

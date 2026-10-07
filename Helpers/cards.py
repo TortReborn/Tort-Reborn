@@ -84,48 +84,37 @@ def pull_value(card: dict) -> int:
         return PEARLS_PER_PULL["member"]
     return PEARLS_PER_PULL.get(card.get("tier"), 0)
 
-# Star fusion merges three of a level into one of the next, so a 5★ is 81 base
-# copies of the same card. The copies are the work; pearls are a light tax on
-# top. Building a full 5★ costs 10,800 pearls across the whole pyramid, set
-# against roughly 613 a day of income, so it never becomes the thing holding
-# someone back.
-# Stars count fusions, so an unfused card is 0★ and one merge makes it 1★.
-FUSION_COPIES_PER_STEP = 3
-FUSION_PEARLS = {1: 100, 2: 300, 3: 900, 4: 2700}
-FUSION_TIER_MULT = {"mythic": 2.0}     # a mythic merge costs double
+# A starred copy fed into a fusion counts as one copy and loses its stars.
 MAX_STARS = 4
-
-# Each tier stops at its own ceiling, because three-of-a-kind compounds fast
-# and the rare tiers simply do not drop often enough to feed it. Copies behind
-# a maxed card: 81 for the normal half of the set, 9 for a legendary, 3 for a
-# fabled. Every ceiling is meant to be reachable, and every one looks the
-# same when you get there.
-TIER_MAX_STARS = {
-    "normal": 4, "unique": 4, "rare": 4, "legendary": 2,
-    "fabled": 1, "mythic": 1,
+FUSION_COPIES = {
+    "normal": 4, "unique": 3, "rare": 3, "legendary": 3,
+    "fabled": 2, "mythic": 2,
+}
+FUSION_PEARLS = {
+    "normal": 25, "unique": 50, "rare": 75, "legendary": 100,
+    "fabled": 100, "mythic": 100,
 }
 
+RATING = {
+    "normal": (1, 1), "unique": (2, 1), "rare": (4, 2),
+    "legendary": (8, 4), "fabled": (14, 6), "mythic": (20, 8),
+}
+LIMITED_RATING = 20
+
 # ── Discard ──────────────────────────────────────────────────────────────────
-# A plain copy goes back and the tier below rolls in its place, so the fourth
-# fabled that can never fuse anywhere still does something. The counts sit
-# just under the drop weights at the top (a fabled drops 2x as often as a
-# mythic, a legendary 4.25x a fabled, a rare 18x a legendary) so reeling stays
-# the main way in, and just over them at the bottom, where dupes pile up and
-# the point is a shot at something new. Normals have nowhere to go.
-#
-# Outputs pay no pearls: every card pays once, when it is reeled in, and a
-# chain of discards paying at every step would print them. Wishes apply, the
-# same way they do to a reel. Only unfused copies can be discarded, and never
-# a member card.
+# Outputs pay no pearls, or a chain of discards would print them. Only unfused
+# copies can be discarded, and never a member card.
 DISCARD_YIELD = {
     "mythic": ("fabled", 2),
-    "fabled": ("legendary", 4),
-    "legendary": ("rare", 10),
+    "fabled": ("legendary", 2),
+    "legendary": ("rare", 2),
     "rare": ("unique", 2),
     "unique": ("normal", 2),
 }
 # Losing one of these to a mis-click is a month of pulls, so they confirm.
 DISCARD_CONFIRM_TIERS = {"mythic", "fabled"}
+
+MERGE_INPUTS = 2
 
 # ── Tank tiers ───────────────────────────────────────────────────────────────
 # Upgrading raises how many reels you can bank, not how many you earn, so the
@@ -432,22 +421,64 @@ def _daily_case_sql(field: str, streak_expr: str) -> str:
     return f"(CASE {arms} ELSE {DAILY_TIERS[0][field]} END)"
 
 
-def fusion_cost(to_star: int, tier: str | None = None) -> tuple[int, int]:
-    """(copies of the level below, pearls) needed to make one card at to_star."""
-    pearls = FUSION_PEARLS[to_star] * FUSION_TIER_MULT.get(tier, 1.0)
-    return FUSION_COPIES_PER_STEP, int(round(pearls))
+def fusion_cost(tier: str) -> tuple[int, int]:
+    return FUSION_COPIES[tier], FUSION_PEARLS[tier]
 
 
-def base_copies_for(star: int) -> int:
-    """Unfused copies behind one card at this level. 0★ is a single card."""
-    return FUSION_COPIES_PER_STEP ** star
+def copies_for(tier: str, star: int) -> int:
+    return 1 + star * FUSION_COPIES[tier]
 
 
 def tier_max_stars(card: dict | None) -> int:
     """How far this card can be fused. Member cards cannot be fused at all."""
     if not card or card.get("member"):
         return 0
-    return TIER_MAX_STARS.get(card.get("tier"), MAX_STARS)
+    return MAX_STARS
+
+
+def card_rating(card: dict | None, best_star: int = 0) -> int:
+    if not card:
+        return 0
+    if card.get("member"):
+        return LIMITED_RATING
+    base, per_star = RATING[card["tier"]]
+    return base + per_star * min(best_star, MAX_STARS)
+
+
+def plan_fusion(levels: dict, target_star: int, need: int) -> dict | None:
+    pool = dict(levels)
+    if pool.get(target_star, 0) < 1:
+        return None
+    pool[target_star] -= 1
+    spend = {}
+    for star in sorted(pool):
+        take = min(pool[star], need)
+        if take:
+            spend[star] = take
+            need -= take
+        if not need:
+            return spend
+    return None
+
+
+def simulate_fusion(levels: dict, from_star: int, steps: int,
+                    copies: int) -> dict | None:
+    if from_star + steps > MAX_STARS:
+        return None
+    after = dict(levels)
+    spent = {}
+    star = from_star
+    for _ in range(steps):
+        plan = plan_fusion(after, star, copies)
+        if plan is None:
+            return None
+        for st, n in plan.items():
+            after[st] -= n
+            spent[st] = spent.get(st, 0) + n
+        after[star] -= 1
+        after[star + 1] = after.get(star + 1, 0) + 1
+        star += 1
+    return {"levels": after, "spent": spent, "stars": star}
 
 
 def discard_yield(card: dict | None) -> tuple[str, int] | None:
@@ -950,53 +981,50 @@ def db_get_entry(user_id: int, slug: str) -> dict | None:
         db.close()
 
 
-def db_fuse(user_id: int, slug: str, to_star: int, copies: int,
-            pearls: int, made: int = 1) -> dict | None:
-    """Merge `copies` cards at to_star-1 into `made` at to_star.
-
-    Every check — enough copies at that exact level, enough pearls — is part
-    of the write, so two fast clicks cannot fuse the same copies twice.
-
-    A batch is one transaction rather than a loop of single merges: nine
-    merges that half-fail would leave a collection nobody asked for, and the
-    arithmetic is the same either way.
-    """
+def db_fuse(user_id: int, slug: str, from_star: int, steps: int,
+            copies: int, pearls: int, expect: dict | None = None) -> dict | None:
+    total_pearls = pearls * steps
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            'UPDATE card_collection SET count = count - %s '
-            'WHERE "user" = %s AND card = %s AND stars = %s AND count >= %s '
-            'RETURNING count',
-            (copies, user_id, slug, to_star - 1, copies))
-        row = db.cursor.fetchone()
-        if not row:
+            'SELECT stars, count FROM card_collection '
+            'WHERE "user" = %s AND card = %s AND count > 0 FOR UPDATE',
+            (user_id, slug))
+        before = {r[0]: r[1] for r in db.cursor.fetchall()}
+        played = simulate_fusion(before, from_star, steps, copies)
+        if played is None or (expect is not None and played["spent"] != expect):
             db.connection.rollback()
             return None
+        after, spent, star = played["levels"], played["spent"], played["stars"]
 
         db.cursor.execute(
             'UPDATE card_wallet SET pearls = pearls - %s '
             'WHERE "user" = %s AND pearls >= %s RETURNING pearls',
-            (pearls, user_id, pearls))
+            (total_pearls, user_id, total_pearls))
         prow = db.cursor.fetchone()
         if not prow:
             db.connection.rollback()
             return None
 
-        db.cursor.execute(
-            'INSERT INTO card_collection ("user", card, stars, count) '
-            'VALUES (%s, %s, %s, %s) '
-            'ON CONFLICT ("user", card, stars) '
-            'DO UPDATE SET count = card_collection.count + %s '
-            'RETURNING count',
-            (user_id, slug, to_star, made, made))
-        now = db.cursor.fetchone()
+        for st in set(before) | set(after):
+            if after.get(st, 0) == before.get(st, 0):
+                continue
+            db.cursor.execute(
+                'INSERT INTO card_collection ("user", card, stars, count) '
+                'VALUES (%s, %s, %s, %s) '
+                'ON CONFLICT ("user", card, stars) '
+                'DO UPDATE SET count = EXCLUDED.count',
+                (user_id, slug, st, after.get(st, 0)))
         db.cursor.execute(
             'DELETE FROM card_collection WHERE "user" = %s AND count <= 0',
             (user_id,))
         db.connection.commit()
-        return {"left": row[0], "now": now[0] if now else made,
-                "stars": to_star, "pearls": prow[0], "made": made}
+        return {"stars": star, "pearls": prow[0], "spent": spent,
+                "levels": {st: n for st, n in after.items() if n > 0}}
+    except Exception:
+        db.connection.rollback()
+        raise
     finally:
         db.close()
 
@@ -1028,6 +1056,10 @@ def db_trade(from_user: int, to_user: int, give: str, give_star: int,
                 'VALUES (%s, %s, %s) ON CONFLICT ("user", card, stars) '
                 'DO UPDATE SET count = card_collection.count + 1',
                 (owner, slug, star))
+        for slug, new_owner in ((give, to_user), (want, from_user)):
+            db.cursor.execute(
+                'UPDATE card_members SET owner = %s WHERE slug = %s',
+                (new_owner, slug))
         db.cursor.execute(
             'DELETE FROM card_collection WHERE count <= 0 AND "user" IN (%s, %s)',
             (from_user, to_user))
@@ -1083,6 +1115,47 @@ def db_discard(user_id: int, slug: str, count: int, outputs: list) -> dict | Non
             (user_id,))
         db.connection.commit()
         return {"left": row[0], "new": new}
+    except Exception:
+        db.connection.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def db_merge(user_id: int, inputs: list, output: str) -> dict | None:
+    spent = {}
+    for slug in inputs:
+        spent[slug] = spent.get(slug, 0) + 1
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'SELECT 1 FROM card_collection '
+            'WHERE "user" = %s AND card = %s AND count > 0', (user_id, output))
+        is_new = db.cursor.fetchone() is None
+        left = {}
+        for slug, n in spent.items():
+            db.cursor.execute(
+                'UPDATE card_collection SET count = count - %s '
+                'WHERE "user" = %s AND card = %s AND stars = 0 AND count >= %s '
+                'RETURNING count', (n, user_id, slug, n))
+            row = db.cursor.fetchone()
+            if not row:
+                db.connection.rollback()
+                return None
+            left[slug] = row[0]
+        db.cursor.execute(
+            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, 0) '
+            'ON CONFLICT ("user", card, stars) '
+            'DO UPDATE SET count = card_collection.count + 1',
+            (user_id, output))
+        db.cursor.execute(
+            'DELETE FROM card_collection WHERE "user" = %s AND count <= 0',
+            (user_id,))
+        db.connection.commit()
+        if output in left:
+            left[output] += 1
+        return {"left": left, "new": is_new}
     except Exception:
         db.connection.rollback()
         raise
@@ -1184,6 +1257,34 @@ def db_get_member_cards(slugs: list | None = None) -> dict:
         db.close()
 
 
+def member_slug(ign: str) -> str:
+    return "member-" + "".join(
+        ch if ch.isalnum() else "-" for ch in ign.lower())[:50]
+
+
+def _unminted_members(db) -> list:
+    db.cursor.execute(
+        'SELECT dl.discord_id, dl.ign, dl.uuid::text, dl.rank '
+        'FROM discord_links dl '
+        'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
+        f'  AND {ACTIVE_MEMBER_SQL} '
+        '  AND dl.discord_id NOT IN (SELECT discord_id FROM card_members)',
+        (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
+    return db.cursor.fetchall()
+
+
+def _insert_member_card(db, member: tuple, owner_id: int) -> dict | None:
+    discord_id, ign, uuid, rank = member
+    db.cursor.execute(
+        'INSERT INTO card_members (slug, discord_id, uuid, ign, rank, owner) '
+        'VALUES (%s, %s, %s, %s, %s, %s) '
+        'ON CONFLICT (discord_id) DO NOTHING '
+        'RETURNING slug, discord_id, uuid::text, ign, rank, owner, retired',
+        (member_slug(ign), discord_id, uuid, ign, rank, owner_id))
+    row = db.cursor.fetchone()
+    return member_card_dict(row) if row else None
+
+
 def db_mint_member_card(owner_id: int) -> dict | None:
     """Mint the card of a random eligible member who doesn't have one yet.
 
@@ -1193,34 +1294,87 @@ def db_mint_member_card(owner_id: int) -> dict | None:
     db = DB()
     db.connect()
     try:
-        db.cursor.execute(
-            'SELECT dl.discord_id, dl.ign, dl.uuid::text, dl.rank '
-            'FROM discord_links dl '
-            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
-            f'  AND {ACTIVE_MEMBER_SQL} '
-            '  AND dl.discord_id NOT IN (SELECT discord_id FROM card_members) '
-            'ORDER BY RANDOM() LIMIT 1',
-            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
-        row = db.cursor.fetchone()
-        if not row:
+        candidates = _unminted_members(db)
+        if not candidates:
             return None
-
-        discord_id, ign, uuid, rank = row
-        slug = "member-" + "".join(
-            ch if ch.isalnum() else "-" for ch in ign.lower())[:50]
-
-        db.cursor.execute(
-            'INSERT INTO card_members (slug, discord_id, uuid, ign, rank, owner) '
-            'VALUES (%s, %s, %s, %s, %s, %s) '
-            'ON CONFLICT (discord_id) DO NOTHING '
-            'RETURNING slug, discord_id, uuid::text, ign, rank, owner, retired',
-            (slug, discord_id, uuid, ign, rank, owner_id))
-        minted = db.cursor.fetchone()
-        if not minted:
+        minted = _insert_member_card(db, random.choice(candidates), owner_id)
+        if minted is None:
             db.connection.rollback()
             return None
         db.connection.commit()
-        return member_card_dict(minted)
+        return minted
+    finally:
+        db.close()
+
+
+def draw_limited(candidates: list, inputs: list, rng: random.Random | None = None):
+    r = rng or random
+    tickets = [("new", c) for c in candidates] + [("kept", i) for i in inputs]
+    return r.choice(tickets)
+
+
+def db_count_unminted() -> int:
+    db = DB()
+    db.connect()
+    try:
+        return len(_unminted_members(db))
+    finally:
+        db.close()
+
+
+def db_merge_limited(user_id: int, slugs: list, rng: random.Random | None = None) -> dict:
+    if len(slugs) != MERGE_INPUTS or len(set(slugs)) != MERGE_INPUTS:
+        return {"reason": "changed"}
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'SELECT card FROM card_collection '
+            'WHERE "user" = %s AND card = ANY(%s) AND stars = 0 AND count >= 1 '
+            'FOR UPDATE', (user_id, slugs))
+        held = {r[0] for r in db.cursor.fetchall()}
+        db.cursor.execute(
+            'SELECT slug, discord_id, uuid::text, ign, rank, owner, retired '
+            'FROM card_members WHERE slug = ANY(%s) FOR UPDATE', (slugs,))
+        inputs = {r[0]: member_card_dict(r) for r in db.cursor.fetchall()}
+        if held != set(slugs) or set(inputs) != set(slugs):
+            db.connection.rollback()
+            return {"reason": "changed"}
+
+        candidates = _unminted_members(db)
+        pool = len(candidates)
+        if not candidates:
+            db.connection.rollback()
+            return {"reason": "empty"}
+
+        card, kept = None, False
+        while card is None:
+            kind, pick = draw_limited(candidates, slugs, rng)
+            if kind == "kept":
+                card, kept = inputs[pick], True
+                break
+            card = _insert_member_card(db, pick, user_id)
+            if card is None:
+                candidates.remove(pick)
+
+        lost = [s for s in slugs if s != card["slug"]]
+        db.cursor.execute(
+            'DELETE FROM card_members WHERE slug = ANY(%s)', (lost,))
+        db.cursor.execute(
+            'DELETE FROM card_collection WHERE card = ANY(%s)', (lost,))
+        if kept:
+            db.cursor.execute(
+                'UPDATE card_members SET owner = %s WHERE slug = %s',
+                (user_id, card["slug"]))
+        else:
+            db.cursor.execute(
+                'INSERT INTO card_collection ("user", card, stars) '
+                'VALUES (%s, %s, 0)', (user_id, card["slug"]))
+        db.connection.commit()
+        return {"card": card, "kept": kept, "pool": pool, "lost": lost}
+    except Exception:
+        db.connection.rollback()
+        raise
     finally:
         db.close()
 
@@ -1248,10 +1402,8 @@ def db_release_member_card(slug: str, owner_id: int) -> bool:
 def pool_entry(ign: str, uuid: str, rank: str, discord_id: int,
                owner: int | None, retired: bool) -> dict:
     """A pool member shaped like a card so the renderer can draw them."""
-    slug = "member-" + "".join(
-        ch if ch.isalnum() else "-" for ch in ign.lower())[:50]
     return {
-        "slug": slug, "name": ign, "tier": rank, "rank": rank,
+        "slug": member_slug(ign), "name": ign, "tier": rank, "rank": rank,
         "member": True, "retired": bool(retired),
         "discord_id": discord_id, "owner": owner,
         "minted": owner is not None,
@@ -1343,42 +1495,50 @@ def db_award_once(user_id: int, award: str, pearls: int) -> bool:
         db.close()
 
 
-def db_leaderboard(limit: int = 15) -> list:
-    """Unique cards, total copies and pearls per user."""
+def collection_rating(collection: dict) -> int:
+    total = 0
+    for slug, entry in collection.items():
+        if is_member_slug(slug):
+            total += LIMITED_RATING
+        else:
+            total += card_rating(get_card(slug), max(entry["levels"]))
+    return total
+
+
+def rank_collections(collections: dict) -> list:
+    rows = []
+    for user, collection in collections.items():
+        rows.append({
+            "user": user,
+            "rating": collection_rating(collection),
+            "uniques": len(collection),
+            "copies": sum(e["total"] for e in collection.values()),
+        })
+    key = lambda r: (r["rating"], r["uniques"], r["copies"])
+    rows.sort(key=lambda r: key(r), reverse=True)
+    rank = 0
+    for i, row in enumerate(rows):
+        if i == 0 or key(row) != key(rows[i - 1]):
+            rank = i + 1
+        row["rank"] = rank
+    return rows
+
+
+def db_standings() -> list:
     db = DB()
     db.connect()
     try:
         db.cursor.execute(
-            'SELECT c."user", COUNT(DISTINCT c.card) AS uniques, '
-            '       SUM(c.count) AS copies, '
-            '       COALESCE(MAX(w.pearls), 0) AS pearls '
-            'FROM card_collection c '
-            'LEFT JOIN card_wallet w ON w."user" = c."user" '
-            'GROUP BY c."user" ORDER BY uniques DESC, copies DESC LIMIT %s',
-            (limit,))
-        return [{"user": r[0], "uniques": r[1], "copies": r[2], "pearls": r[3]}
-                for r in db.cursor.fetchall()]
+            'SELECT "user", card, stars, count FROM card_collection WHERE count > 0')
+        collections = {}
+        for user, card, stars, count in db.cursor.fetchall():
+            entry = collections.setdefault(user, {}).setdefault(
+                card, {"total": 0, "levels": {}})
+            entry["levels"][stars] = count
+            entry["total"] += count
     finally:
         db.close()
-
-
-def db_leaderboard_rank(user_id: int) -> dict | None:
-    """Where one user sits in the same ordering db_leaderboard uses."""
-    db = DB()
-    db.connect()
-    try:
-        db.cursor.execute(
-            'SELECT rank, uniques FROM ('
-            '  SELECT c."user", COUNT(DISTINCT c.card) AS uniques, '
-            '         RANK() OVER (ORDER BY COUNT(DISTINCT c.card) DESC, '
-            '                      SUM(c.count) DESC) AS rank '
-            '  FROM card_collection c GROUP BY c."user"'
-            ') t WHERE t."user" = %s',
-            (user_id,))
-        row = db.cursor.fetchone()
-        return {"rank": row[0], "uniques": row[1]} if row else None
-    finally:
-        db.close()
+    return rank_collections(collections)
 
 
 def check_milestones(user_id: int, collection: dict) -> list:
