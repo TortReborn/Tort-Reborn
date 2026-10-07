@@ -15,6 +15,7 @@ from io import BytesIO
 import requests
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from Helpers import cards as cardlib
 from Helpers.functions import generate_badge
 from Helpers.logger import WARN, log
 from Helpers.variables import discord_ranks
@@ -51,19 +52,9 @@ LIMITED_MID = tuple((a + b) // 2 for a, b in zip(*LIMITED_ENDS))
 TIERS[LIMITED] = {"accent": LIMITED_MID, "glow": tuple(c * 2 // 3 for c in LIMITED_MID),
                   "badge": "#%02x%02x%02x" % LIMITED_MID}
 
-# How far a card can be fused, by tier. Copies triple each step, so these are
-# 81, 9 and 3 base copies respectively.
-# Stars count merges, so 0 is an unfused card. Copies behind a maxed card:
-# 81 for the normal half, 9 for a legendary, 3 for a fabled or a mythic.
-MAX_STARS_BY_TIER = {
-    "normal": 4, "unique": 4, "rare": 4, "legendary": 2,
-    "fabled": 1, "mythic": 1,
-}
-
 
 def max_stars_for(tier: str) -> int:
-    """A member card has no ladder; everything else has its tier's ceiling."""
-    return MAX_STARS_BY_TIER.get(tier, 0)
+    return cardlib.MAX_STARS if tier in cardlib.CARD_TIERS else 0
 
 
 def _tier_level(stars: int, max_stars: int) -> int:

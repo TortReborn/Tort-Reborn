@@ -1,11 +1,11 @@
 REEL = "Pull a card"
-BAIT = "Daily bait"
-HELP = "Card commands"
+BAIT = "Claim daily Reels and Pearls"
+HELP = "View card commands"
 
 TANK = "Your tank"
+CARD = "Cards"
 WISH = "Aim your luck"
 ADMIN = "Card settings"
-POOL = "Drop pool"
 
 # One accent for every embed that is about the system rather than a card;
 # card-bearing embeds take their tier colour instead.
