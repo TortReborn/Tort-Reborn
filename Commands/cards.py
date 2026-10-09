@@ -6,6 +6,7 @@ fabled you land. Nothing here touches shells; the two economies never meet.
 """
 
 import asyncio
+from dataclasses import dataclass
 
 import discord
 from discord.commands import SlashCommandGroup, slash_command
@@ -136,6 +137,11 @@ def _star_name(card: dict, star: int) -> str:
     return f"{card['name']} {label}".strip() if label else card["name"]
 
 
+def _pile_name(card: dict, star: int, count: int) -> str:
+    name = _star_name(card, star)
+    return f"{name} ×{count}" if count > 1 else name
+
+
 def _stack_label(card: dict, star: int, count: int) -> str:
     """How one stack reads in a picker: the card, its level, how many."""
     label = _level_label(card, star)
@@ -150,8 +156,7 @@ def _parse_stack(value: str) -> tuple[str, int] | None:
     return (slug, int(star)) if star.isdigit() else None
 
 
-async def _stack_choices(user_id: int, typed: str, resolve_member=True):
-    """Every stack a user holds, one entry per star level."""
+async def _held_stacks(user_id: int, typed: str = "", resolve_member=True):
     owned = await asyncio.to_thread(cardlib.db_get_collection, user_id)
     if not owned:
         return []
@@ -165,8 +170,16 @@ async def _stack_choices(user_id: int, typed: str, resolve_member=True):
         if not card or typed not in card["name"].lower():
             continue
         for star, count in sorted(entry["levels"].items()):
-            out.append(discord.OptionChoice(
-                name=_stack_label(card, star, count), value=f"{slug}:{star}"))
+            out.append((card, star, count))
+    return out
+
+
+async def _stack_choices(user_id: int, typed: str, resolve_member=True):
+    """Every stack a user holds, one entry per star level."""
+    out = [discord.OptionChoice(name=_stack_label(card, star, count),
+                                value=f"{card['slug']}:{star}")
+           for card, star, count in await _held_stacks(user_id, typed,
+                                                       resolve_member)]
     return sorted(out, key=lambda c: c.name)[:25]
 
 
@@ -174,18 +187,6 @@ async def _autocomplete_stacks(ctx: discord.AutocompleteContext):
     try:
         return await _stack_choices(ctx.interaction.user.id,
                                     (ctx.value or "").lower())
-    except Exception:
-        return []
-
-
-async def _autocomplete_their_stacks(ctx: discord.AutocompleteContext):
-    """The other side of a trade, once they have picked who."""
-    try:
-        member = (ctx.options or {}).get("member")
-        if not member:
-            return []
-        uid = int(member["id"] if isinstance(member, dict) else member)
-        return await _stack_choices(uid, (ctx.value or "").lower())
     except Exception:
         return []
 
@@ -680,20 +681,240 @@ class ReelView(discord.ui.View):
         await _announce_and_reward(interaction.channel, interaction.user, card)
 
 
+@dataclass(frozen=True)
+class TradeLine:
+    card: dict
+    star: int
+    count: int
+
+    def name(self) -> str:
+        return _pile_name(self.card, self.star, self.count)
+
+    def entry(self) -> tuple[str, int, int]:
+        return self.card["slug"], self.star, self.count
+
+
+def _lines_text(lines, sep="\n") -> str:
+    return sep.join(line.name() for line in lines)
+
+
+class TradeAmountModal(discord.ui.Modal):
+    def __init__(self, builder, side: str, card: dict, star: int,
+                 held: int, current: int):
+        super().__init__(title=_star_name(card, star)[:45])
+        self.builder = builder
+        self.side = side
+        self.card = card
+        self.star = star
+        self.held = held
+        self.amount = discord.ui.InputText(
+            label=f"How many (up to {held})", value=str(current),
+            max_length=len(str(held)))
+        self.add_item(self.amount)
+
+    async def callback(self, interaction: discord.Interaction):
+        text = self.amount.value.strip()
+        if not text.isdigit() or not 1 <= int(text) <= self.held:
+            return await interaction.response.send_message(
+                embed=_notice(f"Pick 1 to {self.held}"), ephemeral=True)
+        self.builder.set_line(self.side, self.card, self.star, int(text))
+        await interaction.response.edit_message(
+            embed=self.builder.embed(), view=self.builder)
+
+
+class TradeBuilderView(discord.ui.View):
+    PICKER_SIZE = 25
+    LINES_PER_SIDE = 25
+
+    def __init__(self, proposer: discord.User, target: discord.User,
+                 mine: list, theirs: list, interaction: discord.Interaction):
+        super().__init__(timeout=600)
+        self.proposer = proposer
+        self.target = target
+        self.stacks = {side: sorted(stacks, key=lambda s: (s[0]["name"], s[1]))
+                       for side, stacks in (("give", mine), ("want", theirs))}
+        self.lines = {"give": {}, "want": {}}
+        self.side = "give"
+        self.page = 0
+        self.interaction = interaction
+        self._layout()
+
+    def _owner_cards(self, side: str) -> str:
+        return "your cards" if side == "give" else f"{self.target.display_name}'s cards"
+
+    def embed(self) -> discord.Embed:
+        embed = discord.Embed(title=f"Trade with {self.target.display_name}",
+                              color=ctext.ACCENT)
+        for side, title in (("give", "Your side"),
+                            ("want", f"{self.target.display_name}'s side")):
+            embed.add_field(
+                name=title,
+                value=_lines_text(self.lines[side].values()) or "Nothing yet",
+                inline=True)
+        embed.set_footer(text=f"Picking from {self._owner_cards(self.side)}")
+        return embed
+
+    def set_line(self, side: str, card: dict, star: int, count: int):
+        self.lines[side][(card["slug"], star)] = TradeLine(card, star, count)
+        self._layout()
+
+    def _add_button(self, label, callback, row, style=discord.ButtonStyle.secondary,
+                    disabled=False):
+        button = discord.ui.Button(label=label, style=style, row=row,
+                                   disabled=disabled)
+        button.callback = callback
+        self.add_item(button)
+
+    def _layout(self):
+        self.clear_items()
+        stacks = self.stacks[self.side]
+        pages = max(1, -(-len(stacks) // self.PICKER_SIZE))
+        self.page = min(self.page, pages - 1)
+        start = self.page * self.PICKER_SIZE
+        shown = stacks[start:start + self.PICKER_SIZE]
+
+        placeholder = f"Add from {self._owner_cards(self.side)}"
+        if pages > 1:
+            placeholder += f", page {self.page + 1} of {pages}"
+        picker = discord.ui.Select(
+            placeholder=placeholder, row=0,
+            options=[discord.SelectOption(
+                label=_stack_label(card, star, count)[:100],
+                value=f"{card['slug']}:{star}")
+                for card, star, count in shown])
+        picker.callback = self._picked
+        self.add_item(picker)
+
+        if pages > 1:
+            self._add_button("Previous", self._previous, 1,
+                             disabled=self.page == 0)
+            self._add_button("Next", self._next, 1,
+                             disabled=self.page == pages - 1)
+        other = "want" if self.side == "give" else "give"
+        self._add_button(f"Browse {self._owner_cards(other)}", self._flip, 1)
+
+        placed = self.lines[self.side].values()
+        if placed:
+            remover = discord.ui.Select(
+                placeholder=("Remove from your side" if self.side == "give"
+                             else "Remove from their side"),
+                row=2,
+                options=[discord.SelectOption(
+                    label=line.name()[:100],
+                    value=f"{line.card['slug']}:{line.star}")
+                    for line in placed])
+            remover.callback = self._removed
+            self.add_item(remover)
+
+        ready = bool(self.lines["give"] and self.lines["want"])
+        self._add_button("Send", self._send, 3,
+                         style=discord.ButtonStyle.success, disabled=not ready)
+        self._add_button("Cancel", self._cancel, 3)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.proposer.id:
+            await interaction.response.send_message(
+                embed=_notice("Not your trade"), ephemeral=True)
+            return False
+        return True
+
+    async def on_timeout(self):
+        try:
+            await self.interaction.edit_original_response(view=None)
+        except discord.HTTPException:
+            pass
+
+    async def _refresh(self, interaction: discord.Interaction):
+        self._layout()
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def _picked(self, interaction: discord.Interaction):
+        slug, star = _parse_stack(interaction.data["values"][0])
+        card, _, held = next(s for s in self.stacks[self.side]
+                             if s[0]["slug"] == slug and s[1] == star)
+        lines = self.lines[self.side]
+        if (slug, star) not in lines and len(lines) >= self.LINES_PER_SIDE:
+            return await interaction.response.send_message(
+                embed=_notice(f"Up to {self.LINES_PER_SIDE} cards per side"),
+                ephemeral=True)
+        if held == 1:
+            self.set_line(self.side, card, star, 1)
+            return await interaction.response.edit_message(
+                embed=self.embed(), view=self)
+        current = lines[(slug, star)].count if (slug, star) in lines else 1
+        await interaction.response.send_modal(
+            TradeAmountModal(self, self.side, card, star, held, current))
+
+    async def _removed(self, interaction: discord.Interaction):
+        self.lines[self.side].pop(_parse_stack(interaction.data["values"][0]))
+        await self._refresh(interaction)
+
+    async def _previous(self, interaction: discord.Interaction):
+        self.page -= 1
+        await self._refresh(interaction)
+
+    async def _next(self, interaction: discord.Interaction):
+        self.page += 1
+        await self._refresh(interaction)
+
+    async def _flip(self, interaction: discord.Interaction):
+        self.side = "want" if self.side == "give" else "give"
+        self.page = 0
+        await self._refresh(interaction)
+
+    async def _cancel(self, interaction: discord.Interaction):
+        self.stop()
+        await interaction.response.edit_message(
+            embed=_notice("Trade cancelled"), view=None)
+
+    async def _shortfall(self, give: list, want: list) -> str | None:
+        for user, lines in ((self.proposer, give), (self.target, want)):
+            owned = await asyncio.to_thread(cardlib.db_get_collection, user.id)
+            for line in lines:
+                levels = owned.get(line.card["slug"], {}).get("levels", {})
+                if levels.get(line.star, 0) < line.count:
+                    who = ("You lack" if user.id == self.proposer.id
+                           else f"{user.display_name} lacks")
+                    return f"{who} **{line.name()}**"
+        return None
+
+    async def _send(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        give = list(self.lines["give"].values())
+        want = list(self.lines["want"].values())
+        shortfall = await self._shortfall(give, want)
+        if shortfall:
+            return await interaction.followup.send(
+                embed=_notice(shortfall), ephemeral=True)
+        self.stop()
+        trade = TradeView(self.proposer, self.target, give, want)
+        await interaction.edit_original_response(
+            embed=_notice(f"Sent to {self.target.display_name}"), view=None)
+        trade.message = await interaction.channel.send(
+            content=self.target.mention, embed=trade.embed(), view=trade)
+
+
 class TradeView(discord.ui.View):
     """Two-sided confirm. Only the recipient can accept or decline."""
 
     def __init__(self, proposer: discord.User, target: discord.User,
-                 give: dict, give_star: int, want: dict, want_star: int):
+                 give: list[TradeLine], want: list[TradeLine]):
         super().__init__(timeout=300)
         self.proposer = proposer
         self.target = target
         self.give = give
-        self.give_star = give_star
         self.want = want
-        self.want_star = want_star
         self.message = None
         self.done = False
+
+    def embed(self) -> discord.Embed:
+        embed = discord.Embed(title="Trade", color=ctext.ACCENT)
+        embed.add_field(name=f"{self.proposer.display_name}'s side",
+                        value=_lines_text(self.give), inline=True)
+        embed.add_field(name=f"{self.target.display_name}'s side",
+                        value=_lines_text(self.want), inline=True)
+        embed.set_footer(text="Recipient only · 5 min")
+        return embed
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.target.id:
@@ -724,8 +945,8 @@ class TradeView(discord.ui.View):
                      interaction: discord.Interaction):
         ok = await asyncio.to_thread(
             cardlib.db_trade, self.proposer.id, self.target.id,
-            self.give["slug"], self.give_star,
-            self.want["slug"], self.want_star)
+            [line.entry() for line in self.give],
+            [line.entry() for line in self.want])
         if not ok:
             return await self._close(
                 interaction,
@@ -733,8 +954,8 @@ class TradeView(discord.ui.View):
         await self._close(
             interaction,
             f"Trade done\n"
-            f"{self.proposer.mention}: **{_star_name(self.want, self.want_star)}**\n"
-            f"{self.target.mention}: **{_star_name(self.give, self.give_star)}**")
+            f"{self.proposer.mention} got **{_lines_text(self.want, ', ')}**\n"
+            f"{self.target.mention} got **{_lines_text(self.give, ', ')}**")
         # Trading for the last missing card is how most sets will get finished.
         for user in (self.proposer, self.target):
             await _announce_and_reward(interaction.channel, user, None)
@@ -1146,7 +1367,7 @@ class Cards(commands.Cog):
                    "`/card discard` Discard plain dupes into lower-tier rolls "
                    "(wishlist does not apply)\n"
                    f"{_yield_line()}\n"
-                   "`/card trade` Trade cards with other collectors\n"
+                   "`/card trade` Build a trade of any cards in any amounts\n"
                    "`/card sets` View progress in card sets"),
             inline=False)
         embed.add_field(
@@ -1730,12 +1951,8 @@ class Cards(commands.Cog):
     async def card_trade(
         self, ctx: discord.ApplicationContext,
         member: discord.Option(discord.Member, description="Player"),
-        give: discord.Option(str, description="You give",
-                             autocomplete=_autocomplete_stacks),
-        want: discord.Option(str, description="You get",
-                             autocomplete=_autocomplete_their_stacks),
     ):
-        await ctx.defer()
+        await ctx.defer(ephemeral=True)
         if member.id == ctx.author.id:
             return await ctx.followup.send(embed=_notice("Pick someone else"),
                                            ephemeral=True)
@@ -1743,49 +1960,19 @@ class Cards(commands.Cog):
             return await ctx.followup.send(embed=_notice("Bots have no tank"),
                                            ephemeral=True)
 
-        mine_pick, theirs_pick = _parse_stack(give), _parse_stack(want)
-        if mine_pick is None or theirs_pick is None:
-            return await ctx.followup.send(
-                embed=_notice("Pick both stacks"),
-                ephemeral=True)
-        give_slug, give_star = mine_pick
-        want_slug, want_star = theirs_pick
-
-        give_card = cardlib.get_card(give_slug) or await asyncio.to_thread(
-            cardlib.db_get_member_card, give_slug)
-        want_card = cardlib.get_card(want_slug) or await asyncio.to_thread(
-            cardlib.db_get_member_card, want_slug)
-        if give_card is None or want_card is None:
-            return await ctx.followup.send(embed=_notice("Card missing"),
+        mine = await _held_stacks(ctx.author.id)
+        theirs = await _held_stacks(member.id)
+        if not mine:
+            return await ctx.followup.send(embed=_notice("You have no cards"),
                                            ephemeral=True)
-
-        mine = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
-                                       give_slug)
-        theirs = await asyncio.to_thread(cardlib.db_get_entry, member.id,
-                                         want_slug)
-        if not mine or not mine["levels"].get(give_star):
+        if not theirs:
             return await ctx.followup.send(
-                embed=_notice(f"You lack **{_star_name(give_card, give_star)}**"),
-                ephemeral=True)
-        if not theirs or not theirs["levels"].get(want_star):
-            return await ctx.followup.send(
-                embed=_notice(f"{member.display_name} lacks "
-                              f"**{_star_name(want_card, want_star)}**"),
+                embed=_notice(f"{member.display_name} has no cards"),
                 ephemeral=True)
 
-        embed = discord.Embed(
-            title="Trade",
-            description=(
-                f"{ctx.author.mention}: **{_star_name(give_card, give_star)}**\n"
-                f"{member.mention}: **{_star_name(want_card, want_star)}**"),
-            color=ctext.ACCENT)
-        embed.set_footer(
-            text="Recipient only · 5 min")
-
-        view = TradeView(ctx.author, member, give_card, give_star,
-                         want_card, want_star)
-        view.message = await ctx.followup.send(
-            content=member.mention, embed=embed, view=view, wait=True)
+        view = TradeBuilderView(ctx.author, member, mine, theirs,
+                                ctx.interaction)
+        await ctx.followup.send(embed=view.embed(), view=view, ephemeral=True)
 
     # ── /tank admin ──────────────────────────────────────────────────────────
 

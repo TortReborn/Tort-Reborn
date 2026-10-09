@@ -1029,9 +1029,10 @@ def db_fuse(user_id: int, slug: str, from_star: int, steps: int,
         db.close()
 
 
-def db_trade(from_user: int, to_user: int, give: str, give_star: int,
-             want: str, want_star: int) -> bool:
-    """Swap one copy each way, at the star level each side named.
+def db_trade(from_user: int, to_user: int,
+             give: list[tuple[str, int, int]],
+             want: list[tuple[str, int, int]]) -> bool:
+    """Swap stacks both ways; each entry is (slug, star, count).
 
     Any copy can be traded, fused or not — a 2★ and a 1★ of the same card are
     separate stacks and move independently. Either both sides move or neither
@@ -1040,26 +1041,27 @@ def db_trade(from_user: int, to_user: int, give: str, give_star: int,
     db = DB()
     db.connect()
     try:
-        for owner, slug, star in ((from_user, give, give_star),
-                                  (to_user, want, want_star)):
-            db.cursor.execute(
-                'UPDATE card_collection SET count = count - 1 '
-                'WHERE "user" = %s AND card = %s AND stars = %s AND count >= 1',
-                (owner, slug, star))
-            if db.cursor.rowcount == 0:
-                db.connection.rollback()
-                return False
-        for owner, slug, star in ((to_user, give, give_star),
-                                  (from_user, want, want_star)):
-            db.cursor.execute(
-                'INSERT INTO card_collection ("user", card, stars) '
-                'VALUES (%s, %s, %s) ON CONFLICT ("user", card, stars) '
-                'DO UPDATE SET count = card_collection.count + 1',
-                (owner, slug, star))
-        for slug, new_owner in ((give, to_user), (want, from_user)):
-            db.cursor.execute(
-                'UPDATE card_members SET owner = %s WHERE slug = %s',
-                (new_owner, slug))
+        for owner, stacks in ((from_user, give), (to_user, want)):
+            for slug, star, count in stacks:
+                db.cursor.execute(
+                    'UPDATE card_collection SET count = count - %s '
+                    'WHERE "user" = %s AND card = %s AND stars = %s AND count >= %s',
+                    (count, owner, slug, star, count))
+                if db.cursor.rowcount == 0:
+                    db.connection.rollback()
+                    return False
+        for owner, stacks in ((to_user, give), (from_user, want)):
+            for slug, star, count in stacks:
+                db.cursor.execute(
+                    'INSERT INTO card_collection ("user", card, stars, count) '
+                    'VALUES (%s, %s, %s, %s) ON CONFLICT ("user", card, stars) '
+                    'DO UPDATE SET count = card_collection.count + EXCLUDED.count',
+                    (owner, slug, star, count))
+        for new_owner, stacks in ((to_user, give), (from_user, want)):
+            for slug, _, _ in stacks:
+                db.cursor.execute(
+                    'UPDATE card_members SET owner = %s WHERE slug = %s',
+                    (new_owner, slug))
         db.cursor.execute(
             'DELETE FROM card_collection WHERE count <= 0 AND "user" IN (%s, %s)',
             (from_user, to_user))
