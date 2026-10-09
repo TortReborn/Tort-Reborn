@@ -491,9 +491,70 @@ def test_a_retired_limited_can_be_merged_and_lost_for_good(card_db):
 def test_a_trade_hands_a_limited_card_to_its_new_holder(card_db):
     a = seed_member(card_db, 1)
     give(card_db, OTHER, "bob", 1)
-    assert cardlib.db_trade(USER, OTHER, a, 0, "bob", 0) is True
+    assert cardlib.db_trade(USER, OTHER, [(a, 0, 1)], [("bob", 0, 1)]) is True
     card_db.execute("SELECT owner FROM card_members WHERE slug = %s", (a,))
     assert card_db.fetchone()[0] == OTHER
+
+
+def test_one_card_can_trade_for_three(card_db):
+    give(card_db, USER, "a", 2)
+    give(card_db, OTHER, "b", 5)
+    assert cardlib.db_trade(USER, OTHER, [("a", 0, 1)], [("b", 0, 3)]) is True
+    assert held(card_db, USER, "a") == {0: 1}
+    assert held(card_db, USER, "b") == {0: 3}
+    assert held(card_db, OTHER, "a") == {0: 1}
+    assert held(card_db, OTHER, "b") == {0: 2}
+
+
+def test_four_cards_can_trade_for_two_and_empty_stacks_vanish(card_db):
+    give(card_db, USER, "a", 4)
+    give(card_db, OTHER, "b", 2, stars=1)
+    assert cardlib.db_trade(USER, OTHER, [("a", 0, 4)], [("b", 1, 2)]) is True
+    assert held(card_db, USER, "a") == {}
+    assert held(card_db, USER, "b") == {1: 2}
+    assert held(card_db, OTHER, "a") == {0: 4}
+    assert held(card_db, OTHER, "b") == {}
+
+
+def test_a_trade_short_on_either_side_moves_nothing(card_db):
+    give(card_db, USER, "a", 3)
+    give(card_db, OTHER, "b", 1)
+    assert cardlib.db_trade(USER, OTHER, [("a", 0, 2)], [("b", 0, 2)]) is False
+    assert cardlib.db_trade(USER, OTHER, [("a", 0, 4)], [("b", 0, 1)]) is False
+    assert held(card_db, USER, "a") == {0: 3}
+    assert held(card_db, OTHER, "b") == {0: 1}
+    assert held(card_db, USER, "b") == {}
+    assert held(card_db, OTHER, "a") == {}
+
+
+def test_two_cards_can_trade_for_three_different_ones(card_db):
+    give(card_db, USER, "a", 2)
+    give(card_db, USER, "c", 1, stars=2)
+    give(card_db, OTHER, "b", 1)
+    give(card_db, OTHER, "d", 4)
+    give(card_db, OTHER, "e", 1)
+    assert cardlib.db_trade(
+        USER, OTHER,
+        [("a", 0, 2), ("c", 2, 1)],
+        [("b", 0, 1), ("d", 0, 2), ("e", 0, 1)]) is True
+    assert held(card_db, USER, "a") == {}
+    assert held(card_db, USER, "c") == {}
+    assert held(card_db, USER, "b") == {0: 1}
+    assert held(card_db, USER, "d") == {0: 2}
+    assert held(card_db, USER, "e") == {0: 1}
+    assert held(card_db, OTHER, "a") == {0: 2}
+    assert held(card_db, OTHER, "c") == {2: 1}
+    assert held(card_db, OTHER, "d") == {0: 2}
+
+
+def test_a_bundle_with_one_missing_card_moves_nothing(card_db):
+    give(card_db, USER, "a", 1)
+    give(card_db, OTHER, "b", 1)
+    assert cardlib.db_trade(
+        USER, OTHER, [("a", 0, 1)], [("b", 0, 1), ("gone", 0, 1)]) is False
+    assert held(card_db, USER, "a") == {0: 1}
+    assert held(card_db, OTHER, "b") == {0: 1}
+    assert held(card_db, USER, "b") == {}
 
 
 def test_standings_read_the_live_collection(card_db, monkeypatch):
@@ -648,3 +709,153 @@ async def test_a_limited_merge_with_nobody_left_to_find_says_so(monkeypatch):
     await cmd.LimitedMergeView(USER, [card("a", "Hydra"), card("b", "Hydra")]) \
         .confirm.callback(click)
     assert "No unminted" in click.edits[0]["embed"].description
+
+def stacks(*entries):
+    return [(card(slug, "normal"), star, count) for slug, star, count in entries]
+
+
+class Reply:
+    def __init__(self, values=()):
+        self.data = {"values": list(values)}
+        self.user = types.SimpleNamespace(id=USER)
+        self.sent = []
+        self.edits = []
+        self.modals = []
+        self.response = types.SimpleNamespace(
+            edit_message=self.edit_message, send_message=self.send_message,
+            send_modal=self.send_modal)
+
+    async def edit_message(self, **kwargs):
+        self.edits.append(kwargs)
+
+    async def send_message(self, **kwargs):
+        self.sent.append(kwargs)
+
+    async def send_modal(self, modal):
+        self.modals.append(modal)
+
+
+def builder(mine=None, theirs=None):
+    target = types.SimpleNamespace(id=OTHER, display_name="Bob", mention="<@2>")
+    proposer = types.SimpleNamespace(id=USER, display_name="Ann", mention="<@1>")
+    return cmd.TradeBuilderView(
+        proposer, target,
+        mine if mine is not None else stacks(("a", 0, 3), ("c", 1, 1)),
+        theirs if theirs is not None else stacks(("b", 0, 5)),
+        interaction=None)
+
+
+def buttons(view):
+    return {c.label: c for c in view.children if isinstance(c, cmd.discord.ui.Button)}
+
+
+@pytest.mark.asyncio
+async def test_a_single_copy_goes_straight_into_the_offer():
+    view = builder()
+    reply = Reply(["c:1"])
+    await view._picked(reply)
+    assert [line.entry() for line in view.lines["give"].values()] == [("c", 1, 1)]
+    assert reply.modals == []
+
+
+@pytest.mark.asyncio
+async def test_a_stack_of_several_asks_how_many():
+    view = builder()
+    reply = Reply(["a:0"])
+    await view._picked(reply)
+    [modal] = reply.modals
+    assert isinstance(modal, cmd.TradeAmountModal)
+    assert modal.held == 3
+    assert view.lines["give"] == {}
+
+
+@pytest.mark.asyncio
+async def test_the_amount_modal_sets_the_line_and_refuses_too_many():
+    view = builder()
+    modal = cmd.TradeAmountModal(view, "give", card("a", "normal"), 0, 3, 1)
+    modal.amount.value = "9"
+    reply = Reply()
+    await modal.callback(reply)
+    assert view.lines["give"] == {}
+    assert "1 to 3" in reply.sent[0]["embed"].description
+    modal.amount.value = "2"
+    await modal.callback(reply)
+    assert [line.entry() for line in view.lines["give"].values()] == [("a", 0, 2)]
+
+
+@pytest.mark.asyncio
+async def test_send_waits_for_cards_on_both_sides():
+    view = builder(theirs=stacks(("b", 0, 1)))
+    assert buttons(view)["Send"].disabled is True
+    await view._picked(Reply(["c:1"]))
+    assert buttons(view)["Send"].disabled is True
+    view.side = "want"
+    view._layout()
+    await view._picked(Reply(["b:0"]))
+    assert buttons(view)["Send"].disabled is False
+
+
+@pytest.mark.asyncio
+async def test_a_card_can_be_taken_back_out():
+    view = builder()
+    await view._picked(Reply(["c:1"]))
+    await view._removed(Reply(["c:1"]))
+    assert view.lines["give"] == {}
+
+
+@pytest.mark.asyncio
+async def test_each_side_holds_a_limited_number_of_cards():
+    many = stacks(*[(f"card{i}", 0, 1) for i in range(cmd.TradeBuilderView.LINES_PER_SIDE + 1)])
+    view = builder(mine=many)
+    for i in range(cmd.TradeBuilderView.LINES_PER_SIDE):
+        await view._picked(Reply([f"card{i}:0"]))
+    reply = Reply([f"card{cmd.TradeBuilderView.LINES_PER_SIDE}:0"])
+    await view._picked(reply)
+    assert len(view.lines["give"]) == cmd.TradeBuilderView.LINES_PER_SIDE
+    remover = next(c for c in view.children
+                   if isinstance(c, cmd.discord.ui.Select) and c.placeholder.startswith("Remove"))
+    assert len(remover.options) <= 25
+    assert "per side" in reply.sent[0]["embed"].description
+
+
+@pytest.mark.asyncio
+async def test_a_long_collection_pages_through_the_picker():
+    many = stacks(*[(f"card{i:02d}", 0, 1) for i in range(30)])
+    view = builder(mine=many)
+    picker = view.children[0]
+    assert len(picker.options) == cmd.TradeBuilderView.PICKER_SIZE
+    assert buttons(view)["Previous"].disabled is True
+    await view._next(Reply())
+    assert len(view.children[0].options) == 5
+    assert buttons(view)["Next"].disabled is True
+
+
+@pytest.mark.asyncio
+async def test_browsing_the_other_side_switches_the_collection():
+    view = builder()
+    await view._flip(Reply())
+    assert [o.value for o in view.children[0].options] == ["b:0"]
+    assert "Bob's cards" in view.embed().footer.text
+
+
+@pytest.mark.asyncio
+async def test_accepting_hands_the_whole_bundle_to_the_database(monkeypatch):
+    seen = {}
+
+    def fake_trade(from_user, to_user, give, want):
+        seen.update(from_user=from_user, to_user=to_user, give=give, want=want)
+        return True
+
+    monkeypatch.setattr(cardlib, "db_trade", fake_trade)
+    monkeypatch.setattr(cmd, "_announce_and_reward", noop)
+    view = cmd.TradeView(
+        types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
+        types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
+        [cmd.TradeLine(card("a", "normal"), 0, 2), cmd.TradeLine(card("c", "normal"), 1, 1)],
+        [cmd.TradeLine(card("b", "normal"), 0, 3)])
+    reply = Reply()
+    reply.channel = None
+    await view.accept.callback(reply)
+    assert seen == {"from_user": USER, "to_user": OTHER,
+                    "give": [("a", 0, 2), ("c", 1, 1)], "want": [("b", 0, 3)]}
+    assert "b ×3" in reply.edits[0]["embed"].description
