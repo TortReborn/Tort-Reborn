@@ -231,18 +231,26 @@ async def _autocomplete_discardable(ctx: discord.AutocompleteContext):
 
 async def _autocomplete_fusable(ctx: discord.AutocompleteContext):
     try:
-        choices = await _stack_choices(ctx.interaction.user.id,
-                                       (ctx.value or "").lower(),
-                                       resolve_member=False)
+        stacks = await _held_stacks(ctx.interaction.user.id,
+                                    (ctx.value or "").lower(),
+                                    resolve_member=False)
     except Exception:
         return []
+
+    levels = {}
+    for card, star, count in stacks:
+        levels.setdefault(card["slug"], {})[star] = count
+
     out = []
-    for ch in choices:
-        picked = _parse_stack(ch.value)
-        if picked and not cardlib.is_member_slug(picked[0]) \
-                and picked[1] < cardlib.MAX_STARS:
-            out.append(ch)
-    return out
+    for card, star, count in stacks:
+        feed, _ = cardlib.fusion_cost(card["tier"])
+        if cardlib.simulate_fusion(levels[card["slug"]], star, 1,
+                                   feed) is None:
+            continue
+        out.append(discord.OptionChoice(
+            name=_stack_label(card, star, count),
+            value=f"{card['slug']}:{star}"))
+    return sorted(out, key=lambda choice: choice.name)[:25]
 
 
 async def _autocomplete_mergeable(ctx: discord.AutocompleteContext):
@@ -617,6 +625,7 @@ class ReelView(discord.ui.View):
     def set_exhausted(self, exhausted: bool):
         self.reel_again.disabled = exhausted
         self.reel_again.label = "No Reels" if exhausted else "Reel again"
+        self.reel_ten.disabled = exhausted
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.owner_id:
@@ -639,15 +648,33 @@ class ReelView(discord.ui.View):
                        emoji="\N{FISHING POLE AND FISH}")
     async def reel_again(self, button: discord.ui.Button,
                          interaction: discord.Interaction):
+        await self._reel(interaction, 1)
+
+    @discord.ui.button(label="Reel 10", style=discord.ButtonStyle.secondary)
+    async def reel_ten(self, button: discord.ui.Button,
+                       interaction: discord.Interaction):
+        await self._reel(interaction, 10)
+
+    async def _reel(self, interaction: discord.Interaction, limit: int):
         # Acknowledge before any work. A pull renders an image and makes
         # several database round trips, which at a reel refresh can outlast
         # Discord's three-second window; a reply that fails after the card is
         # banked makes a paid reel look eaten.
         await interaction.response.defer()
-        embed, file, info, card = await _do_reel(self.owner_id, self.owner_name)
+        pulls = []
+        failure = None
+        for _ in range(limit):
+            embed, file, info, card = await _do_reel(
+                self.owner_id, self.owner_name)
+            if embed is None:
+                failure = info
+                break
+            pulls.append((embed, file, info, card))
+            if info == 0:
+                break
 
-        if embed is None:
-            if info == "out":
+        if not pulls:
+            if failure == "out":
                 self.set_exhausted(True)
                 refresh = cardlib.next_refresh_ts()
                 await interaction.edit_original_response(view=self)
@@ -655,14 +682,15 @@ class ReelView(discord.ui.View):
                     embed=_notice(ctext.no_reels(refresh)),
                     ephemeral=True)
             return await interaction.followup.send(
-                embed=_notice(_failure_text(info)), ephemeral=True)
+                embed=_notice(_failure_text(failure)), ephemeral=True)
 
-        # The card being replaced becomes part of the session log above it.
-        if self.current is not None:
-            self.history.append(self.current)
-        self.current = card
+        for _, _, _, pulled_card in pulls:
+            if self.current is not None:
+                self.history.append(self.current)
+            self.current = pulled_card
 
-        self.set_exhausted(info == 0)
+        embed, file, remaining, card = pulls[-1]
+        self.set_exhausted(remaining == 0 or failure == "out")
         try:
             # attachments=[] drops the previous card image; the new file
             # replaces it.
@@ -678,7 +706,13 @@ class ReelView(discord.ui.View):
                     ephemeral=True)
             except discord.HTTPException:
                 pass
-        await _announce_and_reward(interaction.channel, interaction.user, card)
+        for _, _, _, pulled_card in pulls:
+            await _announce_and_reward(interaction.channel, interaction.user,
+                                       pulled_card)
+
+        if failure and failure != "out":
+            await interaction.followup.send(
+                embed=_notice(_failure_text(failure)), ephemeral=True)
 
 
 @dataclass(frozen=True)
