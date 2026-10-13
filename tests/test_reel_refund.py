@@ -339,5 +339,54 @@ async def test_out_of_reels_disables_the_button(monkeypatch, events):
     click = Click(events)
     await view.reel_again.callback(click)
     assert view.reel_again.disabled is True
+    assert view.reel_ten.disabled is True
     assert events[:3] == ["defer", "pull", "edit"]
     assert click.followups[0]["embed"].description == ctext.no_reels(0)
+
+
+@pytest.mark.asyncio
+async def test_reel_ten_pulls_ten_and_shows_the_last(monkeypatch, events):
+    cards = [{"slug": f"card-{n}", "name": f"Card {n}", "tier": "rare"}
+             for n in range(10)]
+    cards_to_pull = iter(cards)
+    remaining = iter(range(11, 1, -1))
+
+    async def fake_do_reel(user_id, who):
+        card = next(cards_to_pull)
+        events.append("pull")
+        return (f"EMBED-{card['slug']}", f"FILE-{card['slug']}",
+                next(remaining), card)
+
+    monkeypatch.setattr(cmd, "_do_reel", fake_do_reel)
+    view = cmd.ReelView(OWNER, "Player", CARD)
+    click = Click(events)
+    await view.reel_ten.callback(click)
+
+    assert events.count("pull") == 10
+    [edit] = click.edits
+    assert edit["embed"] == "EMBED-card-9"
+    assert edit["file"] == "FILE-card-9"
+    assert view.current == cards[-1]
+    assert view.history == [CARD, *cards[:-1]]
+    assert view.reel_ten.disabled is False
+
+
+@pytest.mark.asyncio
+async def test_reel_ten_uses_every_reel_when_fewer_than_ten_remain(
+        monkeypatch, events):
+    cards = [dict(CARD, slug=f"card-{n}") for n in range(3)]
+
+    async def fake_do_reel(user_id, who):
+        card = cards[len([event for event in events if event == "pull"])]
+        events.append("pull")
+        return "EMBED", "FILE", len(cards) - events.count("pull"), card
+
+    monkeypatch.setattr(cmd, "_do_reel", fake_do_reel)
+    view = cmd.ReelView(OWNER, "Player", CARD)
+    click = Click(events)
+    await view.reel_ten.callback(click)
+
+    assert events.count("pull") == 3
+    assert view.current == cards[-1]
+    assert view.reel_again.disabled is True
+    assert view.reel_ten.disabled is True
