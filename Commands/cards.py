@@ -1794,7 +1794,12 @@ class Cards(commands.Cog):
 
         per_stars, per_pearls = cardlib.fusion_cost(match["tier"])
         if from_star is None:
-            spare = max(0, sum(levels.values()) - 1)
+            target = max(
+                (star for star, count in levels.items()
+                 if star < ceiling and count),
+                default=0)
+            spare = max(0, sum(
+                count for star, count in levels.items() if star <= target) - 1)
             return await ctx.followup.send(
                 embed=_notice(f"Need **{per_stars}** other copies\n"
                               f"You have {spare}"),
