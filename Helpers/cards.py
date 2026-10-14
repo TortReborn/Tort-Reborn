@@ -452,6 +452,8 @@ def plan_fusion(levels: dict, target_star: int, need: int) -> dict | None:
     pool[target_star] -= 1
     spend = {}
     for star in sorted(pool):
+        if star > target_star:
+            break
         take = min(pool[star], need)
         if take:
             spend[star] = take

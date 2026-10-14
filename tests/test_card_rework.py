@@ -123,6 +123,11 @@ def test_plan_spends_the_lowest_stars_first():
     assert cardlib.plan_fusion({0: 2, 1: 2, 3: 1}, 1, 3) == {0: 2, 1: 1}
 
 
+def test_plan_never_spends_a_card_above_the_target_star():
+    assert cardlib.plan_fusion({0: 2, 1: 1, 2: 1}, 1, 3) is None
+    assert cardlib.plan_fusion({0: 2, 1: 2, 2: 5}, 1, 3) == {0: 2, 1: 1}
+
+
 def test_the_target_is_never_its_own_feed():
     assert cardlib.plan_fusion({0: 3}, 0, 3) is None
     assert cardlib.plan_fusion({0: 4}, 0, 3) == {0: 3}
@@ -388,6 +393,15 @@ def test_short_copies_leave_everything_as_it_was(card_db):
     assert pearls(card_db, USER) == 100
 
 
+def test_higher_stars_cannot_cover_short_fusion_material(card_db):
+    give(card_db, USER, "bob", 1)
+    give(card_db, USER, "bob", 3, stars=2)
+    fund(card_db, USER, 100)
+    assert cardlib.db_fuse(USER, "bob", 0, 1, 3, 15) is None
+    assert held(card_db, USER, "bob") == {0: 1, 2: 3}
+    assert pearls(card_db, USER) == 100
+
+
 def test_short_pearls_undo_the_copies(card_db):
     give(card_db, USER, "bob", 4)
     fund(card_db, USER, 10)
@@ -400,7 +414,8 @@ def test_fusion_aborts_when_the_copies_it_would_spend_changed(card_db):
     give(card_db, USER, "bob", 3)
     give(card_db, USER, "bob", 1, stars=1)
     fund(card_db, USER, 100)
-    assert cardlib.db_fuse(USER, "bob", 0, 1, 3, 15, expect={0: 3}) is None
+    assert cardlib.db_fuse(USER, "bob", 1, 1, 3, 15,
+                           expect={0: 2, 1: 1}) is None
     assert held(card_db, USER, "bob") == {0: 3, 1: 1}
     assert pearls(card_db, USER) == 100
 
@@ -409,8 +424,8 @@ def test_fusion_goes_ahead_when_the_planned_copies_still_match(card_db):
     give(card_db, USER, "bob", 3)
     give(card_db, USER, "bob", 1, stars=1)
     fund(card_db, USER, 100)
-    result = cardlib.db_fuse(USER, "bob", 0, 1, 3, 15, expect={0: 2, 1: 1})
-    assert result["spent"] == {0: 2, 1: 1}
+    result = cardlib.db_fuse(USER, "bob", 1, 1, 3, 15, expect={0: 3})
+    assert result["spent"] == {0: 3}
 
 
 def test_fusion_never_passes_the_ceiling(card_db):
