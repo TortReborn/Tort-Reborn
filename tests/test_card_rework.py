@@ -152,6 +152,54 @@ def test_simulation_stops_at_the_ceiling():
     assert cardlib.simulate_fusion({3: 1, 0: 3}, 3, 1, 3)["stars"] == 4
 
 
+def test_fusion_chooses_the_highest_eligible_star():
+    normal = card("bob", "normal")
+    assert cardlib.highest_fusable_star(normal, {0: 4, 3: 1}) == 3
+    assert cardlib.highest_fusable_star(normal, {0: 4, 1: 1}) == 1
+    assert cardlib.highest_fusable_star(normal, {0: 4}) is None
+    assert cardlib.highest_fusable_star(normal, {4: 5}) is None
+
+
+@pytest.mark.asyncio
+async def test_fuse_picker_lists_each_card_once_highest_star_first(monkeypatch):
+    monkeypatch.setattr(cardlib, "db_get_collection", lambda user_id: collection(
+        plain={0: 5},
+        high={0: 4, 3: 1},
+        short={0: 4},
+        mid={0: 4, 1: 1},
+        maxed={4: 5},
+    ))
+    monkeypatch.setattr(cardlib, "get_card",
+                        lambda slug: card(slug, "normal"))
+    ctx = types.SimpleNamespace(
+        interaction=types.SimpleNamespace(user=types.SimpleNamespace(id=USER)),
+        value="",
+    )
+
+    choices = await cmd._autocomplete_fusable(ctx)
+
+    assert [choice.value for choice in choices] == ["high", "mid", "plain"]
+
+
+@pytest.mark.asyncio
+async def test_high_star_fuse_survives_the_picker_limit(monkeypatch):
+    owned = {f"plain-{n:02d}": {0: 5} for n in range(25)}
+    owned["high"] = {0: 4, 3: 1}
+    monkeypatch.setattr(cardlib, "db_get_collection",
+                        lambda user_id: collection(**owned))
+    monkeypatch.setattr(cardlib, "get_card",
+                        lambda slug: card(slug, "normal"))
+    ctx = types.SimpleNamespace(
+        interaction=types.SimpleNamespace(user=types.SimpleNamespace(id=USER)),
+        value="",
+    )
+
+    choices = await cmd._autocomplete_fusable(ctx)
+
+    assert len(choices) == 25
+    assert choices[0].value == "high"
+
+
 def test_a_mythic_needs_two_copies_a_step():
     feed, _ = cardlib.fusion_cost("mythic")
     assert feed == cardlib.fusion_cost("fabled")[0] == 2
@@ -612,7 +660,7 @@ async def noop(*args, **kwargs):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("name, returns, build", [
     ("_do_fuse", (None, None),
-     lambda: cmd.FuseView(USER, card("bob", "normal"), 0, 1, {0: 3})),
+     lambda: cmd.FuseView(USER, card("bob", "normal"), 0, {0: 3})),
     ("_do_discard", (None, None, None),
      lambda: cmd.DiscardView(USER, card("big", "mythic"), 1)),
     ("_do_merge_limited", (object(), None, None),
@@ -636,16 +684,69 @@ async def test_confirm_buttons_acknowledge_before_they_work(
 async def test_a_stale_fusion_confirm_is_told_so(monkeypatch):
     seen = {}
 
-    async def stale(user_id, card_, from_star, steps, expect=None):
+    async def stale(user_id, card_, from_star, expect=None):
         seen["expect"] = expect
         return None, None
 
     monkeypatch.setattr(cmd, "_do_fuse", stale)
     click = Click([])
-    await cmd.FuseView(USER, card("bob", "normal"), 0, 1, {0: 2, 1: 1}) \
+    await cmd.FuseView(USER, card("bob", "normal"), 0, {0: 2, 1: 1}) \
         .confirm.callback(click)
     assert seen["expect"] == {0: 2, 1: 1}
     assert "Copies changed" in click.edits[0]["embed"].description
+
+
+@pytest.mark.asyncio
+async def test_fuse_command_upgrades_the_highest_eligible_stack_once(monkeypatch):
+    selected = {}
+    monkeypatch.setattr(cardlib, "get_card",
+                        lambda slug: card(slug, "normal"))
+    monkeypatch.setattr(cardlib, "db_get_entry", lambda user_id, slug: {
+        "levels": {0: 4, 3: 1}, "total": 5, "best": 3,
+    })
+    monkeypatch.setattr(cardlib, "db_get_wallet",
+                        lambda user_id: {"pearls": 100})
+
+    async def fuse(user_id, card_, from_star, expect=None):
+        selected.update(from_star=from_star, expect=expect)
+        return "EMBED", "FILE"
+
+    sent = []
+
+    async def send(**kwargs):
+        sent.append(kwargs)
+
+    monkeypatch.setattr(cmd, "_do_fuse", fuse)
+    ctx = types.SimpleNamespace(
+        defer=noop,
+        author=types.SimpleNamespace(id=USER),
+        followup=types.SimpleNamespace(send=send),
+    )
+
+    await cmd.Cards.card_fuse.callback(
+        cmd.Cards.__new__(cmd.Cards), ctx, "bob")
+
+    assert selected == {"from_star": 3, "expect": {0: 4}}
+    assert sent == [{"embed": "EMBED", "file": "FILE"}]
+
+
+@pytest.mark.asyncio
+async def test_do_fuse_always_writes_one_upgrade_step(monkeypatch):
+    written = {}
+
+    def fuse(user_id, slug, from_star, steps, copies, pearls, expect):
+        written.update(from_star=from_star, steps=steps, expect=expect)
+        return {"stars": 4, "spent": expect, "pearls": 75}
+
+    monkeypatch.setattr(cardlib, "db_fuse", fuse)
+    monkeypatch.setattr(cmd, "card_file",
+                        lambda *args: types.SimpleNamespace(filename="card.png"))
+
+    embed, file = await cmd._do_fuse(
+        USER, card("bob", "normal"), 3, {0: 4})
+
+    assert embed is not None and file.filename == "card.png"
+    assert written == {"from_star": 3, "steps": 1, "expect": {0: 4}}
 
 
 @pytest.mark.asyncio
