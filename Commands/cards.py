@@ -237,20 +237,23 @@ async def _autocomplete_fusable(ctx: discord.AutocompleteContext):
     except Exception:
         return []
 
+    cards = {}
     levels = {}
     for card, star, count in stacks:
+        cards[card["slug"]] = card
         levels.setdefault(card["slug"], {})[star] = count
 
     out = []
-    for card, star, count in stacks:
-        feed, _ = cardlib.fusion_cost(card["tier"])
-        if cardlib.simulate_fusion(levels[card["slug"]], star, 1,
-                                   feed) is None:
+    for slug, card in cards.items():
+        star = cardlib.highest_fusable_star(card, levels[slug])
+        if star is None:
             continue
-        out.append(discord.OptionChoice(
-            name=_stack_label(card, star, count),
-            value=f"{card['slug']}:{star}"))
-    return sorted(out, key=lambda choice: choice.name)[:25]
+        choice = discord.OptionChoice(
+            name=_stack_label(card, star, levels[slug][star]),
+            value=slug)
+        out.append((star, choice))
+    out.sort(key=lambda entry: (-entry[0], entry[1].name.lower()))
+    return [choice for _, choice in out[:25]]
 
 
 async def _autocomplete_mergeable(ctx: discord.AutocompleteContext):
@@ -1044,11 +1047,11 @@ async def _do_discard(user_id: int, card: dict, count: int):
     return embed, file, outputs
 
 
-async def _do_fuse(user_id: int, card: dict, from_star: int, steps: int,
+async def _do_fuse(user_id: int, card: dict, from_star: int,
                    expect: dict | None = None):
     feed, per_pearls = cardlib.fusion_cost(card["tier"])
     result = await asyncio.to_thread(cardlib.db_fuse, user_id, card["slug"],
-                                     from_star, steps, feed, per_pearls, expect)
+                                     from_star, 1, feed, per_pearls, expect)
     if result is None:
         return None, None
 
@@ -1058,7 +1061,7 @@ async def _do_fuse(user_id: int, card: dict, from_star: int, steps: int,
     spent = "\n".join(
         f"-{n} {ctext.level_name(_level_label(card, st))}"
         for st, n in sorted(result["spent"].items()))
-    summary = (f"{spent}\n-{per_pearls * steps:,} Pearls\n"
+    summary = (f"{spent}\n-{per_pearls:,} Pearls\n"
                f"{result['pearls']:,} Pearls left")
     if to_star >= ceiling:
         summary = f"**MAX**\n{summary}"
@@ -1074,13 +1077,11 @@ async def _do_fuse(user_id: int, card: dict, from_star: int, steps: int,
 
 
 class FuseView(discord.ui.View):
-    def __init__(self, owner_id: int, card: dict, from_star: int, steps: int,
-                 spend: dict):
+    def __init__(self, owner_id: int, card: dict, from_star: int, spend: dict):
         super().__init__(timeout=120)
         self.owner_id = owner_id
         self.card = card
         self.from_star = from_star
-        self.steps = steps
         self.spend = spend
         self.message = None
         self.done = False
@@ -1108,7 +1109,7 @@ class FuseView(discord.ui.View):
         self.done = True
         await interaction.response.defer()
         embed, file = await _do_fuse(self.owner_id, self.card, self.from_star,
-                                     self.steps, self.spend)
+                                     self.spend)
         if embed is None:
             return await interaction.edit_original_response(
                 content=None, embed=_notice("Copies changed\nTry again"),
@@ -1763,23 +1764,14 @@ class Cards(commands.Cog):
 
     @card.command(
         name="fuse",
-        description="Feed a card its own copies for a star")
+        description="Feed copies into a card for its next star")
     async def card_fuse(
         self, ctx: discord.ApplicationContext,
         card: discord.Option(str, description="Card to raise",
                              autocomplete=_autocomplete_fusable),
-        stars: discord.Option(
-            int, description="Stars to add",
-            required=False, default=1, min_value=1,
-            max_value=cardlib.MAX_STARS),
     ):
         await ctx.defer()
-        picked = _parse_stack(card)
-        if picked is None:
-            return await ctx.followup.send(
-                embed=_notice("Pick a stack"),
-                ephemeral=True)
-        slug, from_star = picked
+        slug = card
 
         match = cardlib.get_card(slug) or await asyncio.to_thread(
             cardlib.db_get_member_card, slug)
@@ -1790,39 +1782,34 @@ class Cards(commands.Cog):
             return await ctx.followup.send(
                 embed=_notice("Member cards cannot fuse"),
                 ephemeral=True)
+        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id, slug)
+        levels = (entry or {}).get("levels", {})
         ceiling = cardlib.tier_max_stars(match)
-        if from_star >= ceiling:
+        from_star = cardlib.highest_fusable_star(match, levels)
+        if from_star is None and levels and not any(
+                star < ceiling and count for star, count in levels.items()):
             return await ctx.followup.send(
                 embed=_notice(f"**{match['name']}** is maxed"),
                 ephemeral=True)
-        room = ceiling - from_star
-        if stars > room:
-            return await ctx.followup.send(
-                embed=_notice(f"Only **{room}** star"
-                              f"{'' if room == 1 else 's'} left"),
-                ephemeral=True)
 
         per_stars, per_pearls = cardlib.fusion_cost(match["tier"])
-        entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id, slug)
-        levels = (entry or {}).get("levels", {})
-        if not levels.get(from_star):
+        if from_star is None:
+            spare = max(0, sum(levels.values()) - 1)
             return await ctx.followup.send(
-                embed=_notice(f"You lack **{_star_name(match, from_star)}**"),
-                ephemeral=True)
-
-        played = cardlib.simulate_fusion(levels, from_star, stars, per_stars)
-        if played is None:
-            spare = sum(levels.values()) - 1
-            return await ctx.followup.send(
-                embed=_notice(f"Need **{per_stars * stars}** other copies\n"
+                embed=_notice(f"Need **{per_stars}** other copies\n"
                               f"You have {spare}"),
                 ephemeral=True)
 
-        pearls = per_pearls * stars
-        wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
-        if wallet["pearls"] < pearls:
+        played = cardlib.simulate_fusion(levels, from_star, 1, per_stars)
+        if played is None:
             return await ctx.followup.send(
-                embed=_notice(f"Need **{pearls:,}** Pearls\n"
+                embed=_notice("Copies changed\nTry again"),
+                ephemeral=True)
+
+        wallet = await asyncio.to_thread(cardlib.db_get_wallet, ctx.author.id)
+        if wallet["pearls"] < per_pearls:
+            return await ctx.followup.send(
+                embed=_notice(f"Need **{per_pearls:,}** Pearls\n"
                               f"You have {wallet['pearls']:,}"),
                 ephemeral=True)
 
@@ -1830,15 +1817,14 @@ class Cards(commands.Cog):
         if starred:
             lost = ", ".join(f"{n}× {_star_name(match, st)}"
                              for st, n in sorted(starred.items()))
-            view = FuseView(ctx.author.id, match, from_star, stars,
-                            played["spent"])
+            view = FuseView(ctx.author.id, match, from_star, played["spent"])
             view.message = await ctx.followup.send(
                 embed=_notice(f"Fusing **{match['name']}** spends {lost}\n"
                               "Their stars are lost"),
                 view=view, wait=True)
             return
 
-        embed, file = await _do_fuse(ctx.author.id, match, from_star, stars,
+        embed, file = await _do_fuse(ctx.author.id, match, from_star,
                                      played["spent"])
         if embed is None:
             return await ctx.followup.send(

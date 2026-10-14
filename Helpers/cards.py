@@ -481,6 +481,17 @@ def simulate_fusion(levels: dict, from_star: int, steps: int,
     return {"levels": after, "spent": spent, "stars": star}
 
 
+def highest_fusable_star(card: dict, levels: dict) -> int | None:
+    ceiling = tier_max_stars(card)
+    if not ceiling:
+        return None
+    copies, _ = fusion_cost(card["tier"])
+    for star in sorted(levels, reverse=True):
+        if star < ceiling and simulate_fusion(levels, star, 1, copies):
+            return star
+    return None
+
+
 def discard_yield(card: dict | None) -> tuple[str, int] | None:
     """(tier below, how many) a plain copy of this card turns into, or None
     when it cannot be discarded at all."""
