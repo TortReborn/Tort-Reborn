@@ -60,11 +60,11 @@ def no_reels(ts: int) -> str:
 
 
 def render_failed() -> str:
-    return "Render failed\nReel refunded"
+    return "Render failed\nNo Reel spent"
 
 
 def reel_failed() -> str:
-    return "Reel failed\nReel refunded"
+    return "Reel failed\nNo Reel spent"
 
 
 def pull_unshown(name: str) -> str:

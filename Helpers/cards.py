@@ -660,19 +660,8 @@ def db_get_balance(user_id: int) -> int:
     return db_get_wallet(user_id)["total_reels"]
 
 
-def db_spend_reel(user_id: int) -> dict | None:
-    """Refresh and consume one reel atomically, bait pocket first.
-
-    Returns the remaining balances, or None when the user had none. Doing the
-    refresh inside the same UPDATE keeps a spammed command from double
-    spending: the row is locked for the whole statement.
-
-    Bait reels go first so they cannot rot: they block tomorrow's bait until
-    they are gone, and nothing else about them is worth hoarding. The lock is
-    taken in a CTE rather than left implicit, because the caller needs to know
-    which pocket it came out of to refund it correctly, and that is the one
-    thing RETURNING cannot tell it -- RETURNING sees the row after the write.
-    """
+def db_complete_pull(user_id: int, slug: str, pearls: int = 0) -> dict | None:
+    """Spend one reel and grant its card and pearls in one transaction."""
     window = current_window()
     cap = _bank_cap_sql()
     fresh = (f'LEAST({cap}, w.reels + '
@@ -690,43 +679,31 @@ def db_spend_reel(user_id: int) -> dict | None:
             f'  reels = {fresh} - CASE WHEN l.bait_reels > 0 THEN 0 ELSE 1 END, '
             '  bait_reels = GREATEST(0, w.bait_reels - 1), '
             '  window_idx = %(w)s, '
-            '  total_reeled = w.total_reeled + 1 '
+            '  total_reeled = w.total_reeled + 1, '
+            '  pearls = w.pearls + %(pearls)s '
             'FROM locked l '
             'WHERE w."user" = l."user" '
             f'  AND (l.bait_reels > 0 OR {fresh} > 0) '
-            'RETURNING w.reels, w.bait_reels, (l.bait_reels > 0)',
-            {"w": window, "per": REELS_PER_WINDOW, "uid": user_id},
+            'RETURNING w.reels, w.bait_reels, w.pearls',
+            {"w": window, "per": REELS_PER_WINDOW, "uid": user_id,
+             "pearls": pearls},
         )
-        row = db.cursor.fetchone()
-        db.connection.commit()
-        if not row:
+        wallet = db.cursor.fetchone()
+        if not wallet:
+            db.connection.commit()
             return None
-        return {"reels": row[0], "bait_reels": row[1],
-                "total": row[0] + row[1], "used_bait": row[2]}
-    finally:
-        db.close()
-
-
-def db_refund_reel(user_id: int, bait: bool = False):
-    """Put a reel back in the pocket it was taken from.
-
-    A bait reel refunded into the bank would vanish against the cap, which is
-    the whole thing the separate pocket exists to prevent.
-    """
-    if bait:
-        restore = 'bait_reels = LEAST(%s, bait_reels + 1)' % MAX_BAIT_REELS
-    else:
-        restore = 'reels = LEAST(%s, reels + 1)' % _bank_cap_sql()
-    db = DB()
-    db.connect()
-    try:
         db.cursor.execute(
-            f'UPDATE card_wallet SET {restore}, '
-            '  total_reeled = GREATEST(0, total_reeled - 1) '
-            'WHERE "user" = %s',
-            (user_id,),
-        )
+            'INSERT INTO card_collection ("user", card, stars) '
+            'VALUES (%s, %s, 0) '
+            'ON CONFLICT ("user", card, stars) '
+            'DO UPDATE SET count = card_collection.count + 1 '
+            'RETURNING count',
+            (user_id, slug))
+        card = db.cursor.fetchone()
         db.connection.commit()
+        return {"reels": wallet[0], "bait_reels": wallet[1],
+                "total": wallet[0] + wallet[1],
+                "count": card[0], "gained": pearls, "pearls": wallet[2]}
     finally:
         db.close()
 
@@ -904,35 +881,6 @@ def db_upgrade_tank(user_id: int, to_tier: int) -> bool:
 # =============================================================================
 # DB — collection
 # =============================================================================
-
-def db_add_card(user_id: int, slug: str, pearls: int = 0) -> dict:
-    """Record a pull and pay out its pearls together.
-
-    Both writes share one transaction so a card can never be banked without
-    its payout, or vice versa.
-    """
-    db = DB()
-    db.connect()
-    try:
-        db.cursor.execute(
-            'INSERT INTO card_collection ("user", card, stars) VALUES (%s, %s, 0) '
-            'ON CONFLICT ("user", card, stars) '
-            'DO UPDATE SET count = card_collection.count + 1 '
-            'RETURNING count',
-            (user_id, slug))
-        row = db.cursor.fetchone()
-        total = None
-        if pearls:
-            db.cursor.execute(
-                'UPDATE card_wallet SET pearls = pearls + %s WHERE "user" = %s '
-                'RETURNING pearls', (pearls, user_id))
-            prow = db.cursor.fetchone()
-            total = prow[0] if prow else None
-        db.connection.commit()
-        return {"count": row[0] if row else 1, "gained": pearls, "pearls": total}
-    finally:
-        db.close()
-
 
 def db_get_collection(user_id: int) -> dict:
     """slug -> {"total": copies at every level, "levels": {star: count}}."""

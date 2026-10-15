@@ -497,21 +497,19 @@ def _history_content(history: list) -> str:
 
 
 async def _do_reel(user_id: int, who: str):
-    """Spend a reel and roll a card.
+    """Roll and render a card, then atomically spend and bank it.
 
     Returns (embed, file, remaining, card) on success, or (None, None, reason,
-    None) where reason is 'out', 'render' or 'failed'. Anything that goes
-    wrong before the card is banked refunds the reel and releases a member
-    card minted on the way, so a failed pull never costs anything. Once the
-    card is banked nothing is refunded: the pull happened.
+    None) where reason is 'out', 'render' or 'failed'. Nothing is charged
+    until the rendered card can be granted in the same database transaction.
     """
-    spend = await asyncio.to_thread(cardlib.db_spend_reel, user_id)
-    if spend is None:
-        return None, None, "out", None
-    remaining = spend["total"]
-
-    card, minted, stage = None, None, "roll"
+    card, minted, stage = None, None, "balance"
     try:
+        balance = await asyncio.to_thread(cardlib.db_get_balance, user_id)
+        if balance <= 0:
+            return None, None, "out", None
+
+        stage = "roll"
         wishes = set(await asyncio.to_thread(cardlib.db_get_wishes, user_id))
         card = cardlib.roll_card(wishes=wishes)
 
@@ -532,31 +530,25 @@ async def _do_reel(user_id: int, who: str):
 
         stage = "grant"
         pearls = cardlib.pull_value(card)
-        result = await asyncio.to_thread(cardlib.db_add_card, user_id,
+        result = await asyncio.to_thread(cardlib.db_complete_pull, user_id,
                                          card["slug"], pearls)
+        if result is None:
+            await _release_mint(user_id, minted)
+            return None, None, "out", None
     except Exception as e:
         slug = card.get("slug") if card else None
         log(ERROR, f"Reel failed at {stage} for {user_id} ({slug}): {e}",
             context="cards")
-        await _undo_pull(user_id, spend["used_bait"], minted)
+        await _release_mint(user_id, minted)
         return None, None, ("render" if stage == "render" else "failed"), None
 
+    remaining = result["total"]
     embed = _card_embed(card, result["count"], remaining, file.filename, who,
                         gained=result["gained"])
     return embed, file, remaining, card
 
 
-async def _undo_pull(user_id: int, bait: bool, minted: dict | None):
-    """Give back what a failed pull took.
-
-    A refund that itself fails is logged with what the player is owed, so they
-    can be made whole by hand.
-    """
-    try:
-        await asyncio.to_thread(cardlib.db_refund_reel, user_id, bait)
-    except Exception as e:
-        log(ERROR, f"Reel refund failed for {user_id}; owed one "
-            f"{'bait ' if bait else ''}reel: {e}", context="cards")
+async def _release_mint(user_id: int, minted: dict | None):
     if minted:
         try:
             await asyncio.to_thread(cardlib.db_release_member_card,
@@ -608,6 +600,45 @@ async def _announce_and_reward(channel, user, card):
         log(ERROR, f"Post-reel announce failed: {e}", context="cards")
 
 
+class ReelCoordinator:
+    def __init__(self):
+        self._locks = {}
+        self._views = {}
+
+    def lock(self, user_id: int) -> asyncio.Lock:
+        return self._locks.setdefault(user_id, asyncio.Lock())
+
+    def register(self, view):
+        self._views.setdefault(view.owner_id, set()).add(view)
+
+    def unregister(self, view):
+        views = self._views.get(view.owner_id)
+        if views is None:
+            return
+        views.discard(view)
+        if not views:
+            self._views.pop(view.owner_id, None)
+
+    async def update_views(self, user_id: int, *, busy: bool = False,
+                           exhausted: bool = False, skip=None):
+        views = tuple(self._views.get(user_id, ()))
+        for view in views:
+            if busy:
+                view.set_busy()
+            else:
+                view.set_exhausted(exhausted)
+
+        async def edit(view):
+            if view is skip or view.message is None:
+                return
+            try:
+                await view.message.edit(view=view)
+            except discord.HTTPException:
+                pass
+
+        await asyncio.gather(*(edit(view) for view in views))
+
+
 class ReelView(discord.ui.View):
     """Reel again without retyping the command.
 
@@ -615,15 +646,23 @@ class ReelView(discord.ui.View):
     own, so a card in a busy channel can't be rerolled out from under someone.
     """
 
-    def __init__(self, owner_id: int, owner_name: str, card: dict,
+    def __init__(self, coordinator: ReelCoordinator, owner_id: int,
+                 owner_name: str, card: dict,
                  exhausted: bool = False):
         super().__init__(timeout=900)
+        self.coordinator = coordinator
         self.owner_id = owner_id
         self.owner_name = owner_name
         self.message = None
         self.history = []         # everything rerolled past this session
         self.current = card       # shown on the card image right now
         self.set_exhausted(exhausted)
+        self.coordinator.register(self)
+
+    def set_busy(self):
+        self.reel_again.disabled = True
+        self.reel_again.label = "Reeling..."
+        self.reel_ten.disabled = True
 
     def set_exhausted(self, exhausted: bool):
         self.reel_again.disabled = exhausted
@@ -639,6 +678,7 @@ class ReelView(discord.ui.View):
         return True
 
     async def on_timeout(self):
+        self.coordinator.unregister(self)
         for child in self.children:
             child.disabled = True
         if self.message is not None:
@@ -664,6 +704,22 @@ class ReelView(discord.ui.View):
         # Discord's three-second window; a reply that fails after the card is
         # banked makes a paid reel look eaten.
         await interaction.response.defer()
+        async with self.coordinator.lock(self.owner_id):
+            await self.coordinator.update_views(
+                self.owner_id, busy=True, skip=self)
+            try:
+                await interaction.edit_original_response(view=self)
+                await self._run_reel(interaction, limit)
+            except Exception:
+                await self.coordinator.update_views(
+                    self.owner_id, exhausted=False, skip=self)
+                try:
+                    await interaction.edit_original_response(view=self)
+                except discord.HTTPException:
+                    pass
+                raise
+
+    async def _run_reel(self, interaction: discord.Interaction, limit: int):
         pulls = []
         failure = None
         for _ in range(limit):
@@ -678,12 +734,16 @@ class ReelView(discord.ui.View):
 
         if not pulls:
             if failure == "out":
-                self.set_exhausted(True)
+                await self.coordinator.update_views(
+                    self.owner_id, exhausted=True, skip=self)
                 refresh = cardlib.next_refresh_ts()
                 await interaction.edit_original_response(view=self)
                 return await interaction.followup.send(
                     embed=_notice(ctext.no_reels(refresh)),
                     ephemeral=True)
+            await self.coordinator.update_views(
+                self.owner_id, exhausted=False, skip=self)
+            await interaction.edit_original_response(view=self)
             return await interaction.followup.send(
                 embed=_notice(_failure_text(failure)), ephemeral=True)
 
@@ -693,7 +753,10 @@ class ReelView(discord.ui.View):
             self.current = pulled_card
 
         embed, file, remaining, card = pulls[-1]
-        self.set_exhausted(remaining == 0 or failure == "out")
+        await self.coordinator.update_views(
+            self.owner_id,
+            exhausted=remaining == 0 or failure == "out",
+            skip=self)
         try:
             # attachments=[] drops the previous card image; the new file
             # replaces it.
@@ -1277,6 +1340,7 @@ class Cards(commands.Cog):
 
     def __init__(self, client):
         self.client = client
+        self.reels = ReelCoordinator()
 
     async def cog_check(self, ctx: discord.ApplicationContext) -> bool:
         return await _channel_allowed(ctx)
@@ -1303,22 +1367,34 @@ class Cards(commands.Cog):
     async def reel(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         who = ctx.author.display_name
-        embed, file, info, card = await _do_reel(ctx.author.id, who)
+        async with self.reels.lock(ctx.author.id):
+            await self.reels.update_views(ctx.author.id, busy=True)
+            try:
+                embed, file, info, card = await _do_reel(ctx.author.id, who)
+            except Exception:
+                await self.reels.update_views(ctx.author.id, exhausted=False)
+                raise
 
-        if embed is None:
-            if info == "out":
-                refresh = cardlib.next_refresh_ts()
+            if embed is None:
+                exhausted = info == "out"
+                await self.reels.update_views(
+                    ctx.author.id, exhausted=exhausted)
+                if exhausted:
+                    refresh = cardlib.next_refresh_ts()
+                    return await ctx.followup.send(
+                        embed=_notice(ctext.no_reels(refresh)),
+                        ephemeral=True)
                 return await ctx.followup.send(
-                    embed=_notice(ctext.no_reels(refresh)),
-                    ephemeral=True)
-            return await ctx.followup.send(
-                embed=_notice(_failure_text(info)), ephemeral=True)
+                    embed=_notice(_failure_text(info)), ephemeral=True)
 
-        view = ReelView(ctx.author.id, who, card, exhausted=(info == 0))
-        # wait=True so the view can disable its own button when it times out.
-        view.message = await ctx.followup.send(
-            content=_history_content([]),
-            embed=embed, file=file, view=view, wait=True)
+            view = ReelView(self.reels, ctx.author.id, who, card,
+                            exhausted=(info == 0))
+            await self.reels.update_views(
+                ctx.author.id, exhausted=(info == 0), skip=view)
+            # wait=True so the view can disable its own button when it times out.
+            view.message = await ctx.followup.send(
+                content=_history_content([]),
+                embed=embed, file=file, view=view, wait=True)
         await _announce_and_reward(ctx.channel, ctx.author, card)
 
     # ── /bait ────────────────────────────────────────────────────────────────
