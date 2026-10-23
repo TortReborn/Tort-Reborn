@@ -53,10 +53,16 @@ class OnMemberJoin(commands.Cog):
 
         ch = self.client.get_channel(GENERAL_CHANNEL_ID)
         if ch:
+            # py-cord blindly retries a POST that comes back 5xx, and Discord
+            # sometimes 504s after the message was already created -- the
+            # member got welcomed (and pinged) twice, 31s apart. An enforced
+            # nonce makes Discord return the existing message on the retry.
             await ch.send(
                 f"Welcome to TAq {member.mention}! <:TAq:744256840254226553>\n"
                 f"If you want to apply, head to <#1476866917854609408> and choose your application type.\n"
-                f"Read <#{RULES_CHANNEL_ID}> for any immediate questions or concerns (like ally raiding) and have a wonderful stay within The Aquarium! <:partytort:975138500150165594>"
+                f"Read <#{RULES_CHANNEL_ID}> for any immediate questions or concerns (like ally raiding) and have a wonderful stay within The Aquarium! <:partytort:975138500150165594>",
+                nonce=f"w{member.id}",
+                enforce_nonce=True,
             )
 
         # Honorifics survive leaving Discord (member_honorifics, TAQ-76): a
