@@ -18,6 +18,9 @@ import json
 import os
 import random
 import time
+from typing import Literal, TypedDict
+
+from psycopg2.extras import execute_values
 
 from Helpers.database import DB
 
@@ -281,6 +284,14 @@ SCHEMA = [
         pearls     INT         NOT NULL,
         awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY ("user", award)
+    );
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS card_trades (
+        trade_id     UUID        PRIMARY KEY,
+        from_user    BIGINT      NOT NULL,
+        to_user      BIGINT      NOT NULL,
+        completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     """,
     # Self-limiting: old keys stop existing after this runs once.
@@ -990,44 +1001,103 @@ def db_fuse(user_id: int, slug: str, from_star: int, steps: int,
         db.close()
 
 
-def db_trade(from_user: int, to_user: int,
-             give: list[tuple[str, int, int]],
-             want: list[tuple[str, int, int]]) -> bool:
-    """Swap stacks both ways; each entry is (slug, star, count).
+class TradeDoneResult(TypedDict):
+    status: Literal["completed", "already_completed"]
 
-    Any copy can be traded, fused or not — a 2★ and a 1★ of the same card are
-    separate stacks and move independently. Either both sides move or neither
-    does, so a trade can never half-apply.
-    """
+
+class TradeChangedResult(TypedDict):
+    status: Literal["changed"]
+    owner: int
+    slug: str
+    star: int
+    needed: int
+    available: int
+
+
+TradeResult = TradeDoneResult | TradeChangedResult
+
+
+def db_trade(trade_id: str, from_user: int, to_user: int,
+             give: list[tuple[str, int, int]],
+             want: list[tuple[str, int, int]]) -> TradeResult:
+    if from_user == to_user or not give or not want:
+        raise ValueError("A trade needs two players and cards on both sides")
+
+    transfers = []
+    seen = set()
+    for owner, recipient, stacks in (
+            (from_user, to_user, give), (to_user, from_user, want)):
+        for slug, star, count in stacks:
+            if count < 1:
+                raise ValueError("Trade counts must be positive")
+            key = (owner, slug, star)
+            if key in seen:
+                raise ValueError("A trade cannot repeat the same stack")
+            seen.add(key)
+            transfers.append((owner, slug, star, count, recipient))
+
     db = DB()
     db.connect()
     try:
-        for owner, stacks in ((from_user, give), (to_user, want)):
-            for slug, star, count in stacks:
-                db.cursor.execute(
-                    'UPDATE card_collection SET count = count - %s '
-                    'WHERE "user" = %s AND card = %s AND stars = %s AND count >= %s',
-                    (count, owner, slug, star, count))
-                if db.cursor.rowcount == 0:
-                    db.connection.rollback()
-                    return False
-        for owner, stacks in ((to_user, give), (from_user, want)):
-            for slug, star, count in stacks:
-                db.cursor.execute(
-                    'INSERT INTO card_collection ("user", card, stars, count) '
-                    'VALUES (%s, %s, %s, %s) ON CONFLICT ("user", card, stars) '
-                    'DO UPDATE SET count = card_collection.count + EXCLUDED.count',
-                    (owner, slug, star, count))
-        for new_owner, stacks in ((to_user, give), (from_user, want)):
-            for slug, _, _ in stacks:
-                db.cursor.execute(
-                    'UPDATE card_members SET owner = %s WHERE slug = %s',
-                    (new_owner, slug))
+        # Commit the receipt with the transfer so replays cannot move cards twice.
+        db.cursor.execute(
+            'INSERT INTO card_trades (trade_id, from_user, to_user) '
+            'VALUES (%s, %s, %s) ON CONFLICT (trade_id) DO NOTHING '
+            'RETURNING trade_id',
+            (trade_id, from_user, to_user))
+        if not db.cursor.fetchone():
+            db.connection.rollback()
+            return {"status": "already_completed"}
+
+        debit_rows = [(owner, slug, star, count)
+                      for owner, slug, star, count, _ in transfers]
+        execute_values(
+            db.cursor,
+            'SELECT c."user", c.card, c.stars, c.count '
+            'FROM card_collection c '
+            'JOIN (VALUES %s) AS v("user", card, stars, amount) '
+            '  ON c."user" = v."user" AND c.card = v.card '
+            ' AND c.stars = v.stars '
+            'ORDER BY c."user", c.card, c.stars FOR UPDATE OF c',
+            debit_rows)
+        held = {(row[0], row[1], row[2]): row[3]
+                for row in db.cursor.fetchall()}
+        for owner, slug, star, count in debit_rows:
+            available = held.get((owner, slug, star), 0)
+            if available < count:
+                db.connection.rollback()
+                return {"status": "changed", "owner": owner, "slug": slug,
+                        "star": star, "needed": count, "available": available}
+
+        execute_values(
+            db.cursor,
+            'UPDATE card_collection AS c SET count = c.count - v.amount '
+            'FROM (VALUES %s) AS v("user", card, stars, amount) '
+            'WHERE c."user" = v."user" AND c.card = v.card '
+            'AND c.stars = v.stars',
+            debit_rows)
+        credit_rows = [(recipient, slug, star, count)
+                       for _, slug, star, count, recipient in transfers]
+        execute_values(
+            db.cursor,
+            'INSERT INTO card_collection ("user", card, stars, count) VALUES %s '
+            'ON CONFLICT ("user", card, stars) DO UPDATE '
+            'SET count = card_collection.count + EXCLUDED.count',
+            credit_rows)
+        member_rows = [(recipient, slug)
+                       for _, slug, _, _, recipient in transfers
+                       if is_member_slug(slug)]
+        if member_rows:
+            execute_values(
+                db.cursor,
+                'UPDATE card_members AS m SET owner = v.owner '
+                'FROM (VALUES %s) AS v(owner, slug) WHERE m.slug = v.slug',
+                member_rows)
         db.cursor.execute(
             'DELETE FROM card_collection WHERE count <= 0 AND "user" IN (%s, %s)',
             (from_user, to_user))
         db.connection.commit()
-        return True
+        return {"status": "completed"}
     except Exception:
         db.connection.rollback()
         raise
