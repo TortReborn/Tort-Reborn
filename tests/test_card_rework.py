@@ -1,8 +1,10 @@
 
+import asyncio
 import os
 import random
 import sys
 import types
+import uuid
 
 import pytest
 
@@ -317,6 +319,10 @@ def card_db(monkeypatch):
             "user" BIGINT NOT NULL, award VARCHAR(64) NOT NULL,
             pearls INT NOT NULL, awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             PRIMARY KEY ("user", award));
+        CREATE TEMP TABLE card_trades (
+            trade_id UUID PRIMARY KEY, from_user BIGINT NOT NULL,
+            to_user BIGINT NOT NULL,
+            completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
         CREATE TEMP TABLE card_members (
             slug VARCHAR(64) PRIMARY KEY, discord_id BIGINT NOT NULL UNIQUE,
             uuid UUID, ign VARCHAR(64) NOT NULL, rank VARCHAR(32) NOT NULL,
@@ -340,6 +346,11 @@ def give(cur, user, slug, count, stars=0):
     cur.execute('INSERT INTO card_collection ("user", card, stars, count) '
                 'VALUES (%s, %s, %s, %s)', (user, slug, stars, count))
     cur.connection.commit()
+
+
+def trade(give_stacks, want_stacks, trade_id=None):
+    return cardlib.db_trade(
+        trade_id or str(uuid.uuid4()), USER, OTHER, give_stacks, want_stacks)
 
 
 def held(cur, user, slug):
@@ -554,7 +565,7 @@ def test_a_retired_limited_can_be_merged_and_lost_for_good(card_db):
 def test_a_trade_hands_a_limited_card_to_its_new_holder(card_db):
     a = seed_member(card_db, 1)
     give(card_db, OTHER, "bob", 1)
-    assert cardlib.db_trade(USER, OTHER, [(a, 0, 1)], [("bob", 0, 1)]) is True
+    assert trade([(a, 0, 1)], [("bob", 0, 1)])["status"] == "completed"
     card_db.execute("SELECT owner FROM card_members WHERE slug = %s", (a,))
     assert card_db.fetchone()[0] == OTHER
 
@@ -562,7 +573,7 @@ def test_a_trade_hands_a_limited_card_to_its_new_holder(card_db):
 def test_one_card_can_trade_for_three(card_db):
     give(card_db, USER, "a", 2)
     give(card_db, OTHER, "b", 5)
-    assert cardlib.db_trade(USER, OTHER, [("a", 0, 1)], [("b", 0, 3)]) is True
+    assert trade([("a", 0, 1)], [("b", 0, 3)])["status"] == "completed"
     assert held(card_db, USER, "a") == {0: 1}
     assert held(card_db, USER, "b") == {0: 3}
     assert held(card_db, OTHER, "a") == {0: 1}
@@ -572,7 +583,7 @@ def test_one_card_can_trade_for_three(card_db):
 def test_four_cards_can_trade_for_two_and_empty_stacks_vanish(card_db):
     give(card_db, USER, "a", 4)
     give(card_db, OTHER, "b", 2, stars=1)
-    assert cardlib.db_trade(USER, OTHER, [("a", 0, 4)], [("b", 1, 2)]) is True
+    assert trade([("a", 0, 4)], [("b", 1, 2)])["status"] == "completed"
     assert held(card_db, USER, "a") == {}
     assert held(card_db, USER, "b") == {1: 2}
     assert held(card_db, OTHER, "a") == {0: 4}
@@ -582,8 +593,8 @@ def test_four_cards_can_trade_for_two_and_empty_stacks_vanish(card_db):
 def test_a_trade_short_on_either_side_moves_nothing(card_db):
     give(card_db, USER, "a", 3)
     give(card_db, OTHER, "b", 1)
-    assert cardlib.db_trade(USER, OTHER, [("a", 0, 2)], [("b", 0, 2)]) is False
-    assert cardlib.db_trade(USER, OTHER, [("a", 0, 4)], [("b", 0, 1)]) is False
+    assert trade([("a", 0, 2)], [("b", 0, 2)])["status"] == "changed"
+    assert trade([("a", 0, 4)], [("b", 0, 1)])["status"] == "changed"
     assert held(card_db, USER, "a") == {0: 3}
     assert held(card_db, OTHER, "b") == {0: 1}
     assert held(card_db, USER, "b") == {}
@@ -596,10 +607,9 @@ def test_two_cards_can_trade_for_three_different_ones(card_db):
     give(card_db, OTHER, "b", 1)
     give(card_db, OTHER, "d", 4)
     give(card_db, OTHER, "e", 1)
-    assert cardlib.db_trade(
-        USER, OTHER,
+    assert trade(
         [("a", 0, 2), ("c", 2, 1)],
-        [("b", 0, 1), ("d", 0, 2), ("e", 0, 1)]) is True
+        [("b", 0, 1), ("d", 0, 2), ("e", 0, 1)])["status"] == "completed"
     assert held(card_db, USER, "a") == {}
     assert held(card_db, USER, "c") == {}
     assert held(card_db, USER, "b") == {0: 1}
@@ -613,11 +623,24 @@ def test_two_cards_can_trade_for_three_different_ones(card_db):
 def test_a_bundle_with_one_missing_card_moves_nothing(card_db):
     give(card_db, USER, "a", 1)
     give(card_db, OTHER, "b", 1)
-    assert cardlib.db_trade(
-        USER, OTHER, [("a", 0, 1)], [("b", 0, 1), ("gone", 0, 1)]) is False
+    assert trade(
+        [("a", 0, 1)], [("b", 0, 1), ("gone", 0, 1)])["status"] == "changed"
     assert held(card_db, USER, "a") == {0: 1}
     assert held(card_db, OTHER, "b") == {0: 1}
     assert held(card_db, USER, "b") == {}
+
+
+def test_replaying_a_completed_trade_moves_nothing(card_db):
+    give(card_db, USER, "a", 2)
+    give(card_db, OTHER, "b", 2)
+    trade_id = str(uuid.uuid4())
+    assert trade([("a", 0, 1)], [("b", 0, 1)], trade_id)["status"] == "completed"
+    assert trade([("a", 0, 1)], [("b", 0, 1)], trade_id)["status"] == \
+        "already_completed"
+    assert held(card_db, USER, "a") == {0: 1}
+    assert held(card_db, USER, "b") == {0: 1}
+    assert held(card_db, OTHER, "a") == {0: 1}
+    assert held(card_db, OTHER, "b") == {0: 1}
 
 
 def test_standings_read_the_live_collection(card_db, monkeypatch):
@@ -831,17 +854,26 @@ def stacks(*entries):
 
 
 class Reply:
-    def __init__(self, values=()):
+    def __init__(self, values=(), events=None):
         self.data = {"values": list(values)}
         self.user = types.SimpleNamespace(id=USER)
+        self.channel = None
         self.sent = []
         self.edits = []
         self.modals = []
+        self.events = events if events is not None else []
         self.response = types.SimpleNamespace(
             edit_message=self.edit_message, send_message=self.send_message,
-            send_modal=self.send_modal)
+            send_modal=self.send_modal, defer=self.defer)
+        self.followup = types.SimpleNamespace(send=self.send_message)
+
+    async def defer(self):
+        self.events.append("defer")
 
     async def edit_message(self, **kwargs):
+        self.edits.append(kwargs)
+
+    async def edit_original_response(self, **kwargs):
         self.edits.append(kwargs)
 
     async def send_message(self, **kwargs):
@@ -875,14 +907,12 @@ async def test_a_single_copy_goes_straight_into_the_offer():
 
 
 @pytest.mark.asyncio
-async def test_a_stack_of_several_asks_how_many():
+async def test_several_stacks_can_be_added_at_once():
     view = builder()
-    reply = Reply(["a:0"])
+    reply = Reply(["a:0", "c:1"])
     await view._picked(reply)
-    [modal] = reply.modals
-    assert isinstance(modal, cmd.TradeAmountModal)
-    assert modal.held == 3
-    assert view.lines["give"] == {}
+    assert [line.entry() for line in view.lines["give"].values()] == [
+        ("a", 0, 1), ("c", 1, 1)]
 
 
 @pytest.mark.asyncio
@@ -893,30 +923,47 @@ async def test_the_amount_modal_sets_the_line_and_refuses_too_many():
     reply = Reply()
     await modal.callback(reply)
     assert view.lines["give"] == {}
-    assert "1 to 3" in reply.sent[0]["embed"].description
+    assert "0 to 3" in reply.sent[0]["embed"].description
     modal.amount.value = "2"
     await modal.callback(reply)
     assert [line.entry() for line in view.lines["give"].values()] == [("a", 0, 2)]
+    modal.amount.value = "0"
+    await modal.callback(reply)
+    assert view.lines["give"] == {}
 
 
 @pytest.mark.asyncio
 async def test_send_waits_for_cards_on_both_sides():
     view = builder(theirs=stacks(("b", 0, 1)))
-    assert buttons(view)["Send"].disabled is True
+    assert buttons(view)["Review"].disabled is True
     await view._picked(Reply(["c:1"]))
-    assert buttons(view)["Send"].disabled is True
+    assert buttons(view)["Review"].disabled is True
     view.side = "want"
     view._layout()
     await view._picked(Reply(["b:0"]))
-    assert buttons(view)["Send"].disabled is False
+    assert buttons(view)["Review"].disabled is False
 
 
 @pytest.mark.asyncio
 async def test_a_card_can_be_taken_back_out():
     view = builder()
     await view._picked(Reply(["c:1"]))
-    await view._removed(Reply(["c:1"]))
+    reply = Reply(["c:1"])
+    await view._edit_line(reply)
+    [modal] = reply.modals
+    modal.amount.value = "0"
+    await modal.callback(reply)
     assert view.lines["give"] == {}
+
+
+@pytest.mark.asyncio
+async def test_spare_scope_keeps_one_best_copy_out_of_the_amount_picker():
+    view = builder(mine=stacks(("a", 0, 3)))
+    await view._picked(Reply(["a:0"]))
+    reply = Reply(["a:0"])
+    await view._edit_line(reply)
+    [modal] = reply.modals
+    assert modal.held == 2
 
 
 @pytest.mark.asyncio
@@ -928,16 +975,19 @@ async def test_each_side_holds_a_limited_number_of_cards():
     reply = Reply([f"card{cmd.TradeBuilderView.LINES_PER_SIDE}:0"])
     await view._picked(reply)
     assert len(view.lines["give"]) == cmd.TradeBuilderView.LINES_PER_SIDE
-    remover = next(c for c in view.children
-                   if isinstance(c, cmd.discord.ui.Select) and c.placeholder.startswith("Remove"))
-    assert len(remover.options) <= 25
-    assert "per side" in reply.sent[0]["embed"].description
+    editor = next(c for c in view.children
+                  if isinstance(c, cmd.discord.ui.Select)
+                  and c.placeholder.startswith("Edit"))
+    assert len(editor.options) == 25
+    assert view.children[0].disabled is True
 
 
 @pytest.mark.asyncio
 async def test_a_long_collection_pages_through_the_picker():
     many = stacks(*[(f"card{i:02d}", 0, 1) for i in range(30)])
     view = builder(mine=many)
+    view.filters["give"].scope = "all"
+    view._layout()
     picker = view.children[0]
     assert len(picker.options) == cmd.TradeBuilderView.PICKER_SIZE
     assert buttons(view)["Previous"].disabled is True
@@ -954,13 +1004,60 @@ async def test_browsing_the_other_side_switches_the_collection():
     assert "Bob's cards" in view.embed().footer.text
 
 
+def test_spares_keep_the_best_copy():
+    high = card("same", "rare")
+    spares = cmd._spare_stacks([(high, 0, 2), (high, 3, 1)])
+    assert [(star, count) for _, star, count in spares] == [(0, 2)]
+
+
+@pytest.mark.asyncio
+async def test_suggested_scope_only_shows_spares_the_other_player_lacks():
+    view = builder(
+        mine=stacks(("shared", 0, 3), ("missing", 0, 2), ("single", 0, 1)),
+        theirs=stacks(("shared", 0, 1), ("theirs", 0, 2)))
+    assert [(c["slug"], count) for c, _, count in
+            view._filtered_stacks("give")] == [("missing", 1)]
+    assert [(c["slug"], count) for c, _, count in
+            view._filtered_stacks("want")] == [("theirs", 1)]
+
+
+@pytest.mark.asyncio
+async def test_filters_are_kept_separately_for_each_side():
+    view = builder()
+    view.filters["give"].scope = "all"
+    view.filters["give"].search = "a"
+    await view._flip(Reply())
+    assert view.filters["want"].scope == "suggested"
+    assert view.filters["want"].search == ""
+    await view._flip(Reply())
+    assert view.filters["give"].scope == "all"
+    assert view.filters["give"].search == "a"
+
+
+@pytest.mark.asyncio
+async def test_review_requires_both_sides_and_has_a_back_step():
+    view = builder()
+    await view._picked(Reply(["a:0"]))
+    view.side = "want"
+    view._layout()
+    await view._picked(Reply(["b:0"]))
+    await view._review(Reply())
+    assert set(buttons(view)) == {"Back", "Post trade", "Cancel"}
+    assert "Review trade" in view.embed().title
+    await view._back(Reply())
+    assert "Review" in buttons(view)
+
+
 @pytest.mark.asyncio
 async def test_accepting_hands_the_whole_bundle_to_the_database(monkeypatch):
     seen = {}
+    events = []
 
-    def fake_trade(from_user, to_user, give, want):
-        seen.update(from_user=from_user, to_user=to_user, give=give, want=want)
-        return True
+    def fake_trade(trade_id, from_user, to_user, give, want):
+        events.append("db")
+        seen.update(trade_id=trade_id, from_user=from_user,
+                    to_user=to_user, give=give, want=want)
+        return {"status": "completed"}
 
     monkeypatch.setattr(cardlib, "db_trade", fake_trade)
     monkeypatch.setattr(cmd, "_announce_and_reward", noop)
@@ -969,9 +1066,61 @@ async def test_accepting_hands_the_whole_bundle_to_the_database(monkeypatch):
         types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
         [cmd.TradeLine(card("a", "normal"), 0, 2), cmd.TradeLine(card("c", "normal"), 1, 1)],
         [cmd.TradeLine(card("b", "normal"), 0, 3)])
-    reply = Reply()
-    reply.channel = None
+    reply = Reply(events=events)
     await view.accept.callback(reply)
-    assert seen == {"from_user": USER, "to_user": OTHER,
+    assert events[:2] == ["defer", "db"]
+    assert seen == {"trade_id": view.trade_id,
+                    "from_user": USER, "to_user": OTHER,
                     "give": [("a", 0, 2), ("c", 1, 1)], "want": [("b", 0, 3)]}
-    assert "b ×3" in reply.edits[0]["embed"].description
+    assert "b ×3" in reply.edits[-1]["embed"].description
+
+
+@pytest.mark.asyncio
+async def test_concurrent_accepts_execute_the_trade_once(monkeypatch):
+    calls = []
+
+    def fake_trade(*args):
+        calls.append(args)
+        return {"status": "completed"}
+
+    monkeypatch.setattr(cardlib, "db_trade", fake_trade)
+    monkeypatch.setattr(cmd, "_announce_and_reward", noop)
+    view = cmd.TradeView(
+        types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
+        types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
+        [cmd.TradeLine(card("a", "normal"), 0, 1)],
+        [cmd.TradeLine(card("b", "normal"), 0, 1)])
+    await asyncio.gather(view.accept.callback(Reply()),
+                         view.accept.callback(Reply()))
+    assert len(calls) == 1
+    assert view.state == "completed"
+
+
+@pytest.mark.asyncio
+async def test_a_failed_done_edit_can_be_repaired_without_retrading(monkeypatch):
+    calls = []
+
+    def fake_trade(*args):
+        calls.append(args)
+        return {"status": "completed"}
+
+    class FailedDoneReply(Reply):
+        async def edit_original_response(self, **kwargs):
+            self.edits.append(kwargs)
+            if len(self.edits) == 2:
+                raise cmd.discord.HTTPException(
+                    types.SimpleNamespace(status=500, reason="test"),
+                    {"code": 0, "message": "test"})
+
+    monkeypatch.setattr(cardlib, "db_trade", fake_trade)
+    monkeypatch.setattr(cmd, "_announce_and_reward", noop)
+    view = cmd.TradeView(
+        types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
+        types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
+        [cmd.TradeLine(card("a", "normal"), 0, 1)],
+        [cmd.TradeLine(card("b", "normal"), 0, 1)])
+    await view.accept.callback(FailedDoneReply())
+    retry = Reply()
+    await view.accept.callback(retry)
+    assert len(calls) == 1
+    assert "Trade done" in retry.edits[-1]["embed"].description

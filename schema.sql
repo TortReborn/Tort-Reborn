@@ -1203,3 +1203,13 @@ CREATE TABLE IF NOT EXISTS card_awards (
     awarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY ("user", award)
 );
+
+-- A completed trade id is kept with the transfer transaction. Replaying the
+-- same Discord offer can therefore repair its message, but never move cards
+-- a second time.
+CREATE TABLE IF NOT EXISTS card_trades (
+    trade_id     UUID        PRIMARY KEY,
+    from_user    BIGINT      NOT NULL,
+    to_user      BIGINT      NOT NULL,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

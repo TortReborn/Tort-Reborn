@@ -6,14 +6,15 @@ fabled you land. Nothing here touches shells; the two economies never meet.
 """
 
 import asyncio
+import uuid
 from dataclasses import dataclass
 
 import discord
 from discord.commands import SlashCommandGroup, slash_command
 from discord.ext import commands, pages
 
-from Helpers import cards as cardlib
 from Helpers import card_copy as ctext
+from Helpers import cards as cardlib
 from Helpers.card_render import card_file, spread_file
 from Helpers.logger import ERROR, SYSTEM, log
 from Helpers.pagination import add_paginator_buttons
@@ -794,8 +795,47 @@ class TradeLine:
         return self.card["slug"], self.star, self.count
 
 
-def _lines_text(lines, sep="\n") -> str:
-    return sep.join(line.name() for line in lines)
+def _lines_text(lines, sep="\n", limit=None) -> str:
+    names = [line.name() for line in lines]
+    text = sep.join(names)
+    if limit is None or len(text) <= limit:
+        return text
+    shown = []
+    for i, name in enumerate(names):
+        suffix = f"{sep}+{len(names) - i} more"
+        candidate = sep.join(shown + [name]) + suffix
+        if len(candidate) > limit:
+            return sep.join(shown) + f"{sep}+{len(names) - i} more"
+        shown.append(name)
+    return sep.join(shown)
+
+
+@dataclass
+class TradeBrowseState:
+    scope: str = "suggested"
+    tier: str | None = None
+    sort: str = "copies"
+    search: str = ""
+    page: int = 0
+
+
+def _spare_stacks(stacks: list) -> list:
+    by_slug = {}
+    for card, star, count in stacks:
+        by_slug.setdefault(card["slug"], []).append((card, star, count))
+
+    out = []
+    for group in by_slug.values():
+        reserve_star = max(star for _, star, count in group if count > 0)
+        reserved = False
+        for card, star, count in sorted(group, key=lambda s: -s[1]):
+            available = count
+            if star == reserve_star and not reserved:
+                available -= 1
+                reserved = True
+            if available > 0:
+                out.append((card, star, available))
+    return out
 
 
 class TradeAmountModal(discord.ui.Modal):
@@ -808,16 +848,38 @@ class TradeAmountModal(discord.ui.Modal):
         self.star = star
         self.held = held
         self.amount = discord.ui.InputText(
-            label=f"How many (up to {held})", value=str(current),
+            label=f"How many (0 removes, up to {held})", value=str(current),
             max_length=len(str(held)))
         self.add_item(self.amount)
 
     async def callback(self, interaction: discord.Interaction):
         text = self.amount.value.strip()
-        if not text.isdigit() or not 1 <= int(text) <= self.held:
+        if not text.isdigit() or not 0 <= int(text) <= self.held:
             return await interaction.response.send_message(
-                embed=_notice(f"Pick 1 to {self.held}"), ephemeral=True)
+                embed=_notice(f"Pick 0 to {self.held}"), ephemeral=True)
+        self.builder.side = self.side
         self.builder.set_line(self.side, self.card, self.star, int(text))
+        await interaction.response.edit_message(
+            embed=self.builder.embed(), view=self.builder)
+
+
+class TradeSearchModal(discord.ui.Modal):
+    def __init__(self, builder):
+        super().__init__(title="Search cards")
+        self.builder = builder
+        self.side = builder.side
+        current = builder.filters[self.side].search
+        self.query = discord.ui.InputText(
+            label="Card name (leave blank to clear)", value=current,
+            required=False, max_length=64)
+        self.add_item(self.query)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.builder.side = self.side
+        state = self.builder.filters[self.side]
+        state.search = self.query.value.strip().lower()
+        state.page = 0
+        self.builder._layout()
         await interaction.response.edit_message(
             embed=self.builder.embed(), view=self.builder)
 
@@ -825,17 +887,20 @@ class TradeAmountModal(discord.ui.Modal):
 class TradeBuilderView(discord.ui.View):
     PICKER_SIZE = 25
     LINES_PER_SIDE = 25
+    SCOPES = ("suggested", "spares", "all")
+    SORTS = ("copies", "rarity", "name")
 
     def __init__(self, proposer: discord.User, target: discord.User,
                  mine: list, theirs: list, interaction: discord.Interaction):
-        super().__init__(timeout=600)
+        super().__init__(timeout=1800)
         self.proposer = proposer
         self.target = target
-        self.stacks = {side: sorted(stacks, key=lambda s: (s[0]["name"], s[1]))
-                       for side, stacks in (("give", mine), ("want", theirs))}
+        self.stacks = {"give": mine, "want": theirs}
         self.lines = {"give": {}, "want": {}}
+        self.filters = {"give": TradeBrowseState(),
+                        "want": TradeBrowseState()}
         self.side = "give"
-        self.page = 0
+        self.reviewing = False
         self.interaction = interaction
         self._layout()
 
@@ -843,20 +908,92 @@ class TradeBuilderView(discord.ui.View):
         return "your cards" if side == "give" else f"{self.target.display_name}'s cards"
 
     def embed(self) -> discord.Embed:
-        embed = discord.Embed(title=f"Trade with {self.target.display_name}",
+        title = (f"Review trade with {self.target.display_name}" if self.reviewing
+                 else f"Trade with {self.target.display_name}")
+        embed = discord.Embed(title=title,
                               color=ctext.ACCENT)
+        if not self.reviewing:
+            scope = self.filters[self.side].scope
+            embed.description = {
+                "suggested": "Spare cards the other player is missing",
+                "spares": "Spare cards, keeping the best copy",
+                "all": "Every card, including the last copy",
+            }[scope]
         for side, title in (("give", "Your side"),
                             ("want", f"{self.target.display_name}'s side")):
+            lines = list(self.lines[side].values())
+            copies = sum(line.count for line in lines)
             embed.add_field(
-                name=title,
-                value=_lines_text(self.lines[side].values()) or "Nothing yet",
+                name=f"{title} · {len(lines)} stacks / {copies} cards",
+                value=_lines_text(lines, limit=1024) or "Nothing yet",
                 inline=True)
-        embed.set_footer(text=f"Picking from {self._owner_cards(self.side)}")
+        if self.reviewing:
+            embed.set_footer(text="Check both sides before posting")
+        else:
+            state = self.filters[self.side]
+            _, _, pages = self._page_data()
+            bits = [state.scope.title(), state.sort.title()]
+            if state.tier:
+                bits.append(_tier_label(state.tier))
+            if state.search:
+                bits.append(f'Search: {state.search}')
+            bits.append(f"Page {state.page + 1}/{pages}")
+            embed.set_footer(
+                text=f"Picking from {self._owner_cards(self.side)} · "
+                     + " · ".join(bits))
         return embed
 
     def set_line(self, side: str, card: dict, star: int, count: int):
-        self.lines[side][(card["slug"], star)] = TradeLine(card, star, count)
+        key = (card["slug"], star)
+        if count == 0:
+            self.lines[side].pop(key, None)
+        else:
+            self.lines[side][key] = TradeLine(card, star, count)
         self._layout()
+
+    def _scoped_stacks(self, side: str) -> list:
+        state = self.filters[side]
+        stacks = self.stacks[side]
+        if state.scope == "all":
+            return list(stacks)
+        spares = _spare_stacks(stacks)
+        if state.scope == "spares":
+            return spares
+        other = "want" if side == "give" else "give"
+        other_slugs = {card["slug"] for card, _, _ in self.stacks[other]}
+        return [stack for stack in spares
+                if stack[0]["slug"] not in other_slugs]
+
+    def _filtered_stacks(self, side: str) -> list:
+        state = self.filters[side]
+        stacks = self._scoped_stacks(side)
+        if state.tier:
+            stacks = [s for s in stacks if _tier_of(s[0]) == state.tier]
+        if state.search:
+            stacks = [s for s in stacks
+                      if state.search in s[0]["name"].lower()]
+        tier_index = {tier: i for i, tier in enumerate(cardlib.TIER_ORDER)}
+        if state.sort == "copies":
+            stacks.sort(key=lambda s: (-s[2], tier_index.get(_tier_of(s[0]), 9),
+                                       s[0]["name"].lower(), -s[1]))
+        elif state.sort == "rarity":
+            stacks.sort(key=lambda s: (tier_index.get(_tier_of(s[0]), 9),
+                                       s[0]["name"].lower(), -s[1]))
+        else:
+            stacks.sort(key=lambda s: (s[0]["name"].lower(), -s[1]))
+        return stacks
+
+    def _page_data(self):
+        state = self.filters[self.side]
+        stacks = self._filtered_stacks(self.side)
+        pages = max(1, -(-len(stacks) // self.PICKER_SIZE))
+        state.page = min(state.page, pages - 1)
+        start = state.page * self.PICKER_SIZE
+        return stacks[start:start + self.PICKER_SIZE], stacks, pages
+
+    def _available(self, side: str, slug: str, star: int) -> int:
+        return next((count for card, level, count in self._scoped_stacks(side)
+                     if card["slug"] == slug and level == star), 0)
 
     def _add_button(self, label, callback, row, style=discord.ButtonStyle.secondary,
                     disabled=False):
@@ -867,49 +1004,74 @@ class TradeBuilderView(discord.ui.View):
 
     def _layout(self):
         self.clear_items()
-        stacks = self.stacks[self.side]
-        pages = max(1, -(-len(stacks) // self.PICKER_SIZE))
-        self.page = min(self.page, pages - 1)
-        start = self.page * self.PICKER_SIZE
-        shown = stacks[start:start + self.PICKER_SIZE]
+        if self.reviewing:
+            self._add_button("Back", self._back, 0)
+            self._add_button("Post trade", self._send, 0,
+                             style=discord.ButtonStyle.success)
+            self._add_button("Cancel", self._cancel, 0,
+                             style=discord.ButtonStyle.danger)
+            return
+
+        shown, _, pages = self._page_data()
+        state = self.filters[self.side]
+        room = self.LINES_PER_SIDE - len(self.lines[self.side])
 
         placeholder = f"Add from {self._owner_cards(self.side)}"
         if pages > 1:
-            placeholder += f", page {self.page + 1} of {pages}"
+            placeholder += f", page {state.page + 1} of {pages}"
+        options = [discord.SelectOption(
+            label=_stack_label(card, star, count)[:100],
+            value=f"{card['slug']}:{star}",
+            description=_tier_label(_tier_of(card)))
+            for card, star, count in shown]
+        if not options:
+            options = [discord.SelectOption(label="No matching cards",
+                                            value="__none__")]
         picker = discord.ui.Select(
             placeholder=placeholder, row=0,
-            options=[discord.SelectOption(
-                label=_stack_label(card, star, count)[:100],
-                value=f"{card['slug']}:{star}")
-                for card, star, count in shown])
+            min_values=1, max_values=max(1, min(len(options), room or 1)),
+            options=options, disabled=not shown or room == 0)
         picker.callback = self._picked
         self.add_item(picker)
 
-        if pages > 1:
-            self._add_button("Previous", self._previous, 1,
-                             disabled=self.page == 0)
-            self._add_button("Next", self._next, 1,
-                             disabled=self.page == pages - 1)
-        other = "want" if self.side == "give" else "give"
-        self._add_button(f"Browse {self._owner_cards(other)}", self._flip, 1)
+        tier_picker = discord.ui.Select(
+            placeholder="Rarity", row=1,
+            options=[discord.SelectOption(
+                label="All rarities", value="all", default=state.tier is None)]
+            + [discord.SelectOption(
+                label=_tier_label(tier), value=tier, default=state.tier == tier)
+               for tier in cardlib.TIER_ORDER])
+        tier_picker.callback = self._tier_changed
+        self.add_item(tier_picker)
 
         placed = self.lines[self.side].values()
         if placed:
-            remover = discord.ui.Select(
-                placeholder=("Remove from your side" if self.side == "give"
-                             else "Remove from their side"),
+            editor = discord.ui.Select(
+                placeholder="Edit amount or remove",
                 row=2,
                 options=[discord.SelectOption(
                     label=line.name()[:100],
                     value=f"{line.card['slug']}:{line.star}")
                     for line in placed])
-            remover.callback = self._removed
-            self.add_item(remover)
+            editor.callback = self._edit_line
+            self.add_item(editor)
 
+        other = "want" if self.side == "give" else "give"
+        self._add_button(f"Browse {self._owner_cards(other)}", self._flip, 3)
+        self._add_button(f"Scope: {state.scope.title()}", self._cycle_scope, 3)
+        self._add_button(f"Sort: {state.sort.title()}", self._cycle_sort, 3)
+        self._add_button("Previous", self._previous, 3,
+                         disabled=state.page == 0)
+        self._add_button("Next", self._next, 3,
+                         disabled=state.page == pages - 1)
+
+        search_label = f"Search: {state.search}" if state.search else "Search"
+        self._add_button(search_label[:80], self._search, 4)
         ready = bool(self.lines["give"] and self.lines["want"])
-        self._add_button("Send", self._send, 3,
+        self._add_button("Review", self._review, 4,
                          style=discord.ButtonStyle.success, disabled=not ready)
-        self._add_button("Cancel", self._cancel, 3)
+        self._add_button("Cancel", self._cancel, 4,
+                         style=discord.ButtonStyle.danger)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.proposer.id:
@@ -929,37 +1091,69 @@ class TradeBuilderView(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed(), view=self)
 
     async def _picked(self, interaction: discord.Interaction):
-        slug, star = _parse_stack(interaction.data["values"][0])
-        card, _, held = next(s for s in self.stacks[self.side]
-                             if s[0]["slug"] == slug and s[1] == star)
         lines = self.lines[self.side]
-        if (slug, star) not in lines and len(lines) >= self.LINES_PER_SIDE:
-            return await interaction.response.send_message(
-                embed=_notice(f"Up to {self.LINES_PER_SIDE} cards per side"),
-                ephemeral=True)
-        if held == 1:
-            self.set_line(self.side, card, star, 1)
-            return await interaction.response.edit_message(
-                embed=self.embed(), view=self)
-        current = lines[(slug, star)].count if (slug, star) in lines else 1
-        await interaction.response.send_modal(
-            TradeAmountModal(self, self.side, card, star, held, current))
+        for value in interaction.data["values"]:
+            if value == "__none__":
+                continue
+            slug, star = _parse_stack(value)
+            if (slug, star) in lines:
+                continue
+            if len(lines) >= self.LINES_PER_SIDE:
+                break
+            card, _, _ = next(s for s in self.stacks[self.side]
+                              if s[0]["slug"] == slug and s[1] == star)
+            lines[(slug, star)] = TradeLine(card, star, 1)
+        await self._refresh(interaction)
 
-    async def _removed(self, interaction: discord.Interaction):
-        self.lines[self.side].pop(_parse_stack(interaction.data["values"][0]))
+    async def _edit_line(self, interaction: discord.Interaction):
+        slug, star = _parse_stack(interaction.data["values"][0])
+        line = self.lines[self.side][(slug, star)]
+        await interaction.response.send_modal(
+            TradeAmountModal(self, self.side, line.card, star,
+                             self._available(self.side, slug, star), line.count))
+
+    async def _tier_changed(self, interaction: discord.Interaction):
+        value = interaction.data["values"][0]
+        state = self.filters[self.side]
+        state.tier = None if value == "all" else value
+        state.page = 0
         await self._refresh(interaction)
 
     async def _previous(self, interaction: discord.Interaction):
-        self.page -= 1
+        self.filters[self.side].page -= 1
         await self._refresh(interaction)
 
     async def _next(self, interaction: discord.Interaction):
-        self.page += 1
+        self.filters[self.side].page += 1
         await self._refresh(interaction)
 
     async def _flip(self, interaction: discord.Interaction):
         self.side = "want" if self.side == "give" else "give"
-        self.page = 0
+        await self._refresh(interaction)
+
+    async def _cycle_scope(self, interaction: discord.Interaction):
+        state = self.filters[self.side]
+        state.scope = self.SCOPES[(self.SCOPES.index(state.scope) + 1)
+                                  % len(self.SCOPES)]
+        state.page = 0
+        await self._refresh(interaction)
+
+    async def _cycle_sort(self, interaction: discord.Interaction):
+        state = self.filters[self.side]
+        state.sort = self.SORTS[(self.SORTS.index(state.sort) + 1)
+                                % len(self.SORTS)]
+        state.page = 0
+        await self._refresh(interaction)
+
+    async def _search(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(TradeSearchModal(self))
+
+    async def _review(self, interaction: discord.Interaction):
+        self.reviewing = True
+        await self._refresh(interaction)
+
+    async def _back(self, interaction: discord.Interaction):
+        self.reviewing = False
         await self._refresh(interaction)
 
     async def _cancel(self, interaction: discord.Interaction):
@@ -982,37 +1176,45 @@ class TradeBuilderView(discord.ui.View):
         await interaction.response.defer()
         give = list(self.lines["give"].values())
         want = list(self.lines["want"].values())
+        if not give or not want:
+            self.reviewing = False
+            self._layout()
+            await interaction.edit_original_response(
+                embed=self.embed(), view=self)
+            return await interaction.followup.send(
+                embed=_notice("Pick cards for both sides"), ephemeral=True)
         shortfall = await self._shortfall(give, want)
         if shortfall:
             return await interaction.followup.send(
                 embed=_notice(shortfall), ephemeral=True)
-        self.stop()
         trade = TradeView(self.proposer, self.target, give, want)
-        await interaction.edit_original_response(
-            embed=_notice(f"Sent to {self.target.display_name}"), view=None)
         trade.message = await interaction.channel.send(
             content=self.target.mention, embed=trade.embed(), view=trade)
+        self.stop()
+        await interaction.edit_original_response(
+            embed=_notice(f"Sent to {self.target.display_name}"), view=None)
 
 
 class TradeView(discord.ui.View):
-    """Two-sided confirm. Only the recipient can accept or decline."""
-
     def __init__(self, proposer: discord.User, target: discord.User,
-                 give: list[TradeLine], want: list[TradeLine]):
+                 give: list[TradeLine], want: list[TradeLine],
+                 trade_id: str | None = None):
         super().__init__(timeout=300)
         self.proposer = proposer
         self.target = target
         self.give = give
         self.want = want
+        self.trade_id = trade_id or str(uuid.uuid4())
         self.message = None
-        self.done = False
+        self.state = "pending"
+        self.lock = asyncio.Lock()
 
     def embed(self) -> discord.Embed:
         embed = discord.Embed(title="Trade", color=ctext.ACCENT)
         embed.add_field(name=f"{self.proposer.display_name}'s side",
-                        value=_lines_text(self.give), inline=True)
+                        value=_lines_text(self.give, limit=1024), inline=True)
         embed.add_field(name=f"{self.target.display_name}'s side",
-                        value=_lines_text(self.want), inline=True)
+                        value=_lines_text(self.want, limit=1024), inline=True)
         embed.set_footer(text="Recipient only · 5 min")
         return embed
 
@@ -1024,38 +1226,84 @@ class TradeView(discord.ui.View):
         return True
 
     async def on_timeout(self):
-        if self.done or self.message is None:
+        if self.state != "pending" or self.message is None:
             return
-        for child in self.children:
-            child.disabled = True
-        try:
-            await self.message.edit(content="-# Trade expired", view=self)
-        except discord.HTTPException:
-            pass
+        async with self.lock:
+            if self.state != "pending":
+                return
+            self.state = "expired"
+            self._disable()
+            try:
+                await self.message.edit(content="-# Trade expired", view=self)
+            except discord.HTTPException:
+                pass
 
-    async def _close(self, interaction, text):
-        self.done = True
+    def _disable(self, disabled=True):
         for child in self.children:
-            child.disabled = True
-        await interaction.response.edit_message(
-            content=None, embed=_notice(text), view=self)
+            child.disabled = disabled
+
+    def _done_text(self):
+        return (f"Trade done\n"
+                f"{self.proposer.mention} got **{_lines_text(self.want, ', ')}**\n"
+                f"{self.target.mention} got **{_lines_text(self.give, ', ')}**")
+
+    async def _edit(self, interaction, text=None, content=None):
+        try:
+            await interaction.edit_original_response(
+                content=content, embed=_notice(text) if text else self.embed(),
+                view=self)
+        except discord.HTTPException as e:
+            log(ERROR, f"Trade {self.trade_id} reply failed: {e}",
+                context="cards")
+
+    def _changed_text(self, result):
+        lines = self.give if result["owner"] == self.proposer.id else self.want
+        line = next((line for line in lines
+                     if line.card["slug"] == result["slug"]
+                     and line.star == result["star"]), None)
+        owner = ("You" if result["owner"] == self.target.id
+                 else self.proposer.display_name)
+        card = line.name() if line else result["slug"]
+        return f"Trade changed\n{owner} no longer has **{card}**"
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.success)
     async def accept(self, button: discord.ui.Button,
                      interaction: discord.Interaction):
-        ok = await asyncio.to_thread(
-            cardlib.db_trade, self.proposer.id, self.target.id,
-            [line.entry() for line in self.give],
-            [line.entry() for line in self.want])
-        if not ok:
-            return await self._close(
-                interaction,
-                "Trade changed")
-        await self._close(
-            interaction,
-            f"Trade done\n"
-            f"{self.proposer.mention} got **{_lines_text(self.want, ', ')}**\n"
-            f"{self.target.mention} got **{_lines_text(self.give, ', ')}**")
+        await interaction.response.defer()
+        async with self.lock:
+            if self.state == "completed":
+                self._disable()
+                return await self._edit(interaction, self._done_text())
+            if self.state != "pending":
+                return
+            self.state = "processing"
+            self._disable()
+            await self._edit(interaction, "Trading cards…")
+            try:
+                result = await asyncio.to_thread(
+                    cardlib.db_trade, self.trade_id,
+                    self.proposer.id, self.target.id,
+                    [line.entry() for line in self.give],
+                    [line.entry() for line in self.want])
+            except Exception as e:
+                self.state = "pending"
+                self._disable(False)
+                log(ERROR, f"Trade {self.trade_id} failed: {e}", context="cards")
+                await self._edit(interaction,
+                                 content="-# Trade failed · Try again")
+                return
+            if result["status"] == "changed":
+                self.state = "changed"
+                return await self._edit(interaction, self._changed_text(result))
+            if result["status"] not in ("completed", "already_completed"):
+                self.state = "pending"
+                self._disable(False)
+                log(ERROR, f"Trade {self.trade_id} returned {result!r}",
+                    context="cards")
+                return await self._edit(
+                    interaction, content="-# Trade failed · Try again")
+            self.state = "completed"
+            await self._edit(interaction, self._done_text())
         # Trading for the last missing card is how most sets will get finished.
         for user in (self.proposer, self.target):
             await _announce_and_reward(interaction.channel, user, None)
@@ -1063,7 +1311,16 @@ class TradeView(discord.ui.View):
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.secondary)
     async def decline(self, button: discord.ui.Button,
                       interaction: discord.Interaction):
-        await self._close(interaction, "Trade declined")
+        await interaction.response.defer()
+        async with self.lock:
+            if self.state == "completed":
+                self._disable()
+                return await self._edit(interaction, self._done_text())
+            if self.state != "pending":
+                return
+            self.state = "declined"
+            self._disable()
+            await self._edit(interaction, "Trade declined")
 
 
 def _yield_line() -> str:
