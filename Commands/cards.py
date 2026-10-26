@@ -185,13 +185,19 @@ async def _held_stacks(user_id: int, typed: str = "", resolve_member=True):
     return out
 
 
-async def _stack_choices(user_id: int, typed: str, resolve_member=True):
+async def _stack_choices(user_id: int, typed: str, resolve_member=True,
+                         keep=None, by_copies=False):
     """Every stack a user holds, one entry per star level."""
-    out = [discord.OptionChoice(name=_stack_label(card, star, count),
-                                value=f"{card['slug']}:{star}")
-           for card, star, count in await _held_stacks(user_id, typed,
-                                                       resolve_member)]
-    return sorted(out, key=lambda c: c.name)[:25]
+    stacks = await _held_stacks(user_id, typed, resolve_member)
+    if keep:
+        stacks = [s for s in stacks if keep(*s)]
+    if by_copies:
+        stacks.sort(key=lambda s: (-s[2], s[0]["name"].lower()))
+    else:
+        stacks.sort(key=lambda s: _stack_label(*s).lower())
+    return [discord.OptionChoice(name=_stack_label(card, star, count),
+                                 value=f"{card['slug']}:{star}")
+            for card, star, count in stacks[:25]]
 
 
 async def _autocomplete_stacks(ctx: discord.AutocompleteContext):
@@ -224,20 +230,15 @@ async def _autocomplete_owned(ctx: discord.AutocompleteContext):
 
 
 async def _autocomplete_discardable(ctx: discord.AutocompleteContext):
-    """Plain stacks of anything that has a tier below it."""
+    """Plain stacks of anything that has a tier below it, deepest first."""
     try:
-        choices = await _stack_choices(ctx.interaction.user.id,
-                                       (ctx.value or "").lower(),
-                                       resolve_member=False)
+        return await _stack_choices(
+            ctx.interaction.user.id, (ctx.value or "").lower(),
+            resolve_member=False, by_copies=True,
+            keep=lambda card, star, count: (
+                star == 0 and bool(cardlib.discard_yield(card))))
     except Exception:
         return []
-    out = []
-    for ch in choices:
-        picked = _parse_stack(ch.value)
-        if picked and picked[1] == 0 and cardlib.discard_yield(
-                cardlib.get_card(picked[0])):
-            out.append(ch)
-    return out
 
 
 async def _autocomplete_fusable(ctx: discord.AutocompleteContext):
@@ -269,26 +270,19 @@ async def _autocomplete_fusable(ctx: discord.AutocompleteContext):
 
 async def _autocomplete_mergeable(ctx: discord.AutocompleteContext):
     try:
-        choices = await _stack_choices(ctx.interaction.user.id,
-                                       (ctx.value or "").lower())
         first = _parse_stack((ctx.options or {}).get("first") or "")
         wanted = None
         if first:
             card = cardlib.get_card(first[0]) or await asyncio.to_thread(
                 cardlib.db_get_member_card, first[0])
             wanted = _tier_of(card)
+        return await _stack_choices(
+            ctx.interaction.user.id, (ctx.value or "").lower(),
+            by_copies=True,
+            keep=lambda card, star, count: (
+                star == 0 and (not wanted or _tier_of(card) == wanted)))
     except Exception:
         return []
-    out = []
-    for ch in choices:
-        slug, star = _parse_stack(ch.value)
-        if star != 0:
-            continue
-        if wanted and _tier_of(cardlib.get_card(slug) or
-                               {"member": True}) != wanted:
-            continue
-        out.append(ch)
-    return out
 
 
 async def _autocomplete_pool(ctx: discord.AutocompleteContext):

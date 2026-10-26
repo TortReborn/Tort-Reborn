@@ -207,6 +207,43 @@ async def test_high_star_fuse_survives_the_picker_limit(monkeypatch):
     assert choices[0].value == "high"
 
 
+@pytest.mark.asyncio
+async def test_discard_picker_leads_with_the_deepest_stack(monkeypatch):
+    owned = {f"plain-{n:02d}": {0: 1} for n in range(30)}
+    owned["zzz-deep"] = {0: 9}
+    monkeypatch.setattr(cardlib, "db_get_collection",
+                        lambda user_id: collection(**owned))
+    monkeypatch.setattr(cardlib, "get_card", lambda slug: card(slug, "unique"))
+    ctx = types.SimpleNamespace(
+        interaction=types.SimpleNamespace(user=types.SimpleNamespace(id=USER)),
+        value="",
+    )
+
+    choices = await cmd._autocomplete_discardable(ctx)
+
+    assert len(choices) == 25
+    assert choices[0].value == "zzz-deep:0", "most copies first, not A-Z"
+
+
+@pytest.mark.asyncio
+async def test_merge_picker_leads_with_the_deepest_stack(monkeypatch):
+    owned = {f"plain-{n:02d}": {0: 1} for n in range(30)}
+    owned["zzz-deep"] = {0: 9}
+    monkeypatch.setattr(cardlib, "db_get_collection",
+                        lambda user_id: collection(**owned))
+    monkeypatch.setattr(cardlib, "db_get_member_cards", lambda slugs: {})
+    monkeypatch.setattr(cardlib, "get_card", lambda slug: card(slug, "unique"))
+    ctx = types.SimpleNamespace(
+        interaction=types.SimpleNamespace(user=types.SimpleNamespace(id=USER)),
+        value="", options={},
+    )
+
+    choices = await cmd._autocomplete_mergeable(ctx)
+
+    assert len(choices) == 25
+    assert choices[0].value == "zzz-deep:0"
+
+
 def test_a_mythic_needs_two_copies_a_step():
     feed, _ = cardlib.fusion_cost("mythic")
     assert feed == cardlib.fusion_cost("fabled")[0] == 2
