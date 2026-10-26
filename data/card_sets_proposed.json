@@ -1,0 +1,670 @@
+{
+ "note": "Proposed card sets for the Tort Reborn collection. Not loaded by the bot; data/card_sets.json holds the live sets.",
+ "wiki_url_note": "null means the wiki has no page for that character. Checked against the wynncraft.wiki.gg API, not inferred from the name.",
+ "sets": [
+  {
+   "title": "The Elders of Aldorei",
+   "characters": [
+    {
+     "name": "Lari",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Lari"
+    },
+    {
+     "name": "Elder Birch",
+     "wiki_url": null
+    },
+    {
+     "name": "Elder Oak",
+     "wiki_url": null
+    },
+    {
+     "name": "Elder Alder",
+     "wiki_url": null
+    },
+    {
+     "name": "Elder Prometheus",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Elder_Prometheus"
+    },
+    {
+     "name": "Elder Willow",
+     "wiki_url": null
+    }
+   ]
+  },
+  {
+   "title": "WynnExcavation",
+   "characters": [
+    {
+     "name": "Excavator Vade",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Vade"
+    },
+    {
+     "name": "Tesha",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Tesha"
+    },
+    {
+     "name": "Excavator Lykron",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Lykron"
+    },
+    {
+     "name": "Excavator Placardus",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Placardus"
+    },
+    {
+     "name": "Excavator Admin Uci",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Excavator_Admin_Uci"
+    },
+    {
+     "name": "Amadel",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel"
+    },
+    {
+     "name": "Amadel's Assistant",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Amadel%27s_Assistant"
+    },
+    {
+     "name": "Traitor Thomas",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Traitor_Thomas"
+    },
+    {
+     "name": "Royal Advisor Carlos",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Royal_Advisor_Carlos"
+    }
+   ]
+  },
+  {
+   "title": "The Skyraiders",
+   "characters": [
+    {
+     "name": "Skyraider Elie",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Elie"
+    },
+    {
+     "name": "Skyraider Mercenary",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Mercenary"
+    },
+    {
+     "name": "Skyraider Lookout",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Lookout"
+    },
+    {
+     "name": "Skyraider Admirer",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Admirer"
+    },
+    {
+     "name": "Skyraider Guard",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Skyraider_Guard"
+    }
+   ]
+  },
+  {
+   "title": "Hunger of the Gerts",
+   "characters": [
+    {
+     "name": "Cikal",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Cikal"
+    },
+    {
+     "name": "Jitak",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Jitak"
+    },
+    {
+     "name": "Big Butch",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Big_Butch"
+    },
+    {
+     "name": "Gerten Chief Snaga",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Gerten_Chief_Snaga"
+    },
+    {
+     "name": "Gerten Chief Lobo",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Gerten_Chief_Lobo"
+    },
+    {
+     "name": "Gert",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Gert"
+    },
+    {
+     "name": "Gert Guard",
+     "wiki_url": null
+    },
+    {
+     "name": "Winie",
+     "wiki_url": null
+    },
+    {
+     "name": "Comor",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Comor"
+    }
+   ]
+  },
+  {
+   "title": "Dwarves and Doguns",
+   "characters": [
+    {
+     "name": "Axelus",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Axelus"
+    },
+    {
+     "name": "Korzim",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Korzim"
+    },
+    {
+     "name": "Chieftain Paku",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Chieftain_Paku"
+    },
+    {
+     "name": "Sanba",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Sanba"
+    },
+    {
+     "name": "Edula",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Edula"
+    },
+    {
+     "name": "Barden",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Barden"
+    },
+    {
+     "name": "Plario",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Plario"
+    },
+    {
+     "name": "Dogun",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Doguns"
+    },
+    {
+     "name": "Rodoroc Citizen",
+     "wiki_url": null
+    }
+   ]
+  },
+  {
+   "title": "All Roads to Peace",
+   "characters": [
+    {
+     "name": "Arrai-Veretel",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Arrai-Veretel"
+    },
+    {
+     "name": "Durbeo",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Durbeo"
+    },
+    {
+     "name": "Zuett",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Zuett"
+    },
+    {
+     "name": "Captain Goruca",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Goruca"
+    },
+    {
+     "name": "Kreimu",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Kreimu"
+    },
+    {
+     "name": "Onluk",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Onluk"
+    },
+    {
+     "name": "Creinu",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Creinu"
+    },
+    {
+     "name": "Etemitoro",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Etemitoro"
+    },
+    {
+     "name": "Grapes",
+     "wiki_url": null
+    },
+    {
+     "name": "Mango",
+     "wiki_url": null
+    },
+    {
+     "name": "Peaches",
+     "wiki_url": null
+    },
+    {
+     "name": "Jixy",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Jixy"
+    },
+    {
+     "name": "Lomoster",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Lomoster"
+    },
+    {
+     "name": "Miliyus",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Miliyus"
+    },
+    {
+     "name": "Nunexetor",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Nunexetor"
+    },
+    {
+     "name": "Teiren",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Teiren"
+    },
+    {
+     "name": "Ureietun",
+     "wiki_url": null
+    },
+    {
+     "name": "Xoeinbor",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Xoeinbor"
+    },
+    {
+     "name": "Yunelsu",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Yunelsu"
+    },
+    {
+     "name": "Soldier",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Soldier"
+    }
+   ]
+  },
+  {
+   "title": "Hollow Serenity",
+   "characters": [
+    {
+     "name": "Ann",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Ann"
+    },
+    {
+     "name": "Garvan",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Garvan"
+    },
+    {
+     "name": "Mysterious Leader",
+     "wiki_url": null
+    },
+    {
+     "name": "Old Man",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Old_Man"
+    },
+    {
+     "name": "Vera",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Vera"
+    },
+    {
+     "name": "Villager",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Villagers"
+    },
+    {
+     "name": "Aunoa",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Aunoa"
+    },
+    {
+     "name": "Bip",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Bip"
+    },
+    {
+     "name": "Qunit",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Qunit"
+    },
+    {
+     "name": "Runo",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Runo"
+    }
+   ]
+  },
+  {
+   "title": "From the Bottom",
+   "characters": [
+    {
+     "name": "Dobile",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Dobile"
+    },
+    {
+     "name": "Dohstaj",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Dohstaj"
+    },
+    {
+     "name": "Dorroc",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Dorroc"
+    },
+    {
+     "name": "Lodog",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Lodog"
+    },
+    {
+     "name": "Mastro",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Mastro"
+    },
+    {
+     "name": "Nakoba",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Nakoba"
+    },
+    {
+     "name": "Syni",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Syni"
+    },
+    {
+     "name": "Yobon",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Yobon"
+    }
+   ]
+  },
+  {
+   "title": "Into the Light",
+   "characters": [
+    {
+     "name": "Elder",
+     "wiki_url": null
+    },
+    {
+     "name": "Guardian of The Forest",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Guardian_of_The_Forest"
+    },
+    {
+     "name": "Heliorion",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Heliorion"
+    },
+    {
+     "name": "Ollie",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Ollie"
+    },
+    {
+     "name": "Gardener",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Gardener"
+    },
+    {
+     "name": "Aluxander",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Aluxander"
+    },
+    {
+     "name": "Regulux",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Regulux"
+    },
+    {
+     "name": "Charlie",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Charlie"
+    },
+    {
+     "name": "Damien",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Damien"
+    },
+    {
+     "name": "Sasha The Apothecary",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Sasha_The_Apothecary"
+    }
+   ]
+  },
+  {
+   "title": "The Qira Hive",
+   "characters": [
+    {
+     "name": "Qira, Mistress of the Hive",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Qira%2C_Mistress_of_the_Hive"
+    },
+    {
+     "name": "Gale",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Gale"
+    },
+    {
+     "name": "Yansur",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Yansur"
+    },
+    {
+     "name": "Hive Servant",
+     "wiki_url": null
+    }
+   ]
+  },
+  {
+   "title": "Redbeard's Crew",
+   "characters": [
+    {
+     "name": "Captain Redbeard",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Captain_Redbeard"
+    },
+    {
+     "name": "Marston",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Marston"
+    },
+    {
+     "name": "Argus",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Argus"
+    },
+    {
+     "name": "Karkun",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Karkun"
+    },
+    {
+     "name": "Martim",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Martim"
+    }
+   ]
+  },
+  {
+   "title": "Murder Mystery",
+   "characters": [
+    {
+     "name": "Detective Lorias",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Detective_Lorias"
+    },
+    {
+     "name": "Rohem",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Rohem"
+    },
+    {
+     "name": "Valimare",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Valimare"
+    },
+    {
+     "name": "Blackjack Dealer",
+     "wiki_url": null
+    },
+    {
+     "name": "Child",
+     "wiki_url": null
+    }
+   ]
+  },
+  {
+   "title": "Citizens of the Provinces",
+   "characters": [
+    {
+     "name": "Cinfras Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Llevigar Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Olux Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Ahmsord Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Almuj Citizen (A Sandy Scandal)",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Almuj_Citizen_%28A_Sandy_Scandal%29"
+    },
+    {
+     "name": "Corkus City Citizen",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Corkus_City_Citizen"
+    },
+    {
+     "name": "Espren Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Gelibord Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Hyloch Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Rymek Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Selchar Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Thesead Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Avos Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Bucie Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Corkus Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Detlas Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Lusuco Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Lutho Citizen",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Lutho_Citizen"
+    },
+    {
+     "name": "Nesaak Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Relos Citizen",
+     "wiki_url": null
+    }
+   ]
+  },
+  {
+   "title": "The Isle of Corkus",
+   "characters": [
+    {
+     "name": "Corkus Jeweler",
+     "wiki_url": null
+    },
+    {
+     "name": "Corkus City Citizen",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Corkus_City_Citizen"
+    },
+    {
+     "name": "Corkus Guard",
+     "wiki_url": null
+    },
+    {
+     "name": "Corkus Delegate",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Corkus_Delegate"
+    },
+    {
+     "name": "Avos Chief",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Avos_Chief"
+    },
+    {
+     "name": "Corkus Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Avos Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Avos Shaman",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Avos_Shaman"
+    },
+    {
+     "name": "Regular Humyn",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Regular_Humyn"
+    },
+    {
+     "name": "Relos Citizen",
+     "wiki_url": null
+    },
+    {
+     "name": "Relos Mechanic",
+     "wiki_url": null
+    },
+    {
+     "name": "Lusuco Citizen",
+     "wiki_url": null
+    }
+   ]
+  },
+  {
+   "title": "The Fast Lane",
+   "characters": [
+    {
+     "name": "Seaskipper Captain",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Seaskipper_Captain"
+    },
+    {
+     "name": "C.S.S. Sunrise Captain",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/C.S.S._Sunrise_Captain"
+    },
+    {
+     "name": "C.S.S Wavebreaker Captain",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/C.S.S_Wavebreaker_Captain"
+    },
+    {
+     "name": "Boat Captain",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Boat_Captain"
+    },
+    {
+     "name": "Hot Air Balloon Captain",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Hot_Air_Balloon_Captain"
+    },
+    {
+     "name": "Calo",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Calo"
+    },
+    {
+     "name": "Plario",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Plario"
+    },
+    {
+     "name": "Event Airship Pilot",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Event_Airship_Pilot"
+    }
+   ]
+  },
+  {
+   "title": "Holiday Spirits",
+   "characters": [
+    {
+     "name": "Santa",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Santa"
+    },
+    {
+     "name": "Nick",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Nick"
+    },
+    {
+     "name": "Hans",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Hans"
+    },
+    {
+     "name": "Tom",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Tom"
+    },
+    {
+     "name": "Flodur",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Flodur"
+    },
+    {
+     "name": "Mask Salesman",
+     "wiki_url": "https://wynncraft.wiki.gg/wiki/Mask_Salesman"
+    }
+   ]
+  }
+ ]
+}
