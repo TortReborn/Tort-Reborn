@@ -4,9 +4,11 @@ Card sets: progress, the one-time completion reward, and the set sheet.
 1. set_progress counts one copy of each card at any level and lists what
    is missing; a card in two sets counts toward both
 2. check_milestones pays a set exactly once, and only when it is complete
-3. Every shipped set has a name, a description, a positive reward and
+3. A complete set adds Rating on top of its cards, and loses it when one
+   of them leaves the collection
+4. Every shipped set has a name, a description, a positive reward and
    real cards; an empty set can never pay out
-4. A spread with an owned filter dims the cards that are not owned
+5. A spread with an owned filter dims the cards that are not owned
 """
 
 import json
@@ -69,9 +71,32 @@ def test_set_reward_pays_once_and_only_when_complete(monkeypatch):
     partial = {"sui": {"total": 1, "levels": {0: 1}}}
     assert cardlib.check_milestones(7, partial) == []
     full_a = {"bob": {"total": 1, "levels": {0: 1}}, "sui": {"total": 1, "levels": {0: 1}}}
-    assert cardlib.check_milestones(7, full_a) == [("set", "Set A", 100)]
+    assert cardlib.check_milestones(7, full_a) == [("set", TWO_SETS[0], 100)]
     assert cardlib.check_milestones(7, full_a) == [], "paid once"
     assert ("7", "set-empty") not in {(str(u), a) for u, a in given}
+
+
+def test_a_complete_set_adds_rating_on_top_of_its_cards(monkeypatch):
+    _static(monkeypatch, TWO_SETS)
+    card_points = cardlib.RATING["rare"][0]
+    bonus = int(cardlib.SET_RATING_SHARE * 2 * card_points)
+
+    partial = {"bob": {"total": 1, "levels": {0: 1}}}
+    assert cardlib.collection_rating(partial) == card_points
+
+    full_a = {"bob": {"total": 1, "levels": {0: 1}},
+              "sui": {"total": 1, "levels": {0: 1}}}
+    assert cardlib.collection_rating(full_a) == 2 * card_points + bonus
+    assert cardlib.set_rating(TWO_SETS[0]) == bonus
+
+
+def test_set_rating_scales_with_the_cards_in_it():
+    sets = {s["id"]: s for s in cardlib.load_card_set(force=True)["sets"]}
+    pantheon = cardlib.set_rating(sets["raid-pantheon"])
+    keepers = cardlib.set_rating(sets["dungeon-keepers"])
+    assert pantheon > keepers > 0
+    assert pantheon == int(cardlib.SET_RATING_SHARE * 5
+                           * cardlib.RATING["mythic"][0])
 
 
 def test_shipped_sets_are_well_formed():

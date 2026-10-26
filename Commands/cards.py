@@ -14,13 +14,14 @@ from discord.commands import SlashCommandGroup, slash_command
 from discord.ext import commands, pages
 
 from Helpers import card_copy as ctext
+from Helpers import card_list_render as cardlist
 from Helpers import cards as cardlib
 from Helpers.card_render import card_file, spread_file
 from Helpers.logger import ERROR, SYSTEM, log
-from Helpers.pagination import add_paginator_buttons
+from Helpers.pagination import (LazyImagePaginator, add_paginator_buttons,
+                                respond_paginator)
 from Helpers.variables import CARD_PING_ROLE_ID, TAQ_GUILD_IDS
 
-CARDS_PER_PAGE = 20
 POOL_PER_PAGE = 20
 
 # /tank admin set-channel is deliberately exempt from the channel check. It is
@@ -105,14 +106,14 @@ def _resolve(name: str) -> dict | None:
 
 
 def _level_label(card: dict, star: int) -> str:
-    """How a level reads: blank when plain, stars below the top, MAX at it."""
+    """How a level reads: blank when plain, stars below the top, Max at it."""
     if star <= 0:
         return ""
-    return "MAX" if star >= cardlib.tier_max_stars(card) else "★" * star
+    return "Max" if star >= cardlib.tier_max_stars(card) else "★" * star
 
 
 def _max_costs() -> str:
-    """Unfused copies behind a MAX card, tier by tier.
+    """Unfused copies behind a Max card, tier by tier.
 
     Grouped where tiers agree, so the line stays short as ceilings move: it
     reads off FUSION_COPIES rather than repeating what is in it.
@@ -124,13 +125,22 @@ def _max_costs() -> str:
 
     parts = []
     for copies, tiers in groups.items():
-        labels = [_tier_label(t) for t in tiers]
-        if len(labels) > 1:
-            names = f"{', '.join(labels[:-1])} or {labels[-1]}"
-        else:
-            names = labels[0]
-        parts.append(f"**{copies}** {names}")
-    return " · ".join(parts)
+        parts.append(f"**{copies}** "
+                     + "/".join(_tier_label(t) for t in tiers))
+    return ", ".join(parts)
+
+
+def _rating_table() -> str:
+    limited = cardlib.card_rating({"member": True})
+    rows = [f"{ctext.LIMITED:<11}{limited:>5}{'-':>7}{limited:>6}"]
+    for tier in cardlib.CARD_TIERS:
+        card = {"tier": tier}
+        base = cardlib.card_rating(card)
+        per = cardlib.card_rating(card, 1) - base
+        rows.append(f"{_tier_label(tier):<11}{base:>5}{f'+{per}':>7}"
+                    f"{cardlib.card_rating(card, cardlib.MAX_STARS):>6}")
+    header = f"{'Tier':<11}{'Base':>5}{'Star':>7}{'Max':>6}"
+    return "```\n" + header + "\n" + "\n".join(rows) + "\n```"
 
 
 def _star_name(card: dict, star: int) -> str:
@@ -333,12 +343,80 @@ def _set_choices() -> list:
             for s in cardlib.load_card_set()["sets"]]
 
 
+NO_SET = 999      # sorts cards in no set below the ones in one
+
+
+def _set_gaps(owned: dict) -> dict:
+    """Missing slug -> (cards still needed, set name) for its nearest set."""
+    gaps = {}
+    for p in cardlib.set_progress(owned):
+        if p["complete"]:
+            continue
+        for slug in p["missing"]:
+            if slug not in gaps or len(p["missing"]) < gaps[slug][0]:
+                gaps[slug] = (len(p["missing"]), p["set"]["name"])
+    return gaps
+
+
+def _wish_suggestions(owned: dict, wished: set, typed: str) -> list:
+    """Set finishers, then cards you lack, then your thinnest stacks."""
+    gaps = _set_gaps(owned)
+    rows = []
+    for card in cardlib.load_card_set()["cards"]:
+        slug = card["slug"]
+        if slug in wished or not cardlib.is_wishable(card):
+            continue
+        if typed and typed not in card["name"].lower():
+            continue
+        copies = owned.get(slug, {}).get("total", 0)
+        left, set_name = gaps.get(slug, (NO_SET, None))
+        if set_name:
+            label = (f"{card['name']} (completes {set_name})" if left == 1
+                     else f"{card['name']} ({left} left in {set_name})")
+        else:
+            label = f"{card['name']} ×{copies}" if copies else card["name"]
+        rows.append((copies, left, card["name"].lower(), label, card["name"]))
+    rows.sort()
+    return [(label, name) for _, _, _, label, name in rows]
+
+
+def _wished_choices(owned: dict, wished: list, typed: str) -> list:
+    """Wished cards, the ones you already hold most of first."""
+    rows = []
+    for slug in wished:
+        card = cardlib.get_card(slug)
+        if not card or typed not in card["name"].lower():
+            continue
+        copies = owned.get(slug, {}).get("total", 0)
+        label = f"{card['name']} ×{copies}" if copies else card["name"]
+        rows.append((-copies, card["name"].lower(), label, card["name"]))
+    rows.sort()
+    return [(label, name) for _, _, label, name in rows]
+
+
 async def _autocomplete_wishable(ctx: discord.AutocompleteContext):
-    """Any card in the set. Member cards are never wishable."""
+    """Any card in the set, the useful ones first. Member cards never."""
     typed = (ctx.value or "").lower()
-    names = [c["name"] for c in cardlib.load_card_set()["cards"]
-             if c["tier"] in cardlib.WISHABLE_TIERS and typed in c["name"].lower()]
-    return sorted(names)[:25]
+    user = ctx.interaction.user.id
+    try:
+        owned = await asyncio.to_thread(cardlib.db_get_collection, user)
+        wished = set(await asyncio.to_thread(cardlib.db_get_wishes, user))
+    except Exception:
+        owned, wished = {}, set()
+    return [discord.OptionChoice(name=label[:100], value=name)
+            for label, name in _wish_suggestions(owned, wished, typed)[:25]]
+
+
+async def _autocomplete_wished(ctx: discord.AutocompleteContext):
+    user = ctx.interaction.user.id
+    try:
+        wished = await asyncio.to_thread(cardlib.db_get_wishes, user)
+        owned = await asyncio.to_thread(cardlib.db_get_collection, user)
+    except Exception:
+        return []
+    return [discord.OptionChoice(name=label[:100], value=name)
+            for label, name in _wished_choices(owned, wished,
+                                               (ctx.value or "").lower())[:25]]
 
 
 # Card art and dialogue come from the Wynncraft Wiki, credited by a link
@@ -405,8 +483,8 @@ class SetPickView(discord.ui.View):
         self.pick.options += [
             discord.SelectOption(
                 label=p["set"]["name"], value=p["set"]["id"],
-                description=f"{p['owned']}/{p['total']}"
-                            + (" Complete" if p["complete"] else ""),
+                description=f"{p['owned']}/{p['total']}, "
+                            f"+{cardlib.set_rating(p['set'])} Rating",
                 emoji="✅" if p["complete"] else None)
             for p in progress]
 
@@ -450,7 +528,8 @@ class SetPickView(discord.ui.View):
             names = ", ".join(cardlib.get_card(x)["name"] for x in p["missing"])
             state = f"{who}: missing {names}"
         embed.add_field(name=f"{p['owned']}/{p['total']}", value=state, inline=False)
-        embed.set_footer(text=f"+{s['pearls']:,} Pearls")
+        embed.set_footer(text=f"+{s['pearls']:,} Pearls, "
+                              f"+{cardlib.set_rating(s)} Rating")
         await interaction.edit_original_response(
             embed=embed, file=file, attachments=[], view=self)
 
@@ -563,22 +642,24 @@ def _failure_text(reason: str) -> str:
     return ctext.render_failed() if reason == "render" else ctext.reel_failed()
 
 
-def _milestone_embed(user, kind: str, name, pearls: int) -> discord.Embed:
+def _milestone_embed(user, kind: str, subject, pearls: int) -> discord.Embed:
     """One payout, in a form that cannot be scrolled past by accident.
 
     A set completion is worth up to a month of pulls, so it gets the same
     weight as the card that finished it.
     """
+    reward = f"**+{pearls:,}** Pearls"
     if kind == "set":
-        title, color = f"Set complete · {name}", ctext.ACCENT
+        title, color = f"Set complete: {subject['name']}", ctext.ACCENT
+        reward += f", **+{cardlib.set_rating(subject)}** Rating"
     elif kind == "tier":
-        title = f"Every {_tier_label(name)} card"
-        color = cardlib.TIER_COLORS.get(name, ctext.ACCENT)
+        title = f"Every {_tier_label(subject)} card"
+        color = cardlib.TIER_COLORS.get(subject, ctext.ACCENT)
     else:
-        title, color = f"{name} unique cards", ctext.ACCENT
+        title, color = f"{subject} unique cards", ctext.ACCENT
     return discord.Embed(
         title=title,
-        description=f"{user.mention} · **+{pearls:,}** Pearls",
+        description=f"{user.mention}\n{reward}",
         color=color)
 
 
@@ -924,7 +1005,7 @@ class TradeBuilderView(discord.ui.View):
             lines = list(self.lines[side].values())
             copies = sum(line.count for line in lines)
             embed.add_field(
-                name=f"{title} · {len(lines)} stacks / {copies} cards",
+                name=f"{title}: {len(lines)} stacks, {copies} cards",
                 value=_lines_text(lines, limit=1024) or "Nothing yet",
                 inline=True)
         if self.reviewing:
@@ -939,8 +1020,8 @@ class TradeBuilderView(discord.ui.View):
                 bits.append(f'Search: {state.search}')
             bits.append(f"Page {state.page + 1}/{pages}")
             embed.set_footer(
-                text=f"Picking from {self._owner_cards(self.side)} · "
-                     + " · ".join(bits))
+                text=f"Picking from {self._owner_cards(self.side)}, "
+                     + ", ".join(bits))
         return embed
 
     def set_line(self, side: str, card: dict, star: int, count: int):
@@ -1215,7 +1296,7 @@ class TradeView(discord.ui.View):
                         value=_lines_text(self.give, limit=1024), inline=True)
         embed.add_field(name=f"{self.target.display_name}'s side",
                         value=_lines_text(self.want, limit=1024), inline=True)
-        embed.set_footer(text="Recipient only · 5 min")
+        embed.set_footer(text="Recipient only, 5 min")
         return embed
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -1290,7 +1371,7 @@ class TradeView(discord.ui.View):
                 self._disable(False)
                 log(ERROR, f"Trade {self.trade_id} failed: {e}", context="cards")
                 await self._edit(interaction,
-                                 content="-# Trade failed · Try again")
+                                 content="-# Trade failed, try again")
                 return
             if result["status"] == "changed":
                 self.state = "changed"
@@ -1301,7 +1382,7 @@ class TradeView(discord.ui.View):
                 log(ERROR, f"Trade {self.trade_id} returned {result!r}",
                     context="cards")
                 return await self._edit(
-                    interaction, content="-# Trade failed · Try again")
+                    interaction, content="-# Trade failed, try again")
             self.state = "completed"
             await self._edit(interaction, self._done_text())
         # Trading for the last missing card is how most sets will get finished.
@@ -1325,7 +1406,7 @@ class TradeView(discord.ui.View):
 
 def _yield_line() -> str:
     """The discard table in one line, read off DISCARD_YIELD."""
-    return " · ".join(f"{_tier_label(t)} → {n} {_tier_label(below)}"
+    return ", ".join(f"{_tier_label(t)} → {n} {_tier_label(below)}"
                       for t, (below, n) in cardlib.DISCARD_YIELD.items())
 
 
@@ -1384,7 +1465,7 @@ async def _do_fuse(user_id: int, card: dict, from_star: int,
     summary = (f"{spent}\n-{per_pearls:,} Pearls\n"
                f"{result['pearls']:,} Pearls left")
     if to_star >= ceiling:
-        summary = f"**MAX**\n{summary}"
+        summary = f"**Max**\n{summary}"
     line = _wiki_line(card)
     embed = discord.Embed(
         title=f"{card['name']} {_level_label(card, to_star)}".strip(),
@@ -1680,7 +1761,7 @@ class Cards(commands.Cog):
         streak = result["streak"]
         embed = discord.Embed(
             title="Bait",
-            description=(f"**+{result['bait_reels']}** Reels · "
+            description=(f"**+{result['bait_reels']}** Reels, "
                          f"**+{result['gained']:,}** Pearls"),
             color=ctext.ACCENT)
         if cardlib.next_daily_tier(streak):
@@ -1698,6 +1779,7 @@ class Cards(commands.Cog):
         cs = cardlib.load_card_set()
         cap = cardlib.bank_cap(wallet["tank_tier"])
         pct = int(cardlib.WISH_REDIRECT_CHANCE * 100)
+        set_pct = int(cardlib.SET_RATING_SHARE * 100)
 
         embed = discord.Embed(
             title="Tank help",
@@ -1727,9 +1809,17 @@ class Cards(commands.Cog):
                    "`/tank leaderboard` View top collectors by Rating"),
             inline=False)
         embed.add_field(
+            name="Rating",
+            value=("Your score on `/tank leaderboard`\n"
+                   f"{_rating_table()}\n"
+                   "Only your highest starred copy of a card counts\n"
+                   f"Complete a set: gain **+{set_pct}%** of its cards' "
+                   "base values on top"),
+            inline=False)
+        embed.add_field(
             name="Card actions",
             value=("`/card fuse` Feed a card its own copies for a star\n"
-                   f"MAX costs: {_max_costs()}\n"
+                   f"Max costs: {_max_costs()}\n"
                    "`/card merge` Merge two plain cards of a rarity into a "
                    "new roll (wishlist applies)\n"
                    "`/card discard` Discard plain dupes into lower-tier rolls "
@@ -1755,7 +1845,7 @@ class Cards(commands.Cog):
         refresh = cardlib.next_refresh_ts()
         embed.set_footer(
             text=f"{wallet['total_reels']} Reel"
-                 f"{'' if wallet['total_reels'] == 1 else 's'} · "
+                 f"{'' if wallet['total_reels'] == 1 else 's'}, "
                  f"{wallet['pearls']:,} Pearls")
         await ctx.followup.send(
             content=f"-# {ctext.next_line('Next', refresh)}", embed=embed)
@@ -1785,7 +1875,7 @@ class Cards(commands.Cog):
         embed = discord.Embed(color=_card_color(match),
                               description=_card_description(match))
         embed.set_image(url=f"attachment://{file.filename}")
-        held = "" if match.get("member") else " · ".join(
+        held = "" if match.get("member") else ", ".join(
             f"{c}× {ctext.level_name(_level_label(match, st))}"
             for st, c in sorted(entry["levels"].items()))
         embed.set_footer(text=_credit(match, held))
@@ -1855,19 +1945,6 @@ class Cards(commands.Cog):
             if c:
                 rows.append((c, entry))
 
-        def tier_idx(card):
-            t = _tier_of(card)
-            return cardlib.TIER_ORDER.index(t) if t in cardlib.TIER_ORDER else 9
-
-        if sort == "copies":
-            # Most copies first, so the stacks worth fusing or trading are on
-            # page one; rarity breaks ties, then the name.
-            rows.sort(key=lambda r: (-r[1]["total"], tier_idx(r[0]), r[0]["name"]))
-        elif sort == "name":
-            rows.sort(key=lambda r: r[0]["name"].lower())
-        else:
-            rows.sort(key=lambda r: (tier_idx(r[0]), r[0]["name"]))
-
         total_copies = sum(e["total"] for _, e in rows)
         if tier == "member":
             of = len(await asyncio.to_thread(cardlib.db_get_pool))
@@ -1875,50 +1952,37 @@ class Cards(commands.Cog):
             of = cardlib.tier_counts().get(tier, 0)
         else:
             of = len(cs["cards"])
+        standings = await asyncio.to_thread(cardlib.db_standings,
+                                            cardlib.STANDINGS_TTL)
+        place = next((r["rank"] for r in standings if r["user"] == target.id),
+                     None)
+
         what = f"{_tier_label(tier)} Cards" if tier else "Cards"
-        header = (f"**{len(rows)}/{of}** {what}\n{total_copies} copies"
-                  f"\n{rating:,} Rating")
+        stats = [(f"{len(rows)}/{of}", what), (str(total_copies), "copies"),
+                 (f"{rating:,} (#{place})" if place else f"{rating:,}",
+                  "Rating")]
         if mine:
-            header += (f"\n{wallet['pearls']:,} Pearls\n"
-                       f"{wallet['total_reels']} Reel"
-                       f"{'' if wallet['total_reels'] == 1 else 's'}")
+            stats.append((f"{wallet['pearls']:,}", "Pearls"))
+            stats.append((str(wallet["total_reels"]),
+                          ctext.plural(wallet["total_reels"], "Reel")))
         else:
             spares = sum(e["total"] - 1 for _, e in rows if e["total"] > 1)
-            header += f"\n{spares} spare{'' if spares == 1 else 's'}"
+            stats.append((str(spares), ctext.plural(spares, "spare")))
 
-        page_list = []
-        for i in range(0, len(rows), CARDS_PER_PAGE):
-            chunk = rows[i:i + CARDS_PER_PAGE]
-            lines = []
-            for c, e in chunk:
-                member = c.get("member")
-                label_col = _tier_label(_tier_of(c))
-                # A member card has no count worth printing: there is one,
-                # there was only ever going to be one, and it cannot be fused.
-                bits = []
-                if not member:
-                    for st, n in sorted(e["levels"].items()):
-                        label = _level_label(c, st)
-                        bits.append(f"{label}×{n}" if label else f"×{n}")
-                    # Sorting by copies orders on the total, which a split
-                    # stack does not show; a single level already reads as one.
-                    if sort == "copies" and len(e["levels"]) > 1:
-                        bits.append(f"({e['total']} total)")
-                line = f"`{label_col:9}` {c['name']}"
-                lines.append(f"{line} {' '.join(bits)}" if bits else line)
-            embed = discord.Embed(
-                title=f"{target.display_name}'s tank",
-                description=header + "\n\n" + "\n".join(lines),
-                color=_card_color(chunk[0][0]))
-            embed.set_footer(text=f"{i // CARDS_PER_PAGE + 1}/"
-                                  f"{(len(rows) - 1) // CARDS_PER_PAGE + 1}")
-            page_list.append(pages.Page(embeds=[embed]))
+        stacks = cardlist.build_stacks(rows, sort)
+        title = f"{target.display_name}'s tank"
 
-        if len(page_list) == 1:
-            return await ctx.followup.send(embed=page_list[0].embeds[0])
-        paginator = pages.Paginator(pages=page_list)
+        def render(index):
+            return cardlist.page_file(stacks, index, title, stats)
+
+        total = cardlist.page_count(stacks)
+        if total == 1:
+            return await ctx.followup.send(
+                file=await asyncio.to_thread(render, 0))
+        paginator = LazyImagePaginator(total, render, timeout=180)
         add_paginator_buttons(paginator)
-        await paginator.respond(ctx.interaction)
+        await paginator.prepare()
+        await respond_paginator(paginator, ctx.interaction)
 
     @card.command(name="sets", description="View progress in card sets")
     async def card_sets(
@@ -1939,9 +2003,14 @@ class Cards(commands.Cog):
         progress.sort(key=lambda p: (not p["complete"],
                                      -p["owned"] / p["total"], p["set"]["name"]))
         done = sum(p["complete"] for p in progress)
+        earned = sum(cardlib.set_rating(p["set"])
+                     for p in progress if p["complete"])
+        header = f"**{done}/{len(progress)}** complete"
+        if earned:
+            header += f"\n**+{earned}** Rating"
         embed = discord.Embed(
             title=f"{'Your' if mine else target.display_name + chr(39) + 's'} sets",
-            description=f"**{done}/{len(progress)}** complete\n\n"
+            description=header + "\n\n"
                         + "\n".join(_set_line(p) for p in progress),
             color=ctext.ACCENT)
         embed.set_footer(text="Pick a set")
@@ -1973,7 +2042,7 @@ class Cards(commands.Cog):
         embed.add_field(name="Reels", value=reels_value)
         embed.add_field(
             name="Cards",
-            value=f"{len(owned)}/{len(cs['cards'])} unique · {copies} copies")
+            value=f"{len(owned)}/{len(cs['cards'])} unique\n{copies} copies")
         embed.add_field(name="Rating",
                         value=f"{cardlib.collection_rating(owned):,}")
         embed.add_field(name="Streak", value=f"{wallet['streak']} day"
@@ -1996,7 +2065,7 @@ class Cards(commands.Cog):
         if tier < cardlib.MAX_TANK:
             nxt = cardlib.TANK_TIERS[tier + 1]
             embed.set_footer(
-                text=f"Next: {nxt['name']} · {nxt['cost']:,} Pearls")
+                text=f"Next: {nxt['name']} for {nxt['cost']:,} Pearls")
         await ctx.followup.send(embed=embed)
 
     # ── /tank ping ───────────────────────────────────────────────────────────
@@ -2065,7 +2134,7 @@ class Cards(commands.Cog):
         if tier + 1 < cardlib.MAX_TANK:
             after = cardlib.TANK_TIERS[tier + 2]
             embed.set_footer(
-                text=f"Next: {after['name']} · {after['cost']:,} Pearls")
+                text=f"Next: {after['name']} for {after['cost']:,} Pearls")
         await ctx.followup.send(embed=embed)
 
     # ── /tank leaderboard ────────────────────────────────────────────────────
@@ -2091,7 +2160,7 @@ class Cards(commands.Cog):
                               color=ctext.ACCENT)
         mine = next((r for r in standings if r["user"] == ctx.author.id), None)
         if mine and mine["rank"] > LEADERBOARD_SIZE:
-            embed.set_footer(text=f"You: #{mine['rank']} · "
+            embed.set_footer(text=f"You: #{mine['rank']}, "
                                   f"{mine['rating']:,} Rating")
         await ctx.followup.send(embed=embed)
 
@@ -2427,13 +2496,13 @@ class Cards(commands.Cog):
             best = _level_label(card, o["best"])
             copies = ctext.count(o["copies"], "copy", "copies")
             lines.append(f"`{i:2}` **{who}**: {copies}"
-                         + (f" · Best {best}" if best else ""))
+                         + (f", Best {best}" if best else ""))
         if len(owners) > OWNERS_SHOWN:
             lines.append(f"-# +{len(owners) - OWNERS_SHOWN} more")
 
         total = sum(o["copies"] for o in owners)
         embed = discord.Embed(
-            title=f"{card['name']} · {ctext.count(len(owners), 'owner')}",
+            title=f"{card['name']} ({ctext.count(len(owners), 'owner')})",
             description="\n".join(lines),
             color=_card_color(card))
         embed.set_footer(text=_credit(
@@ -2470,7 +2539,7 @@ class Cards(commands.Cog):
 
         have = sum(1 for e in entries if e["slug"] in owned)
         members = sum(1 for e in entries if e.get("member"))
-        header = (f"**{len(entries)}** Cards · You own {have}"
+        header = (f"**{len(entries)}** Cards\nYou own {have}"
                   + (f"\n{ctext.count(members, ctext.LIMITED + ' card')}"
                      if members else "")
                   + "\nRarest first")
@@ -2487,7 +2556,7 @@ class Cards(commands.Cog):
                         tail = f"Held by <@{e['owner']}>"
                     else:
                         tail = "Unminted"
-                    lines.append(f"`{ctext.LIMITED:9}` **{e['name']}**{mark} · {tail}")
+                    lines.append(f"`{ctext.LIMITED:9}` **{e['name']}**{mark}, {tail}")
                 else:
                     lines.append(f"`{_tier_label(e['tier']):9}` "
                                  f"**{e['name']}**{mark}")
@@ -2586,8 +2655,8 @@ class Cards(commands.Cog):
     @wish.command(name="remove", description="Stop targeting a card")
     async def wish_remove(
         self, ctx: discord.ApplicationContext,
-        card: discord.Option(str, description="Card",
-                             autocomplete=_autocomplete_wishable),
+        card: discord.Option(str, description="Wished card",
+                             autocomplete=_autocomplete_wished),
     ):
         await ctx.defer(ephemeral=True)
         match = await asyncio.to_thread(_resolve, card)

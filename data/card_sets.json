@@ -1,5 +1,5 @@
 {
- "note": "Named groups of cards. Membership is by slug; a card may sit in any number of sets. pearls is the one-time reward for holding every card in the set. Loaded by Helpers.cards.load_card_set() as \"sets\".",
+ "note": "Named groups of cards. Membership is by slug; a card may sit in any number of sets. pearls is the one-time reward for holding every card in the set; the Rating a complete set adds is derived from its cards, not written here. Loaded by Helpers.cards.load_card_set() as \"sets\".",
  "sets": [
   {
    "id": "raid-pantheon",

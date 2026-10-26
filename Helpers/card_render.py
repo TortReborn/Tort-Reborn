@@ -119,16 +119,16 @@ def _rank_badge(rank: str, max_w: int) -> Image.Image | None:
 
 TIER_STAR_DIR = os.path.join(BASE, "images", "profile", "tiers")
 TIER_STAR_SCALE = 4
-_TIER_STAR_CACHE: dict[int, Image.Image] = {}
+_TIER_STAR_CACHE: dict[tuple[int, int], Image.Image] = {}
 
 
-def _tier_star(level: int) -> Image.Image:
-    if level not in _TIER_STAR_CACHE:
+def _tier_star(level: int, scale: int = TIER_STAR_SCALE) -> Image.Image:
+    if (level, scale) not in _TIER_STAR_CACHE:
         img = Image.open(os.path.join(TIER_STAR_DIR, f"tier_{level}.png")).convert("RGBA")
-        img = img.resize((img.width * TIER_STAR_SCALE, img.height * TIER_STAR_SCALE),
+        img = img.resize((img.width * scale, img.height * scale),
                          Image.Resampling.NEAREST)
-        _TIER_STAR_CACHE[level] = img
-    return _TIER_STAR_CACHE[level]
+        _TIER_STAR_CACHE[(level, scale)] = img
+    return _TIER_STAR_CACHE[(level, scale)]
 
 
 def _draw_tier_indicator(card: Image.Image, level: int, right: int, top: int, gap: int = 3):

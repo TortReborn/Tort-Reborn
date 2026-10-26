@@ -104,6 +104,9 @@ RATING = {
 }
 LIMITED_RATING = 20
 
+# Not banked like the pearl payout: trade a card out and the bonus goes too.
+SET_RATING_SHARE = 0.5
+
 # ── Discard ──────────────────────────────────────────────────────────────────
 # Outputs pay no pearls, or a chain of discards would print them. Only unfused
 # copies can be discarded, and never a member card.
@@ -1535,6 +1538,9 @@ def collection_rating(collection: dict) -> int:
             total += LIMITED_RATING
         else:
             total += card_rating(get_card(slug), max(entry["levels"]))
+    for p in set_progress(collection):
+        if p["complete"]:
+            total += set_rating(p["set"])
     return total
 
 
@@ -1557,7 +1563,17 @@ def rank_collections(collections: dict) -> list:
     return rows
 
 
-def db_standings() -> list:
+STANDINGS_TTL = 120
+_STANDINGS: tuple[float, list] = (0.0, [])
+
+
+def db_standings(max_age: float = 0) -> list:
+    """Every collection, ranked. Reuses a result younger than max_age."""
+    global _STANDINGS
+    read_at, cached = _STANDINGS
+    if max_age and cached and time.time() - read_at < max_age:
+        return cached
+
     db = DB()
     db.connect()
     try:
@@ -1571,15 +1587,17 @@ def db_standings() -> list:
             entry["total"] += count
     finally:
         db.close()
-    return rank_collections(collections)
+    ranked = rank_collections(collections)
+    _STANDINGS = (time.time(), ranked)
+    return ranked
 
 
 def check_milestones(user_id: int, collection: dict) -> list:
     """Award unique-count, tier-completion and set milestones.
 
-    Returns the awards this call paid out as (kind, name, pearls), where kind
-    is "unique", "tier" or "set" and name is the threshold, the tier or the
-    set's display name. The caller decides how each kind is announced.
+    Returns the awards this call paid out as (kind, subject, pearls), where
+    kind is "unique", "tier" or "set" and subject is the threshold, the tier
+    or the set itself. The caller decides how each kind is announced.
     """
     earned = []
     static = load_card_set()
@@ -1599,7 +1617,7 @@ def check_milestones(user_id: int, collection: dict) -> list:
     for p in set_progress(collection):
         if p["complete"] and p["set"]["pearls"]:
             if db_award_once(user_id, f"set-{p['set']['id']}", p["set"]["pearls"]):
-                earned.append(("set", p["set"]["name"], p["set"]["pearls"]))
+                earned.append(("set", p["set"], p["set"]["pearls"]))
 
     return earned
 
@@ -1611,6 +1629,11 @@ def check_milestones(user_id: int, collection: dict) -> list:
 def sets_of(slug: str) -> list:
     """The sets this card belongs to, in file order."""
     return [s for s in load_card_set()["sets"] if slug in s["slugs"]]
+
+
+def set_rating(card_set: dict) -> int:
+    return int(SET_RATING_SHARE
+               * sum(card_rating(get_card(slug)) for slug in card_set["slugs"]))
 
 
 def set_progress(collection: dict) -> list:

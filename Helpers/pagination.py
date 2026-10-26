@@ -1,5 +1,7 @@
 """Centralised paginator button helper with emoji fallback."""
 
+import asyncio
+
 import discord
 from discord.ext import pages
 
@@ -52,3 +54,29 @@ async def respond_paginator(paginator, interaction: discord.Interaction):
         view=paginator,
     )
     return paginator.message
+
+
+class LazyImagePaginator(pages.Paginator):
+    """Draws each page when it is opened. prepare() must run before sending."""
+
+    def __init__(self, page_count: int, render, **kwargs):
+        self._render = render
+        super().__init__(
+            pages=[pages.Page(content="") for _ in range(max(1, page_count))],
+            **kwargs)
+
+    async def prepare(self, index: int = 0):
+        await self._draw(index)
+        return self
+
+    async def _draw(self, index: int):
+        if not 0 <= index < len(self.pages):
+            return
+        if self.pages[index].files:
+            return
+        self.pages[index] = pages.Page(
+            content="", files=[await asyncio.to_thread(self._render, index)])
+
+    async def goto_page(self, page_number: int = 0, *, interaction=None):
+        await self._draw(page_number)
+        return await super().goto_page(page_number, interaction=interaction)
