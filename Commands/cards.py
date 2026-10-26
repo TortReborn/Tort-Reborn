@@ -2144,25 +2144,37 @@ class Cards(commands.Cog):
     async def tank_leaderboard(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         standings = await asyncio.to_thread(cardlib.db_standings)
-        rows = standings[:LEADERBOARD_SIZE]
-        if not rows:
+        if not standings:
             return await ctx.followup.send(embed=_notice("No tanks yet"),
                                            ephemeral=True)
         cs = cardlib.load_card_set()
-        lines = []
-        for r in rows:
-            member = ctx.guild.get_member(r["user"]) if ctx.guild else None
-            name = member.display_name if member else f"User {r['user']}"
-            lines.append(f"`{r['rank']:2}` **{name}**: {r['rating']:,} Rating, "
-                         f"{r['uniques']}/{len(cs['cards'])}, "
-                         f"{r['copies']} copies")
-        embed = discord.Embed(title="Top tanks", description="\n".join(lines),
-                              color=ctext.ACCENT)
         mine = next((r for r in standings if r["user"] == ctx.author.id), None)
-        if mine and mine["rank"] > LEADERBOARD_SIZE:
-            embed.set_footer(text=f"You: #{mine['rank']}, "
-                                  f"{mine['rating']:,} Rating")
-        await ctx.followup.send(embed=embed)
+        total = (len(standings) - 1) // LEADERBOARD_SIZE + 1
+
+        page_list = []
+        for i in range(0, len(standings), LEADERBOARD_SIZE):
+            lines = []
+            for r in standings[i:i + LEADERBOARD_SIZE]:
+                member = ctx.guild.get_member(r["user"]) if ctx.guild else None
+                name = member.display_name if member else f"User {r['user']}"
+                lines.append(f"`{r['rank']:2}` **{name}**: "
+                             f"{r['rating']:,} Rating, "
+                             f"{r['uniques']}/{len(cs['cards'])}, "
+                             f"{r['copies']} copies")
+            embed = discord.Embed(title="Top tanks",
+                                  description="\n".join(lines),
+                                  color=ctext.ACCENT)
+            footer = f"Page {i // LEADERBOARD_SIZE + 1}/{total}"
+            if mine:
+                footer += f", you are #{mine['rank']} on {mine['rating']:,}"
+            embed.set_footer(text=footer)
+            page_list.append(pages.Page(embeds=[embed]))
+
+        if len(page_list) == 1:
+            return await ctx.followup.send(embed=page_list[0].embeds[0])
+        paginator = pages.Paginator(pages=page_list)
+        add_paginator_buttons(paginator)
+        await respond_paginator(paginator, ctx.interaction)
 
     @card.command(
         name="fuse",
