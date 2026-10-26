@@ -100,9 +100,15 @@ storage = S3Storage()
 
 # In-process cache of profile backgrounds. The bot owns the only write path
 # (save_background), so write-through here gives zero-staleness reads at ~0ms
-# versus the ~300ms S3 round trip Phase 0 measured. Values are the pristine
-# fetched images; reads hand out copies because callers mutate them in place.
-_bg_cache: dict = {}
+# versus the ~300ms S3 round trip Phase 0 measured. Values are the compressed
+# PNG bytes, not decoded images: a decoded RGBA background is many times its
+# PNG, and holding all of them decoded cost hundreds of MB of resident memory.
+# Every read decodes a fresh image, so callers can mutate what they get.
+_bg_cache: dict[int | str, bytes] = {}
+
+
+def _decode_background(data: bytes) -> Image.Image:
+    return Image.open(io.BytesIO(data)).convert("RGBA")
 
 
 def get_background(bg_id) -> Image.Image:
@@ -111,11 +117,11 @@ def get_background(bg_id) -> Image.Image:
 
     cached = _bg_cache.get(bg_id)
     if cached is not None:
-        return cached.copy()
-    img = storage.get_image(f"profile_backgrounds/{bg_id}.png")
-    if img:
-        _bg_cache[bg_id] = img
-        return img.copy()
+        return _decode_background(cached)
+    data = storage.get_bytes(f"profile_backgrounds/{bg_id}.png")
+    if data:
+        _bg_cache[bg_id] = data
+        return _decode_background(data)
     if bg_id != 1:
         try:
             return get_background(1)
@@ -140,8 +146,11 @@ def get_background_file(bg_id):
 
 def save_background(bg_id, image: Image.Image):
     """Upload a profile background to S3 and refresh the memory cache."""
-    storage.put_image(f"profile_backgrounds/{bg_id}.png", image)
-    _bg_cache[bg_id] = image.copy()
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    data = buf.getvalue()
+    storage.put_bytes(f"profile_backgrounds/{bg_id}.png", data)
+    _bg_cache[bg_id] = data
 
 
 def warm_background_cache() -> int:
@@ -158,9 +167,9 @@ def warm_background_cache() -> int:
         bg_id = int(stem) if stem.isdigit() else stem
         if bg_id in _bg_cache:
             continue
-        img = storage.get_image(key)
-        if img:
-            _bg_cache[bg_id] = img
+        data = storage.get_bytes(key)
+        if data:
+            _bg_cache[bg_id] = data
             warmed += 1
     return warmed
 
