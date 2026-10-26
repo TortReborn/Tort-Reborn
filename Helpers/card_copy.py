@@ -39,7 +39,7 @@ def tier_label(tier: str) -> str:
 
 
 def credit(*bits: str | None) -> str:
-    return " · ".join(str(b) for b in bits if b)
+    return ", ".join(str(b) for b in bits if b)
 
 
 def wiki(card: dict) -> str | None:
