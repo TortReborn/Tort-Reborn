@@ -43,9 +43,11 @@ if not token:
 log(SYSTEM, f"Starting with the {PROFILE.upper()} profile...")
 
 # Discord intents
+# No presence or typing events: nothing reads them, and the presence cache held
+# a status for every member of every guild. The bot's own status
+# (change_presence) and the Wynncraft online counts do not depend on either.
 intents = discord.Intents.default()
-intents.typing = True
-intents.presences = True
+intents.typing = False
 intents.members = True
 intents.message_content = True
 
