@@ -1219,3 +1219,38 @@ CREATE INDEX IF NOT EXISTS card_trades_from_user_at_idx
   ON card_trades (from_user, completed_at);
 CREATE INDEX IF NOT EXISTS card_trades_to_user_at_idx
   ON card_trades (to_user, completed_at);
+
+-- =============================================================================
+-- Bot memory samples (TAQ-105)
+-- =============================================================================
+
+-- One row per 5 minutes per running process, written by Tasks/memory_sampler.py
+-- and read back with scripts/memory_report.py. Railway reports only the
+-- container total; these columns split it into the kernel's view (rss_*:
+-- anonymous = what the bot allocated, file = loaded code), glibc's (heap_*:
+-- heap_free_bytes is freed memory not yet returned to the OS) and Python's
+-- (gc_objects, top_types = live container objects by type). deployment_id
+-- keeps runs apart, uptime_s lines runs up by age. Pruned after 30 days.
+CREATE TABLE IF NOT EXISTS bot_memory_samples (
+    sampled_at        TIMESTAMPTZ NOT NULL,
+    deployment_id     TEXT        NOT NULL,
+    uptime_s          INT         NOT NULL,
+    rss_bytes         BIGINT,
+    rss_anon_bytes    BIGINT,
+    rss_file_bytes    BIGINT,
+    rss_peak_bytes    BIGINT,
+    heap_system_bytes BIGINT,
+    heap_free_bytes   BIGINT,
+    heap_mmap_bytes   BIGINT,
+    gc_objects        INT,
+    threads           SMALLINT,
+    guilds            INT,
+    cached_users      INT,
+    cached_members    INT,
+    cached_messages   INT,
+    bg_cache_entries  INT,
+    bg_cache_bytes    BIGINT,
+    top_types         JSONB,
+    sample_ms         REAL,
+    PRIMARY KEY (sampled_at, deployment_id)
+);

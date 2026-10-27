@@ -366,6 +366,7 @@ extensions = [
     'Tasks.annihilation_announcements',
     'Tasks.loop_lag',
     'Tasks.presence_rollup',
+    'Tasks.memory_sampler',
     'Tasks.card_reel_refresh',
     'Tasks.guild_chat_bridge',
 ]
