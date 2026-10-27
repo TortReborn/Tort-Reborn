@@ -358,7 +358,8 @@ def card_db(monkeypatch):
             PRIMARY KEY ("user", award));
         CREATE TEMP TABLE card_trades (
             trade_id UUID PRIMARY KEY, from_user BIGINT NOT NULL,
-            to_user BIGINT NOT NULL,
+            to_user BIGINT NOT NULL, from_cards INT NOT NULL DEFAULT 0,
+            to_cards INT NOT NULL DEFAULT 0,
             completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
         CREATE TEMP TABLE card_members (
             slug VARCHAR(64) PRIMARY KEY, discord_id BIGINT NOT NULL UNIQUE,
@@ -680,6 +681,38 @@ def test_replaying_a_completed_trade_moves_nothing(card_db):
     assert held(card_db, OTHER, "b") == {0: 1}
 
 
+def test_each_player_can_send_up_to_the_trade_limit_per_day(card_db):
+    limit = cardlib.TRADE_RATE_LIMIT.cards
+    give(card_db, USER, "a", limit + 1)
+    give(card_db, OTHER, "b", 2)
+    assert trade([("a", 0, limit)], [("b", 0, 1)])["status"] == "completed"
+    result = trade([("a", 0, 1)], [("b", 0, 1)])
+    assert result == {"status": "limited", "owner": USER, "used": limit,
+                      "attempted": 1, "limit": limit, "period": "day"}
+    assert held(card_db, USER, "a") == {0: 1}
+    assert held(card_db, OTHER, "b") == {0: 1}
+
+
+def test_a_failed_trade_does_not_use_the_daily_allowance(card_db):
+    limit = cardlib.TRADE_RATE_LIMIT.cards
+    give(card_db, USER, "a", limit)
+    give(card_db, OTHER, "b", 1)
+    assert trade([("a", 0, limit + 1)], [("b", 0, 1)])["status"] == "changed"
+    assert trade([("a", 0, limit)], [("b", 0, 1)])["status"] == "completed"
+
+
+def test_trade_period_can_be_changed_to_week(card_db, monkeypatch):
+    monkeypatch.setattr(
+        cardlib, "TRADE_RATE_LIMIT",
+        cardlib.TradeRateLimit(cards=1, period="week"))
+    give(card_db, USER, "a", 2)
+    give(card_db, OTHER, "b", 2)
+    assert trade([("a", 0, 1)], [("b", 0, 1)])["status"] == "completed"
+    result = trade([("a", 0, 1)], [("b", 0, 1)])
+    assert result["status"] == "limited"
+    assert result["period"] == "week"
+
+
 def test_standings_read_the_live_collection(card_db, monkeypatch):
     monkeypatch.setattr(cardlib, "get_card", lambda slug: card(slug, "normal"))
     give(card_db, USER, "a", 1, stars=2)
@@ -986,11 +1019,22 @@ async def test_a_card_can_be_taken_back_out():
     view = builder()
     await view._picked(Reply(["c:1"]))
     reply = Reply(["c:1"])
-    await view._edit_line(reply)
-    [modal] = reply.modals
-    modal.amount.value = "0"
-    await modal.callback(reply)
+    remover = next(c for c in view.children
+                   if isinstance(c, cmd.discord.ui.Select)
+                   and c.placeholder.startswith("Remove"))
+    await remover.callback(reply)
     assert view.lines["give"] == {}
+    assert reply.edits[-1]["embed"].fields[0].value == "Nothing yet"
+
+
+@pytest.mark.asyncio
+async def test_picking_an_offered_card_edits_its_amount():
+    view = builder()
+    await view._picked(Reply(["a:0"]))
+    reply = Reply(["a:0"])
+    await view._picked(reply)
+    [modal] = reply.modals
+    assert modal.amount.value == "1"
 
 
 @pytest.mark.asyncio
@@ -998,7 +1042,7 @@ async def test_spare_scope_keeps_one_best_copy_out_of_the_amount_picker():
     view = builder(mine=stacks(("a", 0, 3)))
     await view._picked(Reply(["a:0"]))
     reply = Reply(["a:0"])
-    await view._edit_line(reply)
+    await view._picked(reply)
     [modal] = reply.modals
     assert modal.held == 2
 
@@ -1007,16 +1051,18 @@ async def test_spare_scope_keeps_one_best_copy_out_of_the_amount_picker():
 async def test_each_side_holds_a_limited_number_of_cards():
     many = stacks(*[(f"card{i}", 0, 1) for i in range(cmd.TradeBuilderView.LINES_PER_SIDE + 1)])
     view = builder(mine=many)
+    view.filters["give"].scope = "all"
+    view._layout()
     for i in range(cmd.TradeBuilderView.LINES_PER_SIDE):
         await view._picked(Reply([f"card{i}:0"]))
     reply = Reply([f"card{cmd.TradeBuilderView.LINES_PER_SIDE}:0"])
     await view._picked(reply)
     assert len(view.lines["give"]) == cmd.TradeBuilderView.LINES_PER_SIDE
-    editor = next(c for c in view.children
-                  if isinstance(c, cmd.discord.ui.Select)
-                  and c.placeholder.startswith("Edit"))
-    assert len(editor.options) == 25
-    assert view.children[0].disabled is True
+    remover = next(c for c in view.children
+                   if isinstance(c, cmd.discord.ui.Select)
+                   and c.placeholder.startswith("Remove"))
+    assert len(remover.options) == 25
+    assert view.children[0].disabled is False
 
 
 @pytest.mark.asyncio
@@ -1131,6 +1177,25 @@ async def test_concurrent_accepts_execute_the_trade_once(monkeypatch):
                          view.accept.callback(Reply()))
     assert len(calls) == 1
     assert view.state == "completed"
+
+
+@pytest.mark.asyncio
+async def test_a_rate_limited_trade_closes_with_the_usage(monkeypatch):
+    monkeypatch.setattr(
+        cardlib, "db_trade",
+        lambda *args: {"status": "limited", "owner": USER, "used": 14,
+                       "attempted": 2, "limit": 15, "period": "day"})
+    view = cmd.TradeView(
+        types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
+        types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
+        [cmd.TradeLine(card("a", "normal"), 0, 2)],
+        [cmd.TradeLine(card("b", "normal"), 0, 1)])
+    reply = Reply()
+    await view.accept.callback(reply)
+    assert view.state == "limited"
+    assert "Ann already sent **14/15 cards** today" in \
+        reply.edits[-1]["embed"].description
+    assert all(child.disabled for child in view.children)
 
 
 @pytest.mark.asyncio

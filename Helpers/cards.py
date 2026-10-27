@@ -18,6 +18,7 @@ import json
 import os
 import random
 import time
+from dataclasses import dataclass
 from typing import Literal, TypedDict
 
 from psycopg2.extras import execute_values
@@ -53,6 +54,15 @@ TIER_WEIGHTS = {
 TIER_ORDER = ["member", "mythic", "fabled", "legendary", "rare", "unique",
               "normal"]
 CARD_TIERS = ["mythic", "fabled", "legendary", "rare", "unique", "normal"]
+
+
+@dataclass(frozen=True)
+class TradeRateLimit:
+    cards: int
+    period: Literal["day", "week"]
+
+
+TRADE_RATE_LIMIT = TradeRateLimit(cards=15, period="day")
 
 TIER_COLORS = {
     "normal": 0xFFFFFF,
@@ -294,9 +304,17 @@ SCHEMA = [
         trade_id     UUID        PRIMARY KEY,
         from_user    BIGINT      NOT NULL,
         to_user      BIGINT      NOT NULL,
+        from_cards   INT         NOT NULL DEFAULT 0,
+        to_cards     INT         NOT NULL DEFAULT 0,
         completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     """,
+    'ALTER TABLE card_trades ADD COLUMN IF NOT EXISTS from_cards INT NOT NULL DEFAULT 0',
+    'ALTER TABLE card_trades ADD COLUMN IF NOT EXISTS to_cards INT NOT NULL DEFAULT 0',
+    'CREATE INDEX IF NOT EXISTS card_trades_from_user_at_idx '
+    'ON card_trades (from_user, completed_at)',
+    'CREATE INDEX IF NOT EXISTS card_trades_to_user_at_idx '
+    'ON card_trades (to_user, completed_at)',
     # Self-limiting: old keys stop existing after this runs once.
     """
     UPDATE card_awards SET award = 'tier-' || CASE substring(award from 6)
@@ -1017,7 +1035,27 @@ class TradeChangedResult(TypedDict):
     available: int
 
 
-TradeResult = TradeDoneResult | TradeChangedResult
+class TradeLimitedResult(TypedDict):
+    status: Literal["limited"]
+    owner: int
+    used: int
+    attempted: int
+    limit: int
+    period: Literal["day", "week"]
+
+
+TradeResult = TradeDoneResult | TradeChangedResult | TradeLimitedResult
+
+
+def _trade_usage(db: DB, user_id: int, period: str) -> int:
+    db.cursor.execute(
+        "SELECT COALESCE(SUM(CASE WHEN from_user = %s THEN from_cards "
+        "ELSE to_cards END), 0) FROM card_trades "
+        "WHERE completed_at >= "
+        "date_trunc(%s, CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' "
+        "AND (from_user = %s OR to_user = %s)",
+        (user_id, period, user_id, user_id))
+    return db.cursor.fetchone()[0]
 
 
 def db_trade(trade_id: str, from_user: int, to_user: int,
@@ -1042,13 +1080,14 @@ def db_trade(trade_id: str, from_user: int, to_user: int,
     db = DB()
     db.connect()
     try:
-        # Commit the receipt with the transfer so replays cannot move cards twice.
-        db.cursor.execute(
-            'INSERT INTO card_trades (trade_id, from_user, to_user) '
-            'VALUES (%s, %s, %s) ON CONFLICT (trade_id) DO NOTHING '
-            'RETURNING trade_id',
-            (trade_id, from_user, to_user))
-        if not db.cursor.fetchone():
+        # Serialize both players, in stable order, so simultaneous offers cannot
+        # pass the allowance check together.
+        for user_id in sorted((from_user, to_user)):
+            db.cursor.execute('SELECT pg_advisory_xact_lock(%s)', (user_id,))
+
+        db.cursor.execute('SELECT 1 FROM card_trades WHERE trade_id = %s',
+                          (trade_id,))
+        if db.cursor.fetchone():
             db.connection.rollback()
             return {"status": "already_completed"}
 
@@ -1071,6 +1110,28 @@ def db_trade(trade_id: str, from_user: int, to_user: int,
                 db.connection.rollback()
                 return {"status": "changed", "owner": owner, "slug": slug,
                         "star": star, "needed": count, "available": available}
+
+        sent = {from_user: sum(count for _, _, count in give),
+                to_user: sum(count for _, _, count in want)}
+        policy = TRADE_RATE_LIMIT
+        for owner in sorted(sent):
+            used = _trade_usage(db, owner, policy.period)
+            if used + sent[owner] > policy.cards:
+                db.connection.rollback()
+                return {"status": "limited", "owner": owner, "used": used,
+                        "attempted": sent[owner], "limit": policy.cards,
+                        "period": policy.period}
+
+        # Commit the receipt with the transfer so replays cannot move cards twice.
+        db.cursor.execute(
+            'INSERT INTO card_trades '
+            '(trade_id, from_user, to_user, from_cards, to_cards) '
+            'VALUES (%s, %s, %s, %s, %s) '
+            'ON CONFLICT (trade_id) DO NOTHING RETURNING trade_id',
+            (trade_id, from_user, to_user, sent[from_user], sent[to_user]))
+        if not db.cursor.fetchone():
+            db.connection.rollback()
+            return {"status": "already_completed"}
 
         execute_values(
             db.cursor,
