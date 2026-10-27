@@ -1038,7 +1038,7 @@ async def test_picking_an_offered_card_edits_its_amount():
 
 
 @pytest.mark.asyncio
-async def test_spare_scope_keeps_one_best_copy_out_of_the_amount_picker():
+async def test_default_spares_keep_one_best_copy_out_of_the_amount_picker():
     view = builder(mine=stacks(("a", 0, 3)))
     await view._picked(Reply(["a:0"]))
     reply = Reply(["a:0"])
@@ -1094,12 +1094,14 @@ def test_spares_keep_the_best_copy():
 
 
 @pytest.mark.asyncio
-async def test_suggested_scope_only_shows_spares_the_other_player_lacks():
+async def test_default_scope_shows_spares_even_when_the_other_player_has_one():
     view = builder(
         mine=stacks(("shared", 0, 3), ("missing", 0, 2), ("single", 0, 1)),
         theirs=stacks(("shared", 0, 1), ("theirs", 0, 2)))
+    assert view.filters["give"].scope == "spares"
+    assert cmd.TradeBuilderView.SCOPES == ("spares", "all")
     assert [(c["slug"], count) for c, _, count in
-            view._filtered_stacks("give")] == [("missing", 1)]
+            view._filtered_stacks("give")] == [("shared", 2), ("missing", 1)]
     assert [(c["slug"], count) for c, _, count in
             view._filtered_stacks("want")] == [("theirs", 1)]
 
@@ -1110,7 +1112,7 @@ async def test_filters_are_kept_separately_for_each_side():
     view.filters["give"].scope = "all"
     view.filters["give"].search = "a"
     await view._flip(Reply())
-    assert view.filters["want"].scope == "suggested"
+    assert view.filters["want"].scope == "spares"
     assert view.filters["want"].search == ""
     await view._flip(Reply())
     assert view.filters["give"].scope == "all"
@@ -1129,6 +1131,39 @@ async def test_review_requires_both_sides_and_has_a_back_step():
     assert "Review trade" in view.embed().title
     await view._back(Reply())
     assert "Review" in buttons(view)
+
+
+@pytest.mark.asyncio
+async def test_trade_overview_groups_rarities_and_marks_recipient_ownership():
+    view = cmd.TradeView(
+        types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
+        types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
+        [cmd.TradeLine(card("plain", "normal"), 0, 1),
+         cmd.TradeLine(card("boss", "mythic"), 0, 1),
+         cmd.TradeLine(card("scarce", "rare"), 0, 2)],
+        [cmd.TradeLine(card("bright", "unique"), 0, 1)],
+        proposer_owned={"bright"}, target_owned={"plain"})
+
+    embed = view.embed()
+    assert embed.fields[0].value == (
+        "**Mythic**\n"
+        "boss (Not owned)\n"
+        "**Rare**\n"
+        "scarce ×2 (Not owned)\n"
+        "**Normal**\n"
+        "plain (Owned)")
+    assert embed.fields[1].value == "**Unique**\nbright (Owned)"
+    assert embed.footer.text == (
+        "Owned status is for the recipient. Recipient only, 5 min")
+
+
+def test_trade_overview_stays_within_discords_field_limit():
+    lines = [cmd.TradeLine(
+        card(f"card-{i}-" + "x" * 50, "normal"), 0, 1)
+        for i in range(25)]
+    text = cmd._trade_overview_text(lines, set())
+    assert len(text) <= 1024
+    assert "+" in text and " more" in text
 
 
 @pytest.mark.asyncio
