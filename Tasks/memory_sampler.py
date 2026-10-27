@@ -1,7 +1,7 @@
 """
 Tasks/memory_sampler.py
 Writes a snapshot of what the bot's memory is made of to bot_memory_samples
-every 5 minutes (TAQ-105), so a run's growth can be read back by query
+every 10 minutes (TAQ-105), so a run's growth can be read back by query
 instead of guessed from Railway's single total line.
 
 Rows carry the Railway deployment id and the process uptime, which keeps runs
@@ -25,7 +25,7 @@ from Helpers import memory_stats
 from Helpers.database import DB
 from Helpers.logger import log, ERROR
 
-INTERVAL_MINUTES = 5
+INTERVAL_MINUTES = 10
 RETENTION_DAYS = 30
 
 # Extensions load during boot, so import time stands in for process start.

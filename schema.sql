@@ -1224,7 +1224,7 @@ CREATE INDEX IF NOT EXISTS card_trades_to_user_at_idx
 -- Bot memory samples (TAQ-105)
 -- =============================================================================
 
--- One row per 5 minutes per running process, written by Tasks/memory_sampler.py
+-- One row per 10 minutes per running process, written by Tasks/memory_sampler.py
 -- and read back with scripts/memory_report.py. Railway reports only the
 -- container total; these columns split it into the kernel's view (rss_*:
 -- anonymous = what the bot allocated, file = loaded code), glibc's (heap_*:
