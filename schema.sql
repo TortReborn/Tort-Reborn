@@ -1211,5 +1211,11 @@ CREATE TABLE IF NOT EXISTS card_trades (
     trade_id     UUID        PRIMARY KEY,
     from_user    BIGINT      NOT NULL,
     to_user      BIGINT      NOT NULL,
+    from_cards   INT         NOT NULL DEFAULT 0 CHECK (from_cards >= 0),
+    to_cards     INT         NOT NULL DEFAULT 0 CHECK (to_cards >= 0),
     completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS card_trades_from_user_at_idx
+  ON card_trades (from_user, completed_at);
+CREATE INDEX IF NOT EXISTS card_trades_to_user_at_idx
+  ON card_trades (to_user, completed_at);

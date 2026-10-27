@@ -1091,7 +1091,7 @@ class TradeBuilderView(discord.ui.View):
         state = self.filters[self.side]
         room = self.LINES_PER_SIDE - len(self.lines[self.side])
 
-        placeholder = f"Add from {self._owner_cards(self.side)}"
+        placeholder = f"Add or edit from {self._owner_cards(self.side)}"
         if pages > 1:
             placeholder += f", page {state.page + 1} of {pages}"
         options = [discord.SelectOption(
@@ -1105,7 +1105,7 @@ class TradeBuilderView(discord.ui.View):
         picker = discord.ui.Select(
             placeholder=placeholder, row=0,
             min_values=1, max_values=max(1, min(len(options), room or 1)),
-            options=options, disabled=not shown or room == 0)
+            options=options, disabled=not shown)
         picker.callback = self._picked
         self.add_item(picker)
 
@@ -1119,17 +1119,18 @@ class TradeBuilderView(discord.ui.View):
         tier_picker.callback = self._tier_changed
         self.add_item(tier_picker)
 
-        placed = self.lines[self.side].values()
+        placed = list(self.lines[self.side].values())
         if placed:
-            editor = discord.ui.Select(
-                placeholder="Edit amount or remove",
-                row=2,
+            remover = discord.ui.Select(
+                placeholder=("Remove from your side" if self.side == "give"
+                             else f"Remove from {self.target.display_name}'s side"),
+                row=2, max_values=len(placed),
                 options=[discord.SelectOption(
                     label=line.name()[:100],
                     value=f"{line.card['slug']}:{line.star}")
                     for line in placed])
-            editor.callback = self._edit_line
-            self.add_item(editor)
+            remover.callback = self._removed
+            self.add_item(remover)
 
         other = "want" if self.side == "give" else "give"
         self._add_button(f"Browse {self._owner_cards(other)}", self._flip, 3)
@@ -1167,9 +1168,18 @@ class TradeBuilderView(discord.ui.View):
 
     async def _picked(self, interaction: discord.Interaction):
         lines = self.lines[self.side]
-        for value in interaction.data["values"]:
-            if value == "__none__":
-                continue
+        values = [value for value in interaction.data["values"]
+                  if value != "__none__"]
+        if len(values) == 1:
+            slug, star = _parse_stack(values[0])
+            line = lines.get((slug, star))
+            if line:
+                return await interaction.response.send_modal(
+                    TradeAmountModal(
+                        self, self.side, line.card, star,
+                        self._available(self.side, slug, star), line.count))
+
+        for value in values:
             slug, star = _parse_stack(value)
             if (slug, star) in lines:
                 continue
@@ -1180,12 +1190,10 @@ class TradeBuilderView(discord.ui.View):
             lines[(slug, star)] = TradeLine(card, star, 1)
         await self._refresh(interaction)
 
-    async def _edit_line(self, interaction: discord.Interaction):
-        slug, star = _parse_stack(interaction.data["values"][0])
-        line = self.lines[self.side][(slug, star)]
-        await interaction.response.send_modal(
-            TradeAmountModal(self, self.side, line.card, star,
-                             self._available(self.side, slug, star), line.count))
+    async def _removed(self, interaction: discord.Interaction):
+        for value in interaction.data["values"]:
+            self.lines[self.side].pop(_parse_stack(value), None)
+        await self._refresh(interaction)
 
     async def _tier_changed(self, interaction: discord.Interaction):
         value = interaction.data["values"][0]
@@ -1341,6 +1349,15 @@ class TradeView(discord.ui.View):
         card = line.name() if line else result["slug"]
         return f"Trade changed\n{owner} no longer has **{card}**"
 
+    def _limited_text(self, result):
+        owner = ("You" if result["owner"] == self.target.id
+                 else self.proposer.display_name)
+        period = "today" if result["period"] == "day" else "this week"
+        return (f"Trade limit reached\n{owner} already sent "
+                f"**{result['used']}/{result['limit']} cards** {period}\n"
+                f"This trade would send "
+                f"**{result['attempted']}** more")
+
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.success)
     async def accept(self, button: discord.ui.Button,
                      interaction: discord.Interaction):
@@ -1370,6 +1387,9 @@ class TradeView(discord.ui.View):
             if result["status"] == "changed":
                 self.state = "changed"
                 return await self._edit(interaction, self._changed_text(result))
+            if result["status"] == "limited":
+                self.state = "limited"
+                return await self._edit(interaction, self._limited_text(result))
             if result["status"] not in ("completed", "already_completed"):
                 self.state = "pending"
                 self._disable(False)
@@ -1819,7 +1839,9 @@ class Cards(commands.Cog):
                    "`/card discard` Discard plain dupes into lower-tier rolls "
                    "(wishlist does not apply)\n"
                    f"{_yield_line()}\n"
-                   "`/card trade` Build a trade of any cards in any amounts\n"
+                   f"`/card trade` Trade up to "
+                   f"**{cardlib.TRADE_RATE_LIMIT.cards} cards sent per "
+                   f"{cardlib.TRADE_RATE_LIMIT.period}**\n"
                    "`/card sets` View progress in card sets"),
             inline=False)
         embed.add_field(
