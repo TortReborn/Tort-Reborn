@@ -1134,6 +1134,39 @@ async def test_review_requires_both_sides_and_has_a_back_step():
 
 
 @pytest.mark.asyncio
+async def test_trade_overview_groups_rarities_and_marks_recipient_ownership():
+    view = cmd.TradeView(
+        types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
+        types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
+        [cmd.TradeLine(card("plain", "normal"), 0, 1),
+         cmd.TradeLine(card("boss", "mythic"), 0, 1),
+         cmd.TradeLine(card("scarce", "rare"), 0, 2)],
+        [cmd.TradeLine(card("bright", "unique"), 0, 1)],
+        proposer_owned={"bright"}, target_owned={"plain"})
+
+    embed = view.embed()
+    assert embed.fields[0].value == (
+        "**Mythic**\n"
+        "boss (Not owned)\n"
+        "**Rare**\n"
+        "scarce ×2 (Not owned)\n"
+        "**Normal**\n"
+        "plain (Owned)")
+    assert embed.fields[1].value == "**Unique**\nbright (Owned)"
+    assert embed.footer.text == (
+        "Owned status is for the recipient. Recipient only, 5 min")
+
+
+def test_trade_overview_stays_within_discords_field_limit():
+    lines = [cmd.TradeLine(
+        card(f"card-{i}-" + "x" * 50, "normal"), 0, 1)
+        for i in range(25)]
+    text = cmd._trade_overview_text(lines, set())
+    assert len(text) <= 1024
+    assert "+" in text and " more" in text
+
+
+@pytest.mark.asyncio
 async def test_accepting_hands_the_whole_bundle_to_the_database(monkeypatch):
     seen = {}
     events = []

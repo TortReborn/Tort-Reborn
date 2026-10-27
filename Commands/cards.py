@@ -885,6 +885,34 @@ def _lines_text(lines, sep="\n", limit=None) -> str:
     return sep.join(shown)
 
 
+def _trade_overview_text(lines: list[TradeLine], recipient_owned: set[str],
+                         limit=1024) -> str:
+    rows = []
+    for tier in cardlib.TIER_ORDER:
+        group = [line for line in lines if _tier_of(line.card) == tier]
+        if not group:
+            continue
+        header = f"**{_tier_label(tier)}**"
+        for i, line in enumerate(group):
+            owned = ("Owned" if line.card["slug"] in recipient_owned
+                     else "Not owned")
+            rows.append(([header] if i == 0 else [])
+                        + [f"{line.name()} ({owned})"])
+
+    rendered = []
+    shown = 0
+    for row in rows:
+        candidate = "\n".join(rendered + row)
+        remaining = len(lines) - shown - 1
+        if remaining:
+            candidate += f"\n+{remaining} more"
+        if len(candidate) > limit:
+            return "\n".join(rendered + [f"+{len(lines) - shown} more"])
+        rendered.extend(row)
+        shown += 1
+    return "\n".join(rendered)
+
+
 @dataclass
 class TradeBrowseState:
     scope: str = "spares"
@@ -1237,9 +1265,16 @@ class TradeBuilderView(discord.ui.View):
         await interaction.response.edit_message(
             embed=_notice("Trade cancelled"), view=None)
 
-    async def _shortfall(self, give: list, want: list) -> str | None:
+    async def _current_collections(self) -> dict[int, dict]:
+        mine, theirs = await asyncio.gather(
+            asyncio.to_thread(cardlib.db_get_collection, self.proposer.id),
+            asyncio.to_thread(cardlib.db_get_collection, self.target.id))
+        return {self.proposer.id: mine, self.target.id: theirs}
+
+    def _shortfall(self, give: list, want: list,
+                   collections: dict[int, dict]) -> str | None:
         for user, lines in ((self.proposer, give), (self.target, want)):
-            owned = await asyncio.to_thread(cardlib.db_get_collection, user.id)
+            owned = collections[user.id]
             for line in lines:
                 levels = owned.get(line.card["slug"], {}).get("levels", {})
                 if levels.get(line.star, 0) < line.count:
@@ -1259,11 +1294,15 @@ class TradeBuilderView(discord.ui.View):
                 embed=self.embed(), view=self)
             return await interaction.followup.send(
                 embed=_notice("Pick cards for both sides"), ephemeral=True)
-        shortfall = await self._shortfall(give, want)
+        collections = await self._current_collections()
+        shortfall = self._shortfall(give, want, collections)
         if shortfall:
             return await interaction.followup.send(
                 embed=_notice(shortfall), ephemeral=True)
-        trade = TradeView(self.proposer, self.target, give, want)
+        trade = TradeView(
+            self.proposer, self.target, give, want,
+            proposer_owned=set(collections[self.proposer.id]),
+            target_owned=set(collections[self.target.id]))
         trade.message = await interaction.channel.send(
             content=self.target.mention, embed=trade.embed(), view=trade)
         self.stop()
@@ -1274,12 +1313,16 @@ class TradeBuilderView(discord.ui.View):
 class TradeView(discord.ui.View):
     def __init__(self, proposer: discord.User, target: discord.User,
                  give: list[TradeLine], want: list[TradeLine],
-                 trade_id: str | None = None):
+                 trade_id: str | None = None,
+                 proposer_owned: set[str] | None = None,
+                 target_owned: set[str] | None = None):
         super().__init__(timeout=300)
         self.proposer = proposer
         self.target = target
         self.give = give
         self.want = want
+        self.proposer_owned = proposer_owned or set()
+        self.target_owned = target_owned or set()
         self.trade_id = trade_id or str(uuid.uuid4())
         self.message = None
         self.state = "pending"
@@ -1288,10 +1331,13 @@ class TradeView(discord.ui.View):
     def embed(self) -> discord.Embed:
         embed = discord.Embed(title="Trade", color=ctext.ACCENT)
         embed.add_field(name=f"{self.proposer.display_name}'s side",
-                        value=_lines_text(self.give, limit=1024), inline=True)
+                        value=_trade_overview_text(
+                            self.give, self.target_owned), inline=True)
         embed.add_field(name=f"{self.target.display_name}'s side",
-                        value=_lines_text(self.want, limit=1024), inline=True)
-        embed.set_footer(text="Recipient only, 5 min")
+                        value=_trade_overview_text(
+                            self.want, self.proposer_owned), inline=True)
+        embed.set_footer(
+            text="Owned status is for the recipient. Recipient only, 5 min")
         return embed
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
