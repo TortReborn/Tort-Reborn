@@ -1038,7 +1038,7 @@ async def test_picking_an_offered_card_edits_its_amount():
 
 
 @pytest.mark.asyncio
-async def test_spare_scope_keeps_one_best_copy_out_of_the_amount_picker():
+async def test_default_spares_keep_one_best_copy_out_of_the_amount_picker():
     view = builder(mine=stacks(("a", 0, 3)))
     await view._picked(Reply(["a:0"]))
     reply = Reply(["a:0"])
@@ -1094,12 +1094,14 @@ def test_spares_keep_the_best_copy():
 
 
 @pytest.mark.asyncio
-async def test_suggested_scope_only_shows_spares_the_other_player_lacks():
+async def test_default_scope_shows_spares_even_when_the_other_player_has_one():
     view = builder(
         mine=stacks(("shared", 0, 3), ("missing", 0, 2), ("single", 0, 1)),
         theirs=stacks(("shared", 0, 1), ("theirs", 0, 2)))
+    assert view.filters["give"].scope == "spares"
+    assert cmd.TradeBuilderView.SCOPES == ("spares", "all")
     assert [(c["slug"], count) for c, _, count in
-            view._filtered_stacks("give")] == [("missing", 1)]
+            view._filtered_stacks("give")] == [("shared", 2), ("missing", 1)]
     assert [(c["slug"], count) for c, _, count in
             view._filtered_stacks("want")] == [("theirs", 1)]
 
@@ -1110,7 +1112,7 @@ async def test_filters_are_kept_separately_for_each_side():
     view.filters["give"].scope = "all"
     view.filters["give"].search = "a"
     await view._flip(Reply())
-    assert view.filters["want"].scope == "suggested"
+    assert view.filters["want"].scope == "spares"
     assert view.filters["want"].search == ""
     await view._flip(Reply())
     assert view.filters["give"].scope == "all"

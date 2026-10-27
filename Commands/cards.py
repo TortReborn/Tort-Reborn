@@ -887,7 +887,7 @@ def _lines_text(lines, sep="\n", limit=None) -> str:
 
 @dataclass
 class TradeBrowseState:
-    scope: str = "suggested"
+    scope: str = "spares"
     tier: str | None = None
     sort: str = "copies"
     search: str = ""
@@ -962,7 +962,7 @@ class TradeSearchModal(discord.ui.Modal):
 class TradeBuilderView(discord.ui.View):
     PICKER_SIZE = 25
     LINES_PER_SIDE = 25
-    SCOPES = ("suggested", "spares", "all")
+    SCOPES = ("spares", "all")
     SORTS = ("copies", "rarity", "name")
 
     def __init__(self, proposer: discord.User, target: discord.User,
@@ -990,7 +990,6 @@ class TradeBuilderView(discord.ui.View):
         if not self.reviewing:
             scope = self.filters[self.side].scope
             embed.description = {
-                "suggested": "Spare cards the other player is missing",
                 "spares": "Spare cards, keeping the best copy",
                 "all": "Every card, including the last copy",
             }[scope]
@@ -1031,13 +1030,7 @@ class TradeBuilderView(discord.ui.View):
         stacks = self.stacks[side]
         if state.scope == "all":
             return list(stacks)
-        spares = _spare_stacks(stacks)
-        if state.scope == "spares":
-            return spares
-        other = "want" if side == "give" else "give"
-        other_slugs = {card["slug"] for card, _, _ in self.stacks[other]}
-        return [stack for stack in spares
-                if stack[0]["slug"] not in other_slugs]
+        return _spare_stacks(stacks)
 
     def _filtered_stacks(self, side: str) -> list:
         state = self.filters[side]
