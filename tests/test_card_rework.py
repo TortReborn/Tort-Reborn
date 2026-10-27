@@ -1153,8 +1153,7 @@ async def test_trade_overview_groups_rarities_and_marks_recipient_ownership():
         "**Normal**\n"
         "plain (Owned)")
     assert embed.fields[1].value == "**Unique**\nbright (Owned)"
-    assert embed.footer.text == (
-        "Owned status is for the recipient. Recipient only, 5 min")
+    assert embed.footer.text == "Recipient only, 5 min"
 
 
 def test_trade_overview_stays_within_discords_field_limit():

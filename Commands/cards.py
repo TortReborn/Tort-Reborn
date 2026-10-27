@@ -1336,8 +1336,7 @@ class TradeView(discord.ui.View):
         embed.add_field(name=f"{self.target.display_name}'s side",
                         value=_trade_overview_text(
                             self.want, self.proposer_owned), inline=True)
-        embed.set_footer(
-            text="Owned status is for the recipient. Recipient only, 5 min")
+        embed.set_footer(text="Recipient only, 5 min")
         return embed
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
