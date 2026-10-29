@@ -182,11 +182,9 @@ _ENV_CONFIG = {
         "HQ_TEAM_ROLE_ID": 1405514713554485309,
         "ANNIHILATION_PING_ROLE_ID": 1275082923812458506,
         "CARD_PING_ROLE_ID": 1548393155018104861,
-        # Warning tracker (TAQ-79). None turns that half of Tasks/warning_forum_sync
-        # off; both stay off until the TE forum exists and the bot has Manage Roles
-        # above Dishonored Fish (role 1355722335340068962 in the main Discord).
-        "WARNING_FORUM_CHANNEL_ID": None,
-        "DISHONORED_FISH_ROLE_ID": None,
+        # Warning tracker (TAQ-79). None turns that half of Tasks/warning_forum_sync off.
+        "WARNING_FORUM_CHANNEL_ID": 1565493644599890081,  # TE: #warnings
+        "DISHONORED_FISH_ROLE_ID": 1355722335340068962,   # main Discord
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1126608994526560306>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292000963395655>",
