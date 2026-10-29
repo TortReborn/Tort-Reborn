@@ -109,6 +109,9 @@ _ENV_CONFIG = {
         "HQ_TEAM_ROLE_ID": 1486367257641619537,
         "ANNIHILATION_PING_ROLE_ID": 1523404277043957921,
         "CARD_PING_ROLE_ID": 1548393718472511702,
+        # Warning tracker (TAQ-79). None turns that half of Tasks/warning_forum_sync off.
+        "WARNING_FORUM_CHANNEL_ID": 1565487313935405076,  # test exec: #warnings
+        "DISHONORED_FISH_ROLE_ID": 1565487406411677877,   # test exec
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1371292212729479207>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292093074640936>",
@@ -179,6 +182,9 @@ _ENV_CONFIG = {
         "HQ_TEAM_ROLE_ID": 1405514713554485309,
         "ANNIHILATION_PING_ROLE_ID": 1275082923812458506,
         "CARD_PING_ROLE_ID": 1548393155018104861,
+        # Warning tracker (TAQ-79). None turns that half of Tasks/warning_forum_sync off.
+        "WARNING_FORUM_CHANNEL_ID": 1565493644599890081,  # TE: #warnings
+        "DISHONORED_FISH_ROLE_ID": 1355722335340068962,   # main Discord
         # Emoji strings (formatted Discord emoji, NOT raw IDs)
         "SHELL_EMOJI": "<:shells:1126608994526560306>",
         "ASPECT_EMOJI": "<:aspect_warrior:1371292000963395655>",
@@ -280,6 +286,7 @@ SNIPE_LOG_CHANNEL_ID = _cfg["SNIPE_LOG_CHANNEL_ID"]
 ANNIHILATION_ANNOUNCEMENT_CHANNEL_ID = _cfg["ANNIHILATION_ANNOUNCEMENT_CHANNEL_ID"]
 GENERAL_CHANNEL_ID = _cfg["GENERAL_CHANNEL_ID"]
 RULES_CHANNEL_ID = _cfg["RULES_CHANNEL_ID"]
+WARNING_FORUM_CHANNEL_ID = _cfg["WARNING_FORUM_CHANNEL_ID"]
 SHELL_EXCHANGE_CHANNEL_ID = _cfg["SHELL_EXCHANGE_CHANNEL_ID"]
 RATES_THREAD_ID = _cfg["RATES_THREAD_ID"]
 WAR_TICKET_CATEGORY_ID = _cfg["WAR_TICKET_CATEGORY_ID"]
@@ -302,6 +309,7 @@ ANNIHILATION_PING_ROLE_ID = _cfg["ANNIHILATION_PING_ROLE_ID"]
 # The six-hour reel refresh mentions this role. 0 means no role exists yet:
 # the refresh posts silently and /tank ping says so.
 CARD_PING_ROLE_ID = _cfg["CARD_PING_ROLE_ID"]
+DISHONORED_FISH_ROLE_ID = _cfg["DISHONORED_FISH_ROLE_ID"]
 # Always prod — used for cross-server/DM checks that must validate against the real guild
 PROD_TAQ_GUILD_ID      = _ENV_CONFIG["prod"]["TAQ_GUILD_ID"]
 PROD_MILITARY_ROLE_ID  = _ENV_CONFIG["prod"]["MILITARY_ROLE_ID"]
