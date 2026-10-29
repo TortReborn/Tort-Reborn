@@ -26,7 +26,7 @@
     ":green_salad:": {
         "onboard": [
         ],
-        "message": "Welcome [user] to the **Consumables team**!\n> In <#1199086789479108628> you'll help us with anything related to consus, depending on what we need at that moment.\n> __Various tasks you can do:__\n> - Gather ingredients and materials\n> - Crafting consus when needed\n> - Improve current consus for wars\n> Make sure to get roles in <#752917987853467669> too to get pinged when we need ingredients or a crafter.",
+        "message": "Welcome [user] to the **Consumables team**!\n> In <#1199086789479108628> you'll help us with anything related to consus, depending on what we need at that moment.\n> __Various tasks you can do:__\n> - Gather ingredients and materials\n> - Crafting consus when needed\n> - Improve current consus for wars\n> Make sure to get roles in <#1523984409538203789> too to get pinged when we need ingredients or a crafter.",
         "channel": 1199086789479108628
     }
 }
