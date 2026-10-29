@@ -33,6 +33,9 @@ SHADOWED_TABLES = [
     "audit_log",
     "shells",
     "management_exceptions",
+    "warning_profiles",
+    "player_warnings",
+    "player_warning_attachments",
 ]
 
 
@@ -90,17 +93,26 @@ def _dev_db():
     cur = conn.cursor()
     # rank_definitions is referenced by discord_links' FK on the real table;
     # the temp copy carries no FK, so the seed here is only for readability.
+    # A dev mirror older than a table's migration simply lacks it; the tests
+    # that need it then fail on their own instead of taking the session down.
+    shadowed = []
     for table in SHADOWED_TABLES:
+        cur.execute("SELECT to_regclass(%s)", (f"public.{table}",))
+        if cur.fetchone()[0] is None:
+            continue
         cur.execute(f"CREATE TEMP TABLE {table} (LIKE public.{table} INCLUDING ALL)")
+        shadowed.append(table)
     cur.execute(
         "INSERT INTO rank_definitions SELECT * FROM public.rank_definitions"
     )
-    yield SharedDB(conn)
+    db = SharedDB(conn)
+    db.shadowed_tables = shadowed
+    yield db
     conn.close()
 
 
 @pytest.fixture
 def temp_db(_dev_db):
     cur = _dev_db.cursor
-    cur.execute("TRUNCATE " + ", ".join(t for t in SHADOWED_TABLES if t != "rank_definitions"))
+    cur.execute("TRUNCATE " + ", ".join(t for t in _dev_db.shadowed_tables if t != "rank_definitions"))
     return _dev_db

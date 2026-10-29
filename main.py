@@ -358,6 +358,7 @@ extensions = [
     'Tasks.check_website_apps',
     'Tasks.sync_vote_counts',
     'Tasks.kick_list_tracker',
+    'Tasks.warning_forum_sync',
     'Tasks.promotion_queue_processor',
     'Tasks.process_website_decisions',
     'Tasks.sync_war_builds',
