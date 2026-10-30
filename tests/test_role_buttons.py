@@ -179,12 +179,14 @@ def _seeded(monkeypatch, slug):
 
 
 def test_role_info_buttons_are_role_buttons_that_look_the_same(monkeypatch):
-    from Commands.generate import PING_ROLES, REACTION_ROLES
+    from Helpers import local_ids
+    from scripts.seed_bot_panels import ROLE_INFO_BUTTONS
+    data = [*ROLE_INFO_BUTTONS["reaction_roles.json"], *ROLE_INFO_BUTTONS["ping_roles.json"]]
     panel = _seeded(monkeypatch, "role-info")
     buttons = bp.role_buttons_in(panel["content"])
-    assert len(buttons) == len(REACTION_ROLES) + len(PING_ROLES)
-    assert [b["label"] for b in buttons] == [s.label for s in (*REACTION_ROLES, *PING_ROLES)]
-    assert [b["role_id"] for b in buttons] == [str(s.role_id) for s in (*REACTION_ROLES, *PING_ROLES)]
+    assert len(buttons) == len(data) == 25
+    assert [b["label"] for b in buttons] == [label for label, *_ in data]
+    assert [b["role_id"] for b in buttons] == [str(local_ids.role(role_id)) for _, role_id, *_ in data]
     assert not any(b.get("kind") == "action" and b.get("action", "").startswith("role:")
                    for m in panel["content"]["messages"] for row in m.get("rows") or [] for b in row)
 

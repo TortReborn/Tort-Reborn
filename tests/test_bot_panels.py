@@ -16,7 +16,7 @@ from Helpers.bot_panels import (
 
 ACTIONS = {
     "apply_guild": PanelAction("apply_guild", "Guild Member Application", "Applications", "\U0001F420", "primary"),
-    "role:ping_notg": PanelAction("role_info:ping_notg", "NOTG", "Ping roles", "<:notg:1316539942524031017>"),
+    "raid_claim": PanelAction("raid_claim", "Claim rewards", "Rewards", "<:notg:1316539942524031017>"),
 }
 VALUES = {"shells_per_aspect": "3", "max_aspects_per_conversion": "40"}
 ASSET = "0123456789abcdef.png"
@@ -80,14 +80,14 @@ def test_non_https_image_rejected():
 def test_action_buttons_use_registry_custom_ids_with_overrides():
     out = render({"content": "hi", "rows": [[
         {"kind": "action", "action": "apply_guild"},
-        {"kind": "action", "action": "role:ping_notg", "label": "Night of the Grootslangs", "style": "success"},
+        {"kind": "action", "action": "raid_claim", "label": "Claim my raids", "style": "success"},
         {"kind": "link", "label": "Site", "url": "https://the-aquarium.com"},
     ]]})
-    apply_btn, role_btn, link_btn = out.view.children
+    apply_btn, claim_btn, link_btn = out.view.children
     assert apply_btn.custom_id == "apply_guild" and apply_btn.label == "Guild Member Application"
     assert apply_btn.style == discord.ButtonStyle.primary
-    assert role_btn.custom_id == "role_info:ping_notg" and role_btn.label == "Night of the Grootslangs"
-    assert role_btn.style == discord.ButtonStyle.success and role_btn.emoji.id == 1316539942524031017
+    assert claim_btn.custom_id == "raid_claim" and claim_btn.label == "Claim my raids"
+    assert claim_btn.style == discord.ButtonStyle.success and claim_btn.emoji.id == 1316539942524031017
     assert link_btn.url == "https://the-aquarium.com" and link_btn.style == discord.ButtonStyle.link
 
 

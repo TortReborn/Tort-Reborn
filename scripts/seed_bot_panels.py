@@ -457,15 +457,47 @@ def _military_roles_embeds() -> list[dict]:
         {"color": color, "footer": {"text": '\u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e  \u200e \u200e \u200e Use the buttons below to get the roles from this list! \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e  \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e  \u200e \u200e \u200e \u200e \u200e'}},
     ]
 
-def _role_rows(specs) -> list[list[dict]]:
+# Role Info's role buttons, moved here from Commands/generate.py's REACTION_ROLES
+# and PING_ROLES (TAQ-120): label, maincord role id, emoji, row. Live edits
+# happen on the website; this is only what a fresh seed starts from.
+ROLE_INFO_BUTTONS = {
+    "reaction_roles.json": [
+        ("Class Builder", 906269952938475602, "\U0001F3D7\ufe0f", 0),
+        ("Crafter", 906265677667663902, "\U0001F477", 0),
+        ("Ingredient Grinder", 1050233131183112255, "\U0001F41A", 0),
+        ("Merman", 796817826987114557, "\U0001F468", 1),
+        ("Mermaid", 796817681276862485, "\U0001F469", 1),
+        ("Ghost Fish", 796817901188808796, "\U0001F47B", 1),
+        ("America", 939940600248160316, "\U0001F30E", 2),
+        ("Europe", 939940342457856000, "\U0001F30D", 2),
+        ("Asia/Oceania", 939944900227657728, "\U0001F30F", 2),
+        ("Events", 1209952006144401500, "\U0001F389", 3),
+        ("Giveaways", 919714824731127818, "\U0001F381", 3),
+        ("Prelude to Annihilation", 1275082923812458506, "\U0001F479", 3),
+    ],
+    "ping_roles.json": [
+        ("NOTG", 1316539196378452039, "<:notg:1316539942524031017>", 0),
+        ("NOL", 1316539324006666300, "<:nol:1316539940418621530>", 0),
+        ("TCC", 1316539449299173447, "<:tcc:1316539938917060658>", 0),
+        ("TNA", 1316539530655825930, "<:tna:1316539936438222850>", 0),
+        ("WTP", 1485993226794962974, "<:wtp:1498097156282781847>", 0),
+        ("Graid", 1485993830778929182, "<:graid:1515117095250301018>", 1),
+        ("Aurora Raids", 1565835104708858096, None, 1),
+        ("Combat XP Bomb", 1423301085350858832, "\U0001F5E1\ufe0f", 2),
+        ("Loot Bomb", 1423302359014047764, "\U0001F48E", 2),
+        ("Loot Chest Bomb", 1423302456091213978, "\U0001F4E6", 2),
+        ("Profession XP Bomb", 1423302526874292279, "\u26cf\ufe0f", 3),
+        ("Profession Speed Bomb", 1423302571640229961, "\U0001F6E0\ufe0f", 3),
+        ("Dungeon Bomb", 1423302825651212349, "\U0001F3F0", 3),
+    ],
+}
+
+
+def _role_rows(buttons) -> list[list[dict]]:
     rows: dict[int, list[dict]] = {}
-    for spec in specs:
-        emoji = spec.emoji
-        if isinstance(emoji, discord.PartialEmoji):
-            emoji = str(emoji)
-        rows.setdefault(spec.row or 0, []).append(
-            {"kind": "role", "role_id": str(spec.role_id), "label": spec.label, "emoji": emoji,
-             **({"requires_role_id": str(spec.gate_role_id)} if spec.gate_role_id else {})}
+    for label, role_id, emoji, row in buttons:
+        rows.setdefault(row, []).append(
+            {"kind": "role", "role_id": str(role_id), "label": label, **({"emoji": emoji} if emoji else {})}
         )
     return [rows[r] for r in sorted(rows)]
 
@@ -485,7 +517,6 @@ class AssetUploader:
 
 
 def build_panels(upload) -> list[dict]:
-    from Commands.generate import PING_ROLES, REACTION_ROLES
 
     guild_info_links = [[
         {"kind": "link", "label": "Our website!", "url": "https://www.the-aquarium.com",
@@ -501,8 +532,8 @@ def build_panels(upload) -> list[dict]:
     role_info = [
         ("guild_ranks.json", "guild_ranks.PNG", None),
         ("discord_roles.json", "discord_roles.PNG", None),
-        ("reaction_roles.json", "reaction_roles.PNG", REACTION_ROLES),
-        ("ping_roles.json", "ping_roles.PNG", PING_ROLES),
+        ("reaction_roles.json", "reaction_roles.PNG", ROLE_INFO_BUTTONS["reaction_roles.json"]),
+        ("ping_roles.json", "ping_roles.PNG", ROLE_INFO_BUTTONS["ping_roles.json"]),
     ]
 
     shell_config = get_shell_exchange_config()
