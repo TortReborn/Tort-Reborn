@@ -12,6 +12,7 @@ from discord.ext import commands
 from discord.ui import View, button
 
 from Helpers import local_ids
+from Helpers.role_buttons import toggle_role
 from Commands.tickets import TICKET_PANEL_ACTIONS
 from Helpers.bot_panels import PanelAction
 from Helpers.database import DB, apply_shell_delta, get_shell_conversion, record_shell_transaction
@@ -98,52 +99,10 @@ class SelfRoleView(View):
         for spec in specs:
             self.add_item(SelfRoleButton(spec))
 
-    @staticmethod
-    def _resolve_role(guild: discord.Guild, role_id: int) -> discord.Role | None:
-        return guild.get_role(role_id)
-
     async def toggle_role(self, interaction: discord.Interaction, spec: RoleButtonConfig):
-        await interaction.response.defer(ephemeral=True)
-
-        guild = interaction.guild
-        if not guild:
-            return await interaction.followup.send("Server only.", ephemeral=True)
-
-        member = interaction.user
-        if not isinstance(member, discord.Member):
-            member = await guild.fetch_member(interaction.user.id)
-
-        if spec.gate_role_id:
-            gate_role = self._resolve_role(guild, spec.gate_role_id)
-            if gate_role is None:
-                return await interaction.followup.send("Gate role not found.", ephemeral=True)
-            if gate_role not in member.roles:
-                return await interaction.followup.send("Missing required role.", ephemeral=True)
-
-        role = self._resolve_role(guild, spec.role_id)
-        if role is None:
-            return await interaction.followup.send("Role not found.", ephemeral=True)
-
-        bot_member = guild.me
-        if bot_member is None and interaction.client.user:
-            bot_member = guild.get_member(interaction.client.user.id)
-        if not bot_member or not bot_member.guild_permissions.manage_roles:
-            return await interaction.followup.send("I need Manage Roles.", ephemeral=True)
-        if bot_member and role >= bot_member.top_role:
-            return await interaction.followup.send("I can't manage that role.", ephemeral=True)
-
-        reason = f"Role info button used by {member} ({member.id})"
-        try:
-            if role in member.roles:
-                await member.remove_roles(role, reason=reason)
-                return await interaction.followup.send(f"Removed {role.name}.", ephemeral=True)
-
-            await member.add_roles(role, reason=reason)
-            await interaction.followup.send(f"Added {role.name}.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.followup.send("I can't manage that role.", ephemeral=True)
-        except discord.HTTPException:
-            await interaction.followup.send("Role update failed.", ephemeral=True)
+        # Legacy role_info:<key> buttons (Role Info before its role buttons were
+        # republished as panel role buttons); same toggle and safety rule.
+        await toggle_role(interaction, spec.role_id, spec.gate_role_id)
 
 
 def _reaction_role_view() -> SelfRoleView:

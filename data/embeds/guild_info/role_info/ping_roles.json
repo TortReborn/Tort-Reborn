@@ -27,7 +27,7 @@
     },
     {
       "type": "rich",
-      "description": "Click the reactions below to get the roles from this list!",
+      "description": "Use the buttons below to get the roles from this list!",
       "color": 10721252,
       "content_scan_version": 4
     }

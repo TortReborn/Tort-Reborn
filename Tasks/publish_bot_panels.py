@@ -32,11 +32,13 @@ from Helpers.bot_panels import (
     asset_name,
     panel_messages,
     render_message,
+    role_buttons_in,
     uses_dynamic,
 )
 from Helpers.database import DB
 from Helpers.logger import log, INFO, ERROR
 from Helpers.panel_values import load_panel_values
+from Helpers.role_buttons import unassignable_reason
 from Helpers.storage import storage
 from Helpers.variables import HOME_GUILD_IDS, TAQ_GUILD_ID
 
@@ -245,6 +247,22 @@ def _fetch_assets(names: set[str]) -> dict[str, bytes]:
     return out
 
 
+def check_role_buttons(content: dict, guild: discord.Guild):
+    """Refuse a publish whose role buttons would hand out a role the safety rule
+    forbids, or name a role this server doesn't have (TAQ-114)."""
+    top = guild.me.top_role if guild.me else None
+    for spec in role_buttons_in(content):
+        role = guild.get_role(int(spec.get("role_id") or 0))
+        if role is None:
+            raise PanelError(f"A role button gives role {spec.get('role_id')}, which isn't in {guild.name}.")
+        why = unassignable_reason(role, top)
+        if why:
+            raise PanelError(f"The {role.name} button can't hand that role out: {why}.")
+        req = spec.get("requires_role_id")
+        if req and guild.get_role(int(req)) is None:
+            raise PanelError(f"The {role.name} button requires role {req}, which isn't in {guild.name}.")
+
+
 class PublishBotPanels(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -374,6 +392,7 @@ class PublishBotPanels(commands.Cog):
         ]
 
         channel = await self._resolve_channel(job.channel_id)
+        check_role_buttons(job.content, channel.guild)
         bot_id = self.client.user.id
 
         if job.adopt_message_ids:
@@ -477,8 +496,11 @@ class PublishBotPanels(commands.Cog):
                     "sort": [ch.category.position if ch.category else -1, ch.position],
                 })
             channels.sort(key=lambda c: c.pop("sort"))
+            top = guild.me.top_role if guild.me else None
             roles = [
-                {"id": str(r.id), "name": r.name, "color": r.color.value}
+                {"id": str(r.id), "name": r.name, "color": r.color.value,
+                 # whether a role button may hand it out, and why not
+                 "assignable": (why := unassignable_reason(r, top)) is None, "why": why}
                 for r in sorted(guild.roles, key=lambda r: -r.position)
                 if not r.is_default()
             ]

@@ -75,3 +75,13 @@ def test_role_buttons_have_test_counterparts():
         assert str(c.role_id) in test_roles, c.label
         if isinstance(c.emoji, discord.PartialEmoji) and c.emoji.id:
             assert str(c.emoji.id) in test_emojis, c.label
+
+
+def test_role_button_ids_are_translated(test_map):
+    button = {"kind": "role", "role_id": "111", "requires_role_id": "111", "label": "<@&111>"}
+    assert local_ids.data(button) == {"kind": "role", "role_id": "211", "requires_role_id": "211", "label": "<@&211>"}
+
+
+def test_role_button_ids_untouched_in_prod(prod):
+    button = {"kind": "role", "role_id": "111"}
+    assert local_ids.data(button) == button

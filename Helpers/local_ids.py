@@ -70,14 +70,18 @@ def text(s):
     return _LINK.sub(lambda m: f"discord.com/channels/{_get('guilds', m[1])}/{channel(m[2])}", s)
 
 
+ROLE_ID_KEYS = ("role_id", "requires_role_id")  # bare role ids in panel role buttons
+
+
 def data(v):
-    """`text` applied to every string in a JSON-like value (embed dicts)."""
+    """`text` applied to every string in a JSON-like value (embed dicts), and
+    role buttons' bare role ids translated."""
     if isinstance(v, str):
         return text(v)
     if isinstance(v, list):
         return [data(x) for x in v]
     if isinstance(v, dict):
-        return {k: data(x) for k, x in v.items()}
+        return {k: (str(role(x)) if k in ROLE_ID_KEYS and _MAP and x else data(x)) for k, x in v.items()}
     return v
 
 
