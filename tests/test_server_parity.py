@@ -318,3 +318,11 @@ def test_renumber_skips_when_no_role_below_the_bot_can_move():
     test["roles"][-1]["managed"] = True
     calls = []
     assert sp.renumber_roles(lambda *a: calls.append(a), TEST, test) is False and calls == []
+
+
+def test_a_channel_prod_keeps_archived_is_archived_even_if_a_bot_uses_it():
+    test = fake_test_server()
+    test["channels"].append(chan(61, "old-stuff", parent="41"))  # prod has it, in Archives
+    want, test, _, names, cls = plan(test, dev_ids=("45", "61"))
+    assert "61" in [c["id"] for c in cls["archive"]]
+    assert "61" not in [c["id"] for c in cls["dev"]]

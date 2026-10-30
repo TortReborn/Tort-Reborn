@@ -28,9 +28,9 @@ What the sync does to a test server:
 - Overwrites are copied by role name. Overwrites for single users and for
   test-only roles are left as they are.
 - Channels a bot uses (any id in either profile of Helpers/variables.py,
-  plus DEV_CHANNEL_NAMES) with no prod counterpart go
-  into a Dev category at the top. Every other test-only channel goes into
-  Archive at the bottom (Archive 2, 3, ... past Discord's 50 per category).
+  plus DEV_CHANNEL_NAMES) with no prod counterpart go into a Dev category at
+  the top, unless prod keeps them in its archive categories. Every other
+  test-only channel goes into Archive at the bottom (Archive 2, 3, ... past Discord's 50 per category).
   Nothing is deleted unless asked: --delete-empty-categories removes
   categories with nothing left in them, --delete-test-only-roles removes
   roles the real server doesn't have (never bot roles or KEEP_TEST_ROLES).
@@ -174,7 +174,14 @@ def prod_layout(g):
         "everyone_permissions": str(everyone["permissions"]),
         "categories": [{"name": c["name"], "overwrites": overwrites(c)} for c in cats],
         "channels": channels,
+        # Live channels prod keeps in its archive categories: archived in test too.
+        "archived": sorted(c["name"] for c in chans if c["type"] != CATEGORY
+                           and cat_name_of(chans, c) in SKIP_CATEGORIES),
     }
+
+
+def cat_name_of(chans, c):
+    return next((p["name"] for p in chans if p["id"] == c.get("parent_id")), None)
 
 
 def channel_settings(c):
@@ -279,7 +286,8 @@ def classify(want, test, dev_ids, dev_names, aliases=None):
             continue
         in_archive = c.get("parent_id") in {a["id"] for a in archives}
         replaced = key(c["name"]) in prod_keys or (aliases or {}).get(c["name"]) in prod_names
-        if not replaced and (c["id"] in dev_ids or key(c["name"]) in {key(n) for n in dev_names}):
+        archived_in_prod = key(c["name"]) in {key(n) for n in want.get("archived", [])}
+        if not replaced and not archived_in_prod and (c["id"] in dev_ids or key(c["name"]) in {key(n) for n in dev_names}):
             dev.append(c)
         elif not in_archive:
             archive.append(c)
