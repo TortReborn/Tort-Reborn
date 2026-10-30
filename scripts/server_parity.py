@@ -27,8 +27,8 @@ What the sync does to a test server:
   channels: the test servers are not Community servers.
 - Overwrites are copied by role name. Overwrites for single users and for
   test-only roles are left as they are.
-- Channels the dev bot uses (any id in the test profile of
-  Helpers/variables.py, plus DEV_CHANNEL_NAMES) with no prod counterpart go
+- Channels a bot uses (any id in either profile of Helpers/variables.py,
+  plus DEV_CHANNEL_NAMES) with no prod counterpart go
   into a Dev category at the top. Every other test-only channel goes into
   Archive at the bottom (Archive 2, 3, ... past Discord's 50 per category).
   Nothing is deleted unless asked: --delete-empty-categories removes
@@ -512,7 +512,9 @@ def stages(snap, which, test):
     want = prod_layout(snap["guilds"][which])
     r_ops, match = role_ops(want, test, bot_top_position(test))
     names = role_names(want, test, match)
-    cls = classify(want, test, config_ids(_ENV_CONFIG["test"]), DEV_CHANNEL_NAMES.get(which, set()),
+    # Either profile: the prod bot logs errors to a channel in the test exec server.
+    used = config_ids(_ENV_CONFIG["test"]) | config_ids(_ENV_CONFIG["prod"])
+    cls = classify(want, test, used, DEV_CHANNEL_NAMES.get(which, set()),
                    CHANNEL_ALIASES.get(which), NOT_DEV_CHANNEL_NAMES.get(which, set()))
     return {
         "roles": [o for o in r_ops if o["op"] != "role_order"],
