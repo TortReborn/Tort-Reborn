@@ -7,6 +7,7 @@ from discord.commands import slash_command
 from io import BytesIO
 from PIL import Image
 
+from Helpers import local_ids
 from Helpers.shell_exchange_generator import generate_images
 from Helpers.database import (
     get_shell_exchange_config,
@@ -116,7 +117,7 @@ class ShellExchange(commands.Cog):
         return rates
 
     def _build_rates_message(self, added, removed, modified):
-        lines = [f"<@&{RATES_PING_ROLE_ID}>"]
+        lines = [f"<@&{local_ids.role(RATES_PING_ROLE_ID)}>"]
         ts = int(time.time())
         lines.append(f"## <t:{ts}:d> Shell Exchange changes")
 
@@ -368,7 +369,7 @@ class ShellExchange(commands.Cog):
             return
 
         # Embed creation (if not legacy message update)
-        long_text = "𓆉  Ingredients are vital to the guild. We use them to craft XP gear, prof gear, war and to offer free war builds. We therefore rely on small donations to keep all guild activities running smoothly. To reward our contributors, we have created our exclusive currency: Shells. They can be traded for crafted gear, guild tomes, mythic items, and more. To find a more comprehensive list, check out the <#1462481145018060951>!\n\nThe list below shows our currently accepted ingredients and materials, which you can receive shells for donating. Other ingredients are welcome, but will not be eligible for shells. If you find an ingredient that isn't on the list but you think might still be useful, feel free to ask a Chief for confirmation. Specially outlined items are of higher need than usual right now, so while you will get exactly the shells displayed still, donating these specific ingredients and materials helps us a lot!\n\n⚠️ Shell rates and accepted ingredients are likely to change depending on their demand, how many we currently have in stock, and their price on the Trade Market. All modifications are announced in ⁠the \"Shell rate balances\" thread. If you'd like to be pinged for them, you can get the <@&1050233131183112255> role in <#1523984409538203789>. This role is also used when our supply of a specific ingredient gets low (pro tip: high demand ingredients will likely earn you more shells!).\n\n𓆉  In order to claim your shells: \nPut your ingredients in the guild bank and screenshot the log message and optionally the content, you can then **open a ticket** and **send a screenshot** as evidence. A Narwhal will soon update your profile and close the ticket as soon as the transaction is completed.\n\n⚙️ There are two useful commands to check your balance:\n`/profile [user]`\n`/leaderboard (total/timespan)`"
+        long_text = local_ids.text("𓆉  Ingredients are vital to the guild. We use them to craft XP gear, prof gear, war and to offer free war builds. We therefore rely on small donations to keep all guild activities running smoothly. To reward our contributors, we have created our exclusive currency: Shells. They can be traded for crafted gear, guild tomes, mythic items, and more. To find a more comprehensive list, check out the <#1462481145018060951>!\n\nThe list below shows our currently accepted ingredients and materials, which you can receive shells for donating. Other ingredients are welcome, but will not be eligible for shells. If you find an ingredient that isn't on the list but you think might still be useful, feel free to ask a Chief for confirmation. Specially outlined items are of higher need than usual right now, so while you will get exactly the shells displayed still, donating these specific ingredients and materials helps us a lot!\n\n⚠️ Shell rates and accepted ingredients are likely to change depending on their demand, how many we currently have in stock, and their price on the Trade Market. All modifications are announced in ⁠the \"Shell rate balances\" thread. If you'd like to be pinged for them, you can get the <@&1050233131183112255> role in <#1523984409538203789>. This role is also used when our supply of a specific ingredient gets low (pro tip: high demand ingredients will likely earn you more shells!).\n\n𓆉  In order to claim your shells: \nPut your ingredients in the guild bank and screenshot the log message and optionally the content, you can then **open a ticket** and **send a screenshot** as evidence. A Narwhal will soon update your profile and close the ticket as soon as the transaction is completed.\n\n⚙️ There are two useful commands to check your balance:\n`/profile [user]`\n`/leaderboard (total/timespan)`")
 
         embed = discord.Embed(description=long_text, color=TAQ_EMBED_COLOR)
 

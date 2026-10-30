@@ -1,4 +1,5 @@
 import base64
+import functools
 import datetime
 import hashlib
 import hmac
@@ -16,6 +17,7 @@ from discord.commands import SlashCommandGroup
 from discord.ui import View, button
 from discord import Permissions
 
+from Helpers import local_ids
 from Helpers.database import DB, apply_shell_delta, record_shell_transaction
 from Helpers.logger import log, ERROR
 from Helpers.variables import (
@@ -49,7 +51,16 @@ TAQ_ROLES_CHANNEL_MENTION = f"<#{TAQ_ROLES_CHANNEL_ID}>"
 
 
 def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
-    return discord.PartialEmoji(name=name, id=emoji_id)
+    return local_ids.partial_emoji(name, emoji_id)
+
+
+def _local(build):
+    """Maincord ids in a builder's embed(s) -> the test servers' (no-op in prod)."""
+    @functools.wraps(build)
+    def wrapper(*args, **kwargs):
+        out = build(*args, **kwargs)
+        return local_ids.embeds(out) if isinstance(out, list) else local_ids.embed(out)
+    return wrapper
 
 
 @dataclass(frozen=True)
@@ -60,6 +71,10 @@ class RoleButtonConfig:
     emoji: str | discord.PartialEmoji | None = None
     row: int | None = None
     gate_role_id: int | None = None
+
+    def __post_init__(self):
+        object.__setattr__(self, "role_id", local_ids.role(self.role_id))
+        object.__setattr__(self, "gate_role_id", local_ids.role(self.gate_role_id))
 
 
 REACTION_ROLES = (
@@ -195,11 +210,12 @@ def _load_discohook_embeds(json_filename: str) -> list[discord.Embed]:
         payload = json.load(f)
     embeds = []
     for embed_data in payload.get("embeds", []):
-        embed_data = {**embed_data, "color": GENERATE_EMBED_COLOR}
+        embed_data = {**local_ids.data(embed_data), "color": GENERATE_EMBED_COLOR}
         embeds.append(discord.Embed.from_dict(embed_data))
     return embeds
 
 
+@_local
 def _build_guild_rules_embed() -> discord.Embed:
     embed = discord.Embed(color=GENERATE_EMBED_COLOR)
     fields = (
@@ -229,6 +245,7 @@ def _build_guild_rules_embed() -> discord.Embed:
     return embed
 
 
+@_local
 def _build_guild_info_embed() -> discord.Embed:
     embed = discord.Embed(color=GENERATE_EMBED_COLOR)
     fields = (
@@ -722,6 +739,7 @@ class ShellConfirmView(View):
 
 # ---- TAq FAQ embed builders ----
 
+@_local
 def _build_taq_faq_embeds_page1() -> list[discord.Embed]:
     c = GENERATE_EMBED_COLOR
     return [
@@ -855,6 +873,7 @@ def _build_taq_faq_embeds_page1() -> list[discord.Embed]:
     ]
 
 
+@_local
 def _build_taq_faq_embeds_page2() -> list[discord.Embed]:
     c = GENERATE_EMBED_COLOR
     return [

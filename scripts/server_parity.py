@@ -15,6 +15,9 @@ plan      dev token, read-only: every change apply would make.
 apply     dev token: makes them, stage by stage (roles, categories, channels,
           order, emojis), re-reading the test server between stages.
 check     plan, exiting 1 when anything has drifted.
+idmap     dev token, read-only on Discord: writes data/test_id_map.json, the
+          maincord -> test id pairs Helpers/local_ids.py uses, and lists ids
+          in the code that have no test counterpart. apply runs it at the end.
 
 What the sync does to a test server:
 - Roles: matched by name (ignoring case, emoji and punctuation), edited to
@@ -73,7 +76,7 @@ PER_MEMBER_CATEGORIES = {"Guild Applications", "Guild Queue", "Invited", "Denied
                          "alt apps archive", "🐚 Shell Exchange", "🗡 War Ticket"}
 # Emojis the server's posts and the bot actually use. The rest are for fun.
 STRUCTURE_EMOJIS = ("TAq", "partytort", "graid", "shells", "aspect_warrior",
-                    "notg", "nol", "tcc", "tna", "wtp")
+                    "notg", "nol", "tcc", "tna", "wtp", "Tome", "tort")
 EMOJI_GUILD = "main"
 # Dev-only channels the bot does not reference by id but that belong in Dev.
 DEV_CHANNEL_NAMES = {"main": set(), "exec": set()}
@@ -515,7 +518,8 @@ def cmd_snapshot(args):
     found = {}
     for which, (prod_id, _) in GUILDS.items():
         g = d.guild(prod_id)
-        out["guilds"][which] = {"id": str(prod_id), "name": g["name"], "roles": g["roles"], "channels": g["channels"]}
+        out["guilds"][which] = {"id": str(prod_id), "name": g["name"], "roles": g["roles"], "channels": g["channels"],
+                                "emoji_names": {e["id"]: e["name"] for e in g.get("emojis", [])}}
         for e in g.get("emojis", []):
             if e["name"] in STRUCTURE_EMOJIS and e["name"] not in found:
                 found[e["name"]] = e
@@ -760,6 +764,8 @@ def cmd_sync(args):
             for r in test_only_roles(test, names):
                 print(f"  delete role {r['name']!r}")
                 d("DELETE", f"/guilds/{gid}/roles/{r['id']}")
+    if writes:
+        write_id_map(d, snap, bot_id)
     if args.command == "apply" and not args.yes:
         print("\nNothing was changed. Run again with --yes to apply.")
     if args.command == "check":
@@ -767,11 +773,103 @@ def cmd_sync(args):
         sys.exit(1 if drift else 0)
 
 
+ID_MAP_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "test_id_map.json")
+ID_SCAN_DIRS = ("Commands", "Helpers", "Tasks", os.path.join("data", "embeds"))
+
+
+def unique_by_name(items, parked=()):
+    """name -> id, for names only one item has; items in `parked` categories
+    (Archive, Dev) count only when nothing live has the name."""
+    seen = {}
+    for x in items:
+        seen.setdefault(x["name"], []).append(x)
+    out = {}
+    for n, xs in seen.items():
+        live = [x for x in xs if x.get("parent_id") not in parked] or xs
+        if len(live) == 1:
+            out[n] = live[0]["id"]
+    return out
+
+
+def parked_categories(channels):
+    return {c["id"] for c in channels if c["type"] == CATEGORY
+            and (is_archive(c["name"]) or c["name"] in (DEV_CATEGORY, *SKIP_CATEGORIES))}
+
+
+def build_id_map(snap, tests):
+    out = {"guilds": {}, "roles": {}, "channels": {}, "emojis": {}}
+    test_emojis = {}
+    for which in ("main", "exec"):  # main first: Tort Test holds the structure emojis
+        for e in tests[which].get("emojis", []):
+            test_emojis.setdefault(e["name"], []).append(e["id"])
+    for which, (prod_id, test_id) in GUILDS.items():
+        p, t = snap["guilds"][which], tests[which]
+        out["guilds"][str(prod_id)] = str(test_id)
+        have = unique_by_name(t["roles"])
+        for r in p["roles"]:
+            if r["name"] in have:
+                out["roles"][r["id"]] = have[r["name"]]
+        # Every prod channel of a name, archived copies too, maps to the live test one.
+        have = unique_by_name(t["channels"], parked_categories(t["channels"]))
+        for c in p["channels"]:
+            if c["name"] in have:
+                out["channels"][c["id"]] = have[c["name"]]
+        for pid, name in p.get("emoji_names", {}).items():
+            if test_emojis.get(name):
+                out["emojis"][pid] = test_emojis[name][0]
+    return {k: dict(sorted(v.items())) for k, v in out.items()}
+
+
+def unmapped_ids(snap, id_map):
+    """Maincord role/channel/emoji ids written in the code that have no test pair."""
+    known = {}
+    for g in snap["guilds"].values():
+        known.update({r["id"]: ("role", r["name"]) for r in g["roles"]})
+        known.update({c["id"]: ("channel", c["name"]) for c in g["channels"]})
+        known.update({i: ("emoji", n) for i, n in g.get("emoji_names", {}).items()})
+    mapped = {i for v in id_map.values() for i in v}
+    root = os.path.join(os.path.dirname(__file__), "..")
+    found = {}
+    for d in ID_SCAN_DIRS:
+        for dirpath, _, files in os.walk(os.path.join(root, d)):
+            for f in files:
+                if not f.endswith((".py", ".json")) or f == "variables.py":  # per profile already
+                    continue
+                path = os.path.join(dirpath, f)
+                for i in re.findall(r"(?<!\d)(\d{17,20})(?!\d)", open(path, encoding="utf-8", errors="ignore").read()):
+                    if i in known and i not in mapped and int(i) not in PROD_GUILD_IDS:
+                        found.setdefault((known[i][0], known[i][1], i), set()).add(os.path.relpath(path, root))
+    return found
+
+
+def write_id_map(d, snap, bot_id):
+    tests = {w: load_test(d, GUILDS[w][1], bot_id) for w in GUILDS}
+    id_map = build_id_map(snap, tests)
+    with open(ID_MAP_FILE, "w", encoding="utf-8") as f:
+        json.dump(id_map, f, indent=1)
+        f.write("\n")
+    print(f"\nwrote {os.path.relpath(ID_MAP_FILE)}: " + ", ".join(f"{len(v)} {k}" for k, v in id_map.items()))
+    for (kind, name, i), files in sorted(unmapped_ids(snap, id_map).items()):
+        print(f"  ! maincord {kind} {name!r} ({i}) in {', '.join(sorted(files))} has no test counterpart")
+
+
+def cmd_idmap(args):
+    token, profile = token_profile()
+    if profile != "test":
+        raise SystemExit("idmap reads the test servers: use the dev bot's token")
+    with open(args.snapshot, encoding="utf-8") as f:
+        snap = json.load(f)
+    d = Discord(token)
+    write_id_map(d, snap, d("GET", "/users/@me")["id"])
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("snapshot")
     s.add_argument("--out", required=True)
+    s = sub.add_parser("idmap")
+    s.add_argument("--snapshot", required=True)
     for name in ("plan", "apply", "check"):
         s = sub.add_parser(name)
         s.add_argument("--snapshot", required=True)
@@ -781,7 +879,7 @@ def main():
             s.add_argument("--delete-empty-categories", action="store_true")
             s.add_argument("--delete-test-only-roles", action="store_true")
     args = p.parse_args()
-    (cmd_snapshot if args.command == "snapshot" else cmd_sync)(args)
+    {"snapshot": cmd_snapshot, "idmap": cmd_idmap}.get(args.command, cmd_sync)(args)
 
 
 if __name__ == "__main__":
