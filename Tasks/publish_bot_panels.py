@@ -11,6 +11,8 @@ which is what the website shows under the panel's history.
 The task also keeps a directory of the home guild's channels, roles and
 emoji plus the bot's button registry in cache_entries ('botPanelRegistry'),
 so the editor can offer pickers and preview mentions without a bot token.
+It is rebuilt hourly, or on the next tick after the editor's refresh button
+writes 'botPanelRegistryRefresh'.
 """
 
 import asyncio
@@ -42,6 +44,7 @@ POLL_SECONDS = 10
 DIRECTORY_EVERY_LOOPS = 360  # ~1 hour
 JOBS_PER_TICK = 10
 REGISTRY_CACHE_KEY = "botPanelRegistry"
+REFRESH_CACHE_KEY = "botPanelRegistryRefresh"
 NO_MENTIONS = discord.AllowedMentions.none()
 
 
@@ -196,6 +199,22 @@ def _save_registry(data: dict):
         db.close()
 
 
+def _take_refresh_request() -> bool:
+    """Consume a refresh the editor asked for; stale ones lapse unanswered."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            "DELETE FROM cache_entries WHERE cache_key = %s RETURNING expires_at > NOW()",
+            (REFRESH_CACHE_KEY,),
+        )
+        row = db.cursor.fetchone()
+        db.connection.commit()
+        return bool(row and row[0])
+    finally:
+        db.close()
+
+
 # ---- Assets ----
 
 def _referenced_assets(content: dict) -> set[str]:
@@ -235,11 +254,11 @@ class PublishBotPanels(commands.Cog):
 
     @tasks.loop(seconds=POLL_SECONDS)
     async def publish_panels(self):
-        if self._loops % DIRECTORY_EVERY_LOOPS == 0:
-            try:
+        try:
+            if self._loops % DIRECTORY_EVERY_LOOPS == 0 or await asyncio.to_thread(_take_refresh_request):
                 await self._sync_registry()
-            except Exception as e:
-                log(ERROR, f"Bot panel registry sync failed: {e}", context="publish_bot_panels")
+        except Exception as e:
+            log(ERROR, f"Bot panel registry sync failed: {e}", context="publish_bot_panels")
         self._loops += 1
 
         # Work through everything waiting (a value change can queue several
