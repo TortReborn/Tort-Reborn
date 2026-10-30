@@ -8,7 +8,7 @@ import discord
 from dotenv import load_dotenv
 from Helpers.variables import (
     WELCOME_CHANNEL_ID, ANNOUNCEMENT_CHANNEL_ID, FAQ_CHANNEL_ID, GUILD_BANK_CHANNEL_ID,
-    RANK_UP_CHANNEL_ID, TAQ_ROLES_CHANNEL_ID, BOT_COMMAND_CHANNEL_ID, RAID_COLLECTING_CHANNEL_ID,
+    TAQ_ROLES_CHANNEL_ID, BOT_COMMAND_CHANNEL_ID, RAID_COLLECTING_CHANNEL_ID,
 )
 
 load_dotenv()
@@ -26,7 +26,6 @@ async def main():
         "[announcement_channel]": f"<#{ANNOUNCEMENT_CHANNEL_ID}>",
         "[faq_channel]": f"<#{FAQ_CHANNEL_ID}>",
         "[guild_bank_channel]": f"<#{GUILD_BANK_CHANNEL_ID}>",
-        "[rank_up_channel]": f"<#{RANK_UP_CHANNEL_ID}>",
         "[taq_roles_channel]": f"<#{TAQ_ROLES_CHANNEL_ID}>",
         "[bot_command_channel]": f"<#{BOT_COMMAND_CHANNEL_ID}>",
         "[raid_collecting_channel]": f"<#{RAID_COLLECTING_CHANNEL_ID}>",
