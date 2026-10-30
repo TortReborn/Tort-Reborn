@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 SHADOWED_TABLES = [
     "rank_definitions",
+    "guild_alliances",
     "discord_links",
     "guild_roster",
     "membership_stints",

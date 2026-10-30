@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from Commands import register
-from Helpers import alliances
+from Helpers import alliances, ally_registration
 from Helpers.alliances import Alliance
 
 
@@ -35,17 +35,19 @@ def test_autocomplete_limits_choices(monkeypatch):
 
 
 def setup_registration(monkeypatch, current):
-    monkeypatch.setattr(register, 'enabled_alliances', lambda: current)
+    monkeypatch.setattr(ally_registration, 'enabled_alliances', lambda: current)
     monkeypatch.setattr(register.Register, '_is_moderator_or_higher', lambda *_: True)
     cog = register.Register(None)
     cog._check_link_conflict = Mock()
     cog._upsert_ally_link = Mock()
+    monkeypatch.setattr(ally_registration, '_check_registration', cog._check_link_conflict)
+    monkeypatch.setattr(ally_registration, '_save_registration', cog._upsert_ally_link)
     role = object()
     ctx = SimpleNamespace(
         defer=AsyncMock(), followup=SimpleNamespace(send=AsyncMock()),
         user=SimpleNamespace(name='HR'), guild=SimpleNamespace(get_role=Mock(return_value=role)),
     )
-    member = SimpleNamespace(id=99, mention='<@99>', roles=[], add_roles=AsyncMock(), edit=AsyncMock())
+    member = SimpleNamespace(id=99, mention='<@99>', guild=ctx.guild, roles=[], add_roles=AsyncMock(), edit=AsyncMock())
     return cog, ctx, member, role
 
 
@@ -73,14 +75,14 @@ def test_registration_rejects_invalid_rank_before_discord_changes(monkeypatch, r
 @pytest.mark.parametrize('alliance', [EDEN, NIA])
 def test_registration_uses_configured_role_and_rank(monkeypatch, alliance):
     cog, ctx, member, role = setup_registration(monkeypatch, [alliance])
-    monkeypatch.setattr(register, 'getPlayerUUID', lambda _: ('Canonical', 'uuid'))
+    monkeypatch.setattr(ally_registration, 'getPlayerUUID', lambda _: ('Canonical', 'uuid'))
     asyncio.run(register.Register.ally.callback(cog, ctx, member, 'Player', str(alliance.id)))
     ctx.guild.get_role.assert_called_once_with(alliance.role_id)
     member.add_roles.assert_awaited_once_with(
         role, reason=f'Ally registration for {alliance.name} (ran by HR)', atomic=True,
     )
     member.edit.assert_awaited_once_with(nick=f'{alliance.rank} Canonical')
-    cog._upsert_ally_link.assert_called_once_with(99, 'Canonical', 'uuid', alliance.rank)
+    cog._upsert_ally_link.assert_called_once_with(99, 'Canonical', 'uuid', alliance)
 
 
 def test_enabled_alliances_query_refreshes_enabled_and_rank_state(temp_db, monkeypatch):
@@ -89,7 +91,7 @@ def test_enabled_alliances_query_refreshes_enabled_and_rank_state(temp_db, monke
         id BIGINT, guild_name TEXT, guild_prefix TEXT, discord_role_id BIGINT,
         display_rank TEXT, enabled BOOLEAN)''')
     cur.execute('TRUNCATE guild_alliances')
-    cur.execute('''INSERT INTO guild_alliances VALUES
+    cur.execute('''INSERT INTO guild_alliances (id, guild_name, guild_prefix, discord_role_id, display_rank, enabled) VALUES
         (1, 'Nerfuria', 'NIA', 456, 'Navigator', TRUE),
         (2, 'Eden', 'EDN', 123, 'Missing Rank', TRUE),
         (3, 'Disabled', 'OFF', 789, 'Navigator', FALSE)''')

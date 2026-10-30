@@ -114,7 +114,7 @@ def _rank_update(target_id, rank):
     db = DB(); db.connect()
     try:
         db.cursor.execute(
-            "UPDATE discord_links SET rank = %s WHERE discord_id = %s",
+            "UPDATE discord_links SET rank = %s, alliance_id = NULL WHERE discord_id = %s",
             (rank, target_id)
         )
         db.connection.commit()

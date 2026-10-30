@@ -171,7 +171,7 @@ class WavePromote(commands.Cog):
 
                 # Persist to DB
                 db.cursor.execute(
-                    "UPDATE discord_links SET rank = %s WHERE discord_id = %s",
+                    "UPDATE discord_links SET rank = %s, alliance_id = NULL WHERE discord_id = %s",
                     (new_rank_key, target.id)
                 )
                 db.connection.commit()

@@ -31,6 +31,20 @@ INSERT INTO rank_definitions (name, kind, sort_order) VALUES
   ('Horizon',    'ally',   101)
 ON CONFLICT (name) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS guild_alliances (
+  id              BIGSERIAL PRIMARY KEY,
+  guild_name      TEXT NOT NULL UNIQUE,
+  guild_prefix    TEXT NOT NULL,
+  discord_role_id BIGINT NOT NULL,
+  display_rank    TEXT NOT NULL DEFAULT 'Navigator',
+  notes           TEXT,
+  enabled         BOOLEAN NOT NULL DEFAULT TRUE,
+  created_by      TEXT,
+  updated_by      TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS discord_links (
   discord_id        BIGINT       PRIMARY KEY,
   ign               VARCHAR(64)  NOT NULL,           -- name cache; rename sync keeps it current
@@ -38,6 +52,7 @@ CREATE TABLE IF NOT EXISTS discord_links (
   rank              VARCHAR(32)  REFERENCES rank_definitions (name),
   linked_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   linked_by         BIGINT,
+  alliance_id       BIGINT REFERENCES guild_alliances(id) ON DELETE SET NULL,
   -- Discord role colour cache for the website (Helpers/discord_colors.py).
   color_primary     INT,
   color_secondary   INT,
@@ -46,6 +61,7 @@ CREATE TABLE IF NOT EXISTS discord_links (
   colors_synced_at  TIMESTAMPTZ
 );
 CREATE UNIQUE INDEX IF NOT EXISTS discord_links_uuid_uq ON discord_links (uuid);
+CREATE INDEX IF NOT EXISTS discord_links_alliance_idx ON discord_links(alliance_id) WHERE alliance_id IS NOT NULL;
 
 -- Who is in the in-game guild right now. Maintained by update_member_data
 -- from the same API diff that posts the join/leave embeds.

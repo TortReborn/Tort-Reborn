@@ -27,16 +27,18 @@ def upsert_identity(cursor, *, discord_id, ign, uuid, linked_by=None):
            VALUES (%s, %s, %s::uuid, %s)
            ON CONFLICT (discord_id) DO UPDATE
            SET ign = EXCLUDED.ign,
-               uuid = EXCLUDED.uuid""",
+               uuid = EXCLUDED.uuid,
+               alliance_id = CASE WHEN discord_links.uuid = EXCLUDED.uuid
+                                  THEN discord_links.alliance_id ELSE NULL END""",
         (int(discord_id), ign, str(uuid), linked_by),
     )
     hon.refresh_discord_id(cursor, uuid, discord_id)
 
 
-def set_rank(cursor, discord_id, rank):
+def set_rank(cursor, discord_id, rank, *, alliance_id=None):
     cursor.execute(
-        "UPDATE discord_links SET rank = %s WHERE discord_id = %s",
-        (rank, int(discord_id)),
+        "UPDATE discord_links SET rank = %s, alliance_id = %s WHERE discord_id = %s",
+        (rank, alliance_id, int(discord_id)),
     )
     return cursor.rowcount > 0
 
