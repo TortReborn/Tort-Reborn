@@ -66,6 +66,7 @@ PING_ROLES = (
     RoleButtonConfig("ping_tna", "TNA", 1316539530655825930, _custom_emoji("tna", 1316539936438222850), row=0),
     RoleButtonConfig("ping_wtp", "WTP", 1485993226794962974, _custom_emoji("wtp", 1498097156282781847), row=0),
     RoleButtonConfig("ping_graid", "Graid", 1485993830778929182, _custom_emoji("graid", 1515117095250301018), row=1),
+    RoleButtonConfig("ping_aurora_raids", "Aurora Raids", 1565835104708858096, row=1),
     RoleButtonConfig("ping_combat_xp_bomb", "Combat XP Bomb", 1423301085350858832, "\U0001F5E1\ufe0f", row=2),
     RoleButtonConfig("ping_loot_bomb", "Loot Bomb", 1423302359014047764, "\U0001F48E", row=2),
     RoleButtonConfig("ping_loot_chest_bomb", "Loot Chest Bomb", 1423302456091213978, "\U0001F4E6", row=2),
