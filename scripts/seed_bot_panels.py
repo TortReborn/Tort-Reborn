@@ -122,7 +122,6 @@ def _build_taq_faq_embeds_page1() -> list[discord.Embed]:
                 "or an experienced Wynncraft warrior. Feel free to ask any questions, game-related or not!\n\n"
                 "Some shortcuts for you:\n"
                 f"{TAQ_ROLES_CHANNEL_MENTION}\n"
-                "<#1062062453137080462> \n"
                 "<#1152966582834827344> \n"
                 "<#736920151081091122> \n"
                 "<#1135510651981287424> \n"
