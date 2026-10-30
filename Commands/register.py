@@ -4,6 +4,7 @@ import discord
 from discord import ApplicationContext, Option, SlashCommandGroup
 from discord.ext import commands
 
+from Helpers.alliances import enabled_alliances
 from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
 from Helpers.links import LinkConflictError, assert_uuid_free
@@ -13,12 +14,15 @@ from Helpers.variables import HOME_GUILD_IDS
 
 MODERATOR_ROLE_NAME = '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'
 
-ALLY_GUILDS = {
-    'Nerfuria': {
-        'role_id': 1414022229435482163,
-        'rank': 'Navigator',
-    },
-}
+
+async def _alliance_autocomplete(ctx: discord.AutocompleteContext):
+    alliances = await asyncio.to_thread(enabled_alliances)
+    query = (ctx.value or '').strip().casefold()
+    return [
+        discord.OptionChoice(name=f'{ally.name} [{ally.prefix}]'[:100], value=str(ally.id))
+        for ally in alliances
+        if query in ally.name.casefold() or query in ally.prefix.casefold()
+    ][:25]
 
 
 class Register(commands.Cog):
@@ -38,7 +42,7 @@ class Register(commands.Cog):
         ctx: ApplicationContext,
         user: discord.Member,
         ign: str,
-        guild: Option(str, 'Allied guild', choices=list(ALLY_GUILDS.keys())),
+        guild: Option(str, 'Allied guild', autocomplete=_alliance_autocomplete),
     ):
         await ctx.defer(ephemeral=True)
 
@@ -49,11 +53,22 @@ class Register(commands.Cog):
             )
             return
 
-        ally_config = ALLY_GUILDS[guild]
-        ally_role = ctx.guild.get_role(ally_config['role_id'])
+        alliances = await asyncio.to_thread(enabled_alliances)
+        alliance = next((ally for ally in alliances if str(ally.id) == guild), None)
+        if alliance is None:
+            await ctx.followup.send('Choose an enabled guild from the suggestions.', ephemeral=True)
+            return
+        if alliance.rank_kind != 'ally':
+            await ctx.followup.send(
+                'This guild needs a valid ally rank in Externals & alliances.', ephemeral=True,
+            )
+            return
+
+        guild = alliance.name
+        ally_role = ctx.guild.get_role(alliance.role_id)
         if ally_role is None:
             await ctx.followup.send(
-                f'Could not find the configured {guild} role (`{ally_config["role_id"]}`).',
+                f'Could not find the configured {guild} role (`{alliance.role_id}`).',
                 ephemeral=True,
             )
             return
@@ -67,7 +82,7 @@ class Register(commands.Cog):
             return
 
         canonical_ign, uuid = player_data
-        rank = ally_config['rank']
+        rank = alliance.rank
 
         try:
             await asyncio.to_thread(self._check_link_conflict, user.id, uuid)

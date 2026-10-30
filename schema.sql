@@ -27,7 +27,8 @@ INSERT INTO rank_definitions (name, kind, sort_order) VALUES
   ('Dolphin',    'member', 7),
   ('Narwhal',    'member', 8),
   ('Hydra',      'member', 9),
-  ('Navigator',  'ally',   100)
+  ('Navigator',  'ally',   100),
+  ('Horizon',    'ally',   101)
 ON CONFLICT (name) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS discord_links (
