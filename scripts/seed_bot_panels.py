@@ -42,8 +42,6 @@ from Helpers.variables import (  # noqa: E402
     SHELL_EXCHANGE_CHANNEL_ID,
     TAQ_GUILD_ID,
     TAQ_ROLES_CHANNEL_ID,
-    WAR_INFO_CHANNEL_ID,
-    WEBSITE_URL,
 )
 
 ROOT = Path(__file__).parent.parent
@@ -384,65 +382,6 @@ def _shell_convert_embed() -> discord.Embed:
     return embed
 
 
-def _promotions_embeds() -> list[discord.Embed]:
-    description = (
-        "Promotions rely on your role in the guild and how you help it! We value all sorts of "
-        "contributions, trying our best to give everyone a chance to rank up regardless of "
-        "their interests and skills.\n"
-        "\n"
-        "🕗\u200e \u200e \u200e **Passive contributions**\n"
-        "> • Being active in guild chat and/or on Discord\n"
-        "> • Joining voice calls\n"
-        "> • Playing with other guild members\n"
-        "> • Helping out a fellow guild member\n"
-        "> • Giving recommendations, advice and feedback.\n"
-        "\n"
-        "We are thankful for any positive effort that contributes to making TAq a friendly "
-        "and welcoming community! ♡\n"
-        "\n"
-        f"🔧\u200e \u200e \u200e **Active contributions**\n"
-        f"> • Joining the [war](https://discord.com/channels/{TAQ_GUILD_ID}/{WAR_INFO_CHANNEL_ID}) effort\n"
-        f"> • Completing [Guild Raids](https://discord.com/channels/{TAQ_GUILD_ID}/{RAID_COLLECTING_CHANNEL_ID})\n"
-        "> • Starting up giveaways (DM any chief)\n"
-        "> • Recruiting new guild members\n"
-        f"> • Donating [ingredients or materials](https://discord.com/channels/{TAQ_GUILD_ID}/{SHELL_EXCHANGE_CHANNEL_ID})\n"
-        "\n"
-        "The first rank-ups are easy to achieve. To get promoted to Manatee (recruiter), "
-        "something as easy as regularly chatting with the guild is enough!\n"
-        f"After reaching Angler, an [application]({WEBSITE_URL}/login?redirect=/apply/hammerhead) "
-        "is required in order to rank up and become a part of our HR team."
-    )
-
-    warring_description = (
-        "⚔️ **Ranking up through warring**\n"
-        "Jumping into guild wars is like hitting the fast lane to rank up in no time! It's an "
-        "absolute blast and a great way to dive into exciting end-game content. You get to "
-        "team up with fellow guild members, form strategies, and kick some towers!\n"
-        "\n"
-        "> Being active in wars is super important for our guild because it keeps us strong "
-        "and competitive. Plus, it's not just about the thrill – having war power means we "
-        "get to hold territories and generate sweet emeralds, which we can then spend on "
-        "guild events and community giveaways. So, if you're up for some action-packed fun "
-        "and want to help our guild thrive, join the war efforts today!\n"
-        "\n"
-        "The amount of wars you participate in will always be taken into account for "
-        "promotion waves. Bonus points if you help with starting rounds of FFA, teaching "
-        "other members, pinging when we get attacked, etc!\n"
-        "\n"
-        "⏩ Rank up shortcuts\n"
-        "```\n"
-        "- Starfish/Manatee → Piranha = learn how to queue\n"
-        "- Piranha → Angler = learning about defending our claim\n"
-        "- Angler → Swordfish = learn how to eco\n"
-        "```\n"
-        "We are always looking for new warrers, so do not hesitate to ask for information!"
-    )
-
-    embed1 = discord.Embed(description=description, color=GENERATE_EMBED_COLOR)
-    embed2 = discord.Embed(description=warring_description, color=GENERATE_EMBED_COLOR)
-    return [embed1, embed2]
-
-
 def _shell_exchange_text() -> str:
     long_text = "𓆉  Ingredients are vital to the guild. We use them to craft XP gear, prof gear, war and to offer free war builds. We therefore rely on small donations to keep all guild activities running smoothly. To reward our contributors, we have created our exclusive currency: Shells. They can be traded for crafted gear, guild tomes, mythic items, and more. To find a more comprehensive list, check out the <#1462481145018060951>!\n\nThe list below shows our currently accepted ingredients and materials, which you can receive shells for donating. Other ingredients are welcome, but will not be eligible for shells. If you find an ingredient that isn't on the list but you think might still be useful, feel free to ask a Chief for confirmation. Specially outlined items are of higher need than usual right now, so while you will get exactly the shells displayed still, donating these specific ingredients and materials helps us a lot!\n\n⚠️ Shell rates and accepted ingredients are likely to change depending on their demand, how many we currently have in stock, and their price on the Trade Market. All modifications are announced in ⁠the \"Shell rate balances\" thread. If you'd like to be pinged for them, you can get the <@&1050233131183112255> role in <#1523984409538203789>. This role is also used when our supply of a specific ingredient gets low (pro tip: high demand ingredients will likely earn you more shells!).\n\n𓆉  In order to claim your shells: \nPut your ingredients in the guild bank and screenshot the log message and optionally the content, you can then **open a ticket** and **send a screenshot** as evidence. A Narwhal will soon update your profile and close the ticket as soon as the transaction is completed.\n\n⚙️ There are two useful commands to check your balance:\n`/profile [user]`\n`/leaderboard (total/timespan)`"
     return long_text
@@ -553,10 +492,6 @@ def build_panels(upload) -> list[dict]:
                  "embeds": [_embed_json(e) for e in _build_taq_faq_embeds_page1()]},
                 {"embeds": [_embed_json(e) for e in _build_taq_faq_embeds_page2()]},
             ]},
-        },
-        {
-            "slug": "promotions", "name": "Promotions", "channel_id": None, "message_ids": [],
-            "content": {"messages": [{"embeds": [_embed_json(e) for e in _promotions_embeds()]}]},
         },
         {
             "slug": "app-header", "name": "Application Header", "channel_id": None, "message_ids": [],
