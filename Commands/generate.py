@@ -5,14 +5,11 @@ import hmac
 import json
 import os
 import time
-from dataclasses import dataclass
 
 import discord
 from discord.ext import commands
 from discord.ui import View, button
 
-from Helpers import local_ids
-from Helpers.role_buttons import toggle_role
 from Commands.tickets import TICKET_PANEL_ACTIONS
 from Helpers.bot_panels import PanelAction
 from Helpers.database import DB, apply_shell_delta, get_shell_conversion, record_shell_transaction
@@ -26,91 +23,6 @@ from Helpers.variables import (
 APPLICATION_TOKEN_SECRET = os.getenv("APPLICATION_TOKEN_SECRET", "")
 GENERATE_EMBED_COLOR = 0x94C1FF
 SHELL_CONVERT_BUTTON_ID = "shells_to_aspects"
-
-
-def _custom_emoji(name: str, emoji_id: int) -> discord.PartialEmoji:
-    return local_ids.partial_emoji(name, emoji_id)
-
-
-@dataclass(frozen=True)
-class RoleButtonConfig:
-    key: str
-    label: str
-    role_id: int
-    emoji: str | discord.PartialEmoji | None = None
-    row: int | None = None
-    gate_role_id: int | None = None
-
-    def __post_init__(self):
-        object.__setattr__(self, "role_id", local_ids.role(self.role_id))
-        object.__setattr__(self, "gate_role_id", local_ids.role(self.gate_role_id))
-
-
-REACTION_ROLES = (
-    RoleButtonConfig("reaction_class_builder", "Class Builder", 906269952938475602, "\U0001F3D7\ufe0f", row=0),
-    RoleButtonConfig("reaction_crafter", "Crafter", 906265677667663902, "\U0001F477", row=0),
-    RoleButtonConfig("reaction_ingredient_grinder", "Ingredient Grinder", 1050233131183112255, "\U0001F41A", row=0),
-    RoleButtonConfig("reaction_merman", "Merman", 796817826987114557, "\U0001F468", row=1),
-    RoleButtonConfig("reaction_mermaid", "Mermaid", 796817681276862485, "\U0001F469", row=1),
-    RoleButtonConfig("reaction_ghost_fish", "Ghost Fish", 796817901188808796, "\U0001F47B", row=1),
-    RoleButtonConfig("reaction_america", "America", 939940600248160316, "\U0001F30E", row=2),
-    RoleButtonConfig("reaction_europe", "Europe", 939940342457856000, "\U0001F30D", row=2),
-    RoleButtonConfig("reaction_asia_oceania", "Asia/Oceania", 939944900227657728, "\U0001F30F", row=2),
-    RoleButtonConfig("reaction_events", "Events", 1209952006144401500, "\U0001F389", row=3),
-    RoleButtonConfig("reaction_giveaways", "Giveaways", 919714824731127818, "\U0001F381", row=3),
-    RoleButtonConfig("reaction_prelude_annihilation", "Prelude to Annihilation", 1275082923812458506, "\U0001F479", row=3),
-)
-
-PING_ROLES = (
-    RoleButtonConfig("ping_notg", "NOTG", 1316539196378452039, _custom_emoji("notg", 1316539942524031017), row=0),
-    RoleButtonConfig("ping_nol", "NOL", 1316539324006666300, _custom_emoji("nol", 1316539940418621530), row=0),
-    RoleButtonConfig("ping_tcc", "TCC", 1316539449299173447, _custom_emoji("tcc", 1316539938917060658), row=0),
-    RoleButtonConfig("ping_tna", "TNA", 1316539530655825930, _custom_emoji("tna", 1316539936438222850), row=0),
-    RoleButtonConfig("ping_wtp", "WTP", 1485993226794962974, _custom_emoji("wtp", 1498097156282781847), row=0),
-    RoleButtonConfig("ping_graid", "Graid", 1485993830778929182, _custom_emoji("graid", 1515117095250301018), row=1),
-    RoleButtonConfig("ping_aurora_raids", "Aurora Raids", 1565835104708858096, row=1),
-    RoleButtonConfig("ping_combat_xp_bomb", "Combat XP Bomb", 1423301085350858832, "\U0001F5E1\ufe0f", row=2),
-    RoleButtonConfig("ping_loot_bomb", "Loot Bomb", 1423302359014047764, "\U0001F48E", row=2),
-    RoleButtonConfig("ping_loot_chest_bomb", "Loot Chest Bomb", 1423302456091213978, "\U0001F4E6", row=2),
-    RoleButtonConfig("ping_profession_xp_bomb", "Profession XP Bomb", 1423302526874292279, "\u26CF\ufe0f", row=3),
-    RoleButtonConfig("ping_profession_speed_bomb", "Profession Speed Bomb", 1423302571640229961, "\U0001F6E0\ufe0f", row=3),
-    RoleButtonConfig("ping_dungeon_bomb", "Dungeon Bomb", 1423302825651212349, "\U0001F3F0", row=3),
-)
-
-
-class SelfRoleButton(discord.ui.Button):
-    def __init__(self, spec: RoleButtonConfig):
-        super().__init__(
-            label=spec.label,
-            style=discord.ButtonStyle.secondary,
-            custom_id=f"role_info:{spec.key}",
-            emoji=spec.emoji,
-            row=spec.row,
-        )
-        self.spec = spec
-
-    async def callback(self, interaction: discord.Interaction):
-        await self.view.toggle_role(interaction, self.spec)
-
-
-class SelfRoleView(View):
-    def __init__(self, specs: tuple[RoleButtonConfig, ...]):
-        super().__init__(timeout=None)
-        for spec in specs:
-            self.add_item(SelfRoleButton(spec))
-
-    async def toggle_role(self, interaction: discord.Interaction, spec: RoleButtonConfig):
-        # Legacy role_info:<key> buttons (Role Info before its role buttons were
-        # republished as panel role buttons); same toggle and safety rule.
-        await toggle_role(interaction, spec.role_id, spec.gate_role_id)
-
-
-def _reaction_role_view() -> SelfRoleView:
-    return SelfRoleView(REACTION_ROLES)
-
-
-def _ping_role_view() -> SelfRoleView:
-    return SelfRoleView(PING_ROLES)
 
 
 # ---- Application button helpers ----
@@ -574,14 +486,6 @@ PANEL_ACTIONS: dict[str, PanelAction] = {
     "raid_claim": PanelAction("raid_claim", "Claim rewards", "Rewards", None, "success"),
     SHELL_CONVERT_BUTTON_ID: PanelAction(SHELL_CONVERT_BUTTON_ID, "Shells -> Aspects", "Rewards", None, "success"),
     **TICKET_PANEL_ACTIONS,
-    **{
-        f"role:{spec.key}": PanelAction(
-            f"role_info:{spec.key}", spec.label, group,
-            str(spec.emoji) if spec.emoji else None, "secondary",
-        )
-        for group, specs in (("Reaction roles", REACTION_ROLES), ("Ping roles", PING_ROLES))
-        for spec in specs
-    },
 }
 
 
@@ -596,8 +500,6 @@ class Generate(commands.Cog):
         self.client.add_view(ApplicationButtonView())
         self.client.add_view(ClaimView())
         self.client.add_view(ShellConvertView())
-        self.client.add_view(_reaction_role_view())
-        self.client.add_view(_ping_role_view())
 
 
 def setup(client):

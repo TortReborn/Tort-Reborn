@@ -63,18 +63,23 @@ def test_embeds_and_emojis(test_map):
     assert local_ids.partial_emoji("notg", 113).id == 213
 
 
-def test_role_buttons_have_test_counterparts():
-    """Under the dev bot the buttons hold test ids; each must be a test-side id in the map."""
+def test_role_buttons_have_test_counterparts(monkeypatch):
+    """Under the dev bot the seeded role buttons hold test ids; each role and custom
+    emoji must be a test-side id in the map, or the button breaks in Tort Test."""
     import json
+    import re
+    import scripts.seed_bot_panels as seed
+    from Helpers.bot_panels import role_buttons_in
     with open(local_ids.MAP_FILE, encoding="utf-8") as f:
         id_map = json.load(f)
-    from Commands import generate
-    configs = [*generate.REACTION_ROLES, *generate.PING_ROLES]
+    monkeypatch.setattr(seed, "get_shell_exchange_config", lambda: {})
+    buttons = [b for p in seed.build_panels(seed.AssetUploader(dry_run=True)) for b in role_buttons_in(p["content"])]
+    assert buttons
     test_roles, test_emojis = set(id_map["roles"].values()), set(id_map["emojis"].values())
-    for c in configs:
-        assert str(c.role_id) in test_roles, c.label
-        if isinstance(c.emoji, discord.PartialEmoji) and c.emoji.id:
-            assert str(c.emoji.id) in test_emojis, c.label
+    for b in buttons:
+        assert b["role_id"] in test_roles, b["label"]
+        for emoji_id in re.findall(r"<a?:\w+:(\d+)>", b.get("emoji") or ""):
+            assert emoji_id in test_emojis, b["label"]
 
 
 def test_role_button_ids_are_translated(test_map):
