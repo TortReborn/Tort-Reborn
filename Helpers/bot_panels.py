@@ -73,6 +73,34 @@ class PanelError(ValueError):
     """The revision can't be sent as written; the message says where."""
 
 
+# Role buttons (TAQ-114): {"kind": "role", "role_id": ..., "requires_role_id"?: ...}.
+# The role lives in the custom_id, so one listener (Commands/role_buttons.py)
+# answers every role button on every panel; Discord only accepts clicks on
+# components actually on the message, so the id can't be forged.
+ROLE_BUTTON_PREFIX = "role:"
+_SNOWFLAKE_RE = re.compile(r"^\d{15,21}$")
+
+
+def role_button_custom_id(role_id: int, requires_role_id: int | None = None) -> str:
+    return f"{ROLE_BUTTON_PREFIX}{role_id}" + (f":{requires_role_id}" if requires_role_id else "")
+
+
+def parse_role_button(custom_id: str) -> tuple[int, int | None] | None:
+    """(role_id, requires_role_id) for a role button's custom_id, else None."""
+    if not custom_id.startswith(ROLE_BUTTON_PREFIX):
+        return None
+    parts = custom_id[len(ROLE_BUTTON_PREFIX):].split(":")
+    if not 1 <= len(parts) <= 2 or not all(_SNOWFLAKE_RE.match(p) for p in parts):
+        return None
+    return int(parts[0]), int(parts[1]) if len(parts) == 2 else None
+
+
+def role_buttons_in(content: dict) -> list[dict]:
+    """Every role button in a panel's content."""
+    return [b for m in (content or {}).get("messages", []) or []
+            for row in m.get("rows") or [] for b in row or [] if (b or {}).get("kind") == "role"]
+
+
 @dataclass(frozen=True)
 class PanelAction:
     """A bot-handled button a panel may place. custom_id is what the
@@ -253,6 +281,25 @@ def _build_button_rows(where: str, rows, actions: dict[str, PanelAction]) -> lis
                     raise PanelError(f"{at}: a link button needs a label or an emoji.")
                 built.append(discord.ui.Button(
                     style=discord.ButtonStyle.link, url=url, label=label or None, emoji=emoji,
+                ))
+                continue
+
+            if spec.get("kind") == "role":
+                role_id = str(spec.get("role_id") or "")
+                requires = str(spec.get("requires_role_id") or "")
+                if not _SNOWFLAKE_RE.match(role_id):
+                    raise PanelError(f"{at}: pick the role this button gives.")
+                if requires and not _SNOWFLAKE_RE.match(requires):
+                    raise PanelError(f"{at}: the required role isn't a role.")
+                if not label and not emoji:
+                    raise PanelError(f"{at}: a role button needs a label or an emoji.")
+                custom_id = role_button_custom_id(int(role_id), int(requires) if requires else None)
+                if custom_id in seen_custom_ids:
+                    raise PanelError(f"{at}: the same role button appears twice in one message.")
+                seen_custom_ids.add(custom_id)
+                built.append(discord.ui.Button(
+                    style=BUTTON_STYLES.get(spec.get("style") or "secondary", discord.ButtonStyle.secondary),
+                    custom_id=custom_id, label=label or None, emoji=emoji,
                 ))
                 continue
 

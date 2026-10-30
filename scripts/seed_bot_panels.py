@@ -445,6 +445,18 @@ def _discohook_embeds(json_filename: str) -> list[dict]:
     ]
 
 
+def _military_roles_embeds() -> list[dict]:
+    # From the webhook post in #military-roles ("The Aquarium", 2023); only the
+    # footer changed, from reactions (Carl-bot) to Tort's buttons.
+    color = 10721252
+    return [
+        {"title": '𓆉  __Class roles__', "color": color,
+         "description": 'Class roles are used to form precise teams. Anybody can select the two solo/vlow-med roles, but the sniping roles can only be assigned by HR.\n\n🍃 - <@&1311125265153265795>: People who want to be pinged after a successful snipe to eat up the rest of the claim\n🪄 -  <@&1154999995741769728>: Voluntary roles for people with a Soloer build. Usually can take territories with high defense\n🤺 - <@&906265863735369728>: Players with an verified DPS build. \n❤️\u200d🩹 - <@&906265943045439529>: Players with an HQ viable Healer build. \n🛡️ - <@&906266064818700338>: Players with an HQ viable Tank build. \n** **'},
+        {"title": '𓆉  __Military roles__', "color": color,
+         "description": 'These roles are assigned by HR, and are usually given to our most experienced warrers.\n\n<@&1033420156690513970>: High rank staff who handle politics, alliances and other important war matters. \n<@&923202820679794779>: People who are able to eco.\n<@&1405514713554485309>: Members that have at least 1 HQ war ready build.\n** **'},
+        {"color": color, "footer": {"text": '\u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e  \u200e \u200e \u200e Use the buttons below to get the roles from this list! \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e  \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e \u200e  \u200e \u200e \u200e \u200e \u200e'}},
+    ]
+
 def _role_rows(specs) -> list[list[dict]]:
     rows: dict[int, list[dict]] = {}
     for spec in specs:
@@ -452,7 +464,8 @@ def _role_rows(specs) -> list[list[dict]]:
         if isinstance(emoji, discord.PartialEmoji):
             emoji = str(emoji)
         rows.setdefault(spec.row or 0, []).append(
-            {"kind": "action", "action": f"role:{spec.key}", "label": spec.label, "emoji": emoji}
+            {"kind": "role", "role_id": str(spec.role_id), "label": spec.label, "emoji": emoji,
+             **({"requires_role_id": str(spec.gate_role_id)} if spec.gate_role_id else {})}
         )
     return [rows[r] for r in sorted(rows)]
 
@@ -562,6 +575,16 @@ def build_panels(upload) -> list[dict]:
                 # The shell ticket button lives here now; it used to be its own
                 # "Shell Collecting" post under the box.
                 "rows": [[{"kind": "action", "action": "ticket_open:shell"}]],
+            }]},
+        },
+        {
+            "slug": "military-roles", "name": "Military Roles", "channel_id": None, "message_ids": [],
+            "content": {"messages": [{
+                "embeds": _military_roles_embeds(),
+                "rows": [[
+                    {"kind": "role", "role_id": "1311125265153265795", "label": "Territory Munching", "emoji": "🍃"},
+                    {"kind": "role", "role_id": "1154999995741769728", "label": "Soloer", "emoji": "🪄"},
+                ]],
             }]},
         },
         {
