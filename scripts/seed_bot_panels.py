@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import discord  # noqa: E402
 
+from Commands.tickets import TICKET_EMBED_COLOR  # noqa: E402
 from Helpers import local_ids  # noqa: E402
 from Helpers.bot_panels import ASSET_PREFIX, ASSET_SCHEME, DYNAMIC_SHELL_EXCHANGE  # noqa: E402
 from Helpers.database import DB, get_shell_exchange_config  # noqa: E402
@@ -388,6 +389,37 @@ def _shell_exchange_text() -> str:
 
 # ---- Panels ----
 
+def _war_ticket_embed() -> discord.Embed:
+    # Moved verbatim from Commands/tickets.py (/tickets post war).
+    embed = discord.Embed(title="War Ticket", color=TICKET_EMBED_COLOR)
+    embed.add_field(
+        name="War Training",
+        value=(
+            "Are you interested in enhancing your skills in warring or economy strategies?\n"
+            "We're excited to offer lessons tailored to help you excel! If you'd like to "
+            "participate and learn more, please let us know by opening a ticket."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Role Request",
+        value=(
+            "Do you need to update your war roles? Want to see war channels? "
+            "Open a ticket to request DPS/Tank/Healer and Military roles."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="War Build Request",
+        value=(
+            "Do you need help with funding your war build?\n"
+            "Req. Active participation in wars and Trust."
+        ),
+        inline=False,
+    )
+    return embed
+
+
 def _embed_json(embed: discord.Embed) -> dict:
     d = embed.to_dict()
     out = {"color": d.get("color", GENERATE_EMBED_COLOR)}
@@ -527,6 +559,16 @@ def build_panels(upload) -> list[dict]:
                 "content": _shell_exchange_text(),
                 "color": GENERATE_EMBED_COLOR,
                 "dynamic": DYNAMIC_SHELL_EXCHANGE,
+                # The shell ticket button lives here now; it used to be its own
+                # "Shell Collecting" post under the box.
+                "rows": [[{"kind": "action", "action": "ticket_open:shell"}]],
+            }]},
+        },
+        {
+            "slug": "war-ticket", "name": "War Ticket", "channel_id": None, "message_ids": [],
+            "content": {"messages": [{
+                "embeds": [_embed_json(_war_ticket_embed())],
+                "rows": [[{"kind": "action", "action": "ticket_open:war"}]],
             }]},
         },
     ]

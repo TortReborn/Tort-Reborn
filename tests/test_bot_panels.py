@@ -282,3 +282,79 @@ def test_the_thread_is_archived_again_even_when_the_publish_fails():
     with pytest.raises(RuntimeError):
         asyncio.run(go())
     assert fresh[4].edit.await_args_list[-1].kwargs == {"archived": True}
+
+
+# ---- Ticket posts as panels (TAQ-113) ----
+
+def _seeded(monkeypatch, slug):
+    import scripts.seed_bot_panels as seed
+    monkeypatch.setattr(seed, "get_shell_exchange_config", lambda: {})
+    [panel] = [p for p in seed.build_panels(seed.AssetUploader(dry_run=True)) if p["slug"] == slug]
+    return panel
+
+
+def _buttons(view):
+    return [(c["custom_id"], c.get("label"), c.get("style"), (c.get("emoji") or {}).get("name"))
+            for row in view.to_components() for c in row.get("components", []) if c.get("type") == 2]
+
+
+def test_ticket_buttons_are_panel_actions_with_the_old_look():
+    """Same custom_id, label, style and emoji /tickets post used, so adopting
+    the live posts changes nothing and TicketOpenView still answers them."""
+    from Commands.generate import PANEL_ACTIONS
+    from Commands.tickets import TicketOpenView
+
+    war, shell = PANEL_ACTIONS["ticket_open:war"], PANEL_ACTIONS["ticket_open:shell"]
+    assert (war.label, war.style, war.emoji) == ("Create ticket", "secondary", "\U0001F4E9")
+    assert (shell.label, shell.style, shell.emoji) == ("Create Ticket", "primary", "\U0001F4E9")
+
+    async def go():
+        return {i.custom_id for i in TicketOpenView().children}
+    assert asyncio.run(go()) >= {"ticket_open:war", "ticket_open:shell"}
+
+
+def test_seeded_war_ticket_is_the_old_post(monkeypatch):
+    from Commands.generate import PANEL_ACTIONS
+    from Commands.tickets import TICKET_EMBED_COLOR
+    panel = _seeded(monkeypatch, "war-ticket")
+
+    async def go():
+        return render_message(0, panel_messages(panel["content"])[0], actions=PANEL_ACTIONS,
+                              values=VALUES, fetch_asset={}.get)
+    r = asyncio.run(go())
+    [embed] = r.embeds
+    assert (embed.title, embed.color.value) == ("War Ticket", TICKET_EMBED_COLOR)
+    assert [f.name for f in embed.fields] == ["War Training", "Role Request", "War Build Request"]
+    assert _buttons(r.view) == [("ticket_open:war", "Create ticket", 2, "\U0001F4E9")]
+
+
+def test_shell_ticket_button_is_on_the_shell_exchange_box(monkeypatch):
+    from Commands.generate import PANEL_ACTIONS
+    panel = _seeded(monkeypatch, "shell-exchange")
+    assert panel["content"]["messages"][0]["rows"] == [[{"kind": "action", "action": "ticket_open:shell"}]]
+
+    async def go():
+        return render_message(0, panel_messages(panel["content"])[0], actions=PANEL_ACTIONS, values=VALUES,
+                              fetch_asset={}.get, dynamic_files={DYNAMIC_SHELL_EXCHANGE: [("i.png", b"a")]})
+    r = asyncio.run(go())
+    assert r.box and ("ticket_open:shell", "Create Ticket", 1, "\U0001F4E9") in _buttons(r.view)
+
+
+def test_tickets_post_is_retired_but_the_counters_stay():
+    from Commands.tickets import Tickets
+    names = {c.name for c in Tickets.tickets.subcommands}
+    assert "post" not in names and {"counters", "set-counter"} <= names
+
+
+def test_ticket_staff_roles_follow_the_test_servers():
+    """Under the dev bot the maincord staff roles translate to Tort Test's copies."""
+    import json
+    from Commands import tickets
+    from Helpers import local_ids
+    with open(local_ids.MAP_FILE, encoding="utf-8") as f:
+        roles = json.load(f)["roles"]
+    for prod_id, current in ((741298208470466592, tickets.MODERATOR_ROLE_ID),
+                             (754735279692054628, tickets.SR_MODERATOR_ROLE_ID),
+                             (1033420156690513970, tickets.WAR_TRAINER_ROLE_ID),
+                             (1332814674869096498, tickets.SHELL_MANAGER_ROLE_ID)):
+        assert current == int(roles[str(prod_id)])

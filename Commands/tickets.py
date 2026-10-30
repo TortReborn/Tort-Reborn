@@ -5,6 +5,8 @@ import discord
 from discord import ApplicationContext, SlashCommandGroup
 from discord.ext import commands
 
+from Helpers import local_ids
+from Helpers.bot_panels import PanelAction
 from Helpers.logger import ERROR, log
 from Helpers.tickets import (
     close_ticket,
@@ -30,10 +32,19 @@ OPEN_BUTTON_CUSTOM_IDS = {
     "shell": "ticket_open:shell",
 }
 CLOSE_BUTTON_CUSTOM_ID = "ticket_close"
-MODERATOR_ROLE_ID = 741298208470466592
-SR_MODERATOR_ROLE_ID = 754735279692054628
-WAR_TRAINER_ROLE_ID = 1033420156690513970
-SHELL_MANAGER_ROLE_ID = 1332814674869096498
+# Maincord roles; local_ids gives the test servers' copies under the dev bot.
+MODERATOR_ROLE_ID = local_ids.role(741298208470466592)
+SR_MODERATOR_ROLE_ID = local_ids.role(754735279692054628)
+WAR_TRAINER_ROLE_ID = local_ids.role(1033420156690513970)
+SHELL_MANAGER_ROLE_ID = local_ids.role(1332814674869096498)
+
+# The open buttons as bot-panel actions (Commands/generate.py PANEL_ACTIONS): the
+# ticket posts are panels now, edited on the website. Labels and styles are the
+# ones /tickets post used, so adopting the live posts changes nothing.
+TICKET_PANEL_ACTIONS = {
+    OPEN_BUTTON_CUSTOM_IDS["war"]: PanelAction(OPEN_BUTTON_CUSTOM_IDS["war"], "Create ticket", "Tickets", "\U0001F4E9", "secondary"),
+    OPEN_BUTTON_CUSTOM_IDS["shell"]: PanelAction(OPEN_BUTTON_CUSTOM_IDS["shell"], "Create Ticket", "Tickets", "\U0001F4E9", "primary"),
+}
 
 
 def _ticket_label(ticket_type: str) -> str:
@@ -84,43 +95,6 @@ def _is_ticket_staff(member: discord.Member, ticket_type: str) -> bool:
         return True
     support_role_ids = {role.id for role in _resolve_support_roles(member.guild, ticket_type)}
     return any(role.id in support_role_ids for role in member.roles)
-
-
-def _panel_embed(ticket_type: str) -> discord.Embed:
-    if ticket_type == "war":
-        embed = discord.Embed(title="War Ticket", color=TICKET_EMBED_COLOR)
-        embed.add_field(
-            name="War Training",
-            value=(
-                "Are you interested in enhancing your skills in warring or economy strategies?\n"
-                "We're excited to offer lessons tailored to help you excel! If you'd like to "
-                "participate and learn more, please let us know by opening a ticket."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Role Request",
-            value=(
-                "Do you need to update your war roles? Want to see war channels? "
-                "Open a ticket to request DPS/Tank/Healer and Military roles."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="War Build Request",
-            value=(
-                "Do you need help with funding your war build?\n"
-                "Req. Active participation in wars and Trust."
-            ),
-            inline=False,
-        )
-        return embed
-
-    return discord.Embed(
-        title="Shell Collecting",
-        description="To claim your shells create a ticket \U0001F4E9",
-        color=TICKET_EMBED_COLOR,
-    )
 
 
 def _welcome_embed(ticket_type: str) -> discord.Embed:
@@ -383,29 +357,10 @@ class Tickets(commands.Cog):
 
     tickets = SlashCommandGroup(
         "tickets",
-        "Manage Tort ticket panels",
+        "Manage Tort tickets",
         guild_ids=HOME_GUILD_IDS,
         default_member_permissions=discord.Permissions(manage_channels=True),
     )
-
-    @tickets.command(name="post", description="Post a war or shell ticket panel")
-    async def post(
-        self,
-        ctx: ApplicationContext,
-        ticket_type: discord.Option(str, "Ticket panel type", choices=["war", "shell"]),
-    ):
-        await ctx.defer(ephemeral=True)
-        if ctx.guild is None or not is_home_guild(ctx.guild.id):
-            await ctx.followup.send("Ticket panels can only be posted in a TAq server.", ephemeral=True)
-            return
-
-        view = TicketOpenView()
-        for item in list(view.children):
-            if getattr(item, "custom_id", None) != OPEN_BUTTON_CUSTOM_IDS[ticket_type]:
-                view.remove_item(item)
-
-        await ctx.channel.send(embed=_panel_embed(ticket_type), view=view)
-        await ctx.followup.send(f"Posted the {_ticket_label(ticket_type).lower()} ticket panel.", ephemeral=True)
 
     @tickets.command(name="counters", description="Show stored ticket counters")
     async def counters(self, ctx: ApplicationContext):
