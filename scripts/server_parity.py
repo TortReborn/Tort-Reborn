@@ -66,16 +66,17 @@ TEST_GUILD_IDS = {t for _, t in GUILDS.values()}
 # Prod categories that are not part of the live layout.
 SKIP_CATEGORIES = {"Archives", "Archives 2"}
 # Per-member channels (tickets, applications): "ticket-0182-name", "accepted-3600".
+# Only skipped inside the categories that hold them, so a "season-2025" channel
+# anywhere else is still copied.
 PER_MEMBER_RE = re.compile(r"(^|-)\d{4}(-|$)")
+PER_MEMBER_CATEGORIES = {"Guild Applications", "Guild Queue", "Invited", "Denied", "Closed Applications",
+                         "alt apps archive", "🐚 Shell Exchange", "🗡 War Ticket"}
 # Emojis the server's posts and the bot actually use. The rest are for fun.
 STRUCTURE_EMOJIS = ("TAq", "partytort", "graid", "shells", "aspect_warrior",
                     "notg", "nol", "tcc", "tna", "wtp")
 EMOJI_GUILD = "main"
 # Dev-only channels the bot does not reference by id but that belong in Dev.
 DEV_CHANNEL_NAMES = {"main": set(), "exec": set()}
-# Channels the test profile references that have no live counterpart and are
-# not dev tools either: archived like any other test-only channel.
-NOT_DEV_CHANNEL_NAMES = {"main": {"🏅｜ranking-up"}, "exec": set()}
 # Test channels whose names don't match their prod counterpart closely enough.
 CHANNEL_ALIASES = {
     "main": {"guild-announcement": "📢｜guild-announcements",
@@ -157,11 +158,16 @@ def prod_layout(g):
                                    c["position"], int(c["id"]))):
         if c.get("parent_id") and c["parent_id"] not in live_cats:
             continue
-        if PER_MEMBER_RE.search(c["name"]):
+        if live_cats.get(c.get("parent_id")) in PER_MEMBER_CATEGORIES and PER_MEMBER_RE.search(c["name"]):
             continue
         channels.append({"name": c["name"], "type": TEST_TYPE.get(c["type"], c["type"]),
                          "parent": live_cats.get(c.get("parent_id")), **channel_settings(c),
                          "overwrites": overwrites(c)})
+    for kind, items in (("role", copy_roles), ("category", cats), ("channel", channels)):
+        seen = [n for n in {x["name"] for x in items} if sum(x["name"] == n for x in items) > 1]
+        if seen:
+            raise SystemExit(f"{g.get('name', g['id'])} has more than one {kind} named {seen}; "
+                             "matching is by name, so rename one before syncing")
     return {
         "roles": [{"name": r["name"], "color": r["color"], "permissions": str(r["permissions"]),
                    "hoist": r["hoist"], "mentionable": r["mentionable"]} for r in copy_roles],
@@ -241,7 +247,7 @@ def test_overwrites(ch, names):
     return sorted(owned), kept
 
 
-def classify(want, test, dev_ids, dev_names, aliases=None, not_dev=()):
+def classify(want, test, dev_ids, dev_names, aliases=None):
     """Match test channels to prod's; everything else goes to Dev or Archive."""
     chans = test["channels"]
     cats = [c for c in chans if c["type"] == CATEGORY]
@@ -273,11 +279,17 @@ def classify(want, test, dev_ids, dev_names, aliases=None, not_dev=()):
             continue
         in_archive = c.get("parent_id") in {a["id"] for a in archives}
         replaced = key(c["name"]) in prod_keys or (aliases or {}).get(c["name"]) in prod_names
-        if c["name"] not in not_dev and not replaced and (c["id"] in dev_ids or key(c["name"]) in {key(n) for n in dev_names}):
+        if not replaced and (c["id"] in dev_ids or key(c["name"]) in {key(n) for n in dev_names}):
             dev.append(c)
         elif not in_archive:
             archive.append(c)
-    return {"cat_match": cat_match, "ch_match": ch_match, "retype": retype, "dev": dev, "archive": archive,
+    # Parent label per test category: prod's name when matched, so a same-named
+    # leftover category never passes for the real one.
+    parent_label = {c["id"]: f"(unmatched) {c['name']}" for c in cats}
+    parent_label.update(wanted_parent)
+    for c in archives + ([dev_cat] if dev_cat else []):
+        parent_label[c["id"]] = c["name"]
+    return {"parent_label": parent_label, "cat_match": cat_match, "ch_match": ch_match, "retype": retype, "dev": dev, "archive": archive,
             "archives": archives, "dev_cat": dev_cat, "cat_name": cat_name}
 
 
@@ -330,7 +342,7 @@ def channel_ops(want, test, names, cls, tier):
             ops.append({"op": "chan_create", "name": w["name"], "spec": spec,
                         **({"replaces": old["id"], "replaces_name": old["name"]} if old else {})})
             continue
-        have = {"name": c["name"], "type": c["type"], "parent": cls["cat_name"].get(c.get("parent_id")),
+        have = {"name": c["name"], "type": c["type"], "parent": cls["parent_label"].get(c.get("parent_id")),
                 **channel_settings(c), "overwrites": test_overwrites(c, names)[0]}
         if c["type"] in (VOICE, STAGE) and spec.get("bitrate") is None:
             have.pop("bitrate", None)
@@ -383,11 +395,17 @@ def emoji_ops(snapshot_emojis, test, which):
         return []
     have = {e["name"] for e in test.get("emojis", [])}
     missing = [e for e in snapshot_emojis if e["name"] not in have]
-    static = sum(not e.get("animated") for e in test.get("emojis", [])) + sum(not e["animated"] for e in missing)
     cap = EMOJI_CAP.get(test.get("premium_tier", 0), 50)
-    ops = [{"op": "emoji_create", "name": e["name"], "image": e["image"]} for e in missing]
-    if static > cap:
-        ops.insert(0, {"op": "warn", "text": f"{static} static emojis would exceed this server's {cap} slots"})
+    free = {a: cap - sum(bool(e.get("animated")) == a for e in test.get("emojis", [])) for a in (False, True)}
+    ops, skipped = [], []
+    for e in missing:
+        if free[e["animated"]] > 0:
+            free[e["animated"]] -= 1
+            ops.append({"op": "emoji_create", "name": e["name"], "image": e["image"]})
+        else:
+            skipped.append(e["name"])
+    if skipped:
+        ops.insert(0, {"op": "warn", "text": f"no emoji slots left for {skipped} (this server has {cap})"})
     return ops
 
 
@@ -499,7 +517,9 @@ def cmd_snapshot(args):
             print(f"  ! emoji {name} not found in either real server")
             continue
         ext = "gif" if e.get("animated") else "png"
-        img = requests.get(f"https://cdn.discordapp.com/emojis/{e['id']}.{ext}", timeout=30).content
+        r = requests.get(f"https://cdn.discordapp.com/emojis/{e['id']}.{ext}", timeout=30)
+        r.raise_for_status()
+        img = r.content
         out["emojis"].append({"name": name, "animated": bool(e.get("animated")),
                               "image": f"data:image/{ext};base64,{base64.b64encode(img).decode()}"})
     with open(args.out, "w", encoding="utf-8") as f:
@@ -515,7 +535,7 @@ def stages(snap, which, test):
     # Either profile: the prod bot logs errors to a channel in the test exec server.
     used = config_ids(_ENV_CONFIG["test"]) | config_ids(_ENV_CONFIG["prod"])
     cls = classify(want, test, used, DEV_CHANNEL_NAMES.get(which, set()),
-                   CHANNEL_ALIASES.get(which), NOT_DEV_CHANNEL_NAMES.get(which, set()))
+                   CHANNEL_ALIASES.get(which))
     return {
         "roles": [o for o in r_ops if o["op"] != "role_order"],
         "role_order": [o for o in r_ops if o["op"] == "role_order"],
@@ -610,7 +630,7 @@ def execute(d, gid, op, test, cls, names):
                 kept = test_overwrites(ch, names)[1]
                 body["permission_overwrites"] = resolve_overwrites(v, test, kept, names)
             elif k == "parent":
-                body["parent_id"] = category_id(test, v)
+                body["parent_id"] = category_id(test, v, cls)
             elif k == "tags":
                 old = {t["name"]: t["id"] for t in ch.get("available_tags", [])}
                 body["available_tags"] = [{**({"id": old[n]} if n in old else {}), "name": n, "moderated": m, "emoji_name": e}
@@ -620,7 +640,7 @@ def execute(d, gid, op, test, cls, names):
         d("PATCH", f"/channels/{op['id']}", body)
     elif o == "chan_create":
         s = op["spec"]
-        body = {"name": s["name"], "type": s["type"], "parent_id": category_id(test, s["parent"]),
+        body = {"name": s["name"], "type": s["type"], "parent_id": category_id(test, s["parent"], cls),
                 "permission_overwrites": resolve_overwrites(s["overwrites"], test, [], names),
                 "topic": s["topic"], "nsfw": s["nsfw"], "rate_limit_per_user": s["rate_limit_per_user"]}
         for k in ("bitrate", "user_limit"):
@@ -637,7 +657,7 @@ def execute(d, gid, op, test, cls, names):
             d("PATCH", f"/channels/{op['replaces']}", {"parent_id": parent})
             next(c for c in test["channels"] if c["id"] == op["replaces"])["parent_id"] = parent
     elif o == "to_dev":
-        d("PATCH", f"/channels/{op['id']}", {"parent_id": category_id(test, DEV_CATEGORY)})
+        d("PATCH", f"/channels/{op['id']}", {"parent_id": category_id(test, DEV_CATEGORY, cls)})
     elif o == "to_archive":
         parent = archive_parent(d, gid, test, cls)
         d("PATCH", f"/channels/{op['id']}", {"parent_id": parent})
@@ -655,15 +675,27 @@ def renumber_roles(d, gid, test):
     positions = [r["position"] for r in test["roles"]]
     if len(positions) == len(set(positions)):
         return False
-    low = min((r for r in test["roles"] if r["position"] > 0 and not r.get("managed")), key=lambda r: r["position"])
+    top = bot_top_position(test)
+    movable = [r for r in test["roles"] if 0 < r["position"] < top and not r.get("managed")]
+    if not movable:
+        return False
+    low = min(movable, key=lambda r: r["position"])
     d("PATCH", f"/guilds/{gid}/roles", [{"id": low["id"], "position": low["position"]}])
     return True
 
 
-def category_id(test, name):
+def category_id(test, name, cls=None):
+    """The test category standing for prod's category `name`: the matched one
+    when there is one, else the (just created) category of that name."""
     if name is None:
         return None
-    return next(c["id"] for c in test["channels"] if c["type"] == CATEGORY and c["name"] == name)
+    for i, label in ((cls or {}).get("parent_label") or {}).items():
+        if label == name:
+            return i
+    found = [c["id"] for c in test["channels"] if c["type"] == CATEGORY and c["name"] == name]
+    if not found:
+        raise SystemExit(f"no category {name!r} in the test server; run apply again from the categories stage")
+    return found[0]
 
 
 def cmd_sync(args):
@@ -709,7 +741,8 @@ def cmd_sync(args):
             for op in ops[stage]:
                 print(f"  {describe(op)}")
                 execute(d, gid, op, test, cls, names)
-            test = load_test(d, gid, bot_id)
+            if any(o["op"] != "warn" for o in ops[stage]):
+                test = load_test(d, gid, bot_id)
         _, cls, names = stages(snap, which, test)
         if args.delete_empty_categories:
             for c in empty_categories(test, cls):

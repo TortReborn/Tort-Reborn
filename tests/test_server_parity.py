@@ -53,7 +53,9 @@ def prod_guild():
         chan(23, "🔥｜raid-collecting", parent="21", pos=0, overwrites=[ow(11), ow(999, type_=1), ow(13)]),
         chan(24, "📢｜guild-announcements", sp.ANNOUNCEMENT, parent="21", pos=1),
         chan(25, "🔥｜raid-guide", sp.FORUM, parent="21", pos=2, available_tags=[{"id": "1", "name": "Notg"}]),
-        chan(26, "ticket-0182-somebody", parent="21", pos=3),
+        chan(29, "Guild Applications", sp.CATEGORY, pos=2),
+        chan(26, "ticket-0182-somebody", parent="29", pos=0),
+        chan(30, "season-2025", parent="21", pos=5),
         chan(27, "old-stuff", parent="22"),
         chan(28, "🔥 War", sp.VOICE, parent="21", pos=4, bitrate=256000),
     ]}
@@ -114,7 +116,8 @@ def test_key_ignores_case_emoji_and_separators():
 def test_layout_skips_archives_tickets_and_bot_roles(layout):
     names = [c["name"] for c in layout["channels"]]
     assert "old-stuff" not in names and "ticket-0182-somebody" not in names
-    assert [c["name"] for c in layout["categories"]] == ["🔥 Raids"]
+    assert "season-2025" in names  # numbered, but not in a ticket category
+    assert [c["name"] for c in layout["categories"]] == ["🔥 Raids", "Guild Applications"]
     assert "Dyno" not in [r["name"] for r in layout["roles"]]
     assert [r["name"] for r in layout["roles"]] == ["Narwhal", "🏆 CONTRIBUTION ROLES", "Sailfish"]
 
@@ -155,7 +158,7 @@ def test_channels_rename_in_place_and_forum_is_recreated():
     # voice bitrate is capped to what an unboosted server allows
     assert edit["47"]["bitrate"] == 96000
     create = [o for o in ops if o["op"] == "chan_create"]
-    assert [(o["name"], o.get("replaces")) for o in create] == [("🔥｜raid-guide", "44")]
+    assert [(o["name"], o.get("replaces")) for o in create] == [("🔥｜raid-guide", "44"), ("season-2025", None)]
     archived = [o["id"] for o in ops if o["op"] == "to_archive"]
     assert archived == ["46"]  # the old raid-guide is archived by its replacement, not twice
     assert [o["id"] for o in ops if o["op"] == "to_dev"] == ["45"]
@@ -274,3 +277,44 @@ def test_topics_swap_custom_emojis_for_the_test_servers_or_plain_names():
     emojis = [{"name": "notg", "id": "7"}]
     assert sp.portable_text("hi <:notg:123> <a:steamhappy:456>", emojis) == "hi <:notg:7> :steamhappy:"
     assert sp.portable_text(None, emojis) is None
+
+
+def test_duplicate_prod_names_stop_the_sync():
+    g = prod_guild()
+    g["roles"].append(role(15, "Sailfish", 0))
+    with pytest.raises(SystemExit, match="more than one role"):
+        sp.prod_layout(g)
+
+
+def test_parents_resolve_to_the_matched_category_not_a_same_named_leftover():
+    test = fake_test_server()
+    test["channels"][0]["name"] = "🔥 Raids"
+    test["channels"].insert(0, chan(60, "🔥 Raids", sp.CATEGORY, pos=9))  # a newer leftover with the same name
+    want, test, _, names, cls = plan(test)
+    assert sp.category_id(test, "🔥 Raids", cls) == "41"  # the matched (oldest) one, not the first in the list
+    # a channel sitting in the leftover is reported as misplaced
+    test["channels"][2]["parent_id"] = "60"
+    want, test, _, names, cls = plan(test)
+    ops = sp.channel_ops(want, test, names, cls, tier=0)
+    assert next(o for o in ops if o.get("id") == "42")["changes"]["parent"] == "🔥 Raids"
+
+
+def test_emoji_uploads_stop_at_the_free_slots():
+    test = fake_test_server()
+    test["emojis"] = [{"name": f"e{i}", "animated": False} for i in range(49)]
+    snap = [{"name": "notg", "animated": False, "image": "x"}, {"name": "shells", "animated": False, "image": "y"}]
+    ops = sp.emoji_ops(snap, test, "main")
+    assert [o["name"] for o in ops if o["op"] == "emoji_create"] == ["notg"]
+    assert any(o["op"] == "warn" and "shells" in o["text"] for o in ops)
+
+
+def test_renumber_skips_when_no_role_below_the_bot_can_move():
+    test = fake_test_server()
+    for r in test["roles"]:
+        if r["id"] != TEST:
+            r["position"] = 7  # all tied, all above the bot's role
+    test["_bot_member"] = {"roles": ["35"]}
+    test["roles"][-1]["position"] = 1
+    test["roles"][-1]["managed"] = True
+    calls = []
+    assert sp.renumber_roles(lambda *a: calls.append(a), TEST, test) is False and calls == []
