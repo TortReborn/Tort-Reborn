@@ -216,3 +216,69 @@ def test_seeded_shell_exchange_is_a_box(monkeypatch):
     monkeypatch.setattr(seed, "get_shell_exchange_config", lambda: {})
     [panel] = [p for p in seed.build_panels(seed.AssetUploader(dry_run=True)) if p["slug"] == "shell-exchange"]
     assert panel["content"]["messages"][0]["layout"] == "box"
+
+
+# ---- Archived forum threads (the Shells -> Aspects panel lives in one) ----
+
+def _thread(tid, archived=False, locked=False):
+    from unittest.mock import AsyncMock, MagicMock
+    t = MagicMock(spec=discord.Thread)
+    t.id, t.name, t.archived, t.locked = tid, f"thread {tid}", archived, locked
+    t.edit = AsyncMock()
+    return t
+
+
+def _publisher(fresh):
+    from unittest.mock import AsyncMock, MagicMock
+    from Tasks.publish_bot_panels import PublishBotPanels
+    cog = PublishBotPanels.__new__(PublishBotPanels)
+    cog.client = MagicMock()
+    cog.client.fetch_channel = AsyncMock(side_effect=lambda i: fresh[i])
+    return cog
+
+
+def test_archived_thread_is_opened_for_the_publish_and_archived_again():
+    fresh = {1: _thread(1, archived=True)}
+    cog = _publisher(fresh)
+
+    async def go():
+        async with cog._open_threads(_thread(1)):  # the cached copy may say it's open
+            fresh[1].edit.assert_awaited_once_with(archived=False)
+    asyncio.run(go())
+    assert [c.kwargs for c in fresh[1].edit.await_args_list] == [{"archived": False}, {"archived": True}]
+
+
+def test_open_threads_and_plain_channels_are_left_alone():
+    fresh = {2: _thread(2)}
+    cog = _publisher(fresh)
+
+    async def go():
+        async with cog._open_threads(_thread(2), object()):
+            pass
+    asyncio.run(go())
+    fresh[2].edit.assert_not_awaited()
+
+
+def test_a_locked_thread_stops_the_publish():
+    from Helpers.bot_panels import PanelError
+    fresh = {3: _thread(3, archived=True, locked=True)}
+    cog = _publisher(fresh)
+
+    async def go():
+        async with cog._open_threads(_thread(3)):
+            pass
+    with pytest.raises(PanelError, match="locked"):
+        asyncio.run(go())
+    fresh[3].edit.assert_not_awaited()
+
+
+def test_the_thread_is_archived_again_even_when_the_publish_fails():
+    fresh = {4: _thread(4, archived=True)}
+    cog = _publisher(fresh)
+
+    async def go():
+        async with cog._open_threads(_thread(4)):
+            raise RuntimeError("Discord said no")
+    with pytest.raises(RuntimeError):
+        asyncio.run(go())
+    assert fresh[4].edit.await_args_list[-1].kwargs == {"archived": True}

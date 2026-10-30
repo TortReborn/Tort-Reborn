@@ -14,6 +14,7 @@ so the editor can offer pickers and preview mentions without a bot token.
 """
 
 import asyncio
+import contextlib
 import datetime
 import json
 from dataclasses import dataclass
@@ -293,6 +294,29 @@ class PublishBotPanels(commands.Cog):
             raise PanelError(f"#{channel} is not a channel the bot can post in.")
         return channel
 
+    @contextlib.asynccontextmanager
+    async def _open_threads(self, *channels):
+        """Discord refuses to edit or post in an archived thread (forum posts
+        archive themselves after a few days), so open the panel's threads for
+        the publish and archive them again afterwards. A locked one is left to
+        a human: unlocking is not the bot's call."""
+        reopened = []
+        try:
+            for ch in {c.id: c for c in channels if isinstance(c, discord.Thread)}.values():
+                fresh = await self.client.fetch_channel(ch.id)
+                if fresh.locked:
+                    raise PanelError(f"The thread {fresh.name!r} is locked; unlock it to publish this panel.")
+                if fresh.archived:
+                    await fresh.edit(archived=False)
+                    reopened.append(fresh)
+            yield
+        finally:
+            for thread in reopened:
+                try:
+                    await thread.edit(archived=True)
+                except discord.HTTPException:
+                    pass
+
     async def _fetch_messages(self, channel, ids: list[int]) -> list[discord.Message | None]:
         out = []
         for mid in ids:
@@ -364,6 +388,22 @@ class PublishBotPanels(commands.Cog):
             and all(m.author.id == bot_id and m.flags.is_components_v2 == r.box for m, r in zip(current, rendered))
         )
 
+        async with self._open_threads(channel, *([old_channel] if old_channel else [])):
+            new_ids = await self._write(channel, current, rendered, in_place, bot_id, notes)
+
+        if shell_cog is not None:
+            dynamic_index = next(i for i, m in enumerate(messages) if m.get("dynamic") == DYNAMIC_SHELL_EXCHANGE)
+            r = rendered[dynamic_index]
+            text_embed = r.copy_embed if r.box else (r.embeds[0] if r.embeds else None)
+            try:
+                await shell_cog.after_panel_publish(text_embed, dynamic_files[DYNAMIC_SHELL_EXCHANGE])
+            except Exception as e:
+                notes.append(f"Posted, but the rates announcement / legacy copy failed: {e}")
+
+        return channel.id, new_ids, notes
+
+    async def _write(self, channel, current, rendered, in_place, bot_id, notes) -> list[int]:
+        """Edit the panel's messages in place, or post fresh ones and delete the old."""
         if in_place:
             for msg, r in zip(current, rendered):
                 if r.box:
@@ -400,17 +440,7 @@ class PublishBotPanels(commands.Cog):
                     await msg.delete()
                 except discord.HTTPException:
                     notes.append(f"Couldn't delete the old message {msg.id}; remove it by hand.")
-
-        if shell_cog is not None:
-            dynamic_index = next(i for i, m in enumerate(messages) if m.get("dynamic") == DYNAMIC_SHELL_EXCHANGE)
-            r = rendered[dynamic_index]
-            text_embed = r.copy_embed if r.box else (r.embeds[0] if r.embeds else None)
-            try:
-                await shell_cog.after_panel_publish(text_embed, dynamic_files[DYNAMIC_SHELL_EXCHANGE])
-            except Exception as e:
-                notes.append(f"Posted, but the rates announcement / legacy copy failed: {e}")
-
-        return channel.id, new_ids, notes
+        return new_ids
 
     # ---- Registry for the editor ----
 
