@@ -908,6 +908,38 @@ def save_shell_exchange_config(data: dict):
         db.close()
 
 
+SHELL_CONVERSION_DEFAULTS = {"shells_per_aspect": 3, "max_aspects_per_conversion": 40}
+SHELL_CONVERSION_MAX = 10000
+
+
+def clean_shell_conversion(data: dict) -> dict:
+    """Keep whole numbers in 1..SHELL_CONVERSION_MAX; anything else falls back to the default."""
+    out = dict(SHELL_CONVERSION_DEFAULTS)
+    for key in out:
+        value = data.get(key)
+        if isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= SHELL_CONVERSION_MAX:
+            out[key] = value
+    return out
+
+
+def get_shell_conversion() -> dict:
+    """Shells -> aspects rate, set on the website's Shell Exchange page
+    (cache_entries 'shellConversion')."""
+    data = {}
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT data FROM cache_entries WHERE cache_key = 'shellConversion'")
+        row = db.cursor.fetchone()
+        if row and row[0]:
+            data = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+    except Exception as e:
+        log(ERROR, f"Error: {e}", context="database")
+    finally:
+        db.close()
+    return clean_shell_conversion(data)
+
+
 def get_shell_exchange_ings() -> dict:
     """Load shell exchange ingredient data from cache_entries."""
     db = DB()

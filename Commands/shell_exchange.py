@@ -25,23 +25,12 @@ from Helpers.variables import (
     LEGACY_WEBHOOK_URL,
     RATES_PING_ROLE_ID,
     RATES_THREAD_ID,
-    TAQ_EMBED_COLOR,
 )
 
 PANEL_FILENAMES = {
     "ingredients": "ingredient_shell_panel.png",
     "materials": "materials_shell_panel.png",
 }
-
-
-def build_panel_view(text, files):
-    """Text plus one gallery per panel, so each image renders at full width."""
-    container = discord.ui.Container(discord.ui.TextDisplay(text), colour=TAQ_EMBED_COLOR)
-    for f in files:
-        container.add_item(
-            discord.ui.MediaGallery(discord.MediaGalleryItem(f"attachment://{f.filename}"))
-        )
-    return discord.ui.DesignerView(container, timeout=None, store=False)
 
 
 class ShellExchange(commands.Cog):
@@ -155,18 +144,6 @@ class ShellExchange(commands.Cog):
         img.save(buffer, format="PNG")
         buffer.seek(0)
         return discord.File(buffer, PANEL_FILENAMES[key])
-
-    async def _retire_split_panels(self, channel, config):
-        """Drop the text/ings/mats messages the single-message layout replaced."""
-        for key in ("text_message_id", "ings_message_id", "mats_message_id"):
-            message_id = config.pop(key, None)
-            if not message_id:
-                continue
-            try:
-                old = await channel.fetch_message(message_id)
-                await old.delete()
-            except Exception:
-                pass
 
     async def _update_legacy_message(self, embed, files):
         async with aiohttp.ClientSession() as session:
@@ -344,73 +321,37 @@ class ShellExchange(commands.Cog):
             self.save_config(config)
             await ctx.respond(f"Material columns set to {cols}", ephemeral=True)
 
-    @shell_exchange_group.command(name="generate", description='Generate and post/update shell exchange')
-    async def shell_exchange_generate(self, ctx: discord.ApplicationContext):
-        await ctx.defer(ephemeral=True)
+    # ---- Bot panel hooks (Tasks/publish_bot_panels.py) ----
+    # The panel text lives on the website now; publishing the shell-exchange
+    # panel asks this cog for the rate images, then for the follow-ups the old
+    # /shell_exchange generate did: the rates-thread diff and the legacy copy.
+
+    def generate_panel_files(self) -> tuple[list[tuple[str, bytes]], list[str]]:
+        """(filename, png bytes) per rate image, plus icons missing from storage.
+        Blocking (PIL); run it in a thread."""
         config = self.load_config()
-        legacy_mode = config.get("legacy_mode", False)
-        channel_id = config.get("channel_id")
-        if not channel_id and not legacy_mode:
-            await ctx.followup.send("Channel not set. Set channel first", ephemeral=True)
-            return
+        images, skipped_icons = generate_images(
+            config.get("output_mode", "both"), config,
+            ings_data=self.load_ings_config(), mats_data=self.load_mats_config(),
+        )
+        files = []
+        for key in ("ingredients", "materials"):
+            panel = self._panel_file(images, key)
+            if panel is not None:
+                files.append((panel.filename, panel.fp.getvalue()))
+        return files, skipped_icons
 
-        channel = self.client.get_channel(channel_id) if channel_id else None
-        if not channel and not legacy_mode:
-            await ctx.followup.send("Invalid channel.", ephemeral=True)
-            return
-
-        output_mode = config.get("output_mode", "both")
-        ings_data = self.load_ings_config()
-        mats_data = self.load_mats_config()
-        images, skipped_icons = generate_images(output_mode, config, ings_data=ings_data, mats_data=mats_data)
-
-        if not images:
-            await ctx.followup.send("No images generated.", ephemeral=True)
-            return
-
-        # Embed creation (if not legacy message update)
-        long_text = local_ids.text("𓆉  Ingredients are vital to the guild. We use them to craft XP gear, prof gear, war and to offer free war builds. We therefore rely on small donations to keep all guild activities running smoothly. To reward our contributors, we have created our exclusive currency: Shells. They can be traded for crafted gear, guild tomes, mythic items, and more. To find a more comprehensive list, check out the <#1462481145018060951>!\n\nThe list below shows our currently accepted ingredients and materials, which you can receive shells for donating. Other ingredients are welcome, but will not be eligible for shells. If you find an ingredient that isn't on the list but you think might still be useful, feel free to ask a Chief for confirmation. Specially outlined items are of higher need than usual right now, so while you will get exactly the shells displayed still, donating these specific ingredients and materials helps us a lot!\n\n⚠️ Shell rates and accepted ingredients are likely to change depending on their demand, how many we currently have in stock, and their price on the Trade Market. All modifications are announced in ⁠the \"Shell rate balances\" thread. If you'd like to be pinged for them, you can get the <@&1050233131183112255> role in <#1523984409538203789>. This role is also used when our supply of a specific ingredient gets low (pro tip: high demand ingredients will likely earn you more shells!).\n\n𓆉  In order to claim your shells: \nPut your ingredients in the guild bank and screenshot the log message and optionally the content, you can then **open a ticket** and **send a screenshot** as evidence. A Narwhal will soon update your profile and close the ticket as soon as the transaction is completed.\n\n⚙️ There are two useful commands to check your balance:\n`/profile [user]`\n`/leaderboard (total/timespan)`")
-
-        embed = discord.Embed(description=long_text, color=TAQ_EMBED_COLOR)
-
-        ings_file = self._panel_file(images, "ingredients")
-        mats_file = self._panel_file(images, "materials")
-
-        # Send or update text message
-        if legacy_mode:
-            files = [f for f in (ings_file, mats_file) if f is not None]
-            try:
-                await self._update_legacy_message(embed, files=files)
-            except Exception as e:
-                await ctx.followup.send(f"Legacy message update failed: {type(e).__name__}: {e}", ephemeral=True)
-                return
-        else:
-            files = [f for f in (ings_file, mats_file) if f is not None]
-            view = build_panel_view(long_text, files)
-
-            panel_msg = None
-            panel_msg_id = config.get("panel_message_id")
-            if panel_msg_id:
-                try:
-                    panel_msg = await channel.fetch_message(panel_msg_id)
-                    await panel_msg.edit(view=view, attachments=[], files=files)
-                except Exception:
-                    panel_msg = None
-
-            if panel_msg is None:
-                panel_msg = await channel.send(view=view, files=files)
-                config["panel_message_id"] = panel_msg.id
-
-            await self._retire_split_panels(channel, config)
-
+    async def after_panel_publish(self, embed: discord.Embed | None, files: list[tuple[str, bytes]]):
+        """Announce rate changes; mirror to the legacy webhook message when on."""
+        config = self.load_config()
+        if config.get("legacy_mode", False) and embed is not None:
+            await self._update_legacy_message(
+                embed, files=[discord.File(BytesIO(data), filename=name) for name, data in files],
+            )
         await self._post_rates_update(config)
+        for key in ("channel_id", "panel_message_id", "text_message_id", "ings_message_id", "mats_message_id"):
+            config.pop(key, None)  # the panel row owns placement now
         self.save_config(config)
-
-        result_msg = "Posted shell exchange"
-        if skipped_icons:
-            names = ", ".join(sorted(set(skipped_icons)))
-            result_msg += f"\n⚠️ Missing icon in storage, left off the panel: {names}"
-        await ctx.followup.send(result_msg, ephemeral=True)
 
     @shell_exchange_group.command(name="legacy", description="Toggle legacy webhook updates")
     async def shell_exchange_legacy(self, ctx: discord.ApplicationContext, enabled: discord.Option(bool, required=True)):
@@ -418,13 +359,6 @@ class ShellExchange(commands.Cog):
         config["legacy_mode"] = enabled
         self.save_config(config)
         await ctx.respond(f"Legacy mode set to {enabled}.", ephemeral=True)
-
-    @shell_exchange_group.command(name="set_channel", description='Set the channel for shell exchange posts')
-    async def shell_exchange_set_channel(self, ctx: discord.ApplicationContext, channel: discord.Option(discord.TextChannel, required=True)):
-        config = self.load_config()
-        config["channel_id"] = channel.id
-        self.save_config(config)
-        await ctx.respond(f"Shell exchange channel set to {channel.mention}", ephemeral=True)
 
     @edit_group.command(name="ingredient", description="Edit ingredient values")
     async def edit_ingredient(self, ctx: discord.ApplicationContext, 
