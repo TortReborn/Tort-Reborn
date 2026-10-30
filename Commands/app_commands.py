@@ -13,6 +13,7 @@ from Helpers.app_transcript import (
     delete_transcribed_channel,
     TranscriptError,
 )
+from Helpers.ally_registration import register_community_member
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3
@@ -330,22 +331,10 @@ class WebAppCommands(commands.Cog):
             f"The Aquarium Applications Team"
         )
 
-        # Auto-link and set nickname
-        link_id = applicant.id if applicant else int(app["discord_id"])
-        uuid = None
-        if ign:
-            uuid_data = await asyncio.to_thread(getPlayerUUID, ign)
-            uuid = uuid_data[1] if uuid_data else None
-            if uuid:
-                try:
-                    await asyncio.to_thread(self._link_discord, link_id, ign, uuid, channel.id, linked=True)
-                except LinkConflictError as e:
-                    await ctx.followup.send(e.user_message(), ephemeral=True)
-            if applicant:
-                try:
-                    await applicant.edit(nick=ign)
-                except discord.Forbidden:
-                    pass
+        registration_status = await register_community_member(
+            applicant, int(app["discord_id"]), ign, app["answers"].get("guild") or '',
+            actor_name=ctx.user.name,
+        )
 
         # Assign "Tortoise - Community" role
         role_status = ""
@@ -373,7 +362,7 @@ class WebAppCommands(commands.Cog):
         await self._update_exec_thread(app["thread_id"], "accepted", "Community Member", ign)
 
         await ctx.followup.send(
-            f"Application accepted (Community Member). IGN: `{ign}`. {role_status}",
+            f"Application accepted (Community Member). IGN: `{ign}`. {role_status} {registration_status}".strip(),
             ephemeral=True,
         )
 

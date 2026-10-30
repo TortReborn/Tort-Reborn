@@ -192,7 +192,7 @@ class PromotionQueueProcessor(commands.Cog):
         db.connect()
         try:
             db.cursor.execute(
-                "UPDATE discord_links SET rank = %s WHERE discord_id = %s",
+                "UPDATE discord_links SET rank = %s, alliance_id = NULL WHERE discord_id = %s",
                 (new_rank, discord_id)
             )
             db.connection.commit()

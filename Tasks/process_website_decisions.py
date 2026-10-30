@@ -7,6 +7,7 @@ import discord
 from discord.ext import tasks, commands
 
 from Helpers.logger import log, INFO, ERROR
+from Helpers.ally_registration import register_community_member
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed, update_hammerhead_poll_embed
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
@@ -123,7 +124,7 @@ class ProcessWebsiteDecisions(commands.Cog):
                                          display_number=display_number)
             else:
                 await self._accept_community(app_id, channel, applicant, discord_id,
-                                             discord_username, ign, thread_id,
+                                             discord_username, ign, thread_id, answers=answers,
                                              display_number=display_number)
         elif status == "denied":
             await self._deny(app_id, app_type, channel, applicant, discord_id,
@@ -288,7 +289,7 @@ class ProcessWebsiteDecisions(commands.Cog):
     # ------------------------------------------------------------------
 
     async def _accept_community(self, app_id, channel, applicant, discord_id,
-                                discord_username, ign, thread_id,
+                                discord_username, ign, thread_id, answers=None,
                                 display_number=None):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
 
@@ -301,19 +302,12 @@ class ProcessWebsiteDecisions(commands.Cog):
             f"The Aquarium Applications Team"
         )
 
-        # Auto-link with linked=True (community members are immediately linked)
-        link_id = applicant.id if applicant else int(discord_id)
-        uuid = None
-        if ign:
-            uuid_data = await asyncio.to_thread(getPlayerUUID, ign)
-            uuid = uuid_data[1] if uuid_data else None
-            if uuid:
-                await self._link_or_report(channel, link_id, ign, uuid, linked=True)
-            if applicant:
-                try:
-                    await applicant.edit(nick=ign)
-                except discord.Forbidden:
-                    pass
+        registration_status = await register_community_member(
+            applicant, int(discord_id), ign, (answers or {}).get("guild") or '',
+            actor_name='website acceptance',
+        )
+        if registration_status:
+            await channel.send(registration_status)
 
         # Assign "Tortoise - Community" role
         if applicant:

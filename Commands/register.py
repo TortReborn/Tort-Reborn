@@ -5,10 +5,8 @@ from discord import ApplicationContext, Option, SlashCommandGroup
 from discord.ext import commands
 
 from Helpers.alliances import enabled_alliances
-from Helpers.database import DB
-from Helpers.functions import getPlayerUUID
-from Helpers.links import LinkConflictError, assert_uuid_free
-from Helpers.registration import set_rank, upsert_identity
+from Helpers.ally_registration import AllyRegistrationError, register_ally
+from Helpers.links import LinkConflictError
 from Helpers.variables import HOME_GUILD_IDS
 
 
@@ -53,97 +51,26 @@ class Register(commands.Cog):
             )
             return
 
-        alliances = await asyncio.to_thread(enabled_alliances)
-        alliance = next((ally for ally in alliances if str(ally.id) == guild), None)
-        if alliance is None:
-            await ctx.followup.send('Choose an enabled guild from the suggestions.', ephemeral=True)
-            return
-        if alliance.rank_kind != 'ally':
-            await ctx.followup.send(
-                'This guild needs a valid ally rank in Externals & alliances.', ephemeral=True,
-            )
-            return
-
-        guild = alliance.name
-        ally_role = ctx.guild.get_role(alliance.role_id)
-        if ally_role is None:
-            await ctx.followup.send(
-                f'Could not find the configured {guild} role (`{alliance.role_id}`).',
-                ephemeral=True,
-            )
-            return
-
-        player_data = await asyncio.to_thread(getPlayerUUID, ign)
-        if not player_data:
-            await ctx.followup.send(
-                f'Could not find a Minecraft account for `{ign}`.',
-                ephemeral=True,
-            )
-            return
-
-        canonical_ign, uuid = player_data
-        rank = alliance.rank
-
         try:
-            await asyncio.to_thread(self._check_link_conflict, user.id, uuid)
-        except LinkConflictError as e:
-            await ctx.followup.send(e.user_message(), ephemeral=True)
+            registered = await register_ally(user, ign, guild, actor_name=ctx.user.name)
+        except LinkConflictError as error:
+            await ctx.followup.send(error.user_message(), ephemeral=True)
             return
-
-        try:
-            if ally_role not in user.roles:
-                await user.add_roles(
-                    ally_role,
-                    reason=f'Ally registration for {guild} (ran by {ctx.user.name})',
-                    atomic=True,
-                )
-            await user.edit(nick=f'{rank} {canonical_ign}')
+        except AllyRegistrationError as error:
+            await ctx.followup.send(str(error), ephemeral=True)
+            return
         except discord.Forbidden:
-            await ctx.followup.send(
-                'I do not have permission to update that user or assign the ally role.',
-                ephemeral=True,
-            )
+            await ctx.followup.send('I could not update the nickname or guild role.', ephemeral=True)
             return
-        except discord.HTTPException as e:
-            await ctx.followup.send(
-                f'Discord rejected the member update: `{e}`',
-                ephemeral=True,
-            )
-            return
-
-        try:
-            await asyncio.to_thread(self._upsert_ally_link, user.id, canonical_ign, uuid, rank)
-        except LinkConflictError as e:
-            await ctx.followup.send(e.user_message(), ephemeral=True)
+        except discord.HTTPException:
+            await ctx.followup.send('Discord rejected the member update.', ephemeral=True)
             return
 
         await ctx.followup.send(
-            f'Registered {user.mention} as **{rank} {discord.utils.escape_markdown(canonical_ign)}** for **{guild}**.',
+            f'Registered {user.mention} as **{registered.alliance.rank} '
+            f'{discord.utils.escape_markdown(registered.ign)}** for **{registered.alliance.name}**.',
             ephemeral=True,
         )
-
-    @staticmethod
-    def _check_link_conflict(discord_id: int, uuid: str):
-        """Blocking DB read — call via asyncio.to_thread."""
-        db = DB()
-        db.connect()
-        try:
-            assert_uuid_free(db.cursor, uuid, discord_id)
-        finally:
-            db.close()
-
-    @staticmethod
-    def _upsert_ally_link(discord_id: int, ign: str, uuid: str, rank: str):
-        """Identity plus the ally rank (a 'kind = ally' row in rank_definitions,
-        so it is never mistaken for guild membership)."""
-        db = DB()
-        db.connect()
-        try:
-            upsert_identity(db.cursor, discord_id=discord_id, ign=ign, uuid=uuid)
-            set_rank(db.cursor, discord_id, rank)
-            db.connection.commit()
-        finally:
-            db.close()
 
     @staticmethod
     def _is_moderator_or_higher(member: discord.Member) -> bool:

@@ -98,7 +98,7 @@ def record_removal(cursor, plan):
     if plan.uuid and plan.rank:
         roster.stamp_rank_at_leave(cursor, plan.uuid, plan.rank)
     cursor.execute(
-        "UPDATE discord_links SET rank = NULL WHERE discord_id = %s AND rank IS NOT NULL",
+        "UPDATE discord_links SET rank = NULL, alliance_id = NULL WHERE discord_id = %s AND (rank IS NOT NULL OR alliance_id IS NOT NULL)",
         (plan.discord_id,),
     )
     return cursor.rowcount > 0
