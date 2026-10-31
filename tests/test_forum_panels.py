@@ -8,7 +8,8 @@ What matters here:
    rest in it, and takes the post back if a later message fails.
 3. Replacing a panel's old messages removes the whole post when the bot
    opened it and nobody else wrote in it; a post others wrote in stays.
-4. The copy tool turns an exported post into panel content faithfully, and
+4. The copy tool turns an exported post into panel content faithfully (with
+   :shortcode: text as the emoji itself), and
    its compare treats the invisible heading as the blank one it stands for.
 """
 
@@ -155,3 +156,12 @@ def test_compare_reads_an_invisible_heading_as_blank_and_skips_link_previews():
     changed = {**sent, "embeds": [{**sent["embeds"][0], "title": "Other"}]}
     assert cfp._first_difference(cfp._shape(EXPORTED, lambda v: v), cfp._shape(changed, lambda v: v)) \
         == "embeds.0.title: was 'Guide' now 'Other'"
+
+
+def test_shortcodes_become_the_emoji_and_nothing_else_does():
+    assert cfp.emojize(":page_facing_up: Application Manager") == "\U0001F4C4 Application Manager"
+    assert cfp.emojize(":tools: Guild Crafter") == "\U0001F6E0️ Guild Crafter"  # Discord's name, not the package's
+    for unchanged in ("<:GonnerWar:1459180651533303830> War Leader", "at 10:30:45", ":notanemoji:",
+                      "https://discord.gg/jMyAh2Qy5V", "<a:spin:21>"):
+        assert cfp.emojize(unchanged) == unchanged
+    assert cfp.emojize({"fields": [{"name": ":tools: x", "inline": False}]}) == {"fields": [{"name": "\U0001F6E0️ x", "inline": False}]}

@@ -133,6 +133,33 @@ def _embed(e: dict, assets: _Assets) -> dict:
     return out
 
 
+# A webhook post can carry :shortcode: text that Discord's chat box would have
+# turned into an emoji; the copy carries the emoji itself, so it reads the same
+# in Discord and in the editor's preview. Custom emojis (<:name:id>) and times
+# (10:30:45) don't match.
+_SHORTCODE = re.compile(r"(?<![<\w]):([a-z0-9_+\-]+):(?!\d)")
+# Names Discord gives emojis that the emoji package's aliases lack
+DISCORD_EMOJI_NAMES = {"tools": "\U0001F6E0️"}
+
+
+def _emoji_for(m: re.Match) -> str:
+    if m[1] in DISCORD_EMOJI_NAMES:
+        return DISCORD_EMOJI_NAMES[m[1]]
+    import emoji
+    return emoji.emojize(m[0], language="alias")
+
+
+def emojize(v):
+    """`v` (a string or JSON-like value) with standard emoji shortcodes as the emoji."""
+    if isinstance(v, str):
+        return _SHORTCODE.sub(_emoji_for, v)
+    if isinstance(v, list):
+        return [emojize(x) for x in v]
+    if isinstance(v, dict):
+        return {k: emojize(x) for k, x in v.items()}
+    return v
+
+
 def build(export_file: str, out: str, dry_run: bool = False):
     data = json.load(open(export_file, encoding="utf-8"))
     panels = []
@@ -151,10 +178,14 @@ def build(export_file: str, out: str, dry_run: bool = False):
                    "images": [assets(a["url"]) for a in m.get("attachments", [])],
                    "embeds": [_embed(e, assets) for e in m["embeds"] if e.get("type") == "rich"]}
             messages.append({k: v for k, v in msg.items() if v})
+        content = emojize({"messages": messages, "post": {"title": t["name"]}})
+        left = sorted(set(_SHORTCODE.findall(json.dumps(content, ensure_ascii=False))))
+        if left:
+            print(f"  {t['name']}: shortcodes with no standard emoji, left as text: {left}")
         panels.append({
             "slug": slug_for(t["name"]), "name": t["name"], "source_thread_id": t["id"],
             "channel_id": local_ids.channel(int(data["forum_id"])),
-            "content": local_ids.data({"messages": messages, "post": {"title": t["name"]}}),
+            "content": local_ids.data(content),
         })
     with open(out, "w", encoding="utf-8") as f:
         json.dump(panels, f, ensure_ascii=False, indent=2)
@@ -311,7 +342,7 @@ def compare(export_file: str, panels_file: str) -> bool:
     moved = {tid: str(live[p["slug"]][1]) for tid, p in panels.items() if p["slug"] in live}
 
     def translate(v):
-        v = local_ids.data(v)
+        v = local_ids.data(emojize(v))
         s = json.dumps(v, ensure_ascii=False)
         for old, new in moved.items():
             s = s.replace(f"<#{old}>", f"<#{new}>").replace(f"/{old}", f"/{new}")
