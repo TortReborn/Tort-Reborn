@@ -108,3 +108,22 @@ def test_bad_input_is_refused(temp_db):
                                        ("raid", 1, "urgent", "priority")):
         with pytest.raises(tomes.TomeError, match=msg):
             _ask(temp_db, kind, count, wars=500, priority=priority)
+
+
+def test_a_split_raid_request_puts_each_parts_own_cost_on_it(temp_db):
+    _shells(temp_db, 5000)
+    temp_db.cursor.execute(
+        "INSERT INTO tome_requests (uuid, ign, kind, count, priority) VALUES (%s, 'x', 'war', 98, 'low')", (UUID,))
+    made = _ask(temp_db, "raid", 5)  # 2 fit in the queue, 3 wait
+    assert [(m["bucket"], m["count"], m["shells"]) for m in made] == [
+        ("queue", 2, 20), ("give_when_available", 3, 40)]  # 1st-2nd at 10; 3rd-4th at 10, 5th at 20
+
+
+def test_request_button_is_a_panel_action_and_the_grant_log_reads_well():
+    from Commands.generate import PANEL_ACTIONS
+    from Commands.tomes import TOME_REQUEST_BUTTON_ID, TomeRequestView, grant_line
+    assert PANEL_ACTIONS[TOME_REQUEST_BUTTON_ID].label == "Request tomes"
+    assert TomeRequestView.__view_children_items__  # the persistent button exists
+    assert grant_line(3, "war", "Thundderr", 170719819715313665, "Kenji121") == \
+        "\U0001F4D8 <@170719819715313665> (Thundderr) was given **3 war tomes** by Kenji121."
+    assert grant_line(1, None, "OldMember", None, None) == "\U0001F4D8 OldMember was given **1 tome**."

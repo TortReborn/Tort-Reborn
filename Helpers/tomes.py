@@ -199,9 +199,12 @@ def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int,
 
     room = max(MAX_QUEUED - s.queued_total, 0)
     parts = [(b, n) for b, n in (("queue", min(count, room)), ("give_when_available", count - min(count, room))) if n]
-    made = []
-    for i, (bucket, n) in enumerate(parts):
-        spent = shells if i == 0 else 0  # the shells ride on the first part
+    made, bought = [], s.raid_bought
+    for bucket, n in parts:
+        # Each part carries what its own tomes cost, so cancelling either
+        # refunds exactly that part.
+        spent = raid_tomes_cost(bought, n) if kind == "raid" else 0
+        bought += n if kind == "raid" else 0
         c.execute(
             """
             INSERT INTO tome_requests (uuid, discord_id, ign, kind, count, priority, bucket, shells_spent)
