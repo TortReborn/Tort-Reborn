@@ -16,7 +16,12 @@ Content shape -- keep in sync with TAq-Website/lib/bot-panels.ts:
         "rows":    [[{"kind": "link", "label", "url", "emoji"} |
                      {"kind": "action", "action", "label", "emoji", "style"}]],
         "dynamic": "shell_exchange_panels" | None,
-    }]}
+    }],
+     "post": {"title": str}}                     # when the channel is a forum
+
+A panel whose channel is a forum is a forum post: the first publish opens the
+post with `post.title`, the panel's first message becomes its opening message,
+and later publishes edit that post (TAQ-115).
 
 Image urls are https:// or asset://<name>; assets live in the bucket under
 ASSET_PREFIX and are attached, so an embed points at attachment://<name>.
@@ -59,6 +64,8 @@ MAX_BUTTONS_PER_ROW = 5
 MAX_BUTTON_LABEL = 80
 MAX_IMAGES = 10
 MAX_BOX_TEXT = 4000  # all text in a Components V2 message
+MAX_POST_TITLE = 100
+BLANK_FIELD_NAME = "​"  # zero-width space: a field heading that shows nothing
 LAYOUT_BOX = "box"   # message["layout"]: one Components V2 container instead of embeds
 
 BUTTON_STYLES = {
@@ -233,11 +240,13 @@ def _build_embed(where: str, data: dict, assets: _AssetCollector) -> discord.Emb
     for i, f in enumerate(fields, start=1):
         name = _text(f.get("name"))
         value = _text(f.get("value"))
-        if not name or not value:
-            raise PanelError(f"{where}, field {i}: a field needs both a name and a value.")
+        if not value:
+            raise PanelError(f"{where}, field {i}: a field needs a value.")
         _check_len(f"{where}, field {i}", "name", name, MAX_FIELD_NAME)
         _check_len(f"{where}, field {i}", "value", value, MAX_FIELD_VALUE)
-        embed.add_field(name=name, value=value, inline=bool(f.get("inline")))
+        # A field may go without a heading; Discord wants one, so it gets an
+        # invisible one, which reads the same as none.
+        embed.add_field(name=name or BLANK_FIELD_NAME, value=value, inline=bool(f.get("inline")))
 
     if not (embed.title or embed.description or embed.fields or embed.image or embed.thumbnail or author_name or footer_text):
         raise PanelError(f"{where}: the embed is empty.")
@@ -449,6 +458,15 @@ def panel_messages(content: dict) -> list[dict]:
     if len(messages) > MAX_MESSAGES:
         raise PanelError(f"The panel has {len(messages)} messages (at most {MAX_MESSAGES}).")
     return messages
+
+
+def forum_post_title(content: dict) -> str:
+    """The title a forum panel's post carries; refused when missing or too long."""
+    title = _text(((content or {}).get("post") or {}).get("title"))
+    if not title:
+        raise PanelError("Give the forum post a title before publishing to a forum.")
+    _check_len("The forum post", "the title", title, MAX_POST_TITLE)
+    return title
 
 
 def uses_dynamic(content: dict, block: str) -> bool:
