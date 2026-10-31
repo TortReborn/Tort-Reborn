@@ -8,8 +8,12 @@ deleted after, so a failed publish never leaves the channel empty. The
 outcome (published / failed + the reason) is written back to the revision,
 which is what the website shows under the panel's history.
 
-The task also keeps a directory of the home guild's channels, roles and
-emoji plus the bot's button registry in cache_entries ('botPanelRegistry'),
+A panel whose channel is a forum is a post there: the first publish opens
+it and later ones edit it, or replace the post when the messages change shape.
+
+The task also keeps a directory of maincord's and TAq Executive's channels
+(plus the forum posts panels live in), roles and emoji, and the bot's button
+registry in cache_entries ('botPanelRegistry'),
 so the editor can offer pickers and preview mentions without a bot token.
 It is rebuilt hourly, or on the next tick after the editor's refresh button
 writes 'botPanelRegistryRefresh'.
@@ -30,6 +34,7 @@ from Helpers.bot_panels import (
     DYNAMIC_SHELL_EXCHANGE,
     PanelError,
     asset_name,
+    forum_post_title,
     panel_messages,
     render_message,
     role_buttons_in,
@@ -40,7 +45,7 @@ from Helpers.logger import log, INFO, ERROR
 from Helpers.panel_values import load_panel_values
 from Helpers.role_buttons import unassignable_reason
 from Helpers.storage import storage
-from Helpers.variables import HOME_GUILD_IDS, TAQ_GUILD_ID
+from Helpers.variables import EXEC_GUILD_ID, HOME_GUILD_IDS, TAQ_GUILD_ID
 
 POLL_SECONDS = 10
 DIRECTORY_EVERY_LOOPS = 360  # ~1 hour
@@ -48,6 +53,8 @@ JOBS_PER_TICK = 10
 REGISTRY_CACHE_KEY = "botPanelRegistry"
 REFRESH_CACHE_KEY = "botPanelRegistryRefresh"
 NO_MENTIONS = discord.AllowedMentions.none()
+# Servers whose channels and roles the editor offers (TAQ-115)
+PANEL_GUILD_IDS = (TAQ_GUILD_ID, EXEC_GUILD_ID)
 
 
 @dataclass
@@ -201,6 +208,16 @@ def _save_registry(data: dict):
         db.close()
 
 
+def _panel_channel_ids() -> list[int]:
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute("SELECT DISTINCT channel_id FROM bot_panels WHERE channel_id IS NOT NULL")
+        return [r[0] for r in db.cursor.fetchall()]
+    finally:
+        db.close()
+
+
 def _take_refresh_request() -> bool:
     """Consume a refresh the editor asked for; stale ones lapse unanswered."""
     db = DB()
@@ -327,9 +344,22 @@ class PublishBotPanels(commands.Cog):
                 raise PanelError(f"The bot can't see channel {channel_id}.")
         if getattr(channel, "guild", None) is None or channel.guild.id not in HOME_GUILD_IDS:
             raise PanelError("Panels can only be posted in the guild's own servers.")
-        if not isinstance(channel, discord.abc.Messageable):
+        if not isinstance(channel, (discord.abc.Messageable, discord.ForumChannel)):
             raise PanelError(f"#{channel} is not a channel the bot can post in.")
         return channel
+
+    async def _existing_post(self, job: PanelJob, forum: discord.ForumChannel) -> discord.Thread | None:
+        """The post this panel already has in `forum`: its messages live in a
+        thread of that forum (a revision names the forum, the panel the post)."""
+        if not job.panel_channel_id:
+            return None
+        thread = self.client.get_channel(job.panel_channel_id)
+        if thread is None:
+            try:
+                thread = await self.client.fetch_channel(job.panel_channel_id)
+            except discord.HTTPException:
+                return None
+        return thread if isinstance(thread, discord.Thread) and thread.parent_id == forum.id else None
 
     @contextlib.asynccontextmanager
     async def _open_threads(self, *channels):
@@ -395,6 +425,13 @@ class PublishBotPanels(commands.Cog):
         check_role_buttons(job.content, channel.guild)
         bot_id = self.client.user.id
 
+        # A forum target is the panel's post there; `channel` becomes that
+        # post, or None while it has yet to be opened.
+        forum = title = None
+        if isinstance(channel, discord.ForumChannel):
+            forum, title = channel, forum_post_title(job.content)
+            channel = await self._existing_post(job, forum)
+
         if job.adopt_message_ids:
             current = await self._fetch_messages(channel, job.adopt_message_ids)
             for mid, msg in zip(job.adopt_message_ids, current):
@@ -403,7 +440,7 @@ class PublishBotPanels(commands.Cog):
                 if msg.author.id != bot_id:
                     raise PanelError(f"Linked message {mid} was posted by {msg.author}, not the bot, so it can't be edited.")
             old_channel = channel
-        elif job.panel_channel_id == channel.id:
+        elif channel is not None and job.panel_channel_id == channel.id:
             current = await self._fetch_messages(channel, job.panel_message_ids)
             old_channel = channel
         else:
@@ -425,9 +462,19 @@ class PublishBotPanels(commands.Cog):
             and len(current) == len(rendered)
             and all(m.author.id == bot_id and m.flags.is_components_v2 == r.box for m, r in zip(current, rendered))
         )
+        # A post's opening message can't be swapped for another, so a forum
+        # panel that changes shape opens a fresh post and the old one goes.
+        if forum and not in_place:
+            channel = None
 
-        async with self._open_threads(channel, *([old_channel] if old_channel else [])):
-            new_ids = await self._write(channel, current, rendered, in_place, bot_id, notes)
+        async with self._open_threads(*[c for c in (channel, old_channel) if c is not None]):
+            if channel is None:
+                channel, new_ids = await self._open_post(forum, title, rendered)
+                await self._remove_old(old_channel, current, bot_id, notes)
+            else:
+                if forum and channel.name != title:
+                    await channel.edit(name=title)
+                new_ids = await self._write(channel, old_channel, current, rendered, in_place, bot_id, notes)
 
         if shell_cog is not None:
             dynamic_index = next(i for i, m in enumerate(messages) if m.get("dynamic") == DYNAMIC_SHELL_EXCHANGE)
@@ -440,7 +487,7 @@ class PublishBotPanels(commands.Cog):
 
         return channel.id, new_ids, notes
 
-    async def _write(self, channel, current, rendered, in_place, bot_id, notes) -> list[int]:
+    async def _write(self, channel, old_channel, current, rendered, in_place, bot_id, notes) -> list[int]:
         """Edit the panel's messages in place, or post fresh ones and delete the old."""
         if in_place:
             for msg, r in zip(current, rendered):
@@ -453,61 +500,108 @@ class PublishBotPanels(commands.Cog):
                     )
             new_ids = [m.id for m in current]
         else:
-            sent = []
-            try:
-                for r in rendered:
-                    if r.box:
-                        sent.append(await channel.send(view=r.view, files=r.files, allowed_mentions=NO_MENTIONS))
-                    else:
-                        sent.append(await channel.send(
-                            content=r.content, embeds=r.embeds, files=r.files,
-                            view=r.view, allowed_mentions=NO_MENTIONS,
-                        ))
-            except Exception:
-                for msg in sent:
-                    try:
-                        await msg.delete()
-                    except discord.HTTPException:
-                        pass
-                raise
-            new_ids = [m.id for m in sent]
-            for msg in current:
-                if msg.author.id != bot_id:
-                    continue
+            new_ids = [m.id for m in await self._send_all(channel, rendered)]
+            await self._remove_old(old_channel, current, bot_id, notes)
+        return new_ids
+
+    async def _send_all(self, channel, rendered) -> list[discord.Message]:
+        """Post the messages in order; on a failure, take back what was posted."""
+        sent = []
+        try:
+            for r in rendered:
+                if r.box:
+                    sent.append(await channel.send(view=r.view, files=r.files, allowed_mentions=NO_MENTIONS))
+                else:
+                    sent.append(await channel.send(
+                        content=r.content, embeds=r.embeds, files=r.files,
+                        view=r.view, allowed_mentions=NO_MENTIONS,
+                    ))
+        except Exception:
+            for msg in sent:
                 try:
                     await msg.delete()
                 except discord.HTTPException:
-                    notes.append(f"Couldn't delete the old message {msg.id}; remove it by hand.")
-        return new_ids
+                    pass
+            raise
+        return sent
+
+    async def _open_post(self, forum: discord.ForumChannel, title: str, rendered) -> tuple[discord.Thread, list[int]]:
+        """Open a forum post with the first message and post the rest in it.
+        The opening message shares the post's id."""
+        first = rendered[0]
+        if first.box:
+            post = await forum.create_thread(name=title, view=first.view, files=first.files, allowed_mentions=NO_MENTIONS)
+        else:
+            post = await forum.create_thread(
+                name=title, content=first.content, embeds=first.embeds, files=first.files,
+                view=first.view, allowed_mentions=NO_MENTIONS,
+            )
+        try:
+            rest = await self._send_all(post, rendered[1:])
+        except Exception:
+            try:
+                await post.delete()
+            except discord.HTTPException:
+                pass
+            raise
+        return post, [post.id] + [m.id for m in rest]
+
+    async def _remove_old(self, old_channel, current, bot_id, notes):
+        """Delete the panel's previous messages. When they are the whole of a
+        forum post the bot started, the post goes with them: a post can't lose
+        its opening message. One that others have written in is left standing."""
+        ids = {m.id for m in current}
+        if isinstance(old_channel, discord.Thread) and old_channel.owner_id == bot_id and old_channel.id in ids:
+            try:
+                # Discord's own notices (a renamed post) and the bot's don't count.
+                others = [m async for m in old_channel.history(limit=None)
+                          if m.id not in ids and m.author.id != bot_id and not m.is_system()]
+                if not others:
+                    await old_channel.delete()
+                    return
+                notes.append(f"Others have written in the old post {old_channel.name!r}, so it was kept; delete it by hand if it should go.")
+                return
+            except discord.HTTPException:
+                notes.append(f"Couldn't delete the old post {old_channel.name!r}; remove it by hand.")
+                return
+        for msg in current:
+            if msg.author.id != bot_id:
+                continue
+            try:
+                await msg.delete()
+            except discord.HTTPException:
+                notes.append(f"Couldn't delete the old message {msg.id}; remove it by hand.")
 
     # ---- Registry for the editor ----
 
     async def _sync_registry(self):
-        guild = self.client.get_guild(TAQ_GUILD_ID)
+        guilds = [g for g in (self.client.get_guild(i) for i in PANEL_GUILD_IDS) if g is not None]
+        main = next((g for g in guilds if g.id == TAQ_GUILD_ID), None)
         channels, roles, emojis = [], [], []
-        if guild is not None:
+        for guild in guilds:
             for ch in guild.channels:
                 if not isinstance(ch, (discord.TextChannel, discord.VoiceChannel, discord.ForumChannel)):
                     continue
                 channels.append({
-                    "id": str(ch.id), "name": ch.name, "type": ch.type.name,
+                    "id": str(ch.id), "name": ch.name, "type": ch.type.name, "guild_id": str(guild.id),
                     "category": ch.category.name if ch.category else None,
-                    "postable": isinstance(ch, discord.TextChannel),
-                    "sort": [ch.category.position if ch.category else -1, ch.position],
+                    "postable": isinstance(ch, (discord.TextChannel, discord.ForumChannel)),
+                    "sort": [guilds.index(guild), ch.category.position if ch.category else -1, ch.position, 0, ""],
                 })
-            channels.sort(key=lambda c: c.pop("sort"))
             top = guild.me.top_role if guild.me else None
-            roles = [
-                {"id": str(r.id), "name": r.name, "color": r.color.value,
+            roles += [
+                {"id": str(r.id), "name": r.name, "color": r.color.value, "guild_id": str(guild.id),
                  # whether a role button may hand it out, and why not
                  "assignable": (why := unassignable_reason(r, top)) is None, "why": why}
                 for r in sorted(guild.roles, key=lambda r: -r.position)
                 if not r.is_default()
             ]
+        channels += await self._panel_posts(guilds, {c["id"]: c for c in channels})
+        channels.sort(key=lambda c: c.pop("sort"))
         # The bot can post custom emojis from every server it is in, so offer the
         # main server's first, then the other home servers', then its app emojis.
         # One entry per name, so a :name: in the editor always means one emoji.
-        sources = [guild] + [self.client.get_guild(g) for g in HOME_GUILD_IDS if g != TAQ_GUILD_ID]
+        sources = [main] + [self.client.get_guild(g) for g in HOME_GUILD_IDS if g != TAQ_GUILD_ID]
         seen = set()
         for source, pool in [(g.name, g.emojis) for g in sources if g] + [(None, list(self.client.app_emojis))]:
             for e in pool:
@@ -515,7 +609,7 @@ class PublishBotPanels(commands.Cog):
                     continue
                 seen.add(e.name.lower())
                 emojis.append({"id": str(e.id), "name": e.name, "animated": e.animated,
-                               "server": source if source != (guild.name if guild else None) else None})
+                               "server": source if source != (main.name if main else None) else None})
 
         await asyncio.to_thread(_save_registry, {
             "actions": [
@@ -524,12 +618,36 @@ class PublishBotPanels(commands.Cog):
             ],
             "dynamic": [{"key": DYNAMIC_SHELL_EXCHANGE, "label": "Shell exchange rate images"}],
             "default_color": GENERATE_EMBED_COLOR,
-            "guild": {"id": str(guild.id), "name": guild.name} if guild else None,
+            "guild": {"id": str(main.id), "name": main.name} if main else None,
+            "guilds": [{"id": str(g.id), "name": g.name} for g in guilds],
             "channels": channels,
             "roles": roles,
             "emojis": emojis,
             "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         })
+
+    async def _panel_posts(self, guilds, listed: dict) -> list[dict]:
+        """The threads (forum posts) panels live in, listed under their forum so
+        the editor can name them. Other threads come and go and aren't offered."""
+        out = []
+        for cid in await asyncio.to_thread(_panel_channel_ids):
+            if str(cid) in listed:
+                continue
+            thread = self.client.get_channel(cid)
+            if thread is None:
+                try:
+                    thread = await self.client.fetch_channel(cid)
+                except discord.HTTPException:
+                    continue
+            parent = listed.get(str(getattr(thread, "parent_id", None)))
+            if not isinstance(thread, discord.Thread) or thread.guild not in guilds or parent is None:
+                continue
+            out.append({
+                "id": str(thread.id), "name": thread.name, "type": thread.type.name,
+                "guild_id": parent["guild_id"], "category": parent["category"], "parent_id": parent["id"],
+                "postable": True, "sort": parent["sort"][:3] + [1, thread.name.lower()],
+            })
+        return out
 
 
 def setup(client):

@@ -104,7 +104,7 @@ def test_same_action_twice_rejected():
 def test_limits_name_the_spot():
     with pytest.raises(PanelError, match=r"Message 1, embed 2: description is 4097"):
         render({"embeds": [{"description": "ok"}, {"description": "x" * 4097}]})
-    with pytest.raises(PanelError, match="field 1: a field needs both"):
+    with pytest.raises(PanelError, match="field 1: a field needs a value"):
         render({"embeds": [{"fields": [{"name": "n", "value": ""}]}]})
     with pytest.raises(PanelError, match="6000"):
         render({"embeds": [{"description": "x" * 4000}, {"description": "y" * 4000}]})

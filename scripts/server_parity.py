@@ -76,7 +76,7 @@ PER_MEMBER_CATEGORIES = {"Guild Applications", "Guild Queue", "Invited", "Denied
                          "alt apps archive", "🐚 Shell Exchange", "🗡 War Ticket"}
 # Emojis the server's posts and the bot actually use. The rest are for fun.
 STRUCTURE_EMOJIS = ("TAq", "partytort", "graid", "shells", "aspect_warrior",
-                    "notg", "nol", "tcc", "tna", "wtp", "Tome", "tort")
+                    "notg", "nol", "tcc", "tna", "wtp", "Tome", "tort", "GonnerWar")
 EMOJI_GUILD = "main"
 # Dev-only channels the bot does not reference by id but that belong in Dev.
 DEV_CHANNEL_NAMES = {"main": set(), "exec": set()}
