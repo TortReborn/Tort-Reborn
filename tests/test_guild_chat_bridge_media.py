@@ -29,7 +29,8 @@ def attachment(filename, content_type, *, spoiler=False, description=None):
     )
 
 
-def embed(url, *, title="", description="", provider="", embed_type="rich", preview="", image_url=""):
+def embed(url, *, title="", description="", provider="", embed_type="rich", preview="", image_url="",
+          video_url="", video_preview=""):
     image = SimpleNamespace(url=image_url, proxy_url=preview) if preview or image_url else None
     return SimpleNamespace(
         url=url,
@@ -39,6 +40,7 @@ def embed(url, *, title="", description="", provider="", embed_type="rich", prev
         type=embed_type,
         image=image,
         thumbnail=None,
+        video=SimpleNamespace(url=video_url, proxy_url=video_preview) if video_url or video_preview else None,
     )
 
 
@@ -52,7 +54,7 @@ def sticker(name, sticker_format, sticker_id=1):
     )
 
 
-def test_classifies_discord_attachments_without_inlining_video():
+def test_classifies_discord_attachments_with_mp4_preview():
     media = _bridge_media((
         attachment("map.png", "image/png", description="Territory map"),
         attachment("cast.gif", "image/gif"),
@@ -62,8 +64,76 @@ def test_classifies_discord_attachments_without_inlining_video():
     assert [item.kind for item in media] == ["image", "gif", "video"]
     assert media[0].preview_url.startswith("https://media.discordapp.net/")
     assert media[1].preview_url.startswith("https://media.discordapp.net/")
-    assert media[2].preview_url == ""
+    assert media[2].preview_url == "https://media.discordapp.net/attachments/1/2/war.mp4"
     assert all(not item.inline for item in media)
+
+
+def test_video_preview_respects_spoilers_and_supported_container():
+    media = _bridge_media((
+        attachment("SPOILER_war.mp4", "video/mp4", spoiler=True),
+        attachment("war.webm", "video/webm"),
+        attachment("war.m4v", "application/octet-stream"),
+    ), ())
+
+    assert media[0].preview_url == ""
+    assert media[1].preview_url == ""
+    assert media[2].preview_url.endswith("war.m4v")
+
+
+def test_gif_embed_prefers_mp4_proxy_to_static_thumbnail():
+    proxy = "https://images-ext-1.discordapp.net/external/example/https/cdn.klipy.com/clip.mp4"
+    item = embed(
+        "https://klipy.com/gifs/skeleton-skeleton-run",
+        provider="Klipy",
+        embed_type="gifv",
+        preview="https://images-ext-1.discordapp.net/external/thumbnail.png",
+        video_url="https://cdn.klipy.com/clip.mp4",
+        video_preview=proxy,
+    )
+    media = _bridge_media((), (item,))
+
+    assert media[0].kind == "gif"
+    assert media[0].preview_url == proxy
+    assert media[0].url == item.url
+    assert media[0].inline is True
+
+
+def test_video_only_embed_has_preview_and_video_kind():
+    proxy = "https://images-ext-1.discordapp.net/external/example/clip.mp4?width=240"
+    item = embed("https://example.com/clip", video_preview=proxy)
+
+    assert _embed_has_preview((item,)) is True
+    media = _bridge_media((), (item,))
+    assert media[0].kind == "video"
+    assert media[0].preview_url == proxy
+
+
+def test_discord_gif_embed_preserves_signed_video_proxy():
+    proxy = "https://images-ext-1.discordapp.net/external/opaque?format=mp4&width=240"
+    item = bridge_module.discord.Embed.from_dict({
+        "type": "gifv",
+        "url": "https://klipy.com/gifs/skeleton-skeleton-run",
+        "provider": {"name": "Klipy"},
+        "thumbnail": {"proxy_url": "https://images-ext-1.discordapp.net/external/thumbnail.png"},
+        "video": {"url": "https://cdn.klipy.com/clip.mp4?signature=example", "proxy_url": proxy},
+    })
+
+    media = _bridge_media((), (item,))
+    assert media[0].kind == "gif"
+    assert media[0].preview_url == proxy
+    assert _embed_has_preview((item,)) is True
+
+
+@pytest.mark.parametrize("video_preview", ["", "https://untrusted.example/clip.mp4",
+                                           "https://images-ext-1.discordapp.net/external/clip.webm"])
+def test_unsupported_or_unproxied_video_keeps_image_preview(video_preview):
+    thumbnail = "https://images-ext-1.discordapp.net/external/thumbnail.png"
+    item = embed("https://example.com/clip", preview=thumbnail,
+                 video_url="https://untrusted.example/clip.webm", video_preview=video_preview)
+
+    media = _bridge_media((), (item,))
+    assert media[0].kind == "link"
+    assert media[0].preview_url == thumbnail
 
 
 def test_classifies_discord_stickers_without_changing_media_contract():

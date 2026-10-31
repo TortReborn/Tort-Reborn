@@ -657,7 +657,8 @@ def _bridge_media(attachments, embeds, stickers=()) -> tuple[BridgeMedia, ...]:
         if not url:
             continue
         spoiler = attachment.is_spoiler()
-        preview_url = "" if spoiler or kind == "video" else _media_url(attachment.proxy_url)
+        previewable = kind != "video" or content_type == "video/mp4" or extension in {"mp4", "m4v"}
+        preview_url = _media_url(attachment.proxy_url) if previewable and not spoiler else ""
         media.append(BridgeMedia(
             kind=kind,
             url=url,
@@ -696,9 +697,12 @@ def _bridge_media(attachments, embeds, stickers=()) -> tuple[BridgeMedia, ...]:
         if not url or url in attachment_urls or any(item.url == url for item in media):
             continue
         image = embed.image or embed.thumbnail
-        preview_url = _embed_preview_url(image)
+        video_preview = _embed_video_preview_url(embed)
+        preview_url = video_preview or _embed_preview_url(image)
         provider = _clip(getattr(embed.provider, "name", "") or "", 64)
         kind = "gif" if embed.type == "gifv" or url.lower().split("?", 1)[0].endswith(".gif") else "link"
+        if kind == "link" and video_preview:
+            kind = "video"
         media.append(BridgeMedia(
             kind=kind,
             url=url,
@@ -715,7 +719,7 @@ def _bridge_media(attachments, embeds, stickers=()) -> tuple[BridgeMedia, ...]:
 def _embed_has_preview(embeds) -> bool:
     for embed in embeds:
         image = embed.image or embed.thumbnail
-        if _embed_preview_url(image):
+        if _embed_preview_url(image) or _embed_video_preview_url(embed):
             return True
     return False
 
@@ -755,6 +759,16 @@ def _reply_excerpt(message: discord.Message | None) -> str:
 def _media_url(value) -> str:
     text = str(value or "").strip()
     return text if text.startswith("https://") and len(text) <= MAX_MEDIA_URL_LENGTH else ""
+
+
+def _embed_video_preview_url(embed) -> str:
+    video = getattr(embed, "video", None)
+    preview = _embed_preview_url(video)
+    source = _media_url(getattr(video, "url", ""))
+    if preview and any(urlsplit(value).path.lower().endswith((".mp4", ".m4v"))
+                       for value in (preview, source)):
+        return preview
+    return ""
 
 
 def _embed_preview_url(image) -> str:
