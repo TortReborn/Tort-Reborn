@@ -194,7 +194,7 @@ def patch_all_db(monkeypatch, db):
         monkeypatch.setattr(mod, 'DB', lambda: db)
 
 
-def register(db, member, ign, uuid, actor_id=NARWHAL_ID, wars=0):
+def register(db, member, ign, uuid, actor_id=NARWHAL_ID):
     """The shared registration plan: roles via member_roles, DB via
     Helpers.registration -- what /new_member, the modal and auto-registration
     all do."""
@@ -207,7 +207,7 @@ def register(db, member, ign, uuid, actor_id=NARWHAL_ID, wars=0):
     roster.open_stint(db.cursor, uuid, joined_at='2026-01-01T00:00:00Z')
     recorded = record_registration(
         db.cursor, discord_id=member.id, ign=ign, uuid=uuid, rank=starting_rank,
-        wars_on_join=wars, held_role_names=held, actor_id=actor_id,
+        held_role_names=held, actor_id=actor_id,
     )
     return starting_rank, recorded
 

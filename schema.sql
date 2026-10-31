@@ -86,6 +86,9 @@ CREATE TABLE IF NOT EXISTS membership_stints (
   left_via      VARCHAR(16),
   source        VARCHAR(16) NOT NULL DEFAULT 'live'
 );
+-- Lifetime wars (all guilds) at the end of the stint; with wars_on_join it
+-- gives the wars done in TAq during it (TAQ-133).
+ALTER TABLE membership_stints ADD COLUMN IF NOT EXISTS wars_on_leave INT;
 CREATE UNIQUE INDEX IF NOT EXISTS membership_stints_open_uq ON membership_stints (uuid) WHERE left_at IS NULL;
 CREATE INDEX IF NOT EXISTS membership_stints_uuid_idx ON membership_stints (uuid, joined_at DESC);
 CREATE INDEX IF NOT EXISTS membership_stints_discord_idx ON membership_stints (discord_id);

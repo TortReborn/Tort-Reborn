@@ -593,7 +593,7 @@ class NewMember(Modal):
             try:
                 record_registration(
                     db.cursor, discord_id=self.user.id, ign=pdata.username, uuid=pdata.UUID,
-                    rank=starting_rank, wars_on_join=pdata.wars, held_role_names=held_role_names,
+                    rank=starting_rank, held_role_names=held_role_names,
                     actor_id=interaction.user.id,
                 )
                 db.connection.commit()

@@ -6,7 +6,8 @@ honorific snapshot) from three near-identical statements. Now it:
 
 1. upserts the identity (discord_id <-> uuid, ign),
 2. sets the Discord rank,
-3. attaches the account and wars-on-join to the open membership stint,
+3. attaches the account to the open membership stint (wars on join come
+   from the update loop's samples, TAQ-133),
 4. records any honorific role the member is holding that the ledger does
    not know about (the TAQ-51 snapshot, as a ledger row), and
 5. clears applications.guild_leave_pending.
@@ -43,13 +44,13 @@ def set_rank(cursor, discord_id, rank, *, alliance_id=None):
     return cursor.rowcount > 0
 
 
-def record_registration(cursor, *, discord_id, ign, uuid, rank, wars_on_join,
+def record_registration(cursor, *, discord_id, ign, uuid, rank,
                         held_role_names=(), actor_id=None):
     """Everything registration writes. Returns the honorific keys it recorded
     from the member's roles (usually none)."""
     upsert_identity(cursor, discord_id=discord_id, ign=ign, uuid=uuid, linked_by=actor_id)
     set_rank(cursor, discord_id, rank)
-    roster.attach_identity(cursor, uuid, discord_id, wars_on_join=wars_on_join)
+    roster.attach_identity(cursor, uuid, discord_id)
     recorded = hon.record_held_roles(
         cursor, uuid=uuid, ign=ign, discord_id=int(discord_id), role_names=held_role_names,
         actor_id=actor_id or 0, note='recorded at registration',
