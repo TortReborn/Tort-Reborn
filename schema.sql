@@ -232,6 +232,65 @@ CREATE TABLE IF NOT EXISTS distribution_log (
 );
 
 -- =============================================================================
+-- Tome Requests (TAQ-116)
+-- =============================================================================
+-- A tome is earned with lifetime wars (kind 'war', milestones in
+-- Helpers/tomes.py) or bought with shells (kind 'raid'). A request is one kind
+-- and a number of tomes; exec gives them out from the website, all at once or
+-- in parts. kind is NULL only on backfilled rows whose source the old records
+-- don't say (owed tomes, special cases).
+
+CREATE TABLE IF NOT EXISTS tome_requests (
+  id           SERIAL       PRIMARY KEY,
+  uuid         UUID         NOT NULL,
+  discord_id   BIGINT,
+  ign          VARCHAR(64)  NOT NULL,
+  kind         VARCHAR(8)   CHECK (kind IN ('war', 'raid')),
+  count        INT          NOT NULL CHECK (count > 0),
+  given        INT          NOT NULL DEFAULT 0 CHECK (given >= 0 AND given <= count),
+  priority     VARCHAR(12)  NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'very_high')),
+  -- queue: served first, by priority then age; give_when_available next;
+  -- give_when_full only when neither has anything waiting; dormant: owed to
+  -- someone no longer in the guild, back in the queue if they rejoin
+  bucket       VARCHAR(24)  NOT NULL DEFAULT 'queue'
+               CHECK (bucket IN ('queue', 'give_when_available', 'give_when_full', 'dormant')),
+  status       VARCHAR(12)  NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done', 'cancelled')),
+  shells_spent INT          NOT NULL DEFAULT 0,
+  source       VARCHAR(12)  NOT NULL DEFAULT 'request' CHECK (source IN ('request', 'backfill', 'adjustment')),
+  note         TEXT,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  CHECK (kind IS NOT NULL OR source <> 'request')
+);
+
+CREATE INDEX IF NOT EXISTS idx_tome_requests_open
+  ON tome_requests (bucket, priority, created_at) WHERE status = 'open';
+CREATE INDEX IF NOT EXISTS idx_tome_requests_uuid ON tome_requests (uuid);
+
+-- Everything that happened to a member's tomes. Tomes received per kind are
+-- the sum of 'given', 'debt' and 'adjusted' counts; 'debt' is tomes given
+-- before they were earned, so later wars pay it off. The bot posts given
+-- tomes to the tomes channel and stamps announced_at.
+CREATE TABLE IF NOT EXISTS tome_events (
+  id           SERIAL       PRIMARY KEY,
+  uuid         UUID         NOT NULL,
+  request_id   INT          REFERENCES tome_requests(id) ON DELETE SET NULL,
+  action       VARCHAR(12)  NOT NULL
+               CHECK (action IN ('requested', 'given', 'moved', 'cancelled', 'debt', 'adjusted')),
+  kind         VARCHAR(8)   CHECK (kind IN ('war', 'raid')),
+  count        INT          NOT NULL DEFAULT 0,
+  actor_id     BIGINT,
+  actor_name   VARCHAR(100),
+  note         TEXT,
+  announced_at TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tome_events_uuid ON tome_events (uuid, created_at);
+CREATE INDEX IF NOT EXISTS idx_tome_events_unannounced
+  ON tome_events (created_at) WHERE action = 'given' AND announced_at IS NULL;
+
+-- =============================================================================
 -- Guild Raid Events
 -- =============================================================================
 

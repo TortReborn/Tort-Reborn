@@ -37,6 +37,9 @@ SHADOWED_TABLES = [
     "warning_profiles",
     "player_warnings",
     "player_warning_attachments",
+    "shell_transactions",
+    "tome_requests",
+    "tome_events",
 ]
 
 
