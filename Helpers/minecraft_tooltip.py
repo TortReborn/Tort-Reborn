@@ -21,9 +21,6 @@ BLACK: Color = (0, 0, 0)
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSET_ROOT = os.path.join(BASE, "images", "item_tooltip")
-GUI_ROOT = os.path.join(ASSET_ROOT, "gui")
-FONT_ROOT = os.path.join(ASSET_ROOT, "font")
-
 TIER_COLORS: dict[str, Color] = {
     "normal": WHITE,
     "common": WHITE,

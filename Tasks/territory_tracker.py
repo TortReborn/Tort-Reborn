@@ -188,20 +188,6 @@ def save_territory_exchanges(owner_changes: dict):
                 pass
 
 
-# ---------- Time helper (unchanged) ----------
-
-def timeHeld(date_time_old, date_time_new):
-    t_old = datetime.datetime.fromisoformat(date_time_old[0:len(date_time_old) - 1])
-    t_new = datetime.datetime.fromisoformat(date_time_new[0:len(date_time_new) - 1])
-    t_held = t_new.__sub__(t_old)
-
-    d = t_held.days
-    td = datetime.timedelta(seconds=t_held.seconds)
-    t = str(td).split(":")
-
-    return f"{d} d {t[0]} h {t[1]} m {t[2]} s"
-
-
 # Helper functions for new features
 def get_all_hq_territories():
     """Get a set of all HQ territory names from claims configuration."""

@@ -281,17 +281,6 @@ def get_member(event_id: int, member_id: int) -> dict | None:
     return None
 
 
-def get_member_for_discord(event_id: int, discord_id: int) -> dict | None:
-    event = get_event(event_id)
-    if not event:
-        return None
-    for party in event["parties"].values():
-        for member in party["members"]:
-            if member["discord_id"] == discord_id:
-                return member
-    return None
-
-
 def _lock_open_event(db: DB, event_id: int) -> None:
     db.cursor.execute(
         """

@@ -135,18 +135,6 @@ def _resolve_ign(db, ign: str) -> str:
     return row[0] if row else ign
 
 
-def _resolve_igns(db, igns: list[str]) -> dict[str, str]:
-    """Resolve multiple IGNs to canonical casing in a single query.
-    Returns a mapping of lowercased input → canonical stored IGN."""
-    if not igns:
-        return {}
-    db.cursor.execute(
-        'SELECT DISTINCT ON (LOWER(ign)) ign FROM snipe_participants WHERE LOWER(ign) = ANY(%s) ORDER BY LOWER(ign), ign',
-        ([i.lower() for i in igns],)
-    )
-    return {row[0].lower(): row[0] for row in db.cursor.fetchall()}
-
-
 def _ident_key(alias: str = 'sp') -> str:
     """Identity key expression for grouping/dedup across players:
     the uuid when known, the lowercased ign snapshot otherwise."""

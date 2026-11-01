@@ -222,17 +222,6 @@ class DB:
         self._raw_connection = None
         self._pool = None
 
-    @classmethod
-    def _reset_pools_for_tests(cls):
-        """Close and drop every pool. Test hook only."""
-        with cls._pool_lock:
-            for pool in cls._pools.values():
-                try:
-                    pool.closeall()
-                except Exception:
-                    pass
-            cls._pools.clear()
-
 
 class BatchBaselineQueryError(RuntimeError):
     """Raised when a multi-member baseline query fails."""
@@ -282,30 +271,6 @@ def get_current_guild_data_and_snapshot_count_with_db(db: DB) -> tuple[dict, int
     else:
         guild_data = {}
     return guild_data, int(snapshot_count or 0)
-
-
-def get_player_activity_baseline(uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
-    """Get baseline value for a player from N calendar days ago.
-
-    Uses date-based lookup (not OFFSET) for accuracy even with missing snapshot days.
-    Handles corrupted 0-value entries from private profiles / API failures by walking
-    forward to find the first non-zero value when zeros are followed by real data.
-
-    If joined_date is provided, only snapshots from the current membership period
-    (snapshot_date >= joined_date) are considered. This prevents returning members
-    from having inflated stats based on old data from a previous membership.
-
-    Returns (value, warn_flag) tuple.
-    """
-    db = DB()
-    db.connect()
-    try:
-        return _get_baseline_from_db(db, uuid, key, days, joined_date=joined_date)
-    except Exception as e:
-        log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
-        return (0, True)
-    finally:
-        db.close()
 
 
 def get_player_activity_baseline_with_db(db: DB, uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:

@@ -76,8 +76,6 @@ _ENV_CONFIG = {
         "FAQ_CHANNEL_ID": 1369134566295732334,
         "GUILD_BANK_CHANNEL_ID": 1369134567834783796,
         "BOT_LOG_CHANNEL_ID": 1473531947178528859,
-        "ATTENTION_CHANNEL_ID": None,
-        "ECO_LEARNING_CHANNEL_ID": None,
         "PROMOTION_CHANNEL_ID": 1565773497970728961,
         "TAQ_ROLES_CHANNEL_ID": 1369134566295732335,
         "BOT_COMMAND_CHANNEL_ID": 1369134566723293194,
@@ -148,8 +146,6 @@ _ENV_CONFIG = {
         "FAQ_CHANNEL_ID": 1386413126697877626,
         "GUILD_BANK_CHANNEL_ID": 1213515243041595442,
         "BOT_LOG_CHANNEL_ID": 1473526161131704331,
-        "ATTENTION_CHANNEL_ID": None,
-        "ECO_LEARNING_CHANNEL_ID": None,
         "PROMOTION_CHANNEL_ID": 1033401698695262379,
         "TAQ_ROLES_CHANNEL_ID": 1523984409538203789,
         "BOT_COMMAND_CHANNEL_ID": 744092522007101480,
@@ -261,8 +257,6 @@ ANNOUNCEMENT_CHANNEL_ID = _cfg["ANNOUNCEMENT_CHANNEL_ID"]
 FAQ_CHANNEL_ID = _cfg["FAQ_CHANNEL_ID"]
 GUILD_BANK_CHANNEL_ID = _cfg["GUILD_BANK_CHANNEL_ID"]
 BOT_LOG_CHANNEL_ID = _cfg["BOT_LOG_CHANNEL_ID"]
-ATTENTION_CHANNEL_ID = _cfg["ATTENTION_CHANNEL_ID"]
-ECO_LEARNING_CHANNEL_ID = _cfg["ECO_LEARNING_CHANNEL_ID"]
 PROMOTION_CHANNEL_ID = _cfg["PROMOTION_CHANNEL_ID"]
 TAQ_ROLES_CHANNEL_ID = _cfg["TAQ_ROLES_CHANNEL_ID"]
 BOT_COMMAND_CHANNEL_ID = _cfg["BOT_COMMAND_CHANNEL_ID"]
@@ -309,7 +303,6 @@ CARD_PING_ROLE_ID = _cfg["CARD_PING_ROLE_ID"]
 DISHONORED_FISH_ROLE_ID = _cfg["DISHONORED_FISH_ROLE_ID"]
 # Always prod — used for cross-server/DM checks that must validate against the real guild
 PROD_TAQ_GUILD_ID      = _ENV_CONFIG["prod"]["TAQ_GUILD_ID"]
-PROD_MILITARY_ROLE_ID  = _ENV_CONFIG["prod"]["MILITARY_ROLE_ID"]
 RATES_PING_ROLE_ID = 1050233131183112255
 VANITY_ROLE_IDS = _cfg["VANITY_ROLE_IDS"]
 
@@ -344,11 +337,9 @@ GUILD_CHAT_BRIDGE_URL = os.getenv(
     "GUILD_CHAT_BRIDGE_URL",
     "wss://verge-api.the-aquarium.com/v1/bridge/ws",
 )
-TICKET_TOOL_BOT_ID = 557628352828014614
 LEGACY_WEBHOOK_URL = os.getenv("LEGACY_WEBHOOK_URL", "")
 LEGACY_MESSAGE_ID = 1135537781574205520
 
-TAQ_EMBED_COLOR = 0x94C1FF
 LOG_CHANNEL_ID = BOT_LOG_CHANNEL_ID
 
 # =============================================================================
@@ -440,23 +431,6 @@ discord_ranks = {
         'roles': ['✫✪✫ Hydra - Leader', '🛡️MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', '🛡️SR. MODERATOR⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀']
     }
 }
-
-minecraft_colors = {"BLACK": (25, 25, 25),
-              "GRAY": (76, 76, 76),
-              "SILVER": (153, 153, 153),
-              "WHITE": (255, 255, 255),
-              "PINK": (242, 127, 165),
-              "MAGENTA": (178, 76, 216),
-              "PURPLE": (127, 63, 178),
-              "BLUE": (51, 76, 178),
-              "CYAN": (76, 127, 153),
-              "LIGHT_BLUE": (102, 153, 216),
-              "GREEN": (102, 127, 51),
-              "LIME": (127, 204, 25),
-              "YELLOW": (229, 229, 51),
-              "ORANGE": (216, 127, 51),
-              "BROWN": (102, 76, 51),
-              "RED": (153, 51, 51)}
 
 minecraft_banner_colors = {"BLACK": (20, 21, 25),
                            "GRAY": (76, 76, 76),
@@ -723,23 +697,3 @@ claims = {
         ],
     }
 }
-
-# ---------------------------------------------------------------------------
-# Application format templates
-# ---------------------------------------------------------------------------
-
-APPLICATION_FORMAT_MESSAGE = (
-    "\U0001f4dd **Application format:**\n"
-    "IGN: \n\n"
-    "Timezone (in relation to gmt):\n\n"
-    "Link to stats page (wynncraft.com/stats):\n\n"
-    "Age (optional):\n\n"
-    "Estimated playtime per day:\n\n"
-    "Do you have any previous guild experience (name of the guild, rank, reason for leaving)?\n\n"
-    "Are you interested in warring? If so, do you already have experience?\n\n"
-    "What do you know about TAq?\n\n"
-    "What would you like to gain from joining TAq?\n\n"
-    "What would you contribute to TAq?\n\n"
-    "Anything else you would like to tell us?  (optional)\n\n"
-    "How did you learn about TAq/reference for application: "
-)

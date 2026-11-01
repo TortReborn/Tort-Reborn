@@ -88,7 +88,3 @@ def passive_value(rate: int) -> str:
 
 def level_name(label: str) -> str:
     return label or "Plain"
-
-
-def stack_name(card: dict, level: str) -> str:
-    return f"{card['name']} {level}".strip()

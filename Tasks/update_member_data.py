@@ -1582,17 +1582,6 @@ class UpdateMemberData(commands.Cog):
 
 
     @staticmethod
-    def _db_get_discord_id(uuid: str):
-        """Blocking: look up Discord ID by UUID in discord_links."""
-        db = _db_connect_with_retry()
-        try:
-            db.cursor.execute("SELECT discord_id FROM discord_links WHERE uuid = %s", (uuid,))
-            row = db.cursor.fetchone()
-            return row[0] if row else None
-        finally:
-            db.close()
-
-    @staticmethod
     def _sync_member_igns(curr_map):
         """Blocking: refresh discord_links.ign for members whose guild-API name
         changed. One row per uuid since TAQ-76. Returns dicts
