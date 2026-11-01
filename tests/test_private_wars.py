@@ -66,6 +66,22 @@ def test_timed_baselines_skip_private_readings(temp_db):
     assert database._get_member_baselines_from_db(temp_db, 'wars', 7, {U1: None}) == {U1: (30, True)}
 
 
+def test_counter_writer_stores_private_as_null(temp_db, monkeypatch):
+    from Tasks import update_member_data as umd
+    monkeypatch.setattr(umd, '_db_connect_with_retry', lambda: temp_db)
+    cur = temp_db.cursor
+
+    umd._write_counter_sample_sync([{'uuid': U1, 'playtime': 5.0, 'wars': None, 'raids': 0}])
+    cur.execute("SELECT wars FROM member_counters_hourly WHERE uuid = %s::uuid", (U1,))
+    assert cur.fetchall() == [(None,)]
+
+    # A known reading in the same hour wins, and a later private one keeps it.
+    umd._write_counter_sample_sync([{'uuid': U1, 'playtime': 5.0, 'wars': 12, 'raids': 0}])
+    umd._write_counter_sample_sync([{'uuid': U1, 'playtime': 5.0, 'wars': None, 'raids': 0}])
+    cur.execute("SELECT wars FROM member_counters_hourly WHERE uuid = %s::uuid", (U1,))
+    assert cur.fetchall() == [(12,)]
+
+
 def test_playtime_daily_does_not_credit_a_private_gap():
     d1 = datetime.date(2026, 10, 1)
     d2 = d1 + datetime.timedelta(days=1)
