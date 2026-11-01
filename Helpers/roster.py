@@ -11,15 +11,20 @@ guild API roster by hand.
   by Tasks/update_member_data.py every cycle from the same API payload that
   drives the join/leave embeds; it is the diff baseline, not a cache.
 - ``membership_stints`` keeps one row per stint: opened when a uuid appears on
-  the roster, closed when it disappears. The open stint's ``discord_id`` and
-  ``wars_on_join`` are filled in at registration, and ``rank_at_leave`` is
-  stamped whenever removal clears the Discord rank.
+  the roster, closed when it disappears. The open stint's ``discord_id`` is
+  filled in at registration, and ``rank_at_leave`` is stamped whenever
+  removal clears the Discord rank.
+- Wars in TAq (TAQ-133). The API only reports lifetime wars across every
+  guild, so TAq's share comes from the bot's own samples: ``wars_on_join`` is
+  the first sample at or after the stint opened, ``wars_on_leave`` the last
+  one before it closed, and a member's TAq wars is the sum over their stints.
 
 All functions take a psycopg2 cursor and are blocking; callers run them via
 asyncio.to_thread inside their own DB checkout and commit.
 """
 
-from datetime import datetime, timezone
+from collections import namedtuple
+from datetime import date, datetime, timezone
 
 
 def uuid_key(value):
@@ -135,32 +140,34 @@ def open_stint(cursor, uuid, *, joined_at, discord_id=None, wars_on_join=None):
 
 def close_stint(cursor, uuid, now=None, *, left_via='api_diff'):
     """Close the open stint for ``uuid``; the Discord rank at that moment is
-    kept as rank_at_leave unless removal already stamped it. Returns True if
-    a stint was closed."""
+    kept as rank_at_leave unless removal already stamped it, and the last war
+    sample as wars_on_leave. Returns True if a stint was closed."""
     now = now or datetime.now(timezone.utc)
     cursor.execute(
-        """UPDATE membership_stints ms
-              SET left_at = %s,
-                  left_via = %s,
-                  rank_at_leave = COALESCE(ms.rank_at_leave, dl.rank)
-             FROM (SELECT %s::uuid AS uuid) target
-             LEFT JOIN discord_links dl ON dl.uuid = target.uuid
-            WHERE ms.uuid = target.uuid AND ms.left_at IS NULL""",
-        (now, left_via, str(uuid)),
+        f"""UPDATE membership_stints ms
+               SET left_at = %s,
+                   left_via = %s,
+                   rank_at_leave = COALESCE(ms.rank_at_leave, dl.rank),
+                   wars_on_leave = COALESCE(ms.wars_on_leave, {_wars_before('ms.uuid', '%s::timestamptz')})
+              FROM (SELECT %s::uuid AS uuid) target
+              LEFT JOIN discord_links dl ON dl.uuid = target.uuid
+             WHERE ms.uuid = target.uuid AND ms.left_at IS NULL""",
+        (now, left_via, now, str(uuid)),
     )
     return cursor.rowcount > 0
 
 
-def attach_identity(cursor, uuid, discord_id, *, wars_on_join=None):
-    """Registration: put the Discord account (and wars on join) on the open
-    stint. No-op when the player is not on the roster yet -- the roster sync
-    will open the stint with the link looked up."""
+def attach_identity(cursor, uuid, discord_id):
+    """Registration: put the Discord account on the open stint. No-op when
+    the player is not on the roster yet -- the roster sync will open the
+    stint with the link looked up. Wars on join come from the samples
+    (fill_join_baselines), not from here: registration can come long after
+    the in-game join, or never."""
     cursor.execute(
         """UPDATE membership_stints
-              SET discord_id = %s,
-                  wars_on_join = COALESCE(wars_on_join, %s)
+              SET discord_id = %s
             WHERE uuid = %s::uuid AND left_at IS NULL""",
-        (int(discord_id), wars_on_join, str(uuid)),
+        (int(discord_id), str(uuid)),
     )
     return cursor.rowcount > 0
 
@@ -195,7 +202,8 @@ def has_prior_stint(cursor, uuid):
 def latest_stint(cursor, uuid):
     """The most recent stint as a dict, or None."""
     cursor.execute(
-        """SELECT id, uuid::text, discord_id, joined_at, left_at, wars_on_join, rank_at_leave, left_via, source
+        """SELECT id, uuid::text, discord_id, joined_at, left_at, wars_on_join, wars_on_leave,
+                  rank_at_leave, left_via, source
              FROM membership_stints
             WHERE uuid = %s::uuid
             ORDER BY left_at IS NULL DESC, joined_at DESC
@@ -205,8 +213,107 @@ def latest_stint(cursor, uuid):
     row = cursor.fetchone()
     if not row:
         return None
-    keys = ['id', 'uuid', 'discord_id', 'joined_at', 'left_at', 'wars_on_join', 'rank_at_leave', 'left_via', 'source']
+    keys = ['id', 'uuid', 'discord_id', 'joined_at', 'left_at', 'wars_on_join', 'wars_on_leave',
+            'rank_at_leave', 'left_via', 'source']
     return dict(zip(keys, row))
+
+
+# --- wars in TAq (TAQ-133) ---------------------------------------------------
+#
+# Two sample sources, both of lifetime wars: member_counters_hourly (every
+# update tick, kept as the hour's max, since 2026-08-13) and player_activity
+# (one row per member per day at 00:01 UTC, since 2025-06-03). Whichever is
+# nearer in time wins.
+
+# player_activity began on this day. A stint that opened on or before it got
+# its baseline from that first snapshot, not from the real join, so its count
+# is a floor: "tracked since June 2025".
+SNAPSHOTS_BEGAN = date(2025, 6, 3)
+
+_SAMPLES = """(
+       SELECT c.hour AS at, c.wars FROM member_counters_hourly c WHERE c.uuid = {uuid}
+       UNION ALL
+       SELECT pa.snapshot_date::timestamp AT TIME ZONE 'UTC', pa.wars
+         FROM player_activity pa WHERE pa.uuid = {uuid}
+     ) s"""
+
+
+def _wars_after(uuid_expr, at_expr, until_expr):
+    """SQL scalar: the first wars sample at or after ``at_expr`` (an hourly
+    bucket counts if it contains that moment) and, when ``until_expr`` is
+    not NULL, no later than it."""
+    return f"""(SELECT s.wars FROM {_SAMPLES.format(uuid=uuid_expr)}
+       WHERE s.at >= date_trunc('hour', {at_expr})
+         AND s.at <= COALESCE({until_expr}, 'infinity'::timestamptz)
+       ORDER BY s.at LIMIT 1)"""
+
+
+def _wars_before(uuid_expr, at_expr):
+    """SQL scalar: the last wars sample at or before ``at_expr``."""
+    return f"""(SELECT s.wars FROM {_SAMPLES.format(uuid=uuid_expr)}
+       WHERE s.at <= {at_expr}
+       ORDER BY s.at DESC LIMIT 1)"""
+
+
+def fill_join_baselines(cursor):
+    """Set wars_on_join on every stint that lacks one, from the first sample
+    after it opened. Runs after each counter write, so a new member has a
+    baseline within one update tick of joining in-game. Returns the number
+    of stints filled."""
+    first = _wars_after('ms.uuid', 'ms.joined_at', 'ms.left_at')
+    cursor.execute(
+        f"""UPDATE membership_stints ms
+               SET wars_on_join = {first}
+             WHERE ms.wars_on_join IS NULL AND {first} IS NOT NULL"""
+    )
+    return cursor.rowcount
+
+
+def fill_leave_counts(cursor):
+    """Set wars_on_leave on every closed stint that lacks one, from the last
+    sample before it closed. close_stint stamps it live; this covers stints
+    closed before the column existed. Returns the number filled."""
+    last = _wars_before('ms.uuid', 'ms.left_at')
+    cursor.execute(
+        f"""UPDATE membership_stints ms
+               SET wars_on_leave = {last}
+             WHERE ms.left_at IS NOT NULL AND ms.wars_on_leave IS NULL AND {last} IS NOT NULL"""
+    )
+    return cursor.rowcount
+
+
+TaqWars = namedtuple('TaqWars', 'total partial')
+
+
+def count_taq_wars(stints, current_wars):
+    """Wars done in TAq across ``stints`` (dicts with joined_at, left_at,
+    wars_on_join, wars_on_leave). The open stint runs to ``current_wars``,
+    the live lifetime count. A stint missing either end is skipped; a
+    negative delta (an API correction) counts as zero. ``partial`` is set
+    when a counted stint began on or before SNAPSHOTS_BEGAN. Returns None
+    when no stint could be counted. Pure; unit-tested."""
+    total, counted, partial = 0, False, False
+    for s in stints:
+        start = s['wars_on_join']
+        end = current_wars if s['left_at'] is None else s['wars_on_leave']
+        if start is None or end is None:
+            continue
+        total += max(int(end) - int(start), 0)
+        counted = True
+        if s['joined_at'].astimezone(timezone.utc).date() <= SNAPSHOTS_BEGAN:
+            partial = True
+    return TaqWars(total, partial) if counted else None
+
+
+def taq_wars(cursor, uuid, current_wars):
+    """count_taq_wars over every stint ``uuid`` has had."""
+    cursor.execute(
+        """SELECT joined_at, left_at, wars_on_join, wars_on_leave
+             FROM membership_stints WHERE uuid = %s::uuid ORDER BY joined_at""",
+        (str(uuid),),
+    )
+    keys = ['joined_at', 'left_at', 'wars_on_join', 'wars_on_leave']
+    return count_taq_wars([dict(zip(keys, r)) for r in cursor.fetchall()], current_wars)
 
 
 # Fragments for queries over ``applications a`` (its discord_id is text).

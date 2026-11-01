@@ -23,7 +23,7 @@ else:
     sys.stdout = _os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
 from Helpers.logger import log, INFO, WARN, ERROR
-from Helpers.classes import Guild, DB, BasicPlayerStats
+from Helpers.classes import Guild, DB
 from Helpers.database import get_current_guild_data_with_db, write_hourly_activity_snapshot_with_db, prune_hourly_activity_snapshots_with_db
 from Helpers.embed_updater import update_web_poll_embed
 from Helpers.functions import getPlayerDatav3, getNameFromUUID, getPlayerUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
@@ -146,6 +146,9 @@ def _write_counter_sample_sync(members):
     Counters are monotonic, so GREATEST keeps a carried-forward or out-of-order
     reading from walking a value backwards. Members whose fetch failed and had
     no cached value are skipped rather than written as zero.
+
+    The sample is also the wars-on-join baseline for anyone who joined since
+    the last tick (TAQ-133), so the baselines are filled in the same commit.
     """
     now = datetime.datetime.now(timezone.utc)
     hour = now.replace(minute=0, second=0, microsecond=0)
@@ -176,7 +179,10 @@ def _write_counter_sample_sync(members):
                 wars     = GREATEST(member_counters_hourly.wars,     EXCLUDED.wars),
                 raids    = GREATEST(member_counters_hourly.raids,    EXCLUDED.raids)
         """, (hour, uuids, playtimes, wars, raids))
+        filled = roster_db.fill_join_baselines(db.cursor)
         db.connection.commit()
+        if filled:
+            log(INFO, f"Wars-on-join baseline set for {filled} stint(s)", context="update_member_data")
     except Exception as e:
         log(ERROR, f"Failed to write counter sample: {e}", context="update_member_data")
     finally:
@@ -1127,12 +1133,6 @@ class UpdateMemberData(commands.Cog):
         if not member:
             return
 
-        # Fetch player stats for wars_on_join
-        pdata = await asyncio.to_thread(BasicPlayerStats, ign)
-        wars_on_join = 0
-        if not pdata.error:
-            wars_on_join = pdata.wars
-
         # Determine starting rank based on existing Discord roles
         starting_rank = determine_starting_rank(member)
         held_role_names = [r.name for r in member.roles]
@@ -1158,20 +1158,20 @@ class UpdateMemberData(commands.Cog):
             return
 
         # Identity + rank + stint + honorific record, in one place.
-        def _complete_registration(did, ign_val, uuid_str, wars, rank):
+        def _complete_registration(did, ign_val, uuid_str, rank):
             db = DB()
             try:
                 db.connect()
                 record_registration(
                     db.cursor, discord_id=did, ign=ign_val, uuid=uuid_str, rank=rank,
-                    wars_on_join=wars, held_role_names=held_role_names, actor_id=0,
+                    held_role_names=held_role_names, actor_id=0,
                 )
                 db.connection.commit()
             finally:
                 db.close()
 
         try:
-            await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, wars_on_join, starting_rank)
+            await asyncio.to_thread(_complete_registration, discord_id, ign, uuid, starting_rank)
         except LinkConflictError as e:
             log(ERROR, f"Registration link conflict for {ign}: {e}", context="auto_register")
             return

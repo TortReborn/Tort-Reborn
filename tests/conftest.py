@@ -27,6 +27,8 @@ SHADOWED_TABLES = [
     "discord_links",
     "guild_roster",
     "membership_stints",
+    "player_activity",
+    "member_counters_hourly",
     "member_honorifics",
     "member_leave_prompts",
     "applications",

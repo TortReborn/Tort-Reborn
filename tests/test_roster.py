@@ -3,9 +3,10 @@
 Pure: diff_roster keys by dashless uuid, so API and DB spellings match.
 DB (temp tables, see conftest): sync_roster upserts the roster, opens a
 stint on join (picking up the linked account), closes it on leave with the
-Discord rank stamped; registration attaches identity + wars to the open
-stint; removal stamps rank_at_leave without closing; latest_stint prefers
-the open one.
+Discord rank stamped; registration attaches identity to the open stint;
+removal stamps rank_at_leave without closing; latest_stint prefers the open
+one. Wars in TAq (TAQ-133): baselines from the first sample after joining,
+the last before leaving, summed across stints.
 """
 
 import os
@@ -96,10 +97,10 @@ def test_open_stint_is_idempotent_and_fills_blanks(temp_db):
 def test_attach_identity_and_stamp_rank(temp_db):
     cur = temp_db.cursor
     roster.open_stint(cur, U1, joined_at='2026-01-01T00:00:00Z')
-    assert roster.attach_identity(cur, U1, 42, wars_on_join=3) is True
+    assert roster.attach_identity(cur, U1, 42) is True
     assert roster.attach_identity(cur, U2, 43) is False        # not on roster: nothing to attach
     s = roster.latest_stint(cur, U1)
-    assert (s['discord_id'], s['wars_on_join']) == (42, 3)
+    assert (s['discord_id'], s['wars_on_join']) == (42, None)  # wars come from samples, not registration
 
     assert roster.stamp_rank_at_leave(cur, U1, 'Piranha') is True
     assert roster.stamp_rank_at_leave(cur, U1, 'Narwhal') is False   # first stamp wins
@@ -120,6 +121,108 @@ def test_latest_stint_prefers_open(temp_db):
     s = roster.latest_stint(cur, U1)
     assert s['left_at'] is None and s['joined_at'].year == 2024
     assert roster.latest_stint(cur, U3) is None
+
+
+# ── wars in TAq (TAQ-133) ─────────────────────────────────────────────────
+
+def _utc(*args):
+    return datetime(*args, tzinfo=timezone.utc)
+
+
+def _hourly(cur, uuid, hour, wars):
+    cur.execute(
+        "INSERT INTO member_counters_hourly (uuid, hour, playtime, wars, raids) VALUES (%s::uuid, %s, 0, %s, 0)",
+        (uuid, hour, wars),
+    )
+
+
+def _daily(cur, uuid, day, wars):
+    cur.execute(
+        "INSERT INTO player_activity (uuid, playtime, wars, snapshot_date) VALUES (%s::uuid, 0, %s, %s)",
+        (uuid, wars, day),
+    )
+
+
+def test_join_baseline_is_first_sample_after_join(temp_db):
+    cur = temp_db.cursor
+    _daily(cur, U1, '2026-09-30', 2400)           # before the join: other guild's wars
+    _daily(cur, U1, '2026-10-02', 2490)
+    _hourly(cur, U1, _utc(2026, 10, 1, 14), 2485)  # the bucket holding the join
+    _hourly(cur, U1, _utc(2026, 10, 1, 15), 2487)
+    roster.open_stint(cur, U1, joined_at=_utc(2026, 10, 1, 14, 20))
+    roster.open_stint(cur, U2, joined_at=_utc(2026, 10, 1, 14, 20))   # no samples yet
+
+    assert roster.fill_join_baselines(cur) == 1
+    assert roster.latest_stint(cur, U1)['wars_on_join'] == 2485
+    assert roster.latest_stint(cur, U2)['wars_on_join'] is None
+
+    # A later sample does not move a baseline that is already set.
+    _hourly(cur, U2, _utc(2026, 10, 1, 16), 7)
+    _hourly(cur, U1, _utc(2026, 10, 1, 13), 1)
+    assert roster.fill_join_baselines(cur) == 1
+    assert roster.latest_stint(cur, U1)['wars_on_join'] == 2485
+    assert roster.latest_stint(cur, U2)['wars_on_join'] == 7
+
+
+def test_daily_snapshot_is_the_fallback_baseline(temp_db):
+    cur = temp_db.cursor
+    # Snapshot dated the 2nd is taken at 00:01 UTC that day: before a join on
+    # the 2nd, so the 3rd's is the first one after it.
+    _daily(cur, U1, '2025-09-02', 10)
+    _daily(cur, U1, '2025-09-03', 12)
+    roster.open_stint(cur, U1, joined_at=_utc(2025, 9, 2, 9))
+    roster.fill_join_baselines(cur)
+    assert roster.latest_stint(cur, U1)['wars_on_join'] == 12
+
+
+def test_close_stamps_last_sample_and_fill_covers_old_closes(temp_db):
+    cur = temp_db.cursor
+    _hourly(cur, U1, _utc(2026, 10, 1, 10), 100)
+    _hourly(cur, U1, _utc(2026, 10, 3, 10), 140)
+    _hourly(cur, U1, _utc(2026, 10, 9, 10), 900)   # after leaving: elsewhere
+    roster.open_stint(cur, U1, joined_at=_utc(2026, 10, 1, 10, 5))
+    roster.fill_join_baselines(cur)
+    roster.close_stint(cur, U1, _utc(2026, 10, 4))
+    s = roster.latest_stint(cur, U1)
+    assert (s['wars_on_join'], s['wars_on_leave']) == (100, 140)
+
+    # A stint closed before wars_on_leave existed.
+    _daily(cur, U2, '2025-07-01', 5)
+    _daily(cur, U2, '2025-07-20', 30)
+    _daily(cur, U2, '2025-08-30', 80)
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, wars_on_join, source)"
+        " VALUES (%s::uuid, '2025-07-01T00:00:00Z', '2025-07-21T00:00:00Z', 5, 'backfill')",
+        (U2,),
+    )
+    assert roster.fill_leave_counts(cur) == 1
+    assert roster.latest_stint(cur, U2)['wars_on_leave'] == 30
+    assert roster.fill_leave_counts(cur) == 0
+
+
+def test_count_taq_wars_sums_every_stint():
+    stints = [
+        # Rejoin history: 1000 elsewhere first, 40 in the first stint,
+        # 500 elsewhere in between, then the current stint.
+        {'joined_at': _utc(2025, 8, 1), 'left_at': _utc(2025, 9, 1), 'wars_on_join': 1000, 'wars_on_leave': 1040},
+        {'joined_at': _utc(2026, 1, 1), 'left_at': None, 'wars_on_join': 1540, 'wars_on_leave': None},
+    ]
+    assert roster.count_taq_wars(stints, 1600) == roster.TaqWars(100, False)
+    # Private wars: only the closed stint can be counted.
+    assert roster.count_taq_wars(stints, None) == roster.TaqWars(40, False)
+    # A negative delta (API correction) counts as zero.
+    assert roster.count_taq_wars(stints[1:], 1500) == roster.TaqWars(0, False)
+    assert roster.count_taq_wars([], 5) is None
+    assert roster.count_taq_wars([{**stints[1], 'wars_on_join': None}], 5) is None
+
+
+def test_count_taq_wars_flags_pre_snapshot_baselines():
+    first_day = {'joined_at': _utc(2025, 6, 3), 'left_at': None, 'wars_on_join': 17106, 'wars_on_leave': None}
+    real_join = {**first_day, 'joined_at': _utc(2021, 4, 2)}
+    after = {**first_day, 'joined_at': _utc(2025, 6, 4)}
+    assert roster.count_taq_wars([first_day], 18957) == roster.TaqWars(1851, True)
+    assert roster.count_taq_wars([real_join], 18957).partial is True
+    assert roster.count_taq_wars([after], 18957).partial is False
 
 
 def test_applicant_sql_fragment_shape():

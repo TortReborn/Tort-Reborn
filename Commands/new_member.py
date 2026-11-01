@@ -30,12 +30,12 @@ def _fetch_new_member_data(user_id, ign):
     return pdata
 
 
-def _record(user_id, ign, uuid, rank, wars, held_role_names, actor_id):
+def _record(user_id, ign, uuid, rank, held_role_names, actor_id):
     """Blocking DB write — call via asyncio.to_thread."""
     db = DB(); db.connect()
     try:
         recorded = record_registration(
-            db.cursor, discord_id=user_id, ign=ign, uuid=uuid, rank=rank, wars_on_join=wars,
+            db.cursor, discord_id=user_id, ign=ign, uuid=uuid, rank=rank,
             held_role_names=held_role_names, actor_id=actor_id,
         )
         db.connection.commit()
@@ -110,7 +110,7 @@ class NewMember(commands.Cog):
 
             try:
                 await asyncio.to_thread(
-                    _record, user.id, pdata.username, pdata.UUID, starting_rank, pdata.wars,
+                    _record, user.id, pdata.username, pdata.UUID, starting_rank,
                     held_role_names, message.interaction.user.id,
                 )
             except LinkConflictError as e:
