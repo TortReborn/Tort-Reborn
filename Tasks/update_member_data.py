@@ -144,7 +144,8 @@ def _write_counter_sample_sync(members):
     on a date, never when during it.
 
     Counters are monotonic, so GREATEST keeps a carried-forward or out-of-order
-    reading from walking a value backwards. Members whose fetch failed and had
+    reading from walking a value backwards (GREATEST ignores NULL, so a private
+    reading never overwrites a known one). Members whose fetch failed and had
     no cached value are skipped rather than written as zero.
 
     The sample is also the wars-on-join baseline for anyone who joined since
@@ -159,7 +160,8 @@ def _write_counter_sample_sync(members):
             continue
         uuids.append(m['uuid'])
         playtimes.append(float(m['playtime']))
-        wars.append(int(m.get('wars') or 0))
+        # Private wars stay NULL: a 0 here would read as a real count (TAQ-134).
+        wars.append(int(m['wars']) if m.get('wars') is not None else None)
         raids.append(int(m.get('raids') or 0))
 
     if not uuids:
@@ -1412,7 +1414,8 @@ class UpdateMemberData(commands.Cog):
 
                 playtime = playtime or 0
                 contributed = contributed or 0
-                wars = wars or 0
+                # wars stays NULL when private with nothing to carry forward:
+                # a 0 is a lifetime count and every delta would credit it (TAQ-134).
                 if uuid:
                     db.cursor.execute("""
                         INSERT INTO player_activity (uuid, playtime, contributed, wars, raids, shells, snapshot_date)
