@@ -205,8 +205,6 @@ def _build_profile_card(player, days, author_id):
                 else:
                     card_entries[f'Guild Raids / {player.stats_days} D'] = str(player.real_raids)
 
-        # if len(card_entries) < 10:
-        #     card_entries['Killed Mobs'] = str(player.mobs)
         if len(card_entries) < 10:
             # Chests - check if private
             if player.chests_is_private:

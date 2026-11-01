@@ -242,12 +242,6 @@ def generate_rank_badge(text, colour, scale=4):
         draw.text((img.width / 2 + 2, img.height / 2 - 3), text, font=font, anchor="mm", fill=color.shadow)
         draw.text((img.width / 2, img.height / 2 - 3), text, font=font, anchor="mm")
 
-        # textshade = Image.new("RGBA", (img.width, 4), (255, 0, 0, 0))
-        # shadedraw = ImageDraw.Draw(textshade)
-        # shadedraw.text((img.width / 2, textshade.height), text, font=font, anchor="mb", fill=color.shade)
-
-        # img.paste(textshade, (0, 10), textshade)
-
         img = img.resize((img.width * scale, img.height * scale), resample=Image.Resampling.NEAREST)
 
         return img
