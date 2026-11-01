@@ -18,7 +18,7 @@ socket (see `Procfile`, `main.py`). No public port.
 | Neon Postgres (pooler endpoint) | psycopg2, one connect+close **per helper call** | `DB` in `Helpers/database.py` |
 | Supabase Storage (S3 API) | boto3, lazily-created singleton client | `S3Storage` in `Helpers/storage.py` |
 | Wynncraft v3 / Mojang / visage / Athena | blocking `requests.get`, new session per call | `Helpers/functions.py`, `Guild` in `Helpers/classes.py` |
-| OpenAI, Google Sheets | blocking | `Helpers/openai_helper.py`, `Helpers/sheets.py` |
+| OpenAI | blocking | `Helpers/openai_helper.py` |
 
 Sharing that one event loop: the command cogs in `Commands/`, the task loops in `Tasks/`
 (intervals from 10s to daily), and Pillow card rendering.
@@ -101,9 +101,7 @@ Scope limits to keep in mind when reading the data:
   run outside any command, so their own calls emit no bucket record. Their impact shows up
   indirectly, through `loop_lag` and through `queue_ms` on commands that land mid-cycle.
 - All outbound GETs — shared helpers and every command file — route through the timed wrapper, so
-  the `http.*` picture is complete. (The one non-`timed_get` HTTP call, `Helpers/sheets.py`'s POST,
-  is a deliberate exception: the wrapper is GET-only. `Commands/aspects.py` uses aiohttp, also by
-  design.)
+  the `http.*` picture is complete. (`Commands/aspects.py` uses aiohttp, by design.)
 - A command cancelled mid-flight (shutdown, gateway disconnect) records `ok: true`, because
   py-cord swallows the cancellation before the timing hook runs. Documented, not fixed.
 
