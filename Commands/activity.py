@@ -1,3 +1,4 @@
+import json
 import math
 import time
 import datetime
@@ -35,6 +36,30 @@ KICK_RANK_ORDER = {
     'hydra': 9,
     'owner': 9,
 }
+
+def _load_json(path: str, default):
+    """
+    Safely load JSON from the given file path.
+    Returns default if file is missing or invalid.
+    """
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _load_discord_ranks():
+    """
+    Query the database for uuid-to-rank mappings.
+    """
+    db = DB()
+    db.connect()
+    db.cursor.execute("SELECT uuid, rank FROM discord_links")
+    mapping = {u: r for u, r in db.cursor.fetchall()}
+    db.close()
+    return mapping
+
 
 def _text_width(text: str, font: ImageFont.FreeTypeFont) -> float:
     """

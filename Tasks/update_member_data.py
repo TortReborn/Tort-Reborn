@@ -140,7 +140,8 @@ def _write_counter_sample_sync(members):
     on a date, never when during it.
 
     Counters are monotonic, so GREATEST keeps a carried-forward or out-of-order
-    reading from walking a value backwards. Members whose fetch failed and had
+    reading from walking a value backwards (GREATEST ignores NULL, so a private
+    reading never overwrites a known one). Members whose fetch failed and had
     no cached value are skipped rather than written as zero.
 
     The sample is also the wars-on-join baseline for anyone who joined since
@@ -155,7 +156,8 @@ def _write_counter_sample_sync(members):
             continue
         uuids.append(m['uuid'])
         playtimes.append(float(m['playtime']))
-        wars.append(int(m.get('wars') or 0))
+        # Private wars stay NULL: a 0 here would read as a real count (TAQ-134).
+        wars.append(int(m['wars']) if m.get('wars') is not None else None)
         raids.append(int(m.get('raids') or 0))
 
     if not uuids:
@@ -1408,7 +1410,8 @@ class UpdateMemberData(commands.Cog):
 
                 playtime = playtime or 0
                 contributed = contributed or 0
-                wars = wars or 0
+                # wars stays NULL when private with nothing to carry forward:
+                # a 0 is a lifetime count and every delta would credit it (TAQ-134).
                 if uuid:
                     db.cursor.execute("""
                         INSERT INTO player_activity (uuid, playtime, contributed, wars, raids, shells, snapshot_date)
@@ -1580,6 +1583,17 @@ class UpdateMemberData(commands.Cog):
             log(WARN, "Restarting update_member_data loop after crash", context="update_member_data")
             self.update_member_data.start()
 
+
+    @staticmethod
+    def _db_get_discord_id(uuid: str):
+        """Blocking: look up Discord ID by UUID in discord_links."""
+        db = _db_connect_with_retry()
+        try:
+            db.cursor.execute("SELECT discord_id FROM discord_links WHERE uuid = %s", (uuid,))
+            row = db.cursor.fetchone()
+            return row[0] if row else None
+        finally:
+            db.close()
 
     @staticmethod
     def _sync_member_igns(curr_map):

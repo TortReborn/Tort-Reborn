@@ -89,6 +89,10 @@ def _notice(text: str) -> discord.Embed:
     return discord.Embed(description=text, color=ctext.ACCENT)
 
 
+def _stars(n: int) -> str:
+    return "★" * n if n > 1 else ""
+
+
 def _resolve(name: str) -> dict | None:
     """Find a card by display name across the set and the minted member cards."""
     wanted = name.strip().lower()
@@ -194,6 +198,14 @@ async def _stack_choices(user_id: int, typed: str, resolve_member=True,
     return [discord.OptionChoice(name=_stack_label(card, star, count),
                                  value=f"{card['slug']}:{star}")
             for card, star, count in stacks[:25]]
+
+
+async def _autocomplete_stacks(ctx: discord.AutocompleteContext):
+    try:
+        return await _stack_choices(ctx.interaction.user.id,
+                                    (ctx.value or "").lower())
+    except Exception:
+        return []
 
 
 async def _autocomplete_owned(ctx: discord.AutocompleteContext):

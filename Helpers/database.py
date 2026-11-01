@@ -222,6 +222,17 @@ class DB:
         self._raw_connection = None
         self._pool = None
 
+    @classmethod
+    def _reset_pools_for_tests(cls):
+        """Close and drop every pool. Test hook only."""
+        with cls._pool_lock:
+            for pool in cls._pools.values():
+                try:
+                    pool.closeall()
+                except Exception:
+                    pass
+            cls._pools.clear()
+
 
 class BatchBaselineQueryError(RuntimeError):
     """Raised when a multi-member baseline query fails."""
@@ -271,6 +282,30 @@ def get_current_guild_data_and_snapshot_count_with_db(db: DB) -> tuple[dict, int
     else:
         guild_data = {}
     return guild_data, int(snapshot_count or 0)
+
+
+def get_player_activity_baseline(uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
+    """Get baseline value for a player from N calendar days ago.
+
+    Uses date-based lookup (not OFFSET) for accuracy even with missing snapshot days.
+    Handles corrupted 0-value entries from private profiles / API failures by walking
+    forward to find the first non-zero value when zeros are followed by real data.
+
+    If joined_date is provided, only snapshots from the current membership period
+    (snapshot_date >= joined_date) are considered. This prevents returning members
+    from having inflated stats based on old data from a previous membership.
+
+    Returns (value, warn_flag) tuple.
+    """
+    db = DB()
+    db.connect()
+    try:
+        return _get_baseline_from_db(db, uuid, key, days, joined_date=joined_date)
+    except Exception as e:
+        log(ERROR, f"Error for {uuid}/{key}: {e}", context="database")
+        return (0, True)
+    finally:
+        db.close()
 
 
 def get_player_activity_baseline_with_db(db: DB, uuid: str, key: str, days: int, joined_date: datetime.date = None) -> tuple:
@@ -373,10 +408,11 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int, joined_date: d
         if target_date < joined_date:
             target_date = joined_date
 
-    # 1. Find the player's snapshot closest to (but not after) N days ago
+    # 1. Find the player's snapshot closest to (but not after) N days ago.
+    #    NULL is a private reading (TAQ-134) and never a baseline.
     db.cursor.execute(f"""
         SELECT {key}, snapshot_date FROM player_activity
-        WHERE uuid = %s AND snapshot_date <= %s {join_filter}
+        WHERE uuid = %s AND snapshot_date <= %s AND {key} IS NOT NULL {join_filter}
         ORDER BY snapshot_date DESC LIMIT 1
     """, (uuid, target_date) + join_params)
     row = db.cursor.fetchone()
@@ -400,7 +436,7 @@ def _get_baseline_from_db(db: DB, uuid: str, key: str, days: int, joined_date: d
     #    use their earliest available snapshot
     db.cursor.execute(f"""
         SELECT {key}, snapshot_date FROM player_activity
-        WHERE uuid = %s {join_filter}
+        WHERE uuid = %s AND {key} IS NOT NULL {join_filter}
         ORDER BY snapshot_date ASC LIMIT 1
     """, (uuid,) + join_params)
     earliest = db.cursor.fetchone()
@@ -471,11 +507,9 @@ def _baseline_results_from_row(db: DB, uuid: str, keys: list[str], values: dict,
     results = {}
     for key in keys:
         value = values.get(key)
-        if value is None:
-            results[key] = (0, True)
-            continue
-
-        if value == 0:
+        # NULL is a private reading (TAQ-134): walk forward to the first known
+        # value, as for the 0s private profiles used to leave.
+        if value is None or value == 0:
             db.cursor.execute(f"""
                 SELECT {key} FROM player_activity
                 WHERE uuid = %s AND snapshot_date > %s AND {key} > 0 {join_filter}
@@ -484,6 +518,9 @@ def _baseline_results_from_row(db: DB, uuid: str, keys: list[str], values: dict,
             nonzero = db.cursor.fetchone()
             if nonzero:
                 results[key] = (int(nonzero[0]), True)
+                continue
+            if value is None:
+                results[key] = (0, True)
                 continue
 
         results[key] = (int(value), warn_default)
@@ -529,6 +566,7 @@ def _get_member_baselines_from_db(db: DB, key: str, days: int, joined_dates_by_u
                 FROM player_activity pa
                 WHERE pa.uuid = i.uuid
                   AND pa.snapshot_date <= i.target_date
+                  AND pa.{key} IS NOT NULL  -- NULL: private reading (TAQ-134)
                   AND (i.joined_date IS NULL OR pa.snapshot_date >= i.joined_date)
                 ORDER BY pa.snapshot_date DESC
                 LIMIT 1
@@ -537,6 +575,7 @@ def _get_member_baselines_from_db(db: DB, key: str, days: int, joined_dates_by_u
                 SELECT pa.{key} AS value, pa.snapshot_date
                 FROM player_activity pa
                 WHERE pa.uuid = i.uuid
+                  AND pa.{key} IS NOT NULL
                   AND (i.joined_date IS NULL OR pa.snapshot_date >= i.joined_date)
                 ORDER BY pa.snapshot_date ASC
                 LIMIT 1

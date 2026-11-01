@@ -144,6 +144,11 @@ async def _update_embed_votes(channel: discord.TextChannel, message_id: int, cou
     await safe_edit_poll(channel, message_id, modify_embed=_modify)
 
 
+async def _update_poll_embed_by_msg(poll_msg: discord.Message, counts: dict):
+    """Update the poll embed on a fetched message with current vote counts."""
+    await _update_embed_votes(poll_msg.channel, poll_msg.id, counts)
+
+
 class ApplicationVoteView(discord.ui.View):
     """Persistent view with Accept/Deny/Abstain voting buttons for applications."""
 

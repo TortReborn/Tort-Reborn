@@ -381,6 +381,13 @@ def get_card(slug: str) -> dict | None:
     return load_card_set()["by_slug"].get(slug)
 
 
+def get_any_card(slug: str) -> dict | None:
+    card = get_card(slug)
+    if card is not None:
+        return card
+    return db_get_member_card(slug)
+
+
 def member_card_dict(row: tuple) -> dict:
     """Shape a card_members row like a card-set entry so renderers agree."""
     slug, discord_id, uuid, ign, rank, owner, retired = row[:7]
@@ -729,6 +736,77 @@ def db_complete_pull(user_id: int, slug: str, pearls: int = 0) -> dict | None:
         return {"reels": wallet[0], "bait_reels": wallet[1],
                 "total": wallet[0] + wallet[1],
                 "count": card[0], "gained": pearls, "pearls": wallet[2]}
+    finally:
+        db.close()
+
+
+def db_reset_all_reels() -> int:
+    """Testing helper: refill everyone to a full bank for the current window.
+
+    Sets window_idx forward too, so the next natural refresh still lands on
+    schedule rather than immediately topping people up again.
+    """
+    window = current_window()
+    cap = _bank_cap_sql()
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            f'UPDATE card_wallet SET reels = {cap}, window_idx = %s', (window,))
+        n = db.cursor.rowcount
+        db.connection.commit()
+        return n
+    finally:
+        db.close()
+
+
+def db_grant_reels(user_id: int, amount: int) -> int:
+    """Add reels from guild activity. Respects the tank's bank cap."""
+    window = current_window()
+    cap = _bank_cap_sql()
+    db = DB()
+    db.connect()
+    try:
+        _ensure_wallet(db, user_id, window)
+        db.cursor.execute(
+            f'UPDATE card_wallet SET reels = LEAST({cap}, reels + %s) '
+            'WHERE "user" = %s RETURNING reels',
+            (amount, user_id),
+        )
+        row = db.cursor.fetchone()
+        db.connection.commit()
+        return row[0] if row else 0
+    finally:
+        db.close()
+
+
+def db_add_pearls(user_id: int, amount: int) -> int:
+    db = DB()
+    db.connect()
+    try:
+        _ensure_wallet(db, user_id, current_window())
+        db.cursor.execute(
+            'UPDATE card_wallet SET pearls = pearls + %s WHERE "user" = %s '
+            'RETURNING pearls', (amount, user_id))
+        row = db.cursor.fetchone()
+        db.connection.commit()
+        return row[0] if row else 0
+    finally:
+        db.close()
+
+
+def db_spend_pearls(user_id: int, amount: int) -> int | None:
+    """Deduct pearls, or return None if the balance is short."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'UPDATE card_wallet SET pearls = pearls - %s '
+            'WHERE "user" = %s AND pearls >= %s RETURNING pearls',
+            (amount, user_id, amount))
+        row = db.cursor.fetchone()
+        db.connection.commit()
+        return row[0] if row else None
     finally:
         db.close()
 
@@ -1450,6 +1528,42 @@ def db_get_pool() -> list:
             'ORDER BY array_position(%s::text[], dl.rank) DESC, lower(dl.ign)',
             (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS, MEMBER_ELIGIBLE_RANKS))
         return [pool_entry(*r) for r in db.cursor.fetchall()]
+    finally:
+        db.close()
+
+
+def db_count_eligible_members() -> tuple[int, int]:
+    """(minted, eligible) — how much of the member pool is already out there."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute('SELECT COUNT(*) FROM card_members')
+        minted = db.cursor.fetchone()[0]
+        db.cursor.execute(
+            'SELECT COUNT(*) FROM discord_links dl '
+            'WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
+            f'  AND {ACTIVE_MEMBER_SQL}',
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
+        return minted, db.cursor.fetchone()[0]
+    finally:
+        db.close()
+
+
+def db_retire_departed_members() -> int:
+    """Mark cards of members who are no longer eligible as Retired."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            'UPDATE card_members SET retired = TRUE '
+            'WHERE NOT retired AND discord_id NOT IN ('
+            '  SELECT dl.discord_id FROM discord_links dl '
+            '  WHERE dl.rank = ANY(%s) AND EXISTS (SELECT 1 FROM guild_roster gr WHERE gr.uuid = dl.uuid) '
+            f'    AND {ACTIVE_MEMBER_SQL})',
+            (MEMBER_ELIGIBLE_RANKS, MEMBER_ACTIVE_DAYS))
+        n = db.cursor.rowcount
+        db.connection.commit()
+        return n
     finally:
         db.close()
 

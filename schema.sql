@@ -485,10 +485,11 @@ CREATE TABLE IF NOT EXISTS member_counters_hourly (
   uuid     UUID        NOT NULL,
   hour     TIMESTAMPTZ NOT NULL,
   playtime REAL        NOT NULL,
-  wars     INT         NOT NULL,
+  wars     INT,                    -- NULL: wars private at every tick that hour
   raids    INT         NOT NULL,
   PRIMARY KEY (uuid, hour)
 );
+ALTER TABLE member_counters_hourly ALTER COLUMN wars DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_member_counters_hour
   ON member_counters_hourly(hour DESC);

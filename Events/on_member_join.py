@@ -10,6 +10,9 @@ from Helpers.member_roles import removal_role_names, resolve_roles
 from Helpers.variables import ERROR_CHANNEL_ID, GENERAL_CHANNEL_ID, GUILD_LOG_CHANNEL_ID, RULES_CHANNEL_ID, TAQ_GUILD_ID
 from Helpers.logger import log, INFO, ERROR
 
+WELCOME_COLOR = 0x94C1FF
+
+
 def _honorifics_on_record(discord_id):
     """Blocking: (honored_fish, retired_chief, [grant dicts]) for a rejoining
     account. A current in-game member who merely rejoined Discord gets

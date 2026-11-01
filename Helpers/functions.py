@@ -11,10 +11,10 @@ from uuid import UUID
 
 import certifi
 import requests
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageColor
+from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
 from Helpers.variables import minecraft_banner_colors, colours, shadows
-from Helpers.logger import log, ERROR
+from Helpers.logger import log, WARN, ERROR
 from Helpers import telemetry
 
 
@@ -50,6 +50,13 @@ def timed_get(url, **kwargs):
             session.cookies.set_policy(_BlockAllCookies())
             session.mount("https://", requests.adapters.HTTPAdapter(max_retries=_retry))
             return session.get(url, **kwargs)
+
+
+def isInCurrDay(data, uuid):
+    for member in data:
+        if member['uuid'] == uuid:
+            return True
+    return False
 
 
 def date_diff(time=False):
@@ -139,6 +146,21 @@ def pretty_date(time=False):
     if day_diff < 365:
         return str(day_diff // 30) + " months ago"
     return str(day_diff // 365) + " years ago"
+
+
+def calcPercentage(p, m):
+    return math.floor((100 / m) * p)
+
+
+def dropShadow(image):
+    new_image = Image.new("RGBA", (350, 350), (0, 0, 0, 0))
+    image = image.resize((310, 310))
+    new_image.paste(image, (20, 50), image)
+    enhancer = ImageEnhance.Brightness(new_image)
+    output = enhancer.enhance(0)
+    image = output.filter(ImageFilter.GaussianBlur(radius=5))
+
+    return image
 
 
 def getPlayerUUID(player, token=None):
@@ -440,6 +462,38 @@ def addLine(text, draw, font, x, y, drop_x=2, drop_y=2, anchor=None):
         return x
 
 
+def interpolate_color(start_color, end_color, percentage):
+    start_r, start_g, start_b = start_color
+    end_r, end_g, end_b = end_color
+
+    r = int(start_r + (end_r - start_r) * percentage)
+    g = int(start_g + (end_g - start_g) * percentage)
+    b = int(start_b + (end_b - start_b) * percentage)
+
+    return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
+
+def get_transition_color(percentage):
+    if percentage <= 0:
+        return '#FF5555'
+    elif percentage < 70:
+        start_color = (255, 85, 85)  # #FF5555
+        end_color = (255, 255, 85)  # #FFFF55
+        normalized_percentage = (percentage - 0) / (70 - 0)
+    elif percentage < 90:
+        start_color = (255, 255, 85)  # #FFFF55
+        end_color = (85, 255, 85)  # #55FF55
+        normalized_percentage = (percentage - 70) / (90 - 70)
+    elif percentage < 100:
+        start_color = (85, 255, 85)  # #55FF55
+        end_color = (85, 255, 255)  # #55FFFF
+        normalized_percentage = (percentage - 90) / (100 - 90)
+    else:
+        return '#55FFFF'
+
+    return interpolate_color(start_color, end_color, normalized_percentage)
+
+
 def darken_color(color, factor):
     r, g, b = int(color[1:3], 21), int(color[3:5], 21), int(color[5:7], 21)
 
@@ -601,7 +655,83 @@ def colorize(img, rgb_color):
 
 # Online player list (30s TTL)
 
+def getOnlinePlayers(token=None):
+    """Return a mapping of username (case-sensitive as returned by the API)
+    -> server string (e.g. "WC1").  The method first tries the v3 player
+    module online list.  If that fails for any reason, it falls back to the
+    legacy public_api.php endpoint so that the bot can keep working even if
+    the new route temporarily goes down.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of player name to server world (e.g. {"Salted": "WC1"}).
+    """
+
+    # Preferred v3 endpoint (30 seconds TTL)
+    v3_url = "https://api.wynncraft.com/v3/player"
+    try:
+        resp = timed_get(v3_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
+        if resp.status_code == 200:
+            data = resp.json()
+            if 'players' in data and isinstance(data['players'], dict):
+                return data['players']
+    except Exception as e:
+        log(WARN, f"V3 endpoint failed: {e}", context="api")
+
+    # Fallback to legacy endpoint (using a different timeout for the fallback)
+    legacy_url = "https://api.wynncraft.com/public_api.php?action=onlinePlayers"
+    try:
+        resp = timed_get(legacy_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
+        if resp.status_code == 200:
+            data = resp.json()
+            # Legacy format returns a list of servers, each with a list of players
+            players_dict = {}
+            for server_name, player_list in data.items():
+                if isinstance(player_list, list):
+                    for player in player_list:
+                        players_dict[player] = server_name
+            return players_dict
+    except Exception as e:
+        log(WARN, f"Legacy endpoint also failed: {e}", context="api")
+
+    # Return empty dict if both fail
+    return {}
+
+
 # Online player list keyed by UUID (30s TTL)
+
+def getOnlinePlayersUUID(token=None):
+    """Return a mapping of lowercase UUID -> server string (e.g. "WC1").
+
+    The Wynncraft v3 player endpoint supports different identifier modes. By
+    adding the query parameter ``identifier=uuid`` the response maps UUIDs
+    to the world a player is currently on.  The TTL is ~30 seconds – perfect
+    for getting accurate online status.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of lowercase uuid string to server world.
+    """
+
+    uuid_url = "https://api.wynncraft.com/v3/player?identifier=uuid"
+
+    try:
+        resp = timed_get(uuid_url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
+        if resp.status_code == 200:
+            data = resp.json()
+            players = data.get("players", {})
+            # Lower-case the UUID keys so later look-ups are case-insensitive
+            return {uuid.lower(): server for uuid, server in players.items()}
+    except Exception as e:
+        log(WARN, f"UUID endpoint failed: {e}", context="api")
+
+    # Fall back to the username endpoint and convert to uuid map is not
+    # possible without additional look-ups, so just return empty dict – the
+    # caller can try the username map separately if desired.
+    return {}
+
 
 # ---------------------------------------------------------------------------
 # Mojang profile lookup (UUID -> current username)
@@ -671,6 +801,22 @@ def get_guild_color(guild_data):
     # Convert to hex color
     return '#{:02x}{:02x}{:02x}'.format(*minecraft_banner_colors[guild_colour])
 
+
+def create_guild_level_progress_bar(level, xp_percent, width=200, height=20, guild_color='#4287f5'):
+    """Create a progress bar showing XP percentage."""
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Background (dark gray)
+    draw.rounded_rectangle([(0, 0), (width, height)], radius=height//2, fill='#2c2c2c')
+    
+    # Progress fill
+    progress_width = int((width - 4) * (xp_percent / 100))
+    if progress_width > 0:
+        draw.rounded_rectangle([(2, 2), (progress_width + 2, height - 2)], 
+                              radius=(height-4)//2, fill=guild_color)
+    
+    return img
 
 def get_rank_stars(rank):
     """Get the number of stars for a given rank."""

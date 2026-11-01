@@ -359,6 +359,12 @@ class PlayerStats:
         self.stats_days = days
         self._set_non_taq_timed_defaults()
 
+    def isInTAq(self, uuid):
+        guild_members = []
+        for member in Guild('The Aquarium').all_members:
+            guild_members.append(member['uuid'])
+        return False if uuid not in guild_members else True
+
     def unlock_background(self, background):
         db = DB()
         db.connect()

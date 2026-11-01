@@ -46,6 +46,23 @@ def get_weekly_playtime_from_db(db: DB, uuid: str, joined_date=None) -> float:
         return 0.0
 
 
+def get_weekly_playtime(uuid: str, joined_date=None) -> float:
+    """Get player's playtime in the last 7 days from player_activity table.
+    Creates its own DB connection for standalone use."""
+    db = DB()
+    try:
+        db.connect()
+        return get_weekly_playtime_from_db(db, uuid, joined_date=joined_date)
+    except Exception as e:
+        log(ERROR, f"Error in get_weekly_playtime: {e}", context="aspect_db")
+        return 0.0
+    finally:
+        try:
+            db.close()
+        except:
+            pass
+
+
 def get_blacklist(db: DB) -> set:
     """Get all blacklisted UUIDs from the database."""
     db.cursor.execute("SELECT uuid FROM aspect_blacklist")

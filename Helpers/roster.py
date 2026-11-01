@@ -230,11 +230,13 @@ def latest_stint(cursor, uuid):
 # is a floor: "tracked since June 2025".
 SNAPSHOTS_BEGAN = date(2025, 6, 3)
 
+# NULL is a private reading (TAQ-134): unknown, never a baseline.
 _SAMPLES = """(
-       SELECT c.hour AS at, c.wars FROM member_counters_hourly c WHERE c.uuid = {uuid}
+       SELECT c.hour AS at, c.wars FROM member_counters_hourly c
+        WHERE c.uuid = {uuid} AND c.wars IS NOT NULL
        UNION ALL
        SELECT pa.snapshot_date::timestamp AT TIME ZONE 'UTC', pa.wars
-         FROM player_activity pa WHERE pa.uuid = {uuid}
+         FROM player_activity pa WHERE pa.uuid = {uuid} AND pa.wars IS NOT NULL
      ) s"""
 
 
