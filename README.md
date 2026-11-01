@@ -15,7 +15,6 @@ Discord bot for **The Aquarium [TAq]** Wynncraft guild. Built with [py-cord](htt
 | **PostgreSQL (Neon)** | Primary database — player data, applications, guild state | `DB_HOST`, `DB_LOGIN`, etc. |
 | **Railway Buckets (S3)** | Image storage — profile backgrounds, cached avatars, shell exchange assets | `S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, etc. |
 | **OpenAI** | AI-powered application parsing — completeness checks, IGN extraction | `OPENAI_API_KEY` |
-| **Google Sheets** (Apps Script) | Recruitment tracking spreadsheet | `SHEETS_SCRIPT_URL` |
 | **Discord Webhooks** | Posting application embeds and shell exchange updates | `LEGACY_WEBHOOK_URL` |
 | **Railway** | Cloud hosting — runs the bot as a worker service | Shared variables (see below) |
 
@@ -39,7 +38,6 @@ Tort-Reborn/
 │   ├── database.py      # PostgreSQL connection + query helpers
 │   ├── storage.py       # S3 image storage (Railway Buckets)
 │   ├── openai_helper.py # OpenAI integration for application analysis
-│   ├── sheets.py        # Google Sheets API wrapper
 │   ├── variables.py     # Guild IDs, channel IDs, role IDs, constants
 │   └── ...              # Image generation, profile rendering, etc.
 │
