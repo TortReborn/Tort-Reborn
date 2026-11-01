@@ -42,7 +42,6 @@ Tort-Reborn/
 │   └── ...              # Image generation, profile rendering, etc.
 │
 ├── images/              # Static assets (banners, mythics, shell icons)
-├── Archive/             # Deprecated code (kept for reference)
 └── requirements.txt     # Python dependencies
 ```
 
