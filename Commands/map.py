@@ -4,7 +4,6 @@ from discord.commands import slash_command, Option
 from Helpers.rate_limiter import external_rate_limit
 from Helpers.functions import timed_get
 from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime, timezone
 from io import BytesIO
 import asyncio
 import json
@@ -133,7 +132,7 @@ def mapCreator(guild_prefix: Optional[str] = None):
                         if dx or dy:
                             draw.text((tx + dx, ty + dy), prefix, font=font, fill="black")
                 draw.text((tx, ty), prefix, font=font, fill=color_rgb)
-            except Exception as e:
+            except Exception:
                 pass
 
         rects_drawn += 1

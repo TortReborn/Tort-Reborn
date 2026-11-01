@@ -1,11 +1,10 @@
 import asyncio
-import datetime
 
 import discord
 from discord.ext import tasks, commands
 
 from Helpers.database import DB
-from Helpers.logger import log, ERROR, INFO
+from Helpers.logger import log, ERROR
 from Helpers.variables import KICK_LIST_CHANNEL_ID, is_home_guild
 
 

@@ -3,16 +3,15 @@ import time
 from io import BytesIO
 
 import discord
-import requests
 from PIL import Image, ImageDraw, ImageFont
 from discord import SlashCommandGroup, ApplicationContext
 from discord.ext import commands, pages
 
 from Helpers.classes import PlaceTemplate, Page, Guild
 from Helpers.database import DB
-from Helpers.functions import getGuildMembers, getPlayerUUID, addLine, expand_image, generate_rank_badge
+from Helpers.functions import addLine, expand_image, generate_rank_badge
 from Helpers.logger import log, INFO
-from Helpers.variables import rank_map, HOME_GUILD_IDS
+from Helpers.variables import HOME_GUILD_IDS
 
 from Helpers.pagination import add_paginator_buttons
 

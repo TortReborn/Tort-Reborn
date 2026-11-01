@@ -103,7 +103,7 @@ class Treasury(commands.Cog):
 
             await respond_paginator(paginator, ctx.interaction)
 
-        except Exception as e:
+        except Exception:
             error_embed = discord.Embed(
                 title='Error',
                 description='An error occurred while fetching territory data. Please try again later.',

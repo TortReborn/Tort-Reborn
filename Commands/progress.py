@@ -10,12 +10,11 @@ from discord.commands import slash_command
 from discord.ui import Select, View
 
 from Helpers.classes import PlayerStats
-from Helpers.functions import getPlayerData, fix_progressbar, getPlayerUUID, generate_rank_badge, create_progress_bar, timed_get
+from Helpers.functions import generate_rank_badge, create_progress_bar, timed_get
 from Helpers.variables import class_map
 from Helpers.rate_limiter import external_rate_limit
 from Helpers.logger import log, ERROR
 from Helpers.storage import get_background, get_background_file
-from StringProgressBar import progressBar
 import re
 import math
 

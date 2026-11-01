@@ -17,7 +17,7 @@ from Helpers.database import DB
 from Helpers.functions import getPlayerUUID
 from Helpers.member_removal import meets_floor
 from Helpers.member_roles import removal_role_names, resolve_roles, HONORED_FISH_ROLE, RETIRED_CHIEF_ROLE
-from Helpers.variables import HOME_GUILD_IDS, discord_ranks
+from Helpers.variables import HOME_GUILD_IDS
 
 CHOICES = {hon.LABELS[hon.HONORED_FISH]: hon.HONORED_FISH, hon.LABELS[hon.RETIRED_CHIEF]: hon.RETIRED_CHIEF}
 

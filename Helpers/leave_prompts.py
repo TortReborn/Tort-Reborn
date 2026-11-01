@@ -15,14 +15,12 @@ still recorded -- the ticket's central case).
 """
 
 import asyncio
-import datetime
 
 import discord
 
 from Helpers import honorifics as hon
 from Helpers.database import DB
 from Helpers.guild_accounts import guild_account_uuids, uuid_key
-from Helpers.logger import log, ERROR
 from Helpers.member_removal import check_reset_permission, record_grant_only, remove_member
 from Helpers.member_roles import EX_MEMBER_ROLE, removal_role_names, resolve_roles
 from Helpers.variables import ERROR_CHANNEL_ID, discord_ranks

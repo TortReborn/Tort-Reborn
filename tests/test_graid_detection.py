@@ -12,9 +12,7 @@ Tests steps 7-11b of the update_member_data loop:
   11b – All-private group with grace period
 """
 
-import asyncio
 import datetime
-from collections import deque
 from datetime import timezone, timedelta
 from unittest.mock import AsyncMock, MagicMock
 

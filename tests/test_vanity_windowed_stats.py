@@ -13,7 +13,6 @@ Tests:
 4. A returning member is not credited progress from a previous membership
 """
 
-import datetime
 import os
 import sys
 from unittest.mock import patch

@@ -2,7 +2,6 @@ import json
 import math
 import time
 import datetime
-from datetime import timedelta
 from io import BytesIO
 from dateutil import parser
 
@@ -13,8 +12,8 @@ from PIL import Image, ImageFont, ImageDraw
 
 from Helpers.classes import PlaceTemplate, Page
 from Helpers.database import DB, BatchBaselineQueryError, get_current_guild_data_with_db, get_player_activity_baselines_for_members_with_db
-from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge, cap_playtime_window
-from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, HOME_GUILD_IDS
+from Helpers.functions import date_diff, expand_image, addLine, generate_rank_badge, cap_playtime_window
+from Helpers.variables import rank_map as RANK_STARS_MAP, HOME_GUILD_IDS
 
 from Helpers.pagination import add_paginator_buttons
 
@@ -48,13 +47,6 @@ def _load_json(path: str, default):
             return json.load(f)
     except Exception:
         return default
-
-
-def _get_baseline_playtime_from_db(db: DB, uuid: str, days: int, joined_date=None) -> float:
-    """Get baseline playtime from player_activity table.
-    Uses the unified calendar-date-based lookup with corrupted-data handling."""
-    value, _ = get_player_activity_baseline_with_db(db, uuid, 'playtime', days, joined_date=joined_date)
-    return float(value)
 
 
 def _load_discord_ranks():

@@ -19,7 +19,7 @@ from Helpers.member_roles import apply_rank_roles, rank_change_summary, registra
 from Helpers.registration import record_registration, set_rank, upsert_identity
 from discord.ext.pages import Page as _Page
 
-from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID, discord_ranks
+from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID
 
 WELCOME_CHANNEL = WELCOME_CHANNEL_ID
 

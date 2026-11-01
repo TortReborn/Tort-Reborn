@@ -5,13 +5,12 @@ from io import BytesIO
 import discord
 from discord.ext import tasks, commands
 
-from Helpers.logger import log, INFO, ERROR
+from Helpers.logger import log, ERROR
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB, get_blacklist, get_next_app_number, get_next_hh_app_number
 from Helpers.functions import generate_applicant_info
 from Helpers.variables import (
     TAQ_GUILD_ID,
-    EXEC_GUILD_ID,
     MEMBER_APP_CHANNEL_ID,
     HAMMERHEAD_APP_CHANNEL_ID,
     APP_MANAGER_ROLE_MENTION,

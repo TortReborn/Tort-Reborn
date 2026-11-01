@@ -12,7 +12,6 @@ Run as standalone:
   python scripts/backfill_graid_logs.py --execute  (actually insert)
 """
 
-import asyncio
 import datetime
 import re
 import os

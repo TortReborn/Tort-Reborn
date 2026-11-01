@@ -2,7 +2,6 @@ import colorsys
 import datetime
 import math
 import os
-import json
 import re
 from functools import lru_cache
 from http import cookiejar as _cookiejar
@@ -14,7 +13,7 @@ import certifi
 import requests
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
-from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows
+from Helpers.variables import minecraft_banner_colors, colours, shadows
 from Helpers.logger import log, WARN, ERROR
 from Helpers import telemetry
 
@@ -69,18 +68,6 @@ def date_diff(time=False):
     elif not time:
         diff = 0
     return diff.days
-
-
-def getPlayerData(name, token=None):
-    if name.lower() == 'woodcreature':
-        name = 'aa7402cc-bf1c-4aed-838b-fd8897d38836'
-    url = f'https://api.wynncraft.com/v2/player/{name}/stats'
-    try:
-        resp = timed_get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
-        resp.raise_for_status()
-        return resp.json()
-    except requests.RequestException:
-        return False
 
 
 def getPlayerDatav3(uuid, token=None):
@@ -161,40 +148,8 @@ def pretty_date(time=False):
     return str(day_diff // 365) + " years ago"
 
 
-def fix_progressbar(progress):
-    temp_progress = progress[0].split('><')
-    if temp_progress[0] == '<:a_e:1001612221069131866':
-        temp_progress[0] = '<:a_start_e:1001612227926827101'
-    else:
-        temp_progress[0] = '<:a_start:1001612226337177761'
-    if progress[1] < 100 and temp_progress[-1] == ':a_:1001612219810857091>':
-        temp_progress[-1] = ':a_end_half:1001612224953057330>'
-    elif temp_progress[-1] == ':a_:1001612219810857091>':
-        temp_progress[-1] = ':a_end:1001612222096740545>'
-    else:
-        temp_progress[-1] = ':a_end_e:1001612223740923994>'
-
-    progress[0] = '><'.join(temp_progress)
-
-    return progress
-
-
 def calcPercentage(p, m):
     return math.floor((100 / m) * p)
-
-
-def getGuildMembers(guild, token=None):
-    url = (
-      'https://api.wynncraft.com/public_api.php'
-      f'?action=guildStats&command={urlify(guild)}'
-    )
-    try:
-        resp = timed_get(url, timeout=10, headers={"Authorization": f"Bearer {os.getenv(token or 'WYNN_TOKEN')}"})
-        resp.raise_for_status()
-        return resp.json().get('members', [])
-    except requests.RequestException:
-        return []
-
 
 
 def dropShadow(image):
@@ -285,38 +240,6 @@ class Color:
         return tuple(int(c * 255) for c in rgb)
 
 
-def generate_rank_old_badge(text, colour, scale=4):
-    if colour[0] != '#':
-        colour = '#' + colour
-    match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', colour)
-    if not match:
-        return False
-    color = Color(colour)
-    img_width = len(text) * 12 + 8
-    img = Image.new('RGBA', (img_width, 18), (255, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    font = _cached_font('images/profile/5x5.ttf', 20)
-
-    draw.rectangle([(2, 2), (img.width - 3, img.height - 3)], fill=color.hex)
-    draw.rectangle([(2, img.height - 2), (img.width - 3, img.height)], fill=color.shadow)
-    draw.rectangle([(img.width - 2, 2), (img.width, img.height - 3)], fill=color.shadow)
-    draw.rectangle([(2, 0), (img.width - 3, 1)], fill=color.light)
-    draw.rectangle([(0, 2), (1, img.height - 3)], fill=color.light)
-    draw.text((img.width / 2 + 2, img.height / 2 - 2), text, font=font, anchor="mm", fill=color.text_shadow)
-    draw.text((img.width / 2, img.height / 2 - 2), text, font=font, anchor="mm")
-
-    textshade = Image.new("RGBA", (img.width, 4), (255, 0, 0, 0))
-    shadedraw = ImageDraw.Draw(textshade)
-    shadedraw.text((img.width / 2, textshade.height), text, font=font, anchor="mb", fill=color.shade)
-
-    img.paste(textshade, (0, 10), textshade)
-
-    img = img.resize((img.width * scale, img.height * scale), resample=Image.Resampling.NEAREST)
-
-    return img
-
-
 def generate_rank_badge(text, colour, scale=4):
     with telemetry.track("render"):
         if colour[0] != '#':
@@ -340,12 +263,6 @@ def generate_rank_badge(text, colour, scale=4):
         draw.rectangle([(img.width - 4, 11), (img.width - 3, 12)], fill=color.light)
         draw.text((img.width / 2 + 2, img.height / 2 - 3), text, font=font, anchor="mm", fill=color.shadow)
         draw.text((img.width / 2, img.height / 2 - 3), text, font=font, anchor="mm")
-
-        # textshade = Image.new("RGBA", (img.width, 4), (255, 0, 0, 0))
-        # shadedraw = ImageDraw.Draw(textshade)
-        # shadedraw.text((img.width / 2, textshade.height), text, font=font, anchor="mb", fill=color.shade)
-
-        # img.paste(textshade, (0, 10), textshade)
 
         img = img.resize((img.width * scale, img.height * scale), resample=Image.Resampling.NEAREST)
 

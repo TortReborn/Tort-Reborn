@@ -22,8 +22,6 @@ from Helpers.variables import discord_ranks
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_GAME = os.path.join(BASE, "images", "profile", "game.ttf")
-FONT_UI = os.path.join(BASE, "images", "shell_exchange", "resources",
-                       "Inter-VariableFont_opsz,wght.ttf")
 ART_CACHE = os.path.join(BASE, "images", "cards")
 PORTRAIT_DIR = os.path.join(BASE, "images", "card_portraits")
 

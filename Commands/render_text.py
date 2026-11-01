@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.commands import slash_command
 import discord
 
-from Helpers.functions import generate_rank_badge, addLine
+from Helpers.functions import addLine
 from Helpers.variables import EXEC_GUILD_IDS
 
 

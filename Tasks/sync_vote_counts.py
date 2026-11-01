@@ -4,7 +4,7 @@ import discord
 from discord.ext import tasks, commands
 
 from Helpers.database import DB
-from Helpers.logger import log, ERROR, INFO
+from Helpers.logger import log, ERROR
 from Helpers.poll_edit import safe_edit_poll
 from Helpers.variables import MEMBER_APP_CHANNEL_ID
 

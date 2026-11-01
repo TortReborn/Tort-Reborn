@@ -5,9 +5,9 @@ from discord.ext import commands
 from discord.commands import slash_command
 from discord import default_permissions
 
-from Helpers.classes import LinkAccount, PlayerStats, BasicPlayerStats
+from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
-from Helpers.functions import getPlayerUUID, determine_starting_rank
+from Helpers.functions import determine_starting_rank
 from Helpers.links import LinkConflictError, assert_uuid_free
 from Helpers.member_roles import registration_role_names
 from Helpers.registration import record_registration

@@ -1,8 +1,7 @@
 # vanity_roles.py
 import asyncio
-import json
 from dataclasses import dataclass
-from datetime import datetime, date, timezone, timedelta, time as dtime
+from datetime import datetime, date, timezone, time as dtime
 from typing import Dict, Any, List, Optional, Tuple
 
 import discord

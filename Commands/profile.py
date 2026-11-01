@@ -8,13 +8,12 @@ import discord
 from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord.commands import slash_command
-import json
 
 from Helpers import telemetry
 from Helpers.classes import PlayerStats
 from Helpers.functions import pretty_date, generate_rank_badge, generate_banner, getData, format_number, addLine, vertical_gradient, round_corners, generate_badge, timed_get
 from Helpers.logger import log, ERROR
-from Helpers.variables import discord_ranks, minecraft_colors, minecraft_banner_colors
+from Helpers.variables import discord_ranks, minecraft_banner_colors
 from Helpers.rate_limiter import external_rate_limit
 from Helpers.storage import get_background
 
@@ -206,8 +205,6 @@ def _build_profile_card(player, days, author_id):
                 else:
                     card_entries[f'Guild Raids / {player.stats_days} D'] = str(player.real_raids)
 
-        # if len(card_entries) < 10:
-        #     card_entries['Killed Mobs'] = str(player.mobs)
         if len(card_entries) < 10:
             # Chests - check if private
             if player.chests_is_private:
