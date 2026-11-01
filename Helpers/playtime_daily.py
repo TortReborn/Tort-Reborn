@@ -75,7 +75,9 @@ def build_rows(records):
             continue  # defensive: the primary key already forbids this
 
         delta = playtime - prev_playtime
-        war_delta = (wars or 0) - (prev_wars or 0)
+        # NULL wars were private (TAQ-134): with either end unknown the
+        # span's wars are unknown, and 0 beats crediting a lifetime count.
+        war_delta = wars - prev_wars if wars is not None and prev_wars is not None else 0
         raid_delta = (raids or 0) - (prev_raids or 0)
 
         if delta < 0:

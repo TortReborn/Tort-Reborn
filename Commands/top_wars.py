@@ -67,17 +67,19 @@ def get_wars_in_range(start_date: datetime.date, end_date: datetime.date) -> Dic
 
         actual_end = end_row[0]
 
+        # NULL wars were private: unknown, so the member is skipped like one
+        # with no snapshot rather than credited their lifetime (TAQ-134).
         db.cursor.execute("""
             SELECT uuid, wars FROM player_activity
-            WHERE snapshot_date = %s
+            WHERE snapshot_date = %s AND wars IS NOT NULL
         """, (actual_start,))
-        start_wars = {str(row[0]): row[1] or 0 for row in db.cursor.fetchall()}
+        start_wars = {str(row[0]): row[1] for row in db.cursor.fetchall()}
 
         db.cursor.execute("""
             SELECT uuid, wars FROM player_activity
-            WHERE snapshot_date = %s
+            WHERE snapshot_date = %s AND wars IS NOT NULL
         """, (actual_end,))
-        end_wars = {str(row[0]): row[1] or 0 for row in db.cursor.fetchall()}
+        end_wars = {str(row[0]): row[1] for row in db.cursor.fetchall()}
 
         # Calculate deltas for current guild members only
         result = {}
