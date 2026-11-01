@@ -1,14 +1,10 @@
-from io import BytesIO
 
 import discord
-from PIL import Image
 from discord import SlashCommandGroup, option
 from discord.ext import commands
-from discord.commands import slash_command
 import json
 
 from Helpers.database import DB
-from Helpers.functions import getPlayerUUID
 from Helpers.variables import HOME_GUILD_IDS
 
 from Helpers.storage import get_background_file

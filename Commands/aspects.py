@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 from Helpers.classes import Guild, DB
 from Helpers.functions import getNameFromUUID
 from Helpers.variables import EXEC_GUILD_IDS, IS_TEST_PROFILE
-from Helpers.logger import log, INFO, WARN, ERROR
+from Helpers.logger import log, INFO, WARN
 from Helpers import aspect_db
 MAX_COLUMNS = 4
 ROWS_PER_COLUMN = 10

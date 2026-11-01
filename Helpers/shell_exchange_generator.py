@@ -3,7 +3,7 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 
 from Helpers.storage import get_shell_exchange_icon
-from Helpers.logger import log, WARN, ERROR
+from Helpers.logger import log, WARN
 
 # runtime config defaults
 

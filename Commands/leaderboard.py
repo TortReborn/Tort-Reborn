@@ -1,4 +1,3 @@
-import json
 import math
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -156,13 +155,6 @@ def create_leaderboard(order_key: str, key_icon: str, header: str, days: int = 7
                     GROUP BY glp.uuid
                 """, (since,))
                 graid_totals = {str(row[0]): row[1] for row in db.cursor.fetchall()}
-
-        # ---------------------------
-        # Load raid offsets for time-windowed raids (non-all-time)
-        # ---------------------------
-        raid_offsets: Dict[str, int] = {}
-        if order_key == 'raids' and days > 0:
-            pass  # Time-windowed raids use API snapshot deltas, no offsets needed
 
         # ---------------------------
         # Build leaderboard rows using CURRENT membership

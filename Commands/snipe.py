@@ -1,6 +1,5 @@
 import asyncio
 import math
-import os
 import re
 import time
 from collections import Counter, defaultdict
@@ -579,7 +578,6 @@ def _generate_snipe_card(
     f_title = ImageFont.truetype('images/profile/5x5.ttf',  30)
     f_label = ImageFont.truetype('images/profile/5x5.ttf',  22)
     f_pb    = ImageFont.truetype('images/profile/game.ttf', 35)
-    f_value = ImageFont.truetype('images/profile/game.ttf', 32)
     f_small = ImageFont.truetype('images/profile/game.ttf', 26)
 
     ACCENT = '#fad51e'

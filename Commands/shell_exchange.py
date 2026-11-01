@@ -3,9 +3,7 @@ import time
 import aiohttp
 import discord
 from discord.ext import commands
-from discord.commands import slash_command
 from io import BytesIO
-from PIL import Image
 
 from Helpers import local_ids
 from Helpers.shell_exchange_generator import generate_images

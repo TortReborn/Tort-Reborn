@@ -5,7 +5,7 @@ import json
 import asyncio
 import os
 import random
-from typing import Dict, List, Set
+from typing import Dict, List
 
 import aiohttp
 from discord.ext import tasks, commands

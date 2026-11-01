@@ -2,9 +2,7 @@ import discord
 from discord.ext import commands
 from discord.commands import user_command
 
-from Helpers.classes import LinkAccount, NewMember
 from Helpers.database import DB
-from Helpers.functions import getPlayerUUID
 from Helpers.variables import HOME_GUILD_IDS, discord_ranks, discord_rank_roles, ERROR_CHANNEL_ID
 
 

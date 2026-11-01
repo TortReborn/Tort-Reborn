@@ -16,7 +16,6 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 from PIL import Image
 
-from Helpers.logger import log, WARN, ERROR
 from Helpers import telemetry
 
 

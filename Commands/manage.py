@@ -1,7 +1,6 @@
 import os
 import time
 import asyncio
-from datetime import datetime
 from io import BytesIO
 
 import discord

@@ -2,7 +2,6 @@ import json
 import math
 import time
 import datetime
-from datetime import timedelta
 from io import BytesIO
 from dateutil import parser
 
@@ -13,8 +12,8 @@ from PIL import Image, ImageFont, ImageDraw
 
 from Helpers.classes import PlaceTemplate, Page
 from Helpers.database import DB, BatchBaselineQueryError, get_current_guild_data_with_db, get_player_activity_baselines_for_members_with_db
-from Helpers.functions import date_diff, isInCurrDay, expand_image, addLine, generate_rank_badge, cap_playtime_window
-from Helpers.variables import rank_map as RANK_STARS_MAP, discord_ranks, HOME_GUILD_IDS
+from Helpers.functions import date_diff, expand_image, addLine, generate_rank_badge, cap_playtime_window
+from Helpers.variables import rank_map as RANK_STARS_MAP, HOME_GUILD_IDS
 
 from Helpers.pagination import add_paginator_buttons
 

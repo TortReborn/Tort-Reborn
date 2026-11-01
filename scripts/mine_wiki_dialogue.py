@@ -18,7 +18,6 @@ import re
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
 
 API = "https://wynncraft.wiki.gg/api.php"
 UA = {"User-Agent": "TortRebornCards/2.0 (TAq guild bot; contact: aiden)"}

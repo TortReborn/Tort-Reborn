@@ -15,7 +15,7 @@ from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
 from Helpers.storage import warm_background_cache
 from Helpers.variables import PROFILE, IS_TEST_PROFILE, ERROR_CHANNEL_ID, PUBLIC_COMMANDS, ERROR_PING_USER_ID
-from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, INFO, WARN
+from Helpers.logger import log, SYSTEM, SUCCESS, ERROR, WARN
 from Helpers import logger
 from Helpers import telemetry
 from Commands.generate import ApplicationButtonView

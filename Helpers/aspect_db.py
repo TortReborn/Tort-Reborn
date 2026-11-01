@@ -6,7 +6,7 @@ Replaces the JSON file-based approach.
 
 import datetime
 from datetime import timezone, timedelta
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 import json
 
 from Helpers.database import DB, get_player_activity_baseline_with_db

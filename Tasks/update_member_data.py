@@ -1,8 +1,6 @@
 import asyncio
 import io
 import json
-import os
-import re
 import sys
 import discord
 import datetime
@@ -26,7 +24,7 @@ from Helpers.logger import log, INFO, WARN, ERROR
 from Helpers.classes import Guild, DB
 from Helpers.database import get_current_guild_data_with_db, write_hourly_activity_snapshot_with_db, prune_hourly_activity_snapshots_with_db
 from Helpers.embed_updater import update_web_poll_embed
-from Helpers.functions import getPlayerDatav3, getNameFromUUID, getPlayerUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
+from Helpers.functions import getPlayerDatav3, getPlayerUUID, determine_starting_rank, create_progress_bar, addLine, round_corners
 from Helpers import roster as roster_db
 from Helpers.leave_prompts import post_leave_prompts
 from Helpers.links import LinkConflictError
@@ -37,7 +35,6 @@ from Helpers.variables import (
     RAID_LOG_CHANNEL_ID,
     BOT_LOG_CHANNEL_ID,
     GUILD_LOG_CHANNEL_ID,
-    ERROR_CHANNEL_ID,
     NOTG_EMOJI,
     TCC_EMOJI,
     TNA_EMOJI,
@@ -53,7 +50,6 @@ from Helpers.variables import (
     TAQ_ROLES_CHANNEL_ID,
     BOT_COMMAND_CHANNEL_ID,
     RAID_COLLECTING_CHANNEL_ID,
-    discord_ranks,
 )
 
 RAID_ANNOUNCE_CHANNEL_ID = RAID_LOG_CHANNEL_ID

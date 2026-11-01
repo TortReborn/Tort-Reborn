@@ -6,7 +6,6 @@ import discord
 from discord import SlashCommandGroup, ApplicationContext
 from discord.ext import commands
 
-from Helpers.classes import BasicPlayerStats
 from Helpers.app_transcript import (
     post_transcript,
     stamp_transcribed,
@@ -16,7 +15,7 @@ from Helpers.app_transcript import (
 from Helpers.ally_registration import register_community_member
 from Helpers.database import DB
 from Helpers.embed_updater import update_web_poll_embed
-from Helpers.functions import generate_applicant_info, getPlayerUUID, getPlayerDatav3
+from Helpers.functions import getPlayerUUID, getPlayerDatav3
 from Helpers.links import LinkConflictError
 from Helpers.registration import upsert_identity
 from Helpers.openai_helper import parse_recruiter_source
@@ -25,7 +24,6 @@ from Helpers.views import RecruiterReviewView
 from Helpers.variables import (
     HOME_GUILD_IDS,
     MEMBER_APP_CHANNEL_ID,
-    APP_MANAGER_ROLE_MENTION,
     INVITED_CATEGORY_NAME,
     CLOSED_CATEGORY_NAME,
     APP_ARCHIVE_CHANNEL_NAME,
@@ -213,7 +211,6 @@ class WebAppCommands(commands.Cog):
 
         # Send message based on guild status
         link_id = applicant.id if applicant else int(app["discord_id"])
-        username = app["discord_username"]
 
         if in_taq:
             # Player is already in TAq — accept and register immediately
@@ -235,7 +232,6 @@ class WebAppCommands(commands.Cog):
                     link_conflict = e
 
             # Trigger auto-registration directly
-            from Tasks.update_member_data import UpdateMemberData
             cog = self.client.get_cog("UpdateMemberData")
             if cog and uuid and not link_conflict:
                 try:

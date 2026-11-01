@@ -2,7 +2,6 @@ import colorsys
 import datetime
 import math
 import os
-import json
 import re
 from functools import lru_cache
 from http import cookiejar as _cookiejar
@@ -14,7 +13,7 @@ import certifi
 import requests
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw, ImageFont, ImageOps, ImageColor
 
-from Helpers.variables import minecraft_colors, minecraft_banner_colors, colours, shadows
+from Helpers.variables import minecraft_banner_colors, colours, shadows
 from Helpers.logger import log, WARN, ERROR
 from Helpers import telemetry
 
