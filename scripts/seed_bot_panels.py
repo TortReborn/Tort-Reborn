@@ -17,6 +17,10 @@ The live messages are not linked yet: open the panel on the website, paste
 the links of the messages it replaces under "Link existing messages", and
 publish; the bot then edits those messages in place. The shell exchange panel
 is linked automatically from its config.
+
+The welcome templates (TAQ-142) are seeded live: they are never posted, and
+from then on new members get the seeded revision instead of the built-in
+text in Helpers/welcome.py.
 """
 
 import argparse
@@ -33,17 +37,25 @@ import discord  # noqa: E402
 
 from Commands.tickets import TICKET_EMBED_COLOR  # noqa: E402
 from Helpers import local_ids  # noqa: E402
-from Helpers.bot_panels import ASSET_PREFIX, ASSET_SCHEME, DYNAMIC_SHELL_EXCHANGE  # noqa: E402
+from Helpers.bot_panels import (  # noqa: E402
+    ASSET_PREFIX, ASSET_SCHEME, DYNAMIC_SHELL_EXCHANGE, TEMPLATE_WELCOME_DM, TEMPLATE_WELCOME_POST,
+)
 from Helpers.database import DB, get_shell_exchange_config  # noqa: E402
 from Helpers.storage import storage  # noqa: E402
 from Helpers.variables import (  # noqa: E402
+    ANNOUNCEMENT_CHANNEL_ID,
     ASPECT_EMOJI,
+    BOT_COMMAND_CHANNEL_ID,
+    FAQ_CHANNEL_ID,
+    GUILD_BANK_CHANNEL_ID,
     RAID_COLLECTING_CHANNEL_ID,
     SHELL_EMOJI,
     SHELL_EXCHANGE_CHANNEL_ID,
     TAQ_GUILD_ID,
     TAQ_ROLES_CHANNEL_ID,
+    WELCOME_CHANNEL_ID,
 )
+from Helpers.welcome import FALLBACK_DM_PATH  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 GUILD_INFO_ASSET_DIR = ROOT / "images" / "guild_info"
@@ -387,6 +399,45 @@ def _shell_exchange_text() -> str:
     return long_text
 
 
+# ---- Welcome templates (TAQ-142) ----
+# The text Helpers/welcome.py sent before the templates existed, with the
+# member as {{member}}. The DM gains a Verge link.
+
+VERGE_URL = "https://modrinth.com/project/37mIxdyU"
+
+
+def _welcome_dm_text() -> str:
+    with open(ROOT / FALLBACK_DM_PATH, "r", encoding="utf-8") as f:
+        t = json.load(f)
+    channels = {
+        "[welcome_channel]": WELCOME_CHANNEL_ID,
+        "[announcement_channel]": ANNOUNCEMENT_CHANNEL_ID,
+        "[faq_channel]": FAQ_CHANNEL_ID,
+        "[guild_bank_channel]": GUILD_BANK_CHANNEL_ID,
+        "[taq_roles_channel]": TAQ_ROLES_CHANNEL_ID,
+        "[bot_command_channel]": BOT_COMMAND_CHANNEL_ID,
+        "[raid_collecting_channel]": RAID_COLLECTING_CHANNEL_ID,
+    }
+
+    def fill(text: str) -> str:
+        text = text.replace("[user]", "{{member}}")
+        for key, channel_id in channels.items():
+            text = text.replace(key, f"<#{channel_id}>")
+        return text
+
+    rundown = "\n".join(f"> {fill(c['channel'])} - {c['description']}" for c in t["channels"])
+    verge = f"Track your guild raids more accurately with **Verge**, our own mod. Setup details are in <#{FAQ_CHANNEL_ID}>."
+    return "\n\n".join([fill(t["header"]), t["channels_title"], rundown, verge, fill(t["footer"])])
+
+
+def _welcome_post_embed() -> dict:
+    return {
+        "color": 0x3498DB,  # discord.Color.blue(), as before
+        "author": {"name": "Welcome Aboard!", "icon_url": "{{member_avatar}}"},
+        "description": "\U0001F30A Dive right in, {{member}}! The water's fine.",
+    }
+
+
 # ---- Panels ----
 
 def _war_ticket_embed() -> discord.Embed:
@@ -625,6 +676,19 @@ def build_panels(upload) -> list[dict]:
                 "rows": [[{"kind": "action", "action": "ticket_open:war"}]],
             }]},
         },
+        {
+            "slug": "welcome-dm", "name": "Welcome DM", "template": TEMPLATE_WELCOME_DM,
+            "channel_id": None, "message_ids": [],
+            "content": {"messages": [{
+                "content": _welcome_dm_text(),
+                "rows": [[{"kind": "link", "label": "Get Verge", "url": VERGE_URL}]],
+            }]},
+        },
+        {
+            "slug": "welcome-post", "name": "Welcome Aboard Post", "template": TEMPLATE_WELCOME_POST,
+            "channel_id": None, "message_ids": [],
+            "content": {"messages": [{"embeds": [_welcome_post_embed()]}]},
+        },
     ]
     # Maincord ids in the content -> the test servers' under the dev bot (no-op in prod).
     return [{**p, "content": local_ids.data(p["content"])} for p in panels]
@@ -637,12 +701,12 @@ def seed(panels: list[dict]) -> None:
         for panel in panels:
             db.cursor.execute(
                 """
-                INSERT INTO bot_panels (slug, name, channel_id, message_ids, published_rev)
-                VALUES (%s, %s, %s, %s::bigint[], 1)
-                ON CONFLICT (slug) DO NOTHING
+                INSERT INTO bot_panels (slug, name, channel_id, message_ids, published_rev, template)
+                VALUES (%s, %s, %s, %s::bigint[], 1, %s)
+                ON CONFLICT DO NOTHING
                 RETURNING id
                 """,
-                (panel["slug"], panel["name"], panel["channel_id"], panel["message_ids"]),
+                (panel["slug"], panel["name"], panel["channel_id"], panel["message_ids"], panel.get("template")),
             )
             row = db.cursor.fetchone()
             if row is None:
@@ -652,9 +716,10 @@ def seed(panels: list[dict]) -> None:
                 """
                 INSERT INTO bot_panel_revisions
                     (panel_id, rev_number, content, channel_id, note, author_name, status, published_at)
-                VALUES (%s, 1, %s, %s, 'Imported from the /generate commands', 'seed', 'published', NOW())
+                VALUES (%s, 1, %s, %s, %s, 'seed', 'published', NOW())
                 """,
-                (row[0], json.dumps(panel["content"]), panel["channel_id"]),
+                (row[0], json.dumps(panel["content"]), panel["channel_id"],
+                 "Imported from the built-in welcome" if panel.get("template") else "Imported from the /generate commands"),
             )
             print(f"  {panel['slug']}: seeded ({len(panel['content']['messages'])} message(s))")
         db.connection.commit()

@@ -8,8 +8,10 @@ import pytest
 
 from Helpers.bot_panels import (
     DYNAMIC_SHELL_EXCHANGE,
+    SAMPLE_MEMBER_VALUES,
     PanelAction,
     PanelError,
+    check_template,
     panel_messages,
     render_message,
 )
@@ -157,9 +159,13 @@ def test_seeded_panels_render(monkeypatch):
 
     async def go():
         for panel in seed.build_panels(fake_upload):
+            # Templates also get the member's values, and only link buttons (TAQ-142)
+            if panel.get("template"):
+                check_template(panel["content"])
             for i, m in enumerate(panel_messages(panel["content"])):
                 render_message(
-                    i, m, actions=PANEL_ACTIONS, values=values, fetch_asset=uploaded.get,
+                    i, m, actions=PANEL_ACTIONS, fetch_asset=uploaded.get,
+                    values={**values, **SAMPLE_MEMBER_VALUES} if panel.get("template") else values,
                     dynamic_files={DYNAMIC_SHELL_EXCHANGE: [("ingredient_shell_panel.png", b"a")]},
                 )
     asyncio.run(go())
