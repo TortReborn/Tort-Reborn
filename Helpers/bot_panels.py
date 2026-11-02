@@ -19,6 +19,9 @@ Content shape -- keep in sync with TAq-Website/lib/bot-panels.ts:
     }],
      "post": {"title": str}}                     # when the channel is a forum
 
+A template panel (bot_panels.template set, TAQ-142) is never posted: the bot
+sends its published revision each time the event it names happens.
+
 A panel whose channel is a forum is a forum post: the first publish opens the
 post with `post.title`, the panel's first message becomes its opening message,
 and later publishes edit that post (TAQ-115).
@@ -106,6 +109,54 @@ def role_buttons_in(content: dict) -> list[dict]:
     """Every role button in a panel's content."""
     return [b for m in (content or {}).get("messages", []) or []
             for row in m.get("rows") or [] for b in row or [] if (b or {}).get("kind") == "role"]
+
+
+# Template panels (TAQ-142): bot_panels.template names the event that sends
+# one. They are never posted; publishing makes a revision the one the bot
+# sends, to one member at a time, with that member's values filled in.
+# Keep in sync with TAq-Website/lib/panel-values.ts (TEMPLATE_VALUES).
+TEMPLATE_WELCOME_DM = "welcome_dm"
+TEMPLATE_WELCOME_POST = "welcome_post"
+TEMPLATES = (TEMPLATE_WELCOME_DM, TEMPLATE_WELCOME_POST)
+
+
+def member_values(mention: str, ign: str, avatar_url: str) -> dict[str, str]:
+    """The {{key}}s a template can use besides the panel values."""
+    return {"member": mention, "ign": ign, "member_avatar": avatar_url}
+
+
+# What a template is checked with when it is published
+SAMPLE_MEMBER_VALUES = member_values("@member", "member", "https://cdn.discordapp.com/embed/avatars/0.png")
+
+
+def check_template(content: dict):
+    """A template goes to one member, often by DM, where bot and role buttons
+    have nothing to answer them and generated images have no place."""
+    for i, m in enumerate(panel_messages(content), start=1):
+        if m.get("dynamic"):
+            raise PanelError(f"Message {i}: a template can't carry generated images.")
+        if any((b or {}).get("kind") != "link" for row in m.get("rows") or [] for b in row or []):
+            raise PanelError(f"Message {i}: a template can only have link buttons.")
+
+
+def referenced_assets(content: dict) -> set[str]:
+    """Every uploaded image a panel's content uses."""
+    found = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+        elif isinstance(node, str):
+            name = asset_name(node)
+            if name:
+                found.add(name)
+
+    walk(content)
+    return found
 
 
 @dataclass(frozen=True)

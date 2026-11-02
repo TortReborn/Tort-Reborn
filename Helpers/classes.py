@@ -20,6 +20,7 @@ from Helpers.registration import record_registration, set_rank, upsert_identity
 from discord.ext.pages import Page as _Page
 
 from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID
+from Helpers.welcome import send_welcome_dm, send_welcome_post
 
 WELCOME_CHANNEL = WELCOME_CHANNEL_ID
 
@@ -610,15 +611,11 @@ class NewMember(Modal):
                               description=f'<@{self.user.id}> was linked to `{pdata.username}`', color=0x3ed63e)
         await msg.edit('', embed=embed)
 
-        # ─── WELCOME EMBED ────────────────────────────────────────────────────────
+        # ─── WELCOME POST + DM ────────────────────────────────────────────────────
         welcome_location = interaction.guild.get_channel(WELCOME_CHANNEL)
         if welcome_location:
-            welcome_embed = discord.Embed(
-                description=f":ocean: Dive right in, {self.user.mention}! The water's fine.",
-                color=discord.Color.blue()
-            )
-            welcome_embed.set_author(name="Welcome Aboard!", icon_url=self.user.display_avatar.url)
-            await welcome_location.send(embed=welcome_embed)
+            await send_welcome_post(welcome_location, self.user, pdata.username)
+        await send_welcome_dm(self.user, pdata.username)
 
 
 class PlaceTemplate:

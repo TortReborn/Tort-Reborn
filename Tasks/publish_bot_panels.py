@@ -11,6 +11,11 @@ which is what the website shows under the panel's history.
 A panel whose channel is a forum is a post there: the first publish opens
 it and later ones edit it, or replace the post when the messages change shape.
 
+A template panel (the welcome messages, TAQ-142) is only checked: the bot
+sends it when a member registers (Helpers/welcome.py). The editor's "send a
+test to me" leaves a draft under botPanelTest:<discord id>, which the loop
+DMs to that member and answers on the same row.
+
 The task also keeps a directory of maincord's and TAq Executive's channels
 (plus the forum posts panels live in), roles and emoji, and the bot's button
 registry in cache_entries ('botPanelRegistry'),
@@ -32,10 +37,12 @@ from Commands.generate import GENERATE_EMBED_COLOR, PANEL_ACTIONS
 from Helpers.bot_panels import (
     ASSET_PREFIX,
     DYNAMIC_SHELL_EXCHANGE,
+    SAMPLE_MEMBER_VALUES,
     PanelError,
-    asset_name,
     forum_post_title,
+    member_values,
     panel_messages,
+    referenced_assets,
     render_message,
     role_buttons_in,
     uses_dynamic,
@@ -46,12 +53,15 @@ from Helpers.panel_values import load_panel_values
 from Helpers.role_buttons import unassignable_reason
 from Helpers.storage import storage
 from Helpers.variables import EXEC_GUILD_ID, HOME_GUILD_IDS, TAQ_GUILD_ID
+from Helpers.welcome import render_template, send_rendered
 
 POLL_SECONDS = 10
 DIRECTORY_EVERY_LOOPS = 360  # ~1 hour
 JOBS_PER_TICK = 10
 REGISTRY_CACHE_KEY = "botPanelRegistry"
 REFRESH_CACHE_KEY = "botPanelRegistryRefresh"
+# + the requester's discord id: a template draft to DM them (TAQ-142)
+TEST_CACHE_PREFIX = "botPanelTest:"
 NO_MENTIONS = discord.AllowedMentions.none()
 # Servers whose channels and roles the editor offers (TAQ-115)
 PANEL_GUILD_IDS = (TAQ_GUILD_ID, EXEC_GUILD_ID)
@@ -68,6 +78,7 @@ class PanelJob:
     adopt_message_ids: list[int]
     panel_channel_id: int | None
     panel_message_ids: list[int]
+    template: str | None = None
 
 
 # ---- DB ----
@@ -124,7 +135,7 @@ def _claim_next() -> PanelJob | None:
         db.cursor.execute(
             """
             SELECT r.id, r.rev_number, r.content, r.channel_id, r.adopt_message_ids,
-                   p.id, p.slug, p.channel_id, p.message_ids
+                   p.id, p.slug, p.channel_id, p.message_ids, p.template
             FROM bot_panel_revisions r JOIN bot_panels p ON p.id = r.panel_id
             WHERE r.id = %s
             """,
@@ -136,7 +147,7 @@ def _claim_next() -> PanelJob | None:
         return PanelJob(
             rev_id=r[0], rev_number=r[1], content=content, channel_id=r[3],
             adopt_message_ids=list(r[4] or []), panel_id=r[5], slug=r[6],
-            panel_channel_id=r[7], panel_message_ids=list(r[8] or []),
+            panel_channel_id=r[7], panel_message_ids=list(r[8] or []), template=r[9],
         )
     except Exception:
         db.connection.rollback()
@@ -190,6 +201,45 @@ def _finish(job: PanelJob, *, channel_id: int | None = None, message_ids: list[i
         db.close()
 
 
+def _claim_tests() -> list[tuple[int, dict]]:
+    """Test sends the editor asked for: (requester's discord id, request)."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            """
+            UPDATE cache_entries SET data = jsonb_set(data, '{status}', '"sending"')
+            WHERE cache_key LIKE %s AND data->>'status' = 'pending' AND expires_at > NOW()
+            RETURNING cache_key, data
+            """,
+            (TEST_CACHE_PREFIX + "%",),
+        )
+        rows = db.cursor.fetchall()
+        db.connection.commit()
+        return [(int(key[len(TEST_CACHE_PREFIX):]), data if isinstance(data, dict) else json.loads(data))
+                for key, data in rows]
+    finally:
+        db.close()
+
+
+def _finish_test(discord_id: int, request: dict, error: str | None):
+    """Report back on the same row, unless a newer request has replaced it."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            """
+            UPDATE cache_entries SET data = data || %s::jsonb
+            WHERE cache_key = %s AND data->>'requested_at' = %s
+            """,
+            (json.dumps({"status": "failed" if error else "sent", "error": error}),
+             f"{TEST_CACHE_PREFIX}{discord_id}", request.get("requested_at")),
+        )
+        db.connection.commit()
+    finally:
+        db.close()
+
+
 def _save_registry(data: dict):
     db = DB()
     db.connect()
@@ -236,25 +286,6 @@ def _take_refresh_request() -> bool:
 
 # ---- Assets ----
 
-def _referenced_assets(content: dict) -> set[str]:
-    found = set()
-
-    def walk(node):
-        if isinstance(node, dict):
-            for v in node.values():
-                walk(v)
-        elif isinstance(node, list):
-            for v in node:
-                walk(v)
-        elif isinstance(node, str):
-            name = asset_name(node)
-            if name:
-                found.add(name)
-
-    walk(content)
-    return found
-
-
 def _fetch_assets(names: set[str]) -> dict[str, bytes]:
     out = {}
     for name in names:
@@ -296,6 +327,12 @@ class PublishBotPanels(commands.Cog):
             log(ERROR, f"Bot panel registry sync failed: {e}", context="publish_bot_panels")
         self._loops += 1
 
+        try:
+            for discord_id, request in await asyncio.to_thread(_claim_tests):
+                await self._send_test(discord_id, request)
+        except Exception as e:
+            log(ERROR, f"Template test sends failed: {e}", context="publish_bot_panels")
+
         # Work through everything waiting (a value change can queue several
         # panels at once), capped so one tick can't run away.
         for _ in range(JOBS_PER_TICK):
@@ -320,6 +357,26 @@ class PublishBotPanels(commands.Cog):
             return
         await asyncio.to_thread(_finish, job, channel_id=channel_id, message_ids=message_ids, notes=notes)
         log(INFO, f"Published bot panel {job.slug} rev {job.rev_number}", context="publish_bot_panels")
+
+    async def _send_test(self, discord_id: int, request: dict):
+        """DM a template draft to the exec member trying it, filled in as if
+        they were the new member."""
+        error = None
+        try:
+            user = await self.client.fetch_user(discord_id)
+            values = member_values(user.mention, request.get("ign") or user.name, user.display_avatar.url)
+            rendered = await render_template(request.get("content") or {}, values)
+            await send_rendered(user, rendered, user.id)
+        except PanelError as e:
+            error = str(e)
+        except discord.Forbidden:
+            error = "The bot can't DM you. Allow direct messages from server members and try again."
+        except discord.HTTPException as e:
+            error = f"Discord refused the message: {e.text or e}"
+        except Exception as e:
+            log(ERROR, f"Template test send to {discord_id} failed: {e}", context="publish_bot_panels")
+            error = f"Unexpected error: {type(e).__name__}: {e}"
+        await asyncio.to_thread(_finish_test, discord_id, request, error)
 
     @publish_panels.before_loop
     async def before_publish_panels(self):
@@ -393,7 +450,13 @@ class PublishBotPanels(commands.Cog):
                 out.append(None)
         return out
 
-    async def _publish(self, job: PanelJob) -> tuple[int, list[int], list[str]]:
+    async def _publish(self, job: PanelJob) -> tuple[int | None, list[int], list[str]]:
+        # A template is sent on its event, not posted: publishing only checks
+        # that it renders, so a broken one fails here and not on a new member.
+        if job.template:
+            await render_template(job.content, SAMPLE_MEMBER_VALUES)
+            return None, [], []
+
         messages = panel_messages(job.content)
         notes: list[str] = []
 
@@ -410,7 +473,7 @@ class PublishBotPanels(commands.Cog):
             if skipped:
                 notes.append("Missing icons left off the rate images: " + ", ".join(sorted(set(skipped))))
 
-        assets = await asyncio.to_thread(_fetch_assets, _referenced_assets(job.content))
+        assets = await asyncio.to_thread(_fetch_assets, referenced_assets(job.content))
         values = await asyncio.to_thread(load_panel_values)
         rendered = [
             render_message(

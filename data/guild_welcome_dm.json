@@ -8,5 +8,6 @@
         { "channel": "[bot_command_channel]", "description": "Channel to send all our bot commands using Tort Reborn." },
         { "channel": "[raid_collecting_channel]", "description": "Where to collect shells and aspects from guild raids." }
     ],
+    "mod": "Track your guild raids more accurately with **Verge**, our own mod: <https://modrinth.com/project/37mIxdyU> (setup details in [faq_channel]).",
     "footer": "If you have any questions, don't hesitate to ask around. We're glad to have you!"
 }

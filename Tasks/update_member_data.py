@@ -44,13 +44,8 @@ from Helpers.variables import (
     ALL_GUILD_IDS,
     TAQ_GUILD_ID,
     WELCOME_CHANNEL_ID,
-    ANNOUNCEMENT_CHANNEL_ID,
-    FAQ_CHANNEL_ID,
-    GUILD_BANK_CHANNEL_ID,
-    TAQ_ROLES_CHANNEL_ID,
-    BOT_COMMAND_CHANNEL_ID,
-    RAID_COLLECTING_CHANNEL_ID,
 )
+from Helpers.welcome import send_welcome_dm, send_welcome_post
 
 RAID_ANNOUNCE_CHANNEL_ID = RAID_LOG_CHANNEL_ID
 LOG_CHANNEL = BOT_LOG_CHANNEL_ID
@@ -1178,63 +1173,12 @@ class UpdateMemberData(commands.Cog):
         if app_channel_id:
             await update_web_poll_embed(self.client, app_channel_id, ":orange_circle: Registered", 0xFFE019)
 
-        # Send welcome embed
         welcome_ch = self.client.get_channel(WELCOME_CHANNEL_ID)
         if welcome_ch:
-            welcome_embed = discord.Embed(
-                description=f":ocean: Dive right in, {member.mention}! The water's fine.",
-                color=discord.Color.blue()
-            )
-            welcome_embed.set_author(name="Welcome Aboard!", icon_url=member.display_avatar.url)
-            await welcome_ch.send(embed=welcome_embed)
-
-        # Send welcome DM
-        await self._send_welcome_dm(member)
+            await send_welcome_post(welcome_ch, member, ign)
+        await send_welcome_dm(member, ign)
 
         log(INFO, f"Successfully registered {ign} ({member.name}) from accepted application.", context="auto_register")
-
-    async def _send_welcome_dm(self, member: discord.Member):
-        """Send a welcome DM to a newly registered guild member."""
-        try:
-            with open("data/guild_welcome_dm.json", "r", encoding="utf-8") as f:
-                template_data = json.load(f)
-        except Exception as e:
-            log(WARN, f"Could not load welcome DM template: {e}", context="auto_register")
-            return
-
-        placeholders = {
-            "[user]": member.mention,
-            "[welcome_channel]": f"<#{WELCOME_CHANNEL_ID}>",
-            "[announcement_channel]": f"<#{ANNOUNCEMENT_CHANNEL_ID}>",
-            "[faq_channel]": f"<#{FAQ_CHANNEL_ID}>",
-            "[guild_bank_channel]": f"<#{GUILD_BANK_CHANNEL_ID}>",
-            "[taq_roles_channel]": f"<#{TAQ_ROLES_CHANNEL_ID}>",
-            "[bot_command_channel]": f"<#{BOT_COMMAND_CHANNEL_ID}>",
-            "[raid_collecting_channel]": f"<#{RAID_COLLECTING_CHANNEL_ID}>",
-        }
-
-        def replace(text):
-            for key, value in placeholders.items():
-                text = text.replace(key, str(value))
-            return text
-
-        header = replace(template_data.get("header", ""))
-        channels_title = template_data.get("channels_title", "")
-        channels = "\n".join(
-            f"> {replace(ch['channel'])} - {ch['description']}"
-            for ch in template_data.get("channels", [])
-        )
-        footer = replace(template_data.get("footer", ""))
-
-        message = f"{header}\n\n{channels_title}\n\n{channels}\n\n{footer}"
-
-        try:
-            await member.send(message)
-            log(INFO, f"Sent welcome DM to {member.name}", context="auto_register")
-        except discord.Forbidden:
-            log(WARN, f"Could not DM {member.name} (DMs disabled or bot blocked)", context="auto_register")
-        except Exception as e:
-            log(WARN, f"Failed to send welcome DM to {member.name}: {e}", context="auto_register")
 
     @staticmethod
     def _sync_roster_table(members, now):
