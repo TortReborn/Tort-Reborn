@@ -16,7 +16,7 @@ they were earned are recorded as debt and count as war tomes received, so
 later wars pay them off.
 
 Keep in step with TAq-Website/lib/tomes.ts, which shows the same numbers on
-the exec Tome Queue page. Nothing here commits: callers do, so a request and
+the exec Distribution page. Nothing here commits: callers do, so a request and
 its shell spend land together or not at all.
 """
 
