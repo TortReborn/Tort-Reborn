@@ -5,7 +5,7 @@ The button starts a private exchange: war tomes or raid tomes, how many,
 which priority, then a confirmation showing the cost. Confirming queues the
 request (Helpers/tomes.request_tomes), taking the shells for raid tomes.
 
-Exec gives tomes out on the website's Tome Queue page, which writes a
+Exec gives tomes out on the website's Distribution page, which writes a
 'given' event per request. The loop here posts each one to the tomes
 channel, pinging the member, and stamps it announced. The channel is the
 'tomes_channel_id' bot setting; until it is set nothing is posted and the
