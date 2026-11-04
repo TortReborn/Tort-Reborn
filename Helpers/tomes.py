@@ -219,12 +219,13 @@ def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int,
 
 
 def open_queue(cursor) -> list[tuple]:
-    """(ign, tomes left, priority, bucket) in the order tomes are given
+    """(ign, tomes left, priority, bucket, discord id) in the order tomes are given
     out. Those a give would skip, dormant requests and members not in the
     guild, aren't here. Keep in step with servingOrder in TAq-Website/lib/tomes.ts."""
     cursor.execute(
         """
-        SELECT r.ign, r.count - r.given, r.priority, r.bucket
+        SELECT r.ign, r.count - r.given, r.priority, r.bucket,
+               COALESCE(r.discord_id, (SELECT l.discord_id FROM discord_links l WHERE l.uuid = r.uuid LIMIT 1))
         FROM tome_requests r
         WHERE r.status = 'open' AND r.bucket <> 'dormant' AND r.count > r.given
           AND EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = r.uuid)
@@ -238,14 +239,17 @@ def open_queue(cursor) -> list[tuple]:
 
 def queue_text(rows) -> str:
     """The queue as the panels' {{tome_queue}} shows it: one line a member per
-    section, with what would not fit counted at the end. Keep in step with
+    section, with what would not fit counted at the end. Members are mentioned
+    (a mention in an embed never pings), or named if they have no linked Discord
+    account. Keep in step with
     queueText in TAq-Website/lib/tomes.ts."""
     if not rows:
         return "Nothing is waiting."
     sections: dict[tuple, dict[str, int]] = {}
-    for ign, left, priority, bucket in rows:
+    for ign, left, priority, bucket, discord_id in rows:
         members = sections.setdefault((bucket, priority if bucket == "queue" else None), {})
-        members[ign] = members.get(ign, 0) + left
+        who = f"<@{discord_id}>" if discord_id else f"`{ign}`"
+        members[who] = members.get(who, 0) + left
 
     lines: list[tuple[str, str | None, int]] = []
     for (bucket, priority), members in sections.items():
@@ -254,8 +258,8 @@ def queue_text(rows) -> str:
             lines.append((f"\n{emoji} **{label}**", None, 0))
         else:
             lines.append((f"\n**{BUCKET_LABELS[bucket]}**", None, 0))
-        for ign, n in members.items():
-            lines.append((f"`{ign}`: {n}", ign, n))
+        for who, n in members.items():
+            lines.append((f"{who}: {n}", who, n))
 
     text = ""
     for i, (line, _, _) in enumerate(lines):

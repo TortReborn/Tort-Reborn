@@ -59,27 +59,28 @@ def test_log_lines_ping_the_member():
         f"\u274C <@{DISCORD}> (Mem): request for **2 war tomes** was cancelled by Exec."
 
 
-# The same table as queueText in TAq-Website/lib/tomes.test.ts: the two must agree.
+# The same table as queueText in TAq-Website/lib/tomes.test.ts: the two must agree,
+# but for the preview writing a mention as @IGN.
 QUEUE_ROWS = [
-    ("Ann_1", 3, "very_high", "queue"),
-    ("Bob", 2, "very_high", "queue"),
-    ("Bob", 1, "very_high", "queue"),
-    ("Cy", 5, "high", "queue"),
-    ("Dee", 4, "low", "give_when_available"),
-    ("Eve", 20, "high", "give_when_full"),
+    ("Ann_1", 3, "very_high", "queue", 101),
+    ("Bob", 2, "very_high", "queue", 102),
+    ("Bob", 1, "very_high", "queue", 102),
+    ("Cy", 5, "high", "queue", None),
+    ("Dee", 4, "low", "give_when_available", 104),
+    ("Eve", 20, "high", "give_when_full", 105),
 ]
 QUEUE_TEXT = """\u2764\ufe0f **Very High**
-`Ann_1`: 3
-`Bob`: 3
+<@101>: 3
+<@102>: 3
 
 \U0001F9E1 **High**
 `Cy`: 5
 
 **Give when available**
-`Dee`: 4
+<@104>: 4
 
 **Give when full**
-`Eve`: 20"""
+<@105>: 20"""
 
 
 def test_queue_text_reads_in_serving_order_with_one_line_a_member():
@@ -88,7 +89,7 @@ def test_queue_text_reads_in_serving_order_with_one_line_a_member():
 
 
 def test_queue_text_counts_what_would_not_fit():
-    rows = [(f"Member{i:04}", 2, "low", "queue") for i in range(400)]
+    rows = [(f"Member{i:04}", 2, "low", "queue", None) for i in range(400)]
     text = tomes.queue_text(rows)
     assert len(text) <= tomes.QUEUE_TEXT_LIMIT
     shown = text.count("`") // 2
