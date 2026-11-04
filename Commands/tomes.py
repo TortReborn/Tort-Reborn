@@ -108,8 +108,17 @@ class _Request:
         self.uuid, self.discord_id, self.ign, self.wars, self.standing = uuid, discord_id, ign, wars, standing
         self.kind = self.count = self.priority = None
 
+    def what(self) -> str:
+        return f"**{self.count} {tomes.KIND_WORDS[self.kind]} tome{'s' if self.count != 1 else ''}**"
+
+    def queued_line(self) -> str:
+        """The reply once the request is in."""
+        return (f"\u2705 Queued {self.cost_line() if self.kind == 'raid' else self.what()}. "
+                "When you are given the tomes in-game, you will be pinged in the tome log channel. "
+                "Claim them from the guild rewards menu.")
+
     def cost_line(self) -> str:
-        what = f"**{self.count} {tomes.KIND_WORDS[self.kind]} tome{'s' if self.count != 1 else ''}**"
+        what = self.what()
         if self.kind == "raid":
             return f"{what} for **{tomes.raid_tomes_cost(self.standing.raid_bought, self.count)} shells**"
         return f"{what} (no shells; war tomes come from your wars)"
@@ -180,10 +189,7 @@ class ConfirmView(discord.ui.View):
         except Exception as e:
             log(ERROR, f"Tome request for {r.ign} failed: {e}", context="tomes")
             return await interaction.edit_original_response(content="❌ Something went wrong; nothing was taken. Try again later.")
-        await interaction.edit_original_response(content=(
-            f"✅ Queued {r.cost_line()}."
-            + " Exec gives tomes out in-game; you'll be pinged in the tome log channel, then claim them from the guild rewards menu."
-        ))
+        await interaction.edit_original_response(content=r.queued_line())
 
 
 class TomeRequestView(discord.ui.View):
