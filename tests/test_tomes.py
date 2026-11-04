@@ -191,6 +191,10 @@ def test_shell_tomes_are_called_that_where_members_see_them():
     req = _Request(UUID, 1, "x", 500, tomes.Standing(500, 0, 0, 0, 0, 100))
     req.kind, req.count = "raid", 1
     assert req.cost_line() == "**1 shell tome** for **10 shells**"
+    assert req.queued_line().startswith("\u2705 Queued **1 shell tome** for **10 shells**. When you are given")
+    req.kind, req.count = "war", 3
+    assert req.queued_line() == ("\u2705 Queued **3 war tomes**. When you are given the tomes in-game, you will be pinged "
+                                 "in the tome log channel. Claim them from the guild rewards menu.")
 
 
 def test_raid_prices_count_raid_tomes_only():
