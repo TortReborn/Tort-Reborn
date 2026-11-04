@@ -285,13 +285,15 @@ CREATE TABLE IF NOT EXISTS tome_events (
   actor_id     BIGINT,
   actor_name   VARCHAR(100),
   note         TEXT,
+  screenshots  TEXT[]       NOT NULL DEFAULT '{}',
+  shells       INT          NOT NULL DEFAULT 0,  -- spent ('requested') or refunded ('cancelled')
   announced_at TIMESTAMPTZ,
   created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_tome_events_uuid ON tome_events (uuid, created_at);
 CREATE INDEX IF NOT EXISTS idx_tome_events_unannounced
-  ON tome_events (created_at) WHERE action = 'given' AND announced_at IS NULL;
+  ON tome_events (created_at) WHERE action IN ('requested', 'given', 'cancelled') AND announced_at IS NULL;
 
 -- =============================================================================
 -- Guild Raid Events
