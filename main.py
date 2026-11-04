@@ -326,6 +326,7 @@ extensions = [
     'Commands.kick_list',
     'Commands.tickets',
     'Commands.role_buttons',
+    'Commands.tomes',
     'Commands.cards',
 
     # Dev Commands

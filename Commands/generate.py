@@ -11,6 +11,7 @@ from discord.ext import commands
 from discord.ui import View, button
 
 from Commands.tickets import TICKET_PANEL_ACTIONS
+from Commands.tomes import TOME_PANEL_ACTIONS
 from Helpers.bot_panels import PanelAction
 from Helpers.database import DB, apply_shell_delta, get_shell_conversion, record_shell_transaction
 from Helpers.logger import log, ERROR
@@ -486,6 +487,7 @@ PANEL_ACTIONS: dict[str, PanelAction] = {
     "raid_claim": PanelAction("raid_claim", "Claim rewards", "Rewards", None, "success"),
     SHELL_CONVERT_BUTTON_ID: PanelAction(SHELL_CONVERT_BUTTON_ID, "Shells -> Aspects", "Rewards", None, "success"),
     **TICKET_PANEL_ACTIONS,
+    **TOME_PANEL_ACTIONS,
 }
 
 

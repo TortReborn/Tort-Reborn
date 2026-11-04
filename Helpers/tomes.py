@@ -6,26 +6,27 @@ A tome is earned one of two ways, and a request is for one of them:
 - **War tomes** cost nothing beyond the milestone: lifetime wars (the API's
   `globalData.wars`, every guild) of 10, 25, 50 and 100 for the first four,
   then every additional 50.
-- **Raid tomes** are bought with shells: 10 each for the first four raid
-  tomes, 20 each after. Only raid tomes count towards that price, and only
-  war tomes towards the milestones.
+- **Shell tomes** are bought with shells: 10 each for the first four, 20 each
+  after. Only shell tomes count towards that price, and only war tomes towards
+  the milestones. Stored as kind 'raid'; members only ever see "shell".
 
-At most MAX_QUEUED tomes wait in a member's queue at once; a request that
-would go past it puts the rest in 'give when available'. Tomes given before
-they were earned are recorded as debt and count as war tomes received, so
+Every request joins the queue; only exec moves one to 'give when available'
+or 'give when full', on the website. Tomes given before they were earned are recorded as debt and count as war tomes received, so
 later wars pay them off.
 
 Keep in step with TAq-Website/lib/tomes.ts, which shows the same numbers on
-the exec Tome Queue page. Nothing here commits: callers do, so a request and
+the exec Distribution page. Nothing here commits: callers do, so a request and
 its shell spend land together or not at all.
 """
 
 from dataclasses import dataclass
 
-from Helpers.database import apply_shell_delta
+from Helpers.database import DB, apply_shell_delta
 
 KINDS = ("war", "raid")
-KIND_LABELS = {"war": "War tomes", "raid": "Raid tomes"}
+KIND_LABELS = {"war": "War tomes", "raid": "Shell tomes"}
+KIND_WORDS = {"war": "war", "raid": "shell"}
+BUCKET_LABELS = {"give_when_available": "Give when available", "give_when_full": "Give when full"}
 
 # The priorities members choose from, as the old pinned post described them.
 PRIORITIES = {
@@ -35,11 +36,11 @@ PRIORITIES = {
     "very_high": ("Very High", "❤️", "Need it for a war build to actually work"),
 }
 
-MAX_QUEUED = 100
 WAR_MILESTONES = (10, 25, 50, 100)  # then every additional WAR_STEP
 WAR_STEP = 50
 RAID_PRICES = (10, 10, 10, 10)      # then RAID_PRICE_AFTER each
 RAID_PRICE_AFTER = 20
+QUEUE_TEXT_LIMIT = 3900  # leaves an embed description room for the panel's own words
 
 
 class TomeError(ValueError):
@@ -81,7 +82,6 @@ class Standing:
     raid_received: int
     raid_queued: int
     shells: int
-    queued_total: int  # tomes waiting in the 'queue' bucket, both kinds
 
     @property
     def war_earned(self) -> int:
@@ -138,35 +138,30 @@ def standing(cursor, uuid, discord_id, wars: int | None) -> Standing:
     received = dict(cursor.fetchall())
     cursor.execute(
         """
-        SELECT kind, bucket, COALESCE(SUM(count - given), 0) FROM tome_requests
+        SELECT kind, COALESCE(SUM(count - given), 0) FROM tome_requests
         WHERE uuid = %s AND status = 'open' AND bucket <> 'dormant'
-        GROUP BY kind, bucket
+        GROUP BY kind
         """,
         (str(uuid),),
     )
-    queued, in_queue = {}, 0
-    for kind, bucket, n in cursor.fetchall():
-        queued[kind] = queued.get(kind, 0) + n
-        if bucket == "queue":
-            in_queue += n
+    queued = dict(cursor.fetchall())
     cursor.execute('SELECT balance FROM shells WHERE "user" = %s', (str(discord_id),))
     row = cursor.fetchone()
     return Standing(
         wars=wars,
         war_received=received.get("war", 0), war_queued=queued.get("war", 0),
         raid_received=received.get("raid", 0), raid_queued=queued.get("raid", 0),
-        shells=row[0] if row else 0, queued_total=in_queue,
+        shells=row[0] if row else 0,
     )
 
 
 def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int, priority: str,
-                  wars: int | None) -> list[dict]:
-    """Queue `count` tomes of `kind` for a member: check they can have them,
-    take the shells for raid tomes, and put anything past MAX_QUEUED in
-    'give when available'. Returns the requests made ({id, bucket, count,
+                  wars: int | None) -> dict:
+    """Queue `count` tomes of `kind` for a member: check they can have them and
+    take the shells for raid tomes. Returns the request made ({id, count,
     shells}). Raises TomeError with a message for the member."""
     if kind not in KINDS:
-        raise TomeError("Pick war tomes or raid tomes.")
+        raise TomeError("Pick war tomes or shell tomes.")
     if priority not in PRIORITIES:
         raise TomeError("Pick a priority.")
     if count < 1:
@@ -193,38 +188,93 @@ def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int,
         shells = raid_tomes_cost(s.raid_bought, count)
         if shells > s.shells:
             raise TomeError(
-                f"{count} raid tome(s) cost {shells} shells and you have {s.shells}. "
+                f"{count} shell tome(s) cost {shells} shells and you have {s.shells}. "
                 f"You can afford {s.raid_affordable}."
             )
 
-    room = max(MAX_QUEUED - s.queued_total, 0)
-    parts = [(b, n) for b, n in (("queue", min(count, room)), ("give_when_available", count - min(count, room))) if n]
-    made = []
-    for i, (bucket, n) in enumerate(parts):
-        spent = shells if i == 0 else 0  # the shells ride on the first part
-        c.execute(
-            """
-            INSERT INTO tome_requests (uuid, discord_id, ign, kind, count, priority, bucket, shells_spent)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-            """,
-            (str(uuid), discord_id, ign, kind, n, priority, bucket, spent),
-        )
-        rid = c.fetchone()[0]
-        c.execute(
-            """
-            INSERT INTO tome_events (uuid, request_id, action, kind, count, actor_id, actor_name, note)
-            VALUES (%s, %s, 'requested', %s, %s, %s, %s, %s)
-            """,
-            (str(uuid), rid, kind, n, discord_id, ign, None if bucket == "queue" else "past the queue limit"),
-        )
-        made.append({"id": rid, "bucket": bucket, "count": n, "shells": spent})
-
+    c.execute(
+        """
+        INSERT INTO tome_requests (uuid, discord_id, ign, kind, count, priority, bucket, shells_spent)
+        VALUES (%s, %s, %s, %s, %s, %s, 'queue', %s) RETURNING id
+        """,
+        (str(uuid), discord_id, ign, kind, count, priority, shells),
+    )
+    rid = c.fetchone()[0]
+    c.execute(
+        """
+        INSERT INTO tome_events (uuid, request_id, action, kind, count, actor_id, actor_name, shells)
+        VALUES (%s, %s, 'requested', %s, %s, %s, %s, %s)
+        """,
+        (str(uuid), rid, kind, count, discord_id, ign, shells),
+    )
     if shells:
         apply_shell_delta(db, discord_id, -shells, source="tome_request", ign=ign,
-                          reason=f"{count} raid tome(s), request #{made[0]['id']}")
+                          reason=f"{count} shell tome(s), request #{rid}")
     c.execute(
         "INSERT INTO audit_log (log_type, actor_name, actor_id, action) VALUES ('tome', %s, %s, %s)",
-        (ign, discord_id, f"Requested {count} {kind} tome(s) at {priority} priority"
+        (ign, discord_id, f"Requested {count} {KIND_WORDS[kind]} tome(s) at {priority} priority"
                           + (f" for {shells} shells" if shells else "")),
     )
-    return made
+    return {"id": rid, "count": count, "shells": shells}
+
+
+def open_queue(cursor) -> list[tuple]:
+    """(ign, tomes left, priority, bucket, discord id) in the order tomes are given
+    out. Those a give would skip, dormant requests and members not in the
+    guild, aren't here. Keep in step with servingOrder in TAq-Website/lib/tomes.ts."""
+    cursor.execute(
+        """
+        SELECT r.ign, r.count - r.given, r.priority, r.bucket,
+               COALESCE(r.discord_id, (SELECT l.discord_id FROM discord_links l WHERE l.uuid = r.uuid LIMIT 1))
+        FROM tome_requests r
+        WHERE r.status = 'open' AND r.bucket <> 'dormant' AND r.count > r.given
+          AND EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = r.uuid)
+        ORDER BY array_position(ARRAY['queue', 'give_when_available', 'give_when_full']::varchar[], r.bucket::varchar),
+                 array_position(ARRAY['very_high', 'high', 'medium', 'low']::varchar[], r.priority::varchar),
+                 r.created_at, r.id
+        """
+    )
+    return cursor.fetchall()
+
+
+def queue_text(rows) -> str:
+    """The queue as the panels' {{tome_queue}} shows it: one line a member per
+    section, with what would not fit counted at the end. Members are mentioned
+    (a mention in an embed never pings), or named if they have no linked Discord
+    account. Keep in step with
+    queueText in TAq-Website/lib/tomes.ts."""
+    if not rows:
+        return "Nothing is waiting."
+    sections: dict[tuple, dict[str, int]] = {}
+    for ign, left, priority, bucket, discord_id in rows:
+        members = sections.setdefault((bucket, priority if bucket == "queue" else None), {})
+        who = f"<@{discord_id}>" if discord_id else f"`{ign}`"
+        members[who] = members.get(who, 0) + left
+
+    lines: list[tuple[str, str | None, int]] = []
+    for (bucket, priority), members in sections.items():
+        if bucket == "queue":
+            label, emoji, _ = PRIORITIES[priority]
+            lines.append((f"\n{emoji} **{label}**", None, 0))
+        else:
+            lines.append((f"\n**{BUCKET_LABELS[bucket]}**", None, 0))
+        for who, n in members.items():
+            lines.append((f"{who}: {n}", who, n))
+
+    text = ""
+    for i, (line, _, _) in enumerate(lines):
+        if len(text) + len(line) + 1 > QUEUE_TEXT_LIMIT - 60:  # room for the line below
+            rest = [(ign, n) for _, ign, n in lines[i:] if ign]
+            who = len({ign for ign, _ in rest})
+            return f"{text.lstrip()}\n…and {who} more member{'s' if who != 1 else ''} ({sum(n for _, n in rest)} tomes)"
+        text += "\n" + line
+    return text.lstrip()
+
+
+def load_queue_text() -> str:
+    """The current queue text (reads the database; blocking, run in a thread)."""
+    db = DB(); db.connect()
+    try:
+        return queue_text(open_queue(db.cursor))
+    finally:
+        db.close()

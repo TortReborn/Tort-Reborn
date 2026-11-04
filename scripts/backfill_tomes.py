@@ -366,7 +366,9 @@ def apply(db, events, reqs):
         )
         rid = c.fetchone()[0]
         c.execute(
-            "INSERT INTO tome_events (uuid, request_id, action, count, actor_name, note) VALUES (%s, %s, 'requested', %s, %s, %s)",
+            # Announced already: the tome log is for new requests, not these.
+            "INSERT INTO tome_events (uuid, request_id, action, count, actor_name, note, announced_at) "
+            "VALUES (%s, %s, 'requested', %s, %s, %s, NOW())",
             (r["uuid"], rid, r["count"], ACTOR, r["note"]),
         )
     c.execute(
