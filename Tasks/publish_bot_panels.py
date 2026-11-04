@@ -11,6 +11,10 @@ which is what the website shows under the panel's history.
 A panel whose channel is a forum is a post there: the first publish opens
 it and later ones edit it, or replace the post when the messages change shape.
 
+A published panel using a live value (Helpers/panel_values.py) is redrawn by
+the same path when that value changes. No revision is written: the panel's
+content hasn't changed, only what it shows.
+
 The task also keeps a directory of maincord's and TAq Executive's channels
 (plus the forum posts panels live in), roles and emoji, and the bot's button
 registry in cache_entries ('botPanelRegistry'),
@@ -42,7 +46,7 @@ from Helpers.bot_panels import (
 )
 from Helpers.database import DB
 from Helpers.logger import log, INFO, ERROR
-from Helpers.panel_values import load_panel_values
+from Helpers.panel_values import LIVE_VALUES, load_panel_values
 from Helpers.role_buttons import unassignable_reason
 from Helpers.storage import storage
 from Helpers.variables import EXEC_GUILD_ID, HOME_GUILD_IDS, TAQ_GUILD_ID
@@ -78,6 +82,46 @@ def _requeue_interrupted():
     db.connect()
     try:
         db.cursor.execute("UPDATE bot_panel_revisions SET status = 'pending' WHERE status = 'publishing'")
+        db.connection.commit()
+    finally:
+        db.close()
+
+
+def _live_panels() -> list[PanelJob]:
+    """Published panels using a live value, with nothing waiting to replace them."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            """
+            SELECT r.id, r.rev_number, r.content, p.id, p.slug, p.channel_id, p.message_ids
+            FROM bot_panels p JOIN bot_panel_revisions r ON r.panel_id = p.id AND r.rev_number = p.published_rev
+            WHERE p.archived_at IS NULL AND cardinality(p.message_ids) > 0
+              AND r.content::text ~ %s
+              AND NOT EXISTS (SELECT 1 FROM bot_panel_revisions w
+                              WHERE w.panel_id = p.id AND w.status IN ('pending', 'publishing'))
+            """,
+            (r"\{\{\s*(" + "|".join(LIVE_VALUES) + r")\s*\}\}",),
+        )
+        return [
+            PanelJob(rev_id=r[0], rev_number=r[1], panel_id=r[3], slug=r[4],
+                     content=r[2] if isinstance(r[2], dict) else json.loads(r[2]),
+                     channel_id=r[5], adopt_message_ids=[], panel_channel_id=r[5], panel_message_ids=list(r[6]))
+            for r in db.cursor.fetchall()
+        ]
+    finally:
+        db.close()
+
+
+def _save_live_messages(panel_id: int, channel_id: int, message_ids: list[int]):
+    """A redraw had to post afresh (a message was deleted): remember the new ones."""
+    db = DB()
+    db.connect()
+    try:
+        db.cursor.execute(
+            "UPDATE bot_panels SET channel_id = %s, message_ids = %s::bigint[], updated_at = NOW() WHERE id = %s",
+            (channel_id, message_ids, panel_id),
+        )
         db.connection.commit()
     finally:
         db.close()
@@ -284,6 +328,8 @@ class PublishBotPanels(commands.Cog):
     def __init__(self, client):
         self.client = client
         self._loops = 0
+        self._live_shown: dict[int, tuple] = {}   # panel id -> (revision, live values) on Discord
+        self._live_errors: dict[int, str] = {}
 
     # ---- Loop ----
 
@@ -301,8 +347,36 @@ class PublishBotPanels(commands.Cog):
         for _ in range(JOBS_PER_TICK):
             job = await asyncio.to_thread(_claim_next)
             if job is None:
-                return
+                break
             await self._run(job)
+
+        try:
+            await self._refresh_live()
+        except Exception as e:
+            log(ERROR, f"Checking live panels failed: {e}", context="publish_bot_panels")
+
+    async def _refresh_live(self):
+        jobs = await asyncio.to_thread(_live_panels)
+        if not jobs:
+            return
+        values = await asyncio.to_thread(load_panel_values)
+        live = {key: values[key] for key in LIVE_VALUES}
+        for job in jobs:
+            # Publishing rate images also announces them, which a redraw must not do.
+            if self._live_shown.get(job.panel_id) == (job.rev_number, live) or uses_dynamic(job.content, DYNAMIC_SHELL_EXCHANGE):
+                continue
+            try:
+                channel_id, message_ids, _ = await self._publish(job)
+            except Exception as e:
+                # Tried again next tick; logged once, not every 10 seconds.
+                if self._live_errors.get(job.panel_id) != str(e):
+                    self._live_errors[job.panel_id] = str(e)
+                    log(ERROR, f"Redrawing live bot panel {job.slug} failed: {e}", context="publish_bot_panels")
+                continue
+            self._live_errors.pop(job.panel_id, None)
+            self._live_shown[job.panel_id] = (job.rev_number, live)
+            if (channel_id, message_ids) != (job.panel_channel_id, job.panel_message_ids):
+                await asyncio.to_thread(_save_live_messages, job.panel_id, channel_id, message_ids)
 
     async def _run(self, job: PanelJob):
         try:

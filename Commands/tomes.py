@@ -1,18 +1,21 @@
 """
-Tome requests (TAQ-116): the "Request tomes" panel button and the grant log.
+Tome requests (TAQ-116): the "Request tomes" panel button and the tome log.
 
-The button starts a private exchange: war tomes or raid tomes, how many,
+The button starts a private exchange: war tomes or shell tomes, how many,
 which priority, then a confirmation showing the cost. Confirming queues the
-request (Helpers/tomes.request_tomes), taking the shells for raid tomes.
+request (Helpers/tomes.request_tomes), taking the shells for shell tomes.
 
 Exec gives tomes out on the website's Distribution page, which writes a
-'given' event per request. The loop here posts each one to the tomes
-channel, pinging the member, and stamps it announced. The channel is the
-'tomes_channel_id' bot setting; until it is set nothing is posted and the
-events wait.
+'given' event per request, with any screenshots of the in-game grant. The
+loop here posts requests, gives (with their screenshots) and cancellations to
+the tome log channel, pinging the member, and stamps them announced. The channel is the 'tome_logs_channel_id' bot setting; until it is
+set nothing is posted and the events wait. The list of what is waiting is the
+panels' {{tome_queue}} value, not this.
 """
 
 import asyncio
+import io
+from itertools import groupby
 
 import discord
 from discord.ext import commands, tasks
@@ -22,13 +25,15 @@ from Helpers.bot_panels import PanelAction
 from Helpers.database import DB
 from Helpers.functions import getPlayerDatav3
 from Helpers.logger import log, ERROR
+from Helpers.storage import storage
 
 TOME_REQUEST_BUTTON_ID = "tome_request"
 TOME_PANEL_ACTIONS = {
     TOME_REQUEST_BUTTON_ID: PanelAction(TOME_REQUEST_BUTTON_ID, "Request tomes", "Tomes", "\U0001F4D8", "primary"),
 }
-CHANNEL_SETTING = "tomes_channel_id"
+CHANNEL_SETTING = "tome_logs_channel_id"
 ANNOUNCE_SECONDS = 30
+LINES_PER_POST = 20  # keeps a post inside Discord's 2000 characters
 STEP_TIMEOUT = 300
 
 
@@ -65,7 +70,7 @@ def _standing(uuid: str, discord_id: int, wars: int | None) -> tomes.Standing:
         db.close()
 
 
-def _request(uuid, discord_id, ign, kind, count, priority, wars) -> list[dict]:
+def _request(uuid, discord_id, ign, kind, count, priority, wars) -> dict:
     db = DB(); db.connect()
     try:
         made = tomes.request_tomes(db, uuid=uuid, discord_id=discord_id, ign=ign, kind=kind,
@@ -92,8 +97,7 @@ def _summary(ign: str, s: tomes.Standing, from_snapshot: bool) -> discord.Embed:
             f"and you have {s.shells}.\n**You can afford {s.raid_affordable}.**")
     e = discord.Embed(title=f"\U0001F4D8 Tomes for {ign}", color=0x94C1FF)
     e.add_field(name="War tomes", value=war, inline=False)
-    e.add_field(name="Raid tomes", value=raid, inline=False)
-    e.set_footer(text=f"Up to {tomes.MAX_QUEUED} tomes wait in the queue at once; the rest go to 'give when available'.")
+    e.add_field(name="Shell tomes", value=raid, inline=False)
     return e
 
 
@@ -105,7 +109,7 @@ class _Request:
         self.kind = self.count = self.priority = None
 
     def cost_line(self) -> str:
-        what = f"**{self.count} {self.kind} tome{'s' if self.count != 1 else ''}**"
+        what = f"**{self.count} {tomes.KIND_WORDS[self.kind]} tome{'s' if self.count != 1 else ''}**"
         if self.kind == "raid":
             return f"{what} for **{tomes.raid_tomes_cost(self.standing.raid_bought, self.count)} shells**"
         return f"{what} (no shells; war tomes come from your wars)"
@@ -126,7 +130,7 @@ class KindView(discord.ui.View):
     async def war(self, _, interaction):
         await self._pick(interaction, "war")
 
-    @discord.ui.button(label="Raid tomes", style=discord.ButtonStyle.success, emoji="\U0001F41A")
+    @discord.ui.button(label="Shell tomes", style=discord.ButtonStyle.success, emoji="\U0001F41A")
     async def raid(self, _, interaction):
         await self._pick(interaction, "raid")
 
@@ -134,7 +138,7 @@ class KindView(discord.ui.View):
 class CountModal(discord.ui.Modal):
     def __init__(self, req: _Request):
         most = req.standing.available(req.kind)
-        super().__init__(title=f"How many {req.kind} tomes?")
+        super().__init__(title=f"How many {tomes.KIND_WORDS[req.kind]} tomes?")
         self.req, self.most = req, most
         self.add_item(discord.ui.InputText(label=f"Number of tomes (up to {most})", placeholder="1", max_length=4))
 
@@ -159,6 +163,8 @@ class ConfirmView(discord.ui.View):
     @discord.ui.select(placeholder="Priority", min_values=1, max_values=1, options=[discord.SelectOption(label="-")])
     async def priority(self, select, interaction):
         self.req.priority = select.values[0]
+        for option in select.options:  # the dropdown keeps showing the pick after the edit
+            option.default = option.value == self.req.priority
         self.confirm.disabled = False
         label = tomes.PRIORITIES[self.req.priority][0]
         await interaction.response.edit_message(content=f"{self.req.cost_line()} at **{label}** priority. Confirm?", view=self)
@@ -168,17 +174,15 @@ class ConfirmView(discord.ui.View):
         await interaction.response.edit_message(content="Queueing your request…", view=None)
         r = self.req
         try:
-            made = await asyncio.to_thread(_request, r.uuid, r.discord_id, r.ign, r.kind, r.count, r.priority, r.wars)
+            await asyncio.to_thread(_request, r.uuid, r.discord_id, r.ign, r.kind, r.count, r.priority, r.wars)
         except tomes.TomeError as e:
             return await interaction.edit_original_response(content=f"❌ {e}")
         except Exception as e:
             log(ERROR, f"Tome request for {r.ign} failed: {e}", context="tomes")
             return await interaction.edit_original_response(content="❌ Something went wrong; nothing was taken. Try again later.")
-        later = sum(m["count"] for m in made if m["bucket"] != "queue")
         await interaction.edit_original_response(content=(
             f"✅ Queued {r.cost_line()}."
-            + (f" {later} of them wait in 'give when available', past the {tomes.MAX_QUEUED}-tome queue." if later else "")
-            + " Exec gives tomes out in-game; you'll be pinged in the tomes channel, then claim them from the guild rewards menu."
+            + " Exec gives tomes out in-game; you'll be pinged in the tome log channel, then claim them from the guild rewards menu."
         ))
 
 
@@ -202,9 +206,9 @@ class TomeRequestView(discord.ui.View):
         await interaction.followup.send(embed=_summary(ign, s, from_snapshot), view=KindView(req), ephemeral=True)
 
 
-# ---- grant log ----
+# ---- tome log ----
 
-def _unannounced(limit=20):
+def _unannounced():
     db = DB(); db.connect()
     try:
         db.cursor.execute("SELECT value FROM bot_settings WHERE key = %s", (CHANNEL_SETTING,))
@@ -213,14 +217,14 @@ def _unannounced(limit=20):
             return None, []
         db.cursor.execute(
             """
-            SELECT e.id, e.count, e.kind, e.actor_name, COALESCE(r.ign, l.ign), COALESCE(r.discord_id, l.discord_id)
+            SELECT e.id, e.action, e.count, e.kind, e.actor_name, COALESCE(r.ign, l.ign), COALESCE(r.discord_id, l.discord_id),
+                   e.screenshots, r.priority, e.note, e.shells
             FROM tome_events e
             LEFT JOIN tome_requests r ON r.id = e.request_id
             LEFT JOIN discord_links l ON l.uuid = e.uuid
-            WHERE e.action = 'given' AND e.announced_at IS NULL
-            ORDER BY e.created_at LIMIT %s
-            """,
-            (limit,),
+            WHERE e.action IN ('requested', 'given', 'cancelled') AND e.announced_at IS NULL
+            ORDER BY e.created_at, e.id
+            """
         )
         return int(row[0]), db.cursor.fetchall()
     finally:
@@ -236,10 +240,58 @@ def _stamp(ids):
         db.close()
 
 
+def _tomes(count, kind) -> str:
+    return f"{count} {tomes.KIND_WORDS[kind] + ' ' if kind else ''}tome{'s' if count != 1 else ''}"
+
+
 def grant_line(count, kind, ign, discord_id, actor) -> str:
-    what = f"{count} {kind + ' ' if kind else ''}tome{'s' if count != 1 else ''}"
     who = f"<@{discord_id}> ({ign})" if discord_id else ign
-    return f"\U0001F4D8 {who} was given **{what}**" + (f" by {actor}" if actor else "") + "."
+    return f"\U0001F4D8 {who} was given **{_tomes(count, kind)}**" + (f" by {actor}" if actor else "") + "."
+
+
+def request_line(count, kind, ign, discord_id, priority, shells) -> str:
+    who = f"<@{discord_id}> ({ign})" if discord_id else ign
+    at = f" at {tomes.PRIORITIES[priority][0]} priority" if priority in tomes.PRIORITIES else ""
+    return f"\U0001F4DD {who} requested **{_tomes(count, kind)}**{at}" + (f" ({shells} shells)" if shells else "") + "."
+
+
+def cancel_line(count, kind, ign, discord_id, actor, shells, reason) -> str:
+    who = f"<@{discord_id}> ({ign})" if discord_id else ign
+    return (f"\u274C {who}: request for **{_tomes(count, kind)}** was cancelled" + (f" by {actor}" if actor else "")
+            + (f", {shells} shells refunded" if shells else "") + "." + (f" Reason: {reason}" if reason else ""))
+
+
+def log_line(row) -> str:
+    _, action, n, kind, actor, ign, discord_id, _, priority, note, shells = row
+    if action == "requested":
+        return request_line(n, kind, ign, discord_id, priority, shells)
+    if action == "cancelled":
+        return cancel_line(n, kind, ign, discord_id, actor, shells, note)
+    return grant_line(n, kind, ign, discord_id, actor)
+
+
+def log_posts(rows) -> list[tuple[list[int], str, list[str]]]:
+    """Unannounced events as posts: (event ids, text, screenshot keys). A give's
+    rows share their screenshots, so they stay together and the screenshots go
+    on its first post only."""
+    posts = []
+    for keys, group in groupby(rows, key=lambda r: r[7] or []):
+        group = list(group)
+        for i in range(0, len(group), LINES_PER_POST):
+            part = group[i:i + LINES_PER_POST]
+            posts.append(([r[0] for r in part],
+                          "\n".join(log_line(r) for r in part),
+                          keys if i == 0 else []))
+    return posts
+
+
+def _screenshot_files(keys) -> list[discord.File]:
+    files = []
+    for key in keys:
+        data = storage.get_bytes(key)
+        if data:
+            files.append(discord.File(io.BytesIO(data), filename=key.rsplit("/", 1)[-1]))
+    return files
 
 
 class Tomes(commands.Cog):
@@ -253,11 +305,20 @@ class Tomes(commands.Cog):
             if not channel_id or not rows:
                 return
             channel = self.client.get_channel(channel_id) or await self.client.fetch_channel(channel_id)
-            await channel.send("\n".join(grant_line(n, k, ign, did, actor) for _, n, k, actor, ign, did in rows),
-                               allowed_mentions=discord.AllowedMentions(users=True, roles=False, everyone=False))
-            await asyncio.to_thread(_stamp, [r[0] for r in rows])
+            mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
+            for ids, text, keys in log_posts(rows):
+                files = await asyncio.to_thread(_screenshot_files, keys)
+                try:
+                    await channel.send(text, files=files, allowed_mentions=mentions)
+                except discord.HTTPException as e:
+                    if e.status != 413:
+                        raise
+                    # Too big for this server's upload limit: the grant still
+                    # gets posted, and the page keeps the screenshots.
+                    await channel.send(text + "\nScreenshots are on the Distribution page.", allowed_mentions=mentions)
+                await asyncio.to_thread(_stamp, ids)
         except Exception as e:
-            log(ERROR, f"Tome grant log failed: {e}", context="tomes")
+            log(ERROR, f"Tome log failed: {e}", context="tomes")
 
     @announce.before_loop
     async def before_announce(self):
