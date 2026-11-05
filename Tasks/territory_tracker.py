@@ -41,13 +41,21 @@ async def _close_session():
     if _http_session and not _http_session.closed:
         await _http_session.close()
 
+def _strip_stored(data):
+    # `stored` changes on every territory about once a minute and nothing reads
+    # it, so keeping it would turn many snapshot patches into full rewrites.
+    for info in data.values():
+        for resource in info.get('resources') or []:
+            resource.pop('stored', None)
+    return data
+
 async def getTerritoryData():
     try:
         sess = await _get_session()
         for attempt in range(3):
             try:
                 async with sess.get(_TERRITORY_URL) as resp:
-                    return await resp.json()
+                    return _strip_stored(await resp.json())
             except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError):
                 if attempt == 2:
                     return False
@@ -95,6 +103,34 @@ def saveTerritoryData(data):
 
     except Exception as e:
         log(ERROR, f"Failed to save to cache: {e}", context="territory_tracker")
+        if 'db' in locals():
+            try:
+                db.close()
+            except:
+                pass
+
+def patchTerritoryData(old_data, new_data):
+    changed = {name: info for name, info in new_data.items() if old_data.get(name) != info}
+    removed = [name for name in old_data if name not in new_data]
+    try:
+        db = DB()
+        db.connect()
+
+        db.cursor.execute("""
+            UPDATE cache_entries
+            SET data = (data || %s::jsonb) - %s::text[],
+                created_at = NOW(),
+                fetch_count = fetch_count + 1,
+                last_error = NULL,
+                error_count = 0
+            WHERE cache_key = 'territories'
+        """, (json.dumps(changed), removed))
+
+        db.connection.commit()
+        db.close()
+
+    except Exception as e:
+        log(ERROR, f"Failed to patch cache: {e}", context="territory_tracker")
         if 'db' in locals():
             try:
                 db.close()
@@ -318,13 +354,15 @@ class TerritoryTracker(commands.Cog):
             if not new_data:
                 return
 
-            # Write-on-change: the full snapshot is ~350KB and rewriting it
-            # every tick dominates Railway egress. Skipping identical writes
-            # loses nothing (the stored bytes would be the same), and because
-            # old_data is re-read from the DB each tick, a missing or diverged
-            # row fails the comparison and gets rewritten on the next pass.
-            if new_data != old_data:
+            # The full snapshot is ~330KB and something in it changes on most
+            # ticks, so rewriting it dominates Railway egress: send only the
+            # territories that changed. Because old_data is re-read from the DB
+            # each tick, a diverged territory is patched on the next pass and a
+            # missing row is rewritten in full.
+            if not old_data:
                 await asyncio.to_thread(saveTerritoryData, new_data)
+            elif new_data != old_data:
+                await asyncio.to_thread(patchTerritoryData, old_data, new_data)
 
             # tally post-update counts
             new_counts = Counter()
