@@ -264,11 +264,9 @@ class GuildChatBridge(commands.Cog):
             return
         self.webhook = webhook
 
-        # Sending through the bridge requires Verge login verification, which only succeeds
-        # for a linked TAq member, so a poster should always resolve here.
         poster = await self._resolve_poster(channel.guild, username)
         if poster is None:
-            log(WARN, f"Dropped Minecraft bridge message; {username} did not resolve to a linked member.", context="guild_chat_bridge")
+            log(WARN, f"Dropped Minecraft bridge message; {username} did not resolve to a bridge member.", context="guild_chat_bridge")
             return
 
         try:
@@ -370,6 +368,9 @@ class GuildChatBridge(commands.Cog):
             self.bridge_message_authors.popitem(last=False)
 
     async def _resolve_poster(self, guild: discord.Guild, ign: str) -> BridgePoster | None:
+        service = await asyncio.to_thread(_service_poster, ign)
+        if service is not None:
+            return service
         discord_id = await asyncio.to_thread(_linked_discord_id, ign)
         if discord_id is None:
             return None
@@ -589,6 +590,31 @@ def _linked_member(discord_id: int) -> LinkedBridgeMember | None:
         discord_id=discord_id,
         ign=str(ign),
         color=_color_value(color),
+    )
+
+
+def _service_poster(ign: str) -> BridgePoster | None:
+    with DB() as db:
+        db.cursor.execute(
+            """
+            SELECT gr.uuid::text, gr.ign,
+                   CASE WHEN storage.uuid IS NOT NULL THEN 'Guild Storage' ELSE 'Guild Bank' END
+            FROM guild_roster gr
+            LEFT JOIN inventory_scanner_accounts storage ON storage.uuid = gr.uuid
+            LEFT JOIN le_balance_accounts bank ON bank.uuid = gr.uuid
+            WHERE LOWER(gr.ign) = LOWER(%s)
+              AND (storage.uuid IS NOT NULL OR bank.uuid IS NOT NULL)
+            LIMIT 1
+            """,
+            (ign,),
+        )
+        row = db.cursor.fetchone()
+    if row is None:
+        return None
+    uuid, name, label = row
+    return BridgePoster(
+        name=_sanitize_webhook_username(f"{label} ({name})"),
+        avatar_url=f"https://mc-heads.net/avatar/{uuid}/64",
     )
 
 

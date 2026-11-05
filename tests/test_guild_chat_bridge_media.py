@@ -328,3 +328,60 @@ def test_reply_excerpt_unwraps_our_own_masked_build_link():
     assert _reply_excerpt(bridged_message(f"look at [build link](<{build_link}>) pls")) == (
         "look at build link pls"
     )
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ign,label", [("Woealer", "Guild Storage"), ("GordLonner", "Guild Bank")])
+async def test_service_account_poster_needs_no_discord_member(monkeypatch, ign, label):
+    poster = bridge_module.BridgePoster(f"{label} ({ign})", "https://mc-heads.net/avatar/test/64")
+    monkeypatch.setattr(bridge_module, "_service_poster", lambda name: poster if name == ign else None)
+    monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: pytest.fail("no Discord identity should be invented"))
+    bridge = object.__new__(GuildChatBridge)
+    assert await bridge._resolve_poster(SimpleNamespace(), ign) == poster
+
+
+@pytest.mark.asyncio
+async def test_normal_linked_poster_keeps_discord_name_and_avatar(monkeypatch):
+    monkeypatch.setattr(bridge_module, "_service_poster", lambda name: None)
+    monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: 123)
+    member = SimpleNamespace(display_name="Starfish Player", display_avatar=SimpleNamespace(url="avatar"))
+    guild = SimpleNamespace(get_member=lambda discord_id: member if discord_id == 123 else None)
+    bridge = object.__new__(GuildChatBridge)
+    assert await bridge._resolve_poster(guild, "Player") == bridge_module.BridgePoster("Starfish Player", "avatar")
+
+
+@pytest.mark.asyncio
+async def test_unassigned_unlinked_poster_is_still_rejected(monkeypatch):
+    monkeypatch.setattr(bridge_module, "_service_poster", lambda name: None)
+    monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: None)
+    bridge = object.__new__(GuildChatBridge)
+    assert await bridge._resolve_poster(SimpleNamespace(), "Woealer") is None
+
+
+@pytest.mark.parametrize("row", [None, ("test-uuid", "Woealer", "Guild Storage"), ("test-uuid", "GordLonner", "Guild Bank")])
+def test_service_poster_uses_pinned_uuid_and_current_roster(monkeypatch, row):
+    from unittest.mock import MagicMock
+
+    database = MagicMock()
+    database.__enter__.return_value = database
+    database.cursor.fetchone.return_value = row
+    monkeypatch.setattr(bridge_module, "DB", lambda: database)
+    result = bridge_module._service_poster("Woealer")
+    sql, parameters = database.cursor.execute.call_args.args
+    assert "storage.uuid = gr.uuid" in sql and "bank.uuid = gr.uuid" in sql
+    assert "LOWER(gr.ign) = LOWER(%s)" in sql
+    assert parameters == ("Woealer",)
+    if row is None:
+        assert result is None
+    else:
+        assert result == bridge_module.BridgePoster(f"{row[2]} ({row[1]})", "https://mc-heads.net/avatar/test-uuid/64")
+
+
+@pytest.mark.asyncio
+async def test_service_assignment_lookup_error_does_not_fall_back_to_username(monkeypatch):
+    def unavailable(ign):
+        raise RuntimeError("database offline")
+
+    monkeypatch.setattr(bridge_module, "_service_poster", unavailable)
+    monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: pytest.fail("must fail closed"))
+    with pytest.raises(RuntimeError, match="offline"):
+        await object.__new__(GuildChatBridge)._resolve_poster(SimpleNamespace(), "Woealer")
