@@ -41,7 +41,7 @@ class Progress(commands.Cog):
         max_dungeons = 18
         max_raids = 4
         max_overall = max_lvl + max_discovery + max_quests + max_dungeons + max_raids
-        if not playerdata:
+        if playerdata.error:
             embed = discord.Embed(title=':no_entry: Something went wrong',
                                   description=f'Could not find a player with name **{discord.utils.escape_markdown(name)}**!', color=0xe33232)
             await message.respond(embed=embed, ephemeral=True)

@@ -10,6 +10,7 @@ from typing import Dict, List
 import aiohttp
 from discord.ext import tasks, commands
 
+from Helpers.mentions import role_ping
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.variables import (
@@ -476,7 +477,7 @@ class TerritoryTracker(commands.Cog):
                                 msg = f"**Attack on {claim_name}!** A {terr_type} was taken."
 
                         if alert_chan:
-                            await alert_chan.send(msg)
+                            await alert_chan.send(msg, allowed_mentions=role_ping(SPEARHEAD_ROLE_ID))
 
             # ---------- Territory Change Embeds ----------
             owner_changes = {}

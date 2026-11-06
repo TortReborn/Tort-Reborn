@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import tasks, commands
 
+from Helpers.mentions import role_ping
 from Helpers.logger import log, INFO, ERROR
 from Helpers.database import DB
 from Helpers.functions import getPlayerDatav3, getPlayerUUID
@@ -21,7 +22,7 @@ from Helpers.app_transcript import (
     delete_transcribed_channel,
     TranscriptError,
 )
-from Helpers.variables import APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME, is_home_guild
+from Helpers.variables import APP_MANAGER_ROLE_ID, APP_MANAGER_ROLE_MENTION, TAQ_GUILD_ID, CLOSED_CATEGORY_NAME, is_home_guild
 
 
 class CheckApps(commands.Cog):
@@ -119,7 +120,8 @@ class CheckApps(commands.Cog):
                 await thread.send(
                     f"{APP_MANAGER_ROLE_MENTION} **{discord.utils.escape_markdown(ign)}** has left their guild! "
                     f"They can now be invited.\n"
-                    f"Run `/app invited` in the ticket channel or this thread to send them the invite message."
+                    f"Run `/app invited` in the ticket channel or this thread to send them the invite message.",
+                    allowed_mentions=role_ping(APP_MANAGER_ROLE_ID),
                 )
 
         log(INFO, f"{ign} has left their guild. Notified exec thread.", context="check_apps")

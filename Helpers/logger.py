@@ -14,6 +14,7 @@ import datetime
 from datetime import timezone
 from collections import deque
 
+from Helpers.mentions import NO_MENTIONS
 from Helpers.variables import LOG_CHANNEL_ID
 
 # ---------------------------------------------------------------------------
@@ -109,6 +110,6 @@ async def _flush():
 
         if batch:
             try:
-                await channel.send(batch)
+                await channel.send(batch, allowed_mentions=NO_MENTIONS)
             except Exception:
                 pass

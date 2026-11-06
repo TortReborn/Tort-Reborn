@@ -1,10 +1,12 @@
 import asyncio
 import json
+from urllib.parse import quote
 from io import BytesIO
 
 import discord
 from discord.ext import tasks, commands
 
+from Helpers.mentions import NO_MENTIONS, role_ping, user_ping
 from Helpers.logger import log, ERROR
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB, get_blacklist, get_next_app_number, get_next_hh_app_number
@@ -13,7 +15,9 @@ from Helpers.variables import (
     TAQ_GUILD_ID,
     MEMBER_APP_CHANNEL_ID,
     HAMMERHEAD_APP_CHANNEL_ID,
+    APP_MANAGER_ROLE_ID,
     APP_MANAGER_ROLE_MENTION,
+    EXEC_APP_MANAGER_ROLE_ID,
     EXEC_APP_MANAGER_ROLE_MENTION,
     APP_CATEGORY_NAME,
 )
@@ -205,11 +209,11 @@ def _format_answers(answers: dict, app_type: str) -> str:
     return "\n\n".join(blocks)
 
 
-async def _send_chunked(channel, text: str, limit: int = 2000):
+async def _send_chunked(channel, text: str, limit: int = 2000, allowed_mentions=None):
     """Send *text* to *channel*, splitting on paragraph boundaries if needed."""
     while text:
         if len(text) <= limit:
-            await channel.send(text)
+            await channel.send(text, allowed_mentions=allowed_mentions)
             break
         # Try to split at a double-newline (paragraph break)
         cut = text.rfind("\n\n", 0, limit)
@@ -219,7 +223,7 @@ async def _send_chunked(channel, text: str, limit: int = 2000):
         if cut <= 0:
             # Last resort: hard cut at limit
             cut = limit
-        await channel.send(text[:cut])
+        await channel.send(text[:cut], allowed_mentions=allowed_mentions)
         text = text[cut:].lstrip("\n")
 
 
@@ -340,6 +344,8 @@ class CheckWebsiteApps(commands.Cog):
 
         # Format and post the combined welcome + application in the channel
         mention = applicant.mention if applicant else f"<@{discord_id}>"
+        # Answers are the applicant's own text, so only the applicant gets pinged.
+        only_applicant = user_ping(discord_id)
         formatted = _format_answers(answers, app_type)
 
         intro = (
@@ -349,10 +355,10 @@ class CheckWebsiteApps(commands.Cog):
         )
         combined = f"{intro}{formatted}"
         if len(combined) <= 2000:
-            await channel.send(combined)
+            await channel.send(combined, allowed_mentions=only_applicant)
         else:
-            await channel.send(intro)
-            await _send_chunked(channel, formatted)
+            await channel.send(intro, allowed_mentions=only_applicant)
+            await _send_chunked(channel, formatted, allowed_mentions=NO_MENTIONS)
 
         # Post poll embed in exec channel
         exec_chan = self.client.get_channel(MEMBER_APP_CHANNEL_ID)
@@ -402,7 +408,10 @@ class CheckWebsiteApps(commands.Cog):
 
         # Send ping (+ image if available) as its own message so edits to the
         # poll embed can never lose the attachment.
-        ping_kwargs = {"content": f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**"}
+        ping_kwargs = {
+            "content": f"{APP_MANAGER_ROLE_MENTION} **New {type_label} application received!**",
+            "allowed_mentions": role_ping(APP_MANAGER_ROLE_ID),
+        }
         if player_info_file:
             image_embed = discord.Embed(colour=0x3ED63E)
             image_embed.set_image(url=f"attachment://{filename}")
@@ -426,14 +435,14 @@ class CheckWebsiteApps(commands.Cog):
         )
 
         # Post the application content in the thread
-        stats_line = f"<https://wynncraft.com/stats/player/{ign}>\n" if ign else ""
+        stats_line = f"<https://wynncraft.com/stats/player/{quote(str(ign), safe='')}>\n" if ign else ""
         thread_header = f"**Application from {mention} ({discord.utils.escape_markdown(discord_username)}):**\n{stats_line}\n"
         thread_combined = f"{thread_header}{formatted}"
         if len(thread_combined) <= 2000:
-            await thread.send(thread_combined)
+            await thread.send(thread_combined, allowed_mentions=only_applicant)
         else:
-            await thread.send(thread_header)
-            await _send_chunked(thread, formatted)
+            await thread.send(thread_header, allowed_mentions=only_applicant)
+            await _send_chunked(thread, formatted, allowed_mentions=NO_MENTIONS)
 
         # Send vote buttons in the thread
         await thread.send("**Vote on this application:**", view=ThreadVoteView())
@@ -506,6 +515,7 @@ class CheckWebsiteApps(commands.Cog):
                 # First message gets the ping
                 msg = await exec_chan.send(
                     f"{EXEC_APP_MANAGER_ROLE_MENTION} **New Hammerhead application received!**",
+                    allowed_mentions=role_ping(EXEC_APP_MANAGER_ROLE_ID),
                     embed=embed,
                     view=ApplicationVoteView() if is_last else None,
                 )
