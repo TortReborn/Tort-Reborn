@@ -1,83 +1,102 @@
+import json
 import os
-from openai import OpenAI
-from pydantic import BaseModel
+import time
+
+import requests
 
 from Helpers.logger import log, ERROR
 
-_client = None
+_RESPONSES_URL = "https://api.openai.com/v1/responses"
+_TIMEOUT_SECONDS = 60
+_MAX_ATTEMPTS = 3
+_RETRY_STATUSES = {408, 409, 429, 500, 502, 503, 504}
 
 
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    return _client
+def _object_schema(name: str, **properties: str) -> dict:
+    """Return a named strict JSON schema, as the Responses API requires."""
+    return {
+        "name": name,
+        "schema": {
+            "type": "object",
+            "properties": {key: {"type": kind} for key, kind in properties.items()},
+            "required": list(properties),
+            "additionalProperties": False,
+        },
+    }
 
 
-def _strict_schema(model: type[BaseModel]) -> dict:
-    """Return a JSON schema with additionalProperties: false (required by OpenAI)."""
-    schema = model.model_json_schema()
-    schema["additionalProperties"] = False
-    return schema
+def _post_with_retries(payload: dict) -> requests.Response:
+    headers = {"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"}
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            response = requests.post(_RESPONSES_URL, json=payload, headers=headers, timeout=_TIMEOUT_SECONDS)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == _MAX_ATTEMPTS:
+                raise
+        else:
+            if response.status_code not in _RETRY_STATUSES or attempt == _MAX_ATTEMPTS:
+                return response
+        time.sleep(2 ** (attempt - 1))
+
+
+def _output_text(body: dict) -> str:
+    return "".join(
+        part.get("text", "")
+        for item in body.get("output") or []
+        if item.get("type") == "message"
+        for part in item.get("content") or []
+        if part.get("type") == "output_text"
+    )
 
 
 def query(
     instructions: str,
     input_text: str,
     model: str = "gpt-5-nano",
-    json_schema: type[BaseModel] | None = None,
+    json_schema: dict | None = None,
     temperature: float | None = None,
     max_tokens: int = 500,
     reasoning_effort: str | None = None,
 ) -> dict:
-    client = _get_client()
     try:
-        kwargs = {
+        payload = {
             "model": model,
             "instructions": instructions,
             "input": input_text,
             "max_output_tokens": max_tokens,
         }
         if temperature is not None:
-            kwargs["temperature"] = temperature
+            payload["temperature"] = temperature
         if reasoning_effort is not None:
             # gpt-5 models spend max_output_tokens on hidden reasoning before the
             # visible answer. "minimal" keeps that from eating the whole budget.
-            kwargs["reasoning"] = {"effort": reasoning_effort}
+            payload["reasoning"] = {"effort": reasoning_effort}
         if json_schema is not None:
-            kwargs["text"] = {
-                "format": {
-                    "type": "json_schema",
-                    "name": json_schema.__name__,
-                    "schema": _strict_schema(json_schema),
-                    "strict": True,
-                }
-            }
-        response = client.responses.create(**kwargs)
-        text = response.output_text
+            payload["text"] = {"format": {"type": "json_schema", "strict": True, **json_schema}}
+        response = _post_with_retries(payload)
+        body = response.json()
+        if not response.ok:
+            message = (body.get("error") or {}).get("message", "request failed")
+            return {"content": None, "data": None, "error": f"OpenAI HTTP {response.status_code}: {message}"}
+        text = _output_text(body)
         if not text:
             # json.loads("") below just says "Expecting value", log the real reason.
-            schema_name = json_schema.__name__ if json_schema is not None else None
+            schema_name = json_schema["name"] if json_schema is not None else None
             log(
                 ERROR,
-                f"Empty output_text from model={model} schema={schema_name} "
-                f"status={getattr(response, 'status', None)} "
-                f"incomplete_details={getattr(response, 'incomplete_details', None)} "
-                f"usage={getattr(response, 'usage', None)}",
+                f"Empty output text from model={model} schema={schema_name} "
+                f"status={body.get('status')} "
+                f"incomplete_details={body.get('incomplete_details')} "
+                f"usage={body.get('usage')}",
                 context="openai_helper",
             )
-        data = None
-        if json_schema is not None:
-            import json
-            data = json.loads(text)
+        data = json.loads(text) if json_schema is not None else None
         return {"content": text, "data": data, "error": None}
     except Exception as e:
         return {"content": None, "data": None, "error": str(e)}
 
 
-class RecruiterSource(BaseModel):
-    recruiter: str
-    certainty: float
+_RECRUITER_SOURCE = _object_schema("RecruiterSource", recruiter="string", certainty="number")
 
 
 _PARSE_INSTRUCTIONS = """\
@@ -103,9 +122,7 @@ with certainty 0.0.
 Set certainty (0.0-1.0) based on how confident you are in the extraction."""
 
 
-class RecruiterMatch(BaseModel):
-    matched_name: str
-    confidence: float
+_RECRUITER_MATCH = _object_schema("RecruiterMatch", matched_name="string", confidence="number")
 
 
 _RECRUITER_MATCH_INSTRUCTIONS = """\
@@ -127,7 +144,7 @@ def parse_recruiter_source(reference_text: str) -> dict:
     result = query(
         instructions=_PARSE_INSTRUCTIONS,
         input_text=reference_text,
-        json_schema=RecruiterSource,
+        json_schema=_RECRUITER_SOURCE,
         model="gpt-5-nano",
         max_tokens=500,
         reasoning_effort="minimal",
@@ -149,7 +166,7 @@ def match_recruiter_name(recruiter_input: str, member_names: list[str]) -> dict:
     result = query(
         instructions=_RECRUITER_MATCH_INSTRUCTIONS,
         input_text=input_text,
-        json_schema=RecruiterMatch,
+        json_schema=_RECRUITER_MATCH,
         model="gpt-5-nano",
         max_tokens=400,
         reasoning_effort="minimal",
