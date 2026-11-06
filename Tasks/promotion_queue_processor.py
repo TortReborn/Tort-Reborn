@@ -263,6 +263,11 @@ class PromotionQueueProcessor(commands.Cog):
                     f"Promote action but new_rank '{entry['new_rank']}' (idx {new_index}) "
                     f"is not above current rank '{actual_rank}' (idx {current_index})"
                 )
+            if new_index >= queuer_index:
+                raise ValueError(
+                    f"Queuer '{entry['queued_by_ign']}' (rank {queuer_rank}) can only promote "
+                    f"members to a rank below their own, not '{entry['new_rank']}'"
+                )
         elif action == 'demote' and entry['new_rank']:
             if entry['new_rank'] not in discord_ranks:
                 raise ValueError(f"new_rank '{entry['new_rank']}' is not a valid rank")
