@@ -74,3 +74,43 @@ def link_change_refusal(initiator_rank, target_rank):
         if ranks.index(target_rank) >= ranks.index(initiator_rank):
             return ':no_entry: You can only change links for members below your own rank.'
     return None
+
+
+def registration_refusal(initiator_rank, target_rank, target_uuid, new_uuid, starting_rank):
+    """Why the initiator may not register the target with this account, or None.
+
+    Registering writes both identity and rank, so it takes the link rule above
+    plus two more: it must not re-point an existing link, and it must not
+    lower a rank. Those changes have their own commands, which show what they
+    change. A rank outside discord_ranks, such as an ally rank, is left alone.
+    """
+    from Helpers.variables import discord_ranks
+
+    refusal = link_change_refusal(initiator_rank, target_rank)
+    if refusal:
+        return refusal
+    if target_uuid and str(target_uuid).replace('-', '').lower() != str(new_uuid).replace('-', '').lower():
+        return ':no_entry: That member is already linked to a different Minecraft account. Use `/manage link` to change it.'
+    if target_rank in discord_ranks:
+        ranks = list(discord_ranks)
+        if ranks.index(target_rank) > ranks.index(starting_rank):
+            return (
+                f':no_entry: That member already holds **{target_rank}**, above the starting rank of '
+                f'**{starting_rank}**. Use `/manage rank`, or `/reset_roles` first if they left the guild.'
+            )
+    return None
+
+
+def lookup_registration_refusal(cursor, initiator_id, target_id, new_uuid, starting_rank):
+    """registration_refusal, reading both accounts from discord_links."""
+    cursor.execute("SELECT rank FROM discord_links WHERE discord_id = %s", (int(initiator_id),))
+    initiator = cursor.fetchone()
+    cursor.execute("SELECT rank, uuid FROM discord_links WHERE discord_id = %s", (int(target_id),))
+    target = cursor.fetchone()
+    return registration_refusal(
+        initiator[0] if initiator else None,
+        target[0] if target else None,
+        target[1] if target else None,
+        new_uuid,
+        starting_rank,
+    )

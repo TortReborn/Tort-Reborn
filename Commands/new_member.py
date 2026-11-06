@@ -8,7 +8,7 @@ from discord import default_permissions
 from Helpers.classes import BasicPlayerStats
 from Helpers.database import DB
 from Helpers.functions import determine_starting_rank
-from Helpers.links import LinkConflictError, assert_uuid_free
+from Helpers.links import LinkConflictError, assert_uuid_free, lookup_registration_refusal
 from Helpers.member_roles import registration_role_names
 from Helpers.registration import record_registration
 from Helpers.variables import HOME_GUILD_IDS
@@ -28,6 +28,15 @@ def _fetch_new_member_data(user_id, ign):
             db.close()
 
     return pdata
+
+
+def _registration_refusal(initiator_id, user_id, uuid, starting_rank):
+    """Blocking DB read — call via asyncio.to_thread."""
+    db = DB(); db.connect()
+    try:
+        return lookup_registration_refusal(db.cursor, initiator_id, user_id, uuid, starting_rank)
+    finally:
+        db.close()
 
 
 def _record(user_id, ign, uuid, rank, held_role_names, actor_id):
@@ -66,6 +75,12 @@ class NewMember(commands.Cog):
                 return
 
             starting_rank = determine_starting_rank(user)
+            refusal = await asyncio.to_thread(
+                _registration_refusal, message.interaction.user.id, user.id, pdata.UUID, starting_rank,
+            )
+            if refusal:
+                await message.respond(refusal, ephemeral=True)
+                return
             held_role_names = [r.name for r in user.roles]
             to_add, to_remove = registration_role_names(starting_rank)
             roles_to_add = []

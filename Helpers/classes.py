@@ -14,7 +14,7 @@ from Helpers.database import (
     get_player_activity_baselines_with_db,
 )
 from Helpers.functions import getPlayerUUID, getPlayerDatav3, getPlayerProfileDatav3, urlify, determine_starting_rank, timed_get, cap_playtime_window
-from Helpers.links import LinkConflictError, assert_uuid_free
+from Helpers.links import LinkConflictError, assert_uuid_free, lookup_registration_refusal
 from Helpers.member_roles import apply_rank_roles, rank_change_summary, registration_role_names
 from Helpers.registration import record_registration, set_rank, upsert_identity
 from discord.ext.pages import Page as _Page
@@ -549,21 +549,28 @@ class NewMember(Modal):
             await msg.edit(embed=embed)
             return
 
-        def _check_free():
+        starting_rank = determine_starting_rank(self.user)
+
+        def _check_allowed():
             db = DB()
             db.connect()
             try:
                 assert_uuid_free(db.cursor, pdata.UUID, self.user.id)
+                return lookup_registration_refusal(
+                    db.cursor, interaction.user.id, self.user.id, pdata.UUID, starting_rank,
+                )
             finally:
                 db.close()
 
         try:
-            await asyncio.to_thread(_check_free)
+            refusal = await asyncio.to_thread(_check_allowed)
         except LinkConflictError as e:
             await msg.edit(content=e.user_message(), embed=None)
             return
+        if refusal:
+            await msg.edit(content=refusal, embed=None)
+            return
 
-        starting_rank = determine_starting_rank(self.user)
         held_role_names = [r.name for r in self.user.roles]
         to_add, to_remove = registration_role_names(starting_rank)
         roles_to_add = []
