@@ -6,6 +6,7 @@ import discord
 from discord import SlashCommandGroup, ApplicationContext
 from discord.ext import commands
 
+from Helpers.mentions import role_ping
 from Helpers.app_transcript import (
     post_transcript,
     stamp_transcribed,
@@ -785,6 +786,7 @@ class WebAppCommands(commands.Cog):
                 embed.set_footer(text=f"{app_id}|{applicant_discord_id or ''}|{ign}")
                 await review_ch.send(
                     f"<@&{MANUAL_REVIEW_ROLE_ID}>", embed=embed, view=RecruiterReviewView(),
+                    allowed_mentions=role_ping(MANUAL_REVIEW_ROLE_ID),
                 )
             return
 

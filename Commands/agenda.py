@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 from discord.commands import SlashCommandGroup
 
+from Helpers.mentions import EVERYONE_PING
 from Helpers.database import DB
 from Helpers.variables import MEETING_ANNOUNCEMENT_CHANNEL_ID, EXECUTIVE_ROLE_ID, EXEC_GUILD_IDS
 
@@ -532,7 +533,7 @@ class Agenda(commands.Cog):
             channel = self.client.get_channel(MEETING_ANNOUNCEMENT_CHANNEL_ID)
             if channel is None:
                 return await ctx.edit(content="Announcement channel not found.", embed=None, view=None)
-            await channel.send(full_message)
+            await channel.send(full_message, allowed_mentions=EVERYONE_PING)
             # Delete selected requested topics from DB
             ids_to_delete = [int(tid) for tid in selected_req_ids]
             await asyncio.to_thread(_db_remove_req_topics, ids_to_delete)

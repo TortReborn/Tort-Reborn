@@ -11,6 +11,7 @@ import os
 import discord
 from discord import Embed
 
+from Helpers.mentions import DEFAULT_MENTIONS, error_report_mentions, fence_safe
 from Helpers.classes import Guild
 from Helpers.database import get_last_online, set_last_online
 from Helpers.storage import warm_background_cache
@@ -51,7 +52,7 @@ intents.typing = False
 intents.members = True
 intents.message_content = True
 
-client = discord.Bot(intents=intents)
+client = discord.Bot(intents=intents, allowed_mentions=DEFAULT_MENTIONS)
 logger.init(client)
 
 
@@ -235,7 +236,7 @@ async def on_application_command_error(
     options = ''
     if ctx.selected_options:
         for opt in ctx.selected_options:
-            options += f' {opt["name"]}:{opt["value"]}'
+            options += f' {opt["name"]}:{fence_safe(opt["value"])}'
 
     # A 10062 on defer/respond means the 3-second ack window was missed (event
     # loop lag, reconnect). Nothing in the command is at fault and the user
@@ -247,7 +248,7 @@ async def on_application_command_error(
 
     # Keep the tail: the exception line and the innermost frames live there,
     # and the first 1500 chars are just py-cord's dispatch plumbing.
-    traceback_string = ''.join(traceback.format_exception(error))
+    traceback_string = fence_safe(''.join(traceback.format_exception(error)))
     if len(traceback_string) > 1500:
         traceback_string = "…(truncated)…\n" + traceback_string[-1500:]
 
@@ -263,7 +264,8 @@ async def on_application_command_error(
         f'## {ctx.author}{guild_info}, <#{ctx.channel_id}>:\n'
         f'```\n/{ctx.command.qualified_name}{options}\n```'
         f'## Traceback:\n'
-        f'```\n{traceback_string}\n```'
+        f'```\n{traceback_string}\n```',
+        allowed_mentions=error_report_mentions(ERROR_PING_USER_ID),
     )
 
     try:

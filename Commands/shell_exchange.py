@@ -6,6 +6,7 @@ from discord.ext import commands
 from io import BytesIO
 
 from Helpers import local_ids
+from Helpers.mentions import role_ping
 from Helpers.shell_exchange_generator import generate_images
 from Helpers.database import (
     get_shell_exchange_config,
@@ -242,7 +243,7 @@ class ShellExchange(commands.Cog):
                 return False
 
         message = self._build_rates_message(added, removed, modified)
-        await thread.send(message)
+        await thread.send(message, allowed_mentions=role_ping(local_ids.role(RATES_PING_ROLE_ID)))
         config["rates_snapshot"] = new_rates
         return True
 
