@@ -193,6 +193,9 @@ def test_both_acceptance_handlers_keep_community_role_and_use_shared_registratio
 
 @pytest.fixture
 def linked_ally_db(temp_db, monkeypatch):
+    # conftest copies ranks from the dev database, which may predate this one.
+    temp_db.cursor.execute("""INSERT INTO rank_definitions (name, kind, sort_order)
+        VALUES ('Horizon', 'ally', 101) ON CONFLICT (name) DO NOTHING""")
     temp_db.cursor.execute('''INSERT INTO guild_alliances
         (id, guild_name, guild_prefix, discord_role_id, display_rank, enabled)
         VALUES (2, 'Eden', 'EDN', 123, 'Horizon', TRUE)''')
