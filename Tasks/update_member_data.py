@@ -321,6 +321,20 @@ def _graid_increment_group_sync(uuid_list, raid_name: str):
         db.close()
 
 
+def _unique_participants(participants):
+    """One entry per player, so nobody is credited twice for one raid.
+    Players are matched by uuid, or by name when they have no uuid."""
+    seen = set()
+    unique = []
+    for p in participants:
+        uuid = p.get('uuid')
+        key = str(uuid).replace('-', '').lower() if uuid else f"ign:{(p.get('ign') or '').lower()}"
+        if key not in seen:
+            seen.add(key)
+            unique.append(p)
+    return unique
+
+
 def _graid_log_manual_sync(participants, raid_type):
     """
     Apply a manually-submitted raid log atomically.
@@ -334,6 +348,7 @@ def _graid_log_manual_sync(participants, raid_type):
     """
     if not participants:
         return None
+    participants = _unique_participants(participants)
     db = _db_connect_with_retry()
     try:
         cur = db.cursor
