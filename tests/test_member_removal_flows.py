@@ -30,6 +30,8 @@ Worked examples:
 """
 
 import asyncio
+
+import pytest
 import os
 import sys
 
@@ -517,7 +519,7 @@ def test_leave_button_reset_removes_and_resolves(temp_db, monkeypatch):
     db = temp_db
     guild = FakeGuild()
     seed_link(db, NARWHAL_ID, UUID_C, 'Narwhal1', 'Narwhal')
-    seed_member(db, 112, UUID_B, 'kicked', 'Angler')
+    seed_member(db, 112, UUID_B, 'kicked', 'Angler', on_roster=False)
     kicked = guild.add_member(FakeMember(112, [mr.MEMBER_ROLE, 'Angler', mr.RANKS_HEADER, 'Merman'], guild))
     seed_prompt(db, 5002, UUID_B, 'kicked', 112, 'Angler')
 
@@ -559,6 +561,90 @@ def test_leave_button_retired_chief_needs_narwhal(temp_db, monkeypatch):
     assert hon.active_honorifics(db.cursor, uuid=UUID_A) == (False, False)
     db.cursor.execute("SELECT resolved_at FROM member_leave_prompts WHERE message_id = 5004")
     assert db.cursor.fetchone() == (None,)
+
+
+def _unresolved(db, message_id):
+    db.cursor.execute("SELECT resolved_at FROM member_leave_prompts WHERE message_id = %s", (message_id,))
+    return db.cursor.fetchone() == (None,)
+
+
+def test_leave_button_needs_manage_roles(temp_db, monkeypatch):
+    db = temp_db
+    guild = FakeGuild()
+    seed_link(db, NARWHAL_ID, UUID_C, 'Narwhal1', 'Narwhal')
+    seed_member(db, 115, UUID_A, 'target', 'Angler', on_roster=False)
+    target = guild.add_member(FakeMember(115, [mr.MEMBER_ROLE, 'Angler'], guild))
+    seed_prompt(db, 5005, UUID_A, 'target', 115, 'Angler')
+    presser = FakeMember(NARWHAL_ID, [], guild)
+    presser.guild_permissions.manage_roles = False
+
+    interaction = press(db, monkeypatch, presser, guild, 5005, None)
+
+    assert 'Manage Roles' in interaction.followup.sent[-1]
+    assert target.role_names == {mr.MEMBER_ROLE, 'Angler'}
+    assert _unresolved(db, 5005)
+
+
+def test_leave_button_uses_the_rank_they_hold_now(temp_db, monkeypatch):
+    db = temp_db
+    guild = FakeGuild()
+    seed_link(db, 2, UUID_C, 'Hammer1', 'Hammerhead')
+    seed_member(db, 116, UUID_A, 'promoted', 'Narwhal', on_roster=False)
+    target = guild.add_member(FakeMember(116, [mr.MEMBER_ROLE, 'Narwhal'], guild))
+    seed_prompt(db, 5006, UUID_A, 'promoted', 116, 'Starfish')
+
+    press(db, monkeypatch, FakeMember(2, [], guild), guild, 5006, None)
+
+    assert target.role_names == {mr.MEMBER_ROLE, 'Narwhal'}
+    assert link_row(db, 116) == 'Narwhal'
+    assert _unresolved(db, 5006)
+
+
+def test_leave_button_falls_back_to_the_rank_at_leave(temp_db, monkeypatch):
+    db = temp_db
+    guild = FakeGuild()
+    seed_link(db, 2, UUID_C, 'Hammer1', 'Hammerhead')
+    seed_link(db, 117, UUID_A, 'senior', None)
+    guild.add_member(FakeMember(117, [mr.EX_MEMBER_ROLE], guild))
+    seed_prompt(db, 5007, UUID_A, 'senior', 117, 'Narwhal')
+
+    press(db, monkeypatch, FakeMember(2, [], guild), guild, 5007, hon.HONORED_FISH)
+
+    assert hon.active_honorifics(db.cursor, uuid=UUID_A) == (False, False)
+    assert _unresolved(db, 5007)
+
+
+@pytest.mark.parametrize("grant", [None, hon.HONORED_FISH])
+def test_leave_button_closes_when_they_are_back_in_the_guild(temp_db, monkeypatch, grant):
+    db = temp_db
+    guild = FakeGuild()
+    seed_link(db, NARWHAL_ID, UUID_C, 'Narwhal1', 'Narwhal')
+    seed_member(db, 118, UUID_A, 'returned', 'Angler')
+    target = guild.add_member(FakeMember(118, [mr.MEMBER_ROLE, 'Angler'], guild))
+    seed_prompt(db, 5008, UUID_A, 'returned', 118, 'Angler')
+
+    interaction = press(db, monkeypatch, FakeMember(NARWHAL_ID, [], guild), guild, 5008, grant)
+
+    assert target.role_names == {mr.MEMBER_ROLE, 'Angler'}
+    assert link_row(db, 118) == 'Angler'
+    assert hon.active_honorifics(db.cursor, uuid=UUID_A) == (False, False)
+    db.cursor.execute("SELECT resolution FROM member_leave_prompts WHERE message_id = 5008")
+    assert db.cursor.fetchone() == ('noop',)
+    assert 'back in the guild' in interaction.followup.sent[-1]
+    assert interaction.message.edits[0]['view'].children[0].disabled
+
+
+def test_leave_button_someone_outranked_cannot_close_a_returned_member(temp_db, monkeypatch):
+    db = temp_db
+    guild = FakeGuild()
+    seed_link(db, 2, UUID_C, 'Hammer1', 'Hammerhead')
+    seed_member(db, 119, UUID_A, 'returned', 'Narwhal')
+    guild.add_member(FakeMember(119, [mr.MEMBER_ROLE, 'Narwhal'], guild))
+    seed_prompt(db, 5009, UUID_A, 'returned', 119, 'Starfish')
+
+    press(db, monkeypatch, FakeMember(2, [], guild), guild, 5009, None)
+
+    assert _unresolved(db, 5009)
 
 
 def test_leave_button_second_press_reports_first_resolver(temp_db, monkeypatch):
