@@ -19,6 +19,7 @@ import asyncio
 import discord
 
 from Helpers import honorifics as hon
+from Helpers import roster
 from Helpers.database import DB
 from Helpers.guild_accounts import guild_account_uuids, uuid_key
 from Helpers.member_removal import check_reset_permission, record_grant_only, remove_member
@@ -194,15 +195,32 @@ class LeavePromptView(discord.ui.View):
                 ephemeral=True)
             return
 
-        # Permission: the /reset_roles rule, against the rank they had when they left.
+        if not interaction.user.guild_permissions.manage_roles:
+            await interaction.followup.send(
+                'You are missing Manage Roles permission(s) to use this.', ephemeral=True)
+            return
+
+        # Permission: the /reset_roles rule. Prompts don't expire, so judge the
+        # member as they are now. A removal clears the rank, so fall back to the
+        # one they had when they left.
         presser_rank = await asyncio.to_thread(_with_db, _rank_of, interaction.user.id)
-        refusal = check_reset_permission(presser_rank, (prompt['last_rank'],) if prompt['last_rank'] else None)
+        current_rank, back_in_guild = await asyncio.to_thread(_with_db, _current_state, prompt['uuid'])
+        target_rank = current_rank or prompt['last_rank']
+        refusal = check_reset_permission(presser_rank, (target_rank,) if target_rank else None)
         if refusal is None and grant == hon.RETIRED_CHIEF:
             ranks = list(discord_ranks)
             if ranks.index(presser_rank) < ranks.index('Narwhal'):
                 refusal = (':no_entry: Permission denied', 'Retired Chief can only be granted by Narwhal or higher.')
         if refusal:
             await interaction.followup.send(f"{refusal[0]} {refusal[1]}", ephemeral=True)
+            return
+
+        if back_in_guild:
+            await self._finish(
+                interaction, prompt, 'noop',
+                f"{discord.utils.escape_markdown(prompt['ign'])} is back in the guild, so nothing was changed. "
+                f"Closed by {interaction.user.mention}. Use `/reset_roles` if a reset is still needed.",
+            )
             return
 
         if prompt['discord_id'] is None:
@@ -259,6 +277,9 @@ class LeavePromptView(discord.ui.View):
             return
 
         resolution = grant or ('reset' if outcome == 'remove' else 'noop')
+        await self._finish(interaction, prompt, resolution, summary)
+
+    async def _finish(self, interaction, prompt, resolution, summary):
         claimed = await asyncio.to_thread(_with_db, resolve_prompt, prompt['message_id'], interaction.user.id, resolution)
         if not claimed:
             await interaction.followup.send('Someone else handled this at the same time.', ephemeral=True)
@@ -271,6 +292,13 @@ class LeavePromptView(discord.ui.View):
             child.disabled = True
         await interaction.message.edit(embed=embed, view=self)
         await interaction.followup.send(summary, ephemeral=True)
+
+
+def _current_state(cursor, uuid):
+    """(rank now, or None; whether they are on the roster now) for a uuid."""
+    cursor.execute("SELECT rank FROM discord_links WHERE uuid = %s::uuid", (str(uuid),))
+    row = cursor.fetchone()
+    return (row[0] if row else None), roster.is_member(cursor, uuid=uuid)
 
 
 def _rank_of(cursor, discord_id):
