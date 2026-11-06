@@ -27,8 +27,12 @@ def user_ping(user_id):
 
 
 def error_report_mentions(ping_user_id):
-    """An error report pings the configured owner, never anything in its text."""
-    return user_ping(ping_user_id) if ping_user_id else NO_MENTIONS
+    """An error report pings the configured owner, never anything in its text.
+
+    A bad id must not stop the report, so it just goes out without the ping.
+    """
+    owner = str(ping_user_id or "").strip()
+    return user_ping(owner) if owner.isdigit() else NO_MENTIONS
 
 
 def fence_safe(value):

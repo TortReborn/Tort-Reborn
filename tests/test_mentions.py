@@ -33,7 +33,11 @@ def test_user_ping_allows_one_user_only():
 def test_error_report_pings_only_the_owner():
     allowed = mentions.error_report_mentions("456").to_dict()
     assert allowed["parse"] == [] and allowed["users"] == [456]
-    assert mentions.error_report_mentions("").to_dict() == {"parse": []}
+
+
+@pytest.mark.parametrize("bad", ["", None, "abc", "12a"])
+def test_a_bad_owner_id_does_not_stop_the_error_report(bad):
+    assert mentions.error_report_mentions(bad).to_dict() == {"parse": []}
 
 
 def test_text_cannot_close_a_code_block():
