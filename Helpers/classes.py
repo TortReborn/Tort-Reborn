@@ -24,6 +24,19 @@ from Helpers.welcome import send_welcome_dm, send_welcome_post
 
 WELCOME_CHANNEL = WELCOME_CHANNEL_ID
 
+PLAYER_TAG_COLOR = '#66ccff'
+
+
+def rank_style(tag):
+    """Badge colour and text for a Wynncraft rank, with a plain fallback for ranks we don't list."""
+    if tag == 'Player':
+        return PLAYER_TAG_COLOR, 'PLAYER'
+    style = wynn_ranks.get(tag.lower())
+    if style is None:
+        return PLAYER_TAG_COLOR, tag.upper()
+    return style['color'], style['display']
+
+
 class Guild:
 
     def __init__(self, guild, token=None):
@@ -158,8 +171,7 @@ class PlayerStats:
             self.tag = support_rank.upper() if support_rank is not None else 'Player'
         else:
             self.tag = self.rank
-        self.tag_color = wynn_ranks[self.tag.lower()]['color'] if self.tag != 'Player' else '#66ccff'
-        self.tag_display = wynn_ranks[self.tag.lower()]['display'] if self.tag != 'Player' else 'PLAYER'
+        self.tag_color, self.tag_display = rank_style(self.tag)
 
         raw_total_level = pdata.get('globalData', {}).get('totalLevel')
         self.total_level = raw_total_level if raw_total_level is not None else 0
@@ -426,7 +438,7 @@ class BasicPlayerStats:
             self.tag = support_rank.upper() if support_rank is not None else 'Player'
         else:
             self.tag = self.rank
-        self.tag_color = wynn_ranks[self.tag.lower()]['color'] if self.tag != 'Player' else '#66ccff'
+        self.tag_color, _ = rank_style(self.tag)
         self.wars = pdata.get('globalData', {}).get('wars', 0)
         self.total_level = pdata.get('globalData', {}).get('totalLevel', 0)
         self.completed_quests = pdata.get('globalData', {}).get('completedQuests', 0)
