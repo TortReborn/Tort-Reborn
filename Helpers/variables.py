@@ -522,7 +522,7 @@ wynn_ranks = {
     "web": {"color": "#d11111", "display": "WEB"},
     "owner": {"color": "#aa0000", "display": "OWNER"},
     "moderator": {"color": "#ff6a00", "display": "MODERATOR"},
-    "artist": {"color": "#00aaaa", "display": "ARTIST"},
+    "art": {"color": "#00aaaa", "display": "ARTIST"},
     "builder": {"color": "#00aaaa", "display": "BUILDER"},
     "cmd": {"color": "#00aaaa", "display": "CMD"},
     "gm": {"color": "#00aaaa", "display": "GM"},
