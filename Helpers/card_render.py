@@ -10,12 +10,14 @@ card is only ever downloaded once.
 
 import os
 import time
+from functools import lru_cache
 from io import BytesIO
 
 import requests
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from Helpers import cards as cardlib
+from Helpers import telemetry
 from Helpers.functions import generate_badge
 from Helpers.logger import WARN, log
 from Helpers.variables import discord_ranks
@@ -345,25 +347,37 @@ def spread_file(cards: list, owned: set | None = None):
     return discord.File(buf, filename=f"spread_{int(time.time())}.png")
 
 
+def _card_png(name, tier, slug, image_url, badge, stars, max_stars) -> bytes:
+    buf = BytesIO()
+    with telemetry.track("render"):
+        img = render_card(name, tier, slug, image_url, badge, stars, max_stars)
+        img.convert("RGB").save(buf, format="PNG")
+    return buf.getvalue()
+
+
+@lru_cache(maxsize=256)
+def _cached_card_png(name, tier, slug, image_url, badge, stars, max_stars,
+                     art_version) -> bytes:
+    return _card_png(name, tier, slug, image_url, badge, stars, max_stars)
+
+
 def card_file(card: dict, badge: str | None = None, stars: int = 0,
               max_stars: int | None = None):
-    """Render a card from a card-set entry into a discord.File.
-
-    Stars default to none: a card out of a reel is unfused, and stars count
-    merges behind it rather than the card itself.
-
-    Member cards carry their own badge and are framed by guild rank, so the
-    badge defaults to MEMBER for them unless the caller says otherwise.
-    """
     import discord
 
     if card.get("member") and badge is None:
         badge = card.get("rank")
-
-    img = render_card(card["name"], card["tier"], card.get("slug", ""),
-                      card.get("image_url", ""), badge=badge, stars=stars,
-                      max_stars=max_stars)
-    buf = BytesIO()
-    img.convert("RGB").save(buf, format="PNG")
-    buf.seek(0)
+    slug, image_url = card.get("slug", ""), card.get("image_url", "")
+    art_version = None
+    for directory in (PORTRAIT_DIR, ART_CACHE):
+        path = os.path.join(directory, f"{slug}.png")
+        if os.path.isfile(path):
+            stat = os.stat(path)
+            art_version = (path, stat.st_mtime_ns, stat.st_size)
+            break
+    args = (card["name"], card["tier"], slug, image_url, badge, stars, max_stars)
+    # Don't cache a missing-art fallback while a failed download can still recover.
+    png = (_card_png(*args) if art_version is None and image_url
+           else _cached_card_png(*args, art_version))
+    buf = BytesIO(png)
     return discord.File(buf, filename=f"card_{card.get('slug', 'x')}_{int(time.time())}.png")

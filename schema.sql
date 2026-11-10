@@ -1172,6 +1172,7 @@ CREATE TABLE IF NOT EXISTS card_wallet (
     tank_tier    SMALLINT    NOT NULL DEFAULT 1,
     streak       INT         NOT NULL DEFAULT 0,
     last_daily   DATE,
+    last_streak_save DATE,
     last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     -- Reels from /bait, held outside the bank so a full bank cannot swallow
     -- them. Spent before reels do, and never above one day's worth: you
