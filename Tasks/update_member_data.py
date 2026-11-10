@@ -82,6 +82,25 @@ RAID_EMOJIS = {
 
 # --- thread-safe DB + snapshot helpers ---
 
+def previous_reading(cursor, uuid):
+    """(playtime, contributed, wars) from the member's last daily snapshot, to
+    carry forward while their stats are hidden. Wars only carry within the
+    current stint: a member who rejoins hidden would otherwise start from the
+    count they left with, and the wars they did elsewhere in between would be
+    credited to TAq (TAQ-208). None when there is no snapshot."""
+    cursor.execute(
+        """SELECT pa.playtime, pa.contributed,
+                  CASE WHEN pa.snapshot_date >= COALESCE(
+                         (SELECT s.joined_at::date FROM membership_stints s
+                           WHERE s.uuid = pa.uuid AND s.left_at IS NULL), '-infinity'::date)
+                       THEN pa.wars END
+             FROM player_activity pa WHERE pa.uuid = %s
+            ORDER BY pa.snapshot_date DESC LIMIT 1""",
+        (uuid,),
+    )
+    return cursor.fetchone()
+
+
 def _db_connect_with_retry(max_attempts: int = 3, backoff_first: float = 0.5):
     attempt, delay, last = 0, backoff_first, None
     while attempt < max_attempts:
@@ -1354,11 +1373,7 @@ class UpdateMemberData(commands.Cog):
                 # Carry forward previous snapshot values for private/failed API responses
                 # to avoid writing 0 which corrupts baseline calculations
                 if uuid and (playtime is None or wars is None or contributed is None):
-                    db.cursor.execute("""
-                        SELECT playtime, contributed, wars FROM player_activity
-                        WHERE uuid = %s ORDER BY snapshot_date DESC LIMIT 1
-                    """, (uuid,))
-                    prev = db.cursor.fetchone()
+                    prev = previous_reading(db.cursor, uuid)
                     if prev:
                         if playtime is None:
                             playtime = prev[0]

@@ -169,11 +169,14 @@ def _build_profile_card(player, days, author_id):
             else:
                 card_entries[f'Playtime / {player.stats_days} D'] = f'{int(player.real_pt)} hrs'
 
-        # Wars - check if private
-        if player.wars_is_private:
+        # Wars done in TAq, not the lifetime count across every guild (TAQ-208).
+        # "+" marks a floor: hidden wars now, or a stint from before tracking.
+        if player.taq_wars is not None:
+            card_entries['Wars'] = f"{player.taq_wars}{'+' if player.taq_wars_floor else ''}"
+        elif player.wars_is_private:
             card_entries['Wars'] = '&cPrivate'
         else:
-            card_entries['Wars'] = str(player.wars)
+            card_entries['Wars'] = '0'
 
         if player.taq and player.in_guild_for.days >= 1:
             # Timed wars - check if private

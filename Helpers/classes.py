@@ -17,6 +17,7 @@ from Helpers.functions import getPlayerUUID, getPlayerDatav3, getPlayerProfileDa
 from Helpers.links import LinkConflictError, assert_uuid_free, lookup_registration_refusal
 from Helpers.member_roles import apply_rank_roles, rank_change_summary, registration_role_names
 from Helpers.registration import record_registration, set_rank, upsert_identity
+from Helpers.roster import taq_wars
 from discord.ext.pages import Page as _Page
 
 from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID
@@ -95,6 +96,7 @@ class PlayerStats:
             self._load_guild_fields(pdata)
             db.connect()
             self._load_profile_db_state(db)
+            self._load_taq_wars(db)
             if load_timed_stats:
                 self._load_timed_stats(db, days)
             else:
@@ -275,6 +277,14 @@ class PlayerStats:
             self.uncollected_raids = uncollected_raids or 0
             self.collected_raids = collected_raids or 0
             self.guild_raids = self.uncollected_raids + self.collected_raids
+
+    def _load_taq_wars(self, db):
+        """Wars done in TAq across every stint (TAQ-133, TAQ-208). None when
+        nothing can be counted: never in TAq, or hidden since joining.
+        taq_wars_floor marks a count that is at least this many."""
+        result = taq_wars(db.cursor, self.UUID, None if self.wars_is_private else self.wars)
+        self.taq_wars = result.total if result else None
+        self.taq_wars_floor = bool(result and (result.partial or result.stale))
 
     def _load_timed_stats(self, db, days):
         if not self.taq:
