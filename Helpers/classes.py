@@ -279,12 +279,13 @@ class PlayerStats:
             self.guild_raids = self.uncollected_raids + self.collected_raids
 
     def _load_taq_wars(self, db):
-        """Wars done in TAq across every stint (TAQ-133, TAQ-208). None when
-        nothing can be counted: never in TAq, or hidden since joining.
-        taq_wars_floor marks a count that is at least this many."""
-        result = taq_wars(db.cursor, self.UUID, None if self.wars_is_private else self.wars)
-        self.taq_wars = result.total if result else None
-        self.taq_wars_floor = bool(result and (result.partial or result.stale))
+        """Wars done in TAq across every stint (TAQ-133, TAQ-208); 0 for a
+        player never counted in TAq. Not loaded while wars are hidden: the
+        profile shows Private, like every other hidden stat."""
+        self.taq_wars = None
+        if not self.wars_is_private:
+            result = taq_wars(db.cursor, self.UUID, self.wars)
+            self.taq_wars = result.total if result else 0
 
     def _load_timed_stats(self, db, days):
         if not self.taq:

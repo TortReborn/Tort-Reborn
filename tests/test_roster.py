@@ -227,7 +227,7 @@ def test_count_taq_wars_flags_pre_snapshot_baselines():
     assert roster.count_taq_wars([{**real_join, 'wars_on_join': 0}], 18957) == roster.TaqWars(18957, False)
 
 
-def test_hidden_wars_count_to_the_last_known_sample(temp_db):
+def test_taq_wars_sums_the_stints_on_record(temp_db):
     cur = temp_db.cursor
     cur.execute(
         "INSERT INTO membership_stints (uuid, joined_at, left_at, wars_on_join, wars_on_leave, source) VALUES"
@@ -235,12 +235,8 @@ def test_hidden_wars_count_to_the_last_known_sample(temp_db):
         " (%s::uuid, '2026-01-01T00:00:00Z', NULL, 200, NULL, 'live')",
         (U1, U1),
     )
-    _daily(cur, U1, '2026-02-01', 230)
-    _hourly(cur, U1, _utc(2026, 3, 1, 12), 250)
-    assert roster.taq_wars(cur, U1, 260) == roster.TaqWars(100, False, False)
-    # Hidden now: the open stint runs to the last sample, and it's a floor.
-    assert roster.taq_wars(cur, U1, None) == roster.TaqWars(90, False, True)
-    assert roster.taq_wars(cur, U2, None) is None
+    assert roster.taq_wars(cur, U1, 260) == roster.TaqWars(100, False)
+    assert roster.taq_wars(cur, U2, 260) is None
 
 
 def test_hidden_wars_carry_forward_only_within_the_stint(temp_db):

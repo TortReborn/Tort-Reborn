@@ -285,9 +285,7 @@ def fill_leave_counts(cursor):
     return cursor.rowcount
 
 
-# partial: a floor, from a pre-snapshot baseline. stale: the member hides their
-# wars now, so the open stint runs to their last known count.
-TaqWars = namedtuple('TaqWars', 'total partial stale', defaults=(False,))
+TaqWars = namedtuple('TaqWars', 'total partial')
 
 
 def count_taq_wars(stints, current_wars):
@@ -311,23 +309,14 @@ def count_taq_wars(stints, current_wars):
 
 
 def taq_wars(cursor, uuid, current_wars):
-    """count_taq_wars over every stint ``uuid`` has had. ``current_wars`` is
-    the live lifetime count; when it is None (hidden) the open stint runs to
-    the last known sample instead, and the result is marked stale."""
+    """count_taq_wars over every stint ``uuid`` has had."""
     cursor.execute(
         """SELECT joined_at, left_at, wars_on_join, wars_on_leave
              FROM membership_stints WHERE uuid = %s::uuid ORDER BY joined_at""",
         (str(uuid),),
     )
     keys = ['joined_at', 'left_at', 'wars_on_join', 'wars_on_leave']
-    stints = [dict(zip(keys, r)) for r in cursor.fetchall()]
-    stale = False
-    if current_wars is None and any(s['left_at'] is None for s in stints):
-        cursor.execute(f"SELECT {_wars_before('%(u)s::uuid', 'NOW()')}", {'u': str(uuid)})
-        current_wars = cursor.fetchone()[0]
-        stale = current_wars is not None
-    result = count_taq_wars(stints, current_wars)
-    return result._replace(stale=stale) if result else None
+    return count_taq_wars([dict(zip(keys, r)) for r in cursor.fetchall()], current_wars)
 
 
 # Fragments for queries over ``applications a`` (its discord_id is text).
