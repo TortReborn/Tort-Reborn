@@ -84,17 +84,25 @@ RAID_EMOJIS = {
 
 def previous_reading(cursor, uuid):
     """(playtime, contributed, wars) from the member's last daily snapshot, to
-    carry forward while their stats are hidden. Wars only carry within the
-    current stint: a member who rejoins hidden would otherwise start from the
-    count they left with, and the wars they did elsewhere in between would be
-    credited to TAq (TAQ-208). None when there is no snapshot."""
+    carry forward while their stats are hidden. None when there is no snapshot.
+
+    Wars and guild XP only carry from a snapshot taken during the current
+    stint (TAQ-208). A member who rejoins hidden would otherwise start from
+    the count they left with, and the wars they did elsewhere in between
+    would be credited to TAq; guild XP restarts on rejoining. The snapshot
+    must postdate the join itself, not just its day, and with no open stint
+    yet (a rejoin the roster sync hasn't caught) nothing carries."""
     cursor.execute(
-        """SELECT pa.playtime, pa.contributed,
-                  CASE WHEN pa.snapshot_date >= COALESCE(
-                         (SELECT s.joined_at::date FROM membership_stints s
-                           WHERE s.uuid = pa.uuid AND s.left_at IS NULL), '-infinity'::date)
-                       THEN pa.wars END
-             FROM player_activity pa WHERE pa.uuid = %s
+        """SELECT pa.playtime,
+                  CASE WHEN st.in_stint THEN pa.contributed END,
+                  CASE WHEN st.in_stint THEN pa.wars END
+             FROM player_activity pa
+            CROSS JOIN LATERAL (
+                  SELECT EXISTS (SELECT 1 FROM membership_stints s
+                                  WHERE s.uuid = pa.uuid AND s.left_at IS NULL
+                                    AND (pa.snapshot_date::timestamp AT TIME ZONE 'UTC') >= s.joined_at) AS in_stint
+                 ) st
+            WHERE pa.uuid = %s
             ORDER BY pa.snapshot_date DESC LIMIT 1""",
         (uuid,),
     )

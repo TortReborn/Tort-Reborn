@@ -96,10 +96,12 @@ class PlayerStats:
             self._load_guild_fields(pdata)
             db.connect()
             self._load_profile_db_state(db)
-            self._load_taq_wars(db)
             if load_timed_stats:
+                # Only the profile shows these; the other commands skip the lookups.
+                self._load_taq_wars(db)
                 self._load_timed_stats(db, days)
             else:
+                self.taq_wars = None
                 self._set_skipped_timed_defaults(days)
         finally:
             db.close()

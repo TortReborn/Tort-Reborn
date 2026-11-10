@@ -249,11 +249,34 @@ def test_hidden_wars_carry_forward_only_within_the_stint(temp_db):
         " (%s::uuid, '2026-03-01T00:00:00Z', NULL, 'live')",
         (U1, U1),
     )
-    # Rejoined hidden: the last reading is from the previous stint, so no wars carry.
-    assert previous_reading(cur, U1)[2] is None
+    # Rejoined hidden: the last reading is from the previous stint, so no wars
+    # or guild XP carry. Playtime is the player's own, so it always does.
+    assert previous_reading(cur, U1)[1:] == (None, None)
     _daily(cur, U1, '2026-03-02', 650)
     assert previous_reading(cur, U1)[2] == 650
     assert previous_reading(cur, U2) is None
+
+
+def test_same_day_rejoin_and_unopened_stint_carry_nothing(temp_db):
+    from Tasks.update_member_data import previous_reading
+    cur = temp_db.cursor
+    # Snapshot at the start of the day, then left and rejoined that afternoon.
+    _daily(cur, U1, '2026-03-02', 500)
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, source) VALUES"
+        " (%s::uuid, '2026-01-01T00:00:00Z', '2026-03-02T10:00:00Z', 'live'),"
+        " (%s::uuid, '2026-03-02T15:00:00Z', NULL, 'live')",
+        (U1, U1),
+    )
+    assert previous_reading(cur, U1)[2] is None
+    # Rejoined before the roster sync opened a stint: no open stint, nothing carries.
+    _daily(cur, U2, '2026-03-02', 70)
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, source) VALUES"
+        " (%s::uuid, '2026-01-01T00:00:00Z', '2026-02-01T00:00:00Z', 'live')",
+        (U2,),
+    )
+    assert previous_reading(cur, U2)[2] is None
 
 
 def test_applicant_sql_fragment_shape():
