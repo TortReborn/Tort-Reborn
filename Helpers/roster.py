@@ -227,7 +227,8 @@ def latest_stint(cursor, uuid):
 
 # player_activity began on this day. A stint that opened on or before it got
 # its baseline from that first snapshot, not from the real join, so its count
-# is a floor: "tracked since June 2025".
+# is a floor ("tracked since June 2025") unless the baseline is 0, which
+# already counts every war (TAQ-208 set those members to 0 on prod).
 SNAPSHOTS_BEGAN = date(2025, 6, 3)
 
 # NULL is a private reading (TAQ-134): unknown, never a baseline.
@@ -292,8 +293,8 @@ def count_taq_wars(stints, current_wars):
     wars_on_join, wars_on_leave). The open stint runs to ``current_wars``,
     the live lifetime count. A stint missing either end is skipped; a
     negative delta (an API correction) counts as zero. ``partial`` is set
-    when a counted stint began on or before SNAPSHOTS_BEGAN. Returns None
-    when no stint could be counted. Pure; unit-tested."""
+    when a counted stint began on or before SNAPSHOTS_BEGAN with a baseline
+    above 0. Returns None when no stint could be counted. Pure; unit-tested."""
     total, counted, partial = 0, False, False
     for s in stints:
         start = s['wars_on_join']
@@ -302,7 +303,7 @@ def count_taq_wars(stints, current_wars):
             continue
         total += max(int(end) - int(start), 0)
         counted = True
-        if s['joined_at'].astimezone(timezone.utc).date() <= SNAPSHOTS_BEGAN:
+        if int(start) > 0 and s['joined_at'].astimezone(timezone.utc).date() <= SNAPSHOTS_BEGAN:
             partial = True
     return TaqWars(total, partial) if counted else None
 

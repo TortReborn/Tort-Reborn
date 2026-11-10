@@ -223,6 +223,60 @@ def test_count_taq_wars_flags_pre_snapshot_baselines():
     assert roster.count_taq_wars([first_day], 18957) == roster.TaqWars(1851, True)
     assert roster.count_taq_wars([real_join], 18957).partial is True
     assert roster.count_taq_wars([after], 18957).partial is False
+    # A pre-snapshot baseline of 0 already counts every war: not a floor.
+    assert roster.count_taq_wars([{**real_join, 'wars_on_join': 0}], 18957) == roster.TaqWars(18957, False)
+
+
+def test_taq_wars_sums_the_stints_on_record(temp_db):
+    cur = temp_db.cursor
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, wars_on_join, wars_on_leave, source) VALUES"
+        " (%s::uuid, '2025-08-01T00:00:00Z', '2025-09-01T00:00:00Z', 100, 140, 'backfill'),"
+        " (%s::uuid, '2026-01-01T00:00:00Z', NULL, 200, NULL, 'live')",
+        (U1, U1),
+    )
+    assert roster.taq_wars(cur, U1, 260) == roster.TaqWars(100, False)
+    assert roster.taq_wars(cur, U2, 260) is None
+
+
+def test_hidden_wars_carry_forward_only_within_the_stint(temp_db):
+    from Tasks.update_member_data import previous_reading
+    cur = temp_db.cursor
+    _daily(cur, U1, '2026-01-10', 500)
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, source) VALUES"
+        " (%s::uuid, '2025-12-01T00:00:00Z', '2026-01-20T00:00:00Z', 'backfill'),"
+        " (%s::uuid, '2026-03-01T00:00:00Z', NULL, 'live')",
+        (U1, U1),
+    )
+    # Rejoined hidden: the last reading is from the previous stint, so no wars
+    # or guild XP carry. Playtime is the player's own, so it always does.
+    assert previous_reading(cur, U1)[1:] == (None, None)
+    _daily(cur, U1, '2026-03-02', 650)
+    assert previous_reading(cur, U1)[2] == 650
+    assert previous_reading(cur, U2) is None
+
+
+def test_same_day_rejoin_and_unopened_stint_carry_nothing(temp_db):
+    from Tasks.update_member_data import previous_reading
+    cur = temp_db.cursor
+    # Snapshot at the start of the day, then left and rejoined that afternoon.
+    _daily(cur, U1, '2026-03-02', 500)
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, source) VALUES"
+        " (%s::uuid, '2026-01-01T00:00:00Z', '2026-03-02T10:00:00Z', 'live'),"
+        " (%s::uuid, '2026-03-02T15:00:00Z', NULL, 'live')",
+        (U1, U1),
+    )
+    assert previous_reading(cur, U1)[2] is None
+    # Rejoined before the roster sync opened a stint: no open stint, nothing carries.
+    _daily(cur, U2, '2026-03-02', 70)
+    cur.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, source) VALUES"
+        " (%s::uuid, '2026-01-01T00:00:00Z', '2026-02-01T00:00:00Z', 'live')",
+        (U2,),
+    )
+    assert previous_reading(cur, U2)[2] is None
 
 
 def test_applicant_sql_fragment_shape():

@@ -82,6 +82,33 @@ RAID_EMOJIS = {
 
 # --- thread-safe DB + snapshot helpers ---
 
+def previous_reading(cursor, uuid):
+    """(playtime, contributed, wars) from the member's last daily snapshot, to
+    carry forward while their stats are hidden. None when there is no snapshot.
+
+    Wars and guild XP only carry from a snapshot taken during the current
+    stint (TAQ-208). A member who rejoins hidden would otherwise start from
+    the count they left with, and the wars they did elsewhere in between
+    would be credited to TAq; guild XP restarts on rejoining. The snapshot
+    must postdate the join itself, not just its day, and with no open stint
+    yet (a rejoin the roster sync hasn't caught) nothing carries."""
+    cursor.execute(
+        """SELECT pa.playtime,
+                  CASE WHEN st.in_stint THEN pa.contributed END,
+                  CASE WHEN st.in_stint THEN pa.wars END
+             FROM player_activity pa
+            CROSS JOIN LATERAL (
+                  SELECT EXISTS (SELECT 1 FROM membership_stints s
+                                  WHERE s.uuid = pa.uuid AND s.left_at IS NULL
+                                    AND (pa.snapshot_date::timestamp AT TIME ZONE 'UTC') >= s.joined_at) AS in_stint
+                 ) st
+            WHERE pa.uuid = %s
+            ORDER BY pa.snapshot_date DESC LIMIT 1""",
+        (uuid,),
+    )
+    return cursor.fetchone()
+
+
 def _db_connect_with_retry(max_attempts: int = 3, backoff_first: float = 0.5):
     attempt, delay, last = 0, backoff_first, None
     while attempt < max_attempts:
@@ -1354,11 +1381,7 @@ class UpdateMemberData(commands.Cog):
                 # Carry forward previous snapshot values for private/failed API responses
                 # to avoid writing 0 which corrupts baseline calculations
                 if uuid and (playtime is None or wars is None or contributed is None):
-                    db.cursor.execute("""
-                        SELECT playtime, contributed, wars FROM player_activity
-                        WHERE uuid = %s ORDER BY snapshot_date DESC LIMIT 1
-                    """, (uuid,))
-                    prev = db.cursor.fetchone()
+                    prev = previous_reading(db.cursor, uuid)
                     if prev:
                         if playtime is None:
                             playtime = prev[0]

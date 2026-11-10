@@ -17,6 +17,7 @@ from Helpers.functions import getPlayerUUID, getPlayerDatav3, getPlayerProfileDa
 from Helpers.links import LinkConflictError, assert_uuid_free, lookup_registration_refusal
 from Helpers.member_roles import apply_rank_roles, rank_change_summary, registration_role_names
 from Helpers.registration import record_registration, set_rank, upsert_identity
+from Helpers.roster import taq_wars
 from discord.ext.pages import Page as _Page
 
 from Helpers.variables import wynn_ranks, WELCOME_CHANNEL_ID
@@ -96,8 +97,11 @@ class PlayerStats:
             db.connect()
             self._load_profile_db_state(db)
             if load_timed_stats:
+                # Only the profile shows these; the other commands skip the lookups.
+                self._load_taq_wars(db)
                 self._load_timed_stats(db, days)
             else:
+                self.taq_wars = None
                 self._set_skipped_timed_defaults(days)
         finally:
             db.close()
@@ -275,6 +279,15 @@ class PlayerStats:
             self.uncollected_raids = uncollected_raids or 0
             self.collected_raids = collected_raids or 0
             self.guild_raids = self.uncollected_raids + self.collected_raids
+
+    def _load_taq_wars(self, db):
+        """Wars done in TAq across every stint (TAQ-133, TAQ-208); 0 for a
+        player never counted in TAq. Not loaded while wars are hidden: the
+        profile shows Private, like every other hidden stat."""
+        self.taq_wars = None
+        if not self.wars_is_private:
+            result = taq_wars(db.cursor, self.UUID, self.wars)
+            self.taq_wars = result.total if result else 0
 
     def _load_timed_stats(self, db, days):
         if not self.taq:

@@ -169,11 +169,11 @@ def _build_profile_card(player, days, author_id):
             else:
                 card_entries[f'Playtime / {player.stats_days} D'] = f'{int(player.real_pt)} hrs'
 
-        # Wars - check if private
+        # Wars done in TAq, not the lifetime count across every guild (TAQ-208)
         if player.wars_is_private:
             card_entries['Wars'] = '&cPrivate'
         else:
-            card_entries['Wars'] = str(player.wars)
+            card_entries['Wars'] = str(player.taq_wars)
 
         if player.taq and player.in_guild_for.days >= 1:
             # Timed wars - check if private
