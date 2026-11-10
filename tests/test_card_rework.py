@@ -186,6 +186,8 @@ async def test_fuse_picker_lists_each_card_once_highest_star_first(monkeypatch):
     choices = await cmd._autocomplete_fusable(ctx)
 
     assert [choice.value for choice in choices] == ["high", "mid", "plain"]
+    assert all(choice.name.startswith(f"{choice.value} (Normal)")
+               for choice in choices)
 
 
 @pytest.mark.asyncio
@@ -242,6 +244,50 @@ async def test_merge_picker_leads_with_the_deepest_stack(monkeypatch):
 
     assert len(choices) == 25
     assert choices[0].value == "zzz-deep:0"
+    assert choices[0].name == "zzz-deep (Unique) ×9"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tier", cardlib.CARD_TIERS)
+async def test_fuse_and_merge_candidates_show_rarity(monkeypatch, tier):
+    monkeypatch.setattr(cardlib, "db_get_collection",
+                        lambda user_id: collection(candidate={0: 10}))
+    monkeypatch.setattr(cardlib, "db_get_member_cards", lambda slugs: {})
+    monkeypatch.setattr(cardlib, "get_card", lambda slug: card(slug, tier))
+    ctx = types.SimpleNamespace(
+        interaction=types.SimpleNamespace(user=types.SimpleNamespace(id=USER)),
+        value="cand", options={},
+    )
+
+    fused = await cmd._autocomplete_fusable(ctx)
+    merged = await cmd._autocomplete_mergeable(ctx)
+
+    assert [(c.name, c.value) for c in fused] == [
+        (f"candidate ({tier.capitalize()}) ×10", "candidate")]
+    assert [(c.name, c.value) for c in merged] == [
+        (f"candidate ({tier.capitalize()}) ×10", "candidate:0")]
+
+
+@pytest.mark.asyncio
+async def test_merge_second_candidate_keeps_rarity_filter_and_limited_label(monkeypatch):
+    limited = {"slug": "member-player", "name": "Player", "tier": "Hydra",
+               "member": True}
+    monkeypatch.setattr(cardlib, "db_get_collection", lambda user_id: collection(
+        **{"member-player": {0: 1}, "other": {0: 8}}))
+    monkeypatch.setattr(cardlib, "db_get_member_cards",
+                        lambda slugs: {limited["slug"]: limited})
+    monkeypatch.setattr(cardlib, "db_get_member_card", lambda slug: limited)
+    monkeypatch.setattr(cardlib, "get_card",
+                        lambda slug: card(slug, "rare") if slug == "other" else None)
+    ctx = types.SimpleNamespace(
+        interaction=types.SimpleNamespace(user=types.SimpleNamespace(id=USER)),
+        value="", options={"first": "member-player:0"},
+    )
+
+    choices = await cmd._autocomplete_mergeable(ctx)
+
+    assert [(c.name, c.value) for c in choices] == [
+        ("Player (Limited) ×1", "member-player:0")]
 
 
 def test_a_mythic_needs_two_copies_a_step():

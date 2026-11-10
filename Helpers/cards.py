@@ -18,6 +18,7 @@ import json
 import os
 import random
 import time
+from collections import Counter
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
@@ -133,36 +134,31 @@ DISCARD_CONFIRM_TIERS = {"mythic", "fabled"}
 MERGE_INPUTS = 2
 
 # ── Tank tiers ───────────────────────────────────────────────────────────────
-# Upgrading raises how many reels you can bank, not how many you earn, so the
-# drop odds are untouched by progression.
-#
 # Named after the guild's own rank buckets (see data/embeds/guild_info/
 # role_info/guild_ranks.json), all seven of them in the same order, so a tank
 # reads like a rank: everyone starts in the Reef and the top tank is the
 # Abyss Waters.
 #
 # The number, not the name, is what a wallet stores, so rungs 1-3 are frozen:
-# their cost, bank, trickle and wishes are exactly what they were when the
+# their cost, bank and trickle are exactly what they were when the
 # ladder had five rungs, and the two extra buckets are inserted above them.
 # That was checked against live wallets before it went in — every one of them
 # sat on rung 1, 2 or 3 and nothing above rung 3 had ever been bought, so
 # inserting there cost nobody anything. Moving a rung at or below 3 later
 # would silently hand out (or take back) a tank somebody paid for — retire a
 # rung instead of renumbering.
-#
-# Not every rung pays in all three currencies; a step that widens the bank
-# and the trickle is a real upgrade without also granting a wish, which is
-# what keeps the top at five wishes across seven rungs.
 TANK_TIERS = {
-    1: {"name": "Reef", "cost": 0, "bank": 6, "trickle": 0, "wishes": 1},
-    2: {"name": "Coastal Waters", "cost": 2000, "bank": 8, "trickle": 3, "wishes": 2},
-    3: {"name": "Azure Ocean", "cost": 8000, "bank": 10, "trickle": 6, "wishes": 3},
-    4: {"name": "Blue Sea", "cost": 14000, "bank": 11, "trickle": 8, "wishes": 3},
-    5: {"name": "Deep Sea", "cost": 22000, "bank": 12, "trickle": 10, "wishes": 4},
-    6: {"name": "Dark Sea", "cost": 32000, "bank": 13, "trickle": 12, "wishes": 4},
-    7: {"name": "Abyss Waters", "cost": 45000, "bank": 15, "trickle": 15, "wishes": 5},
+    1: {"name": "Reef", "cost": 0, "bank": 6, "trickle": 0, "wishes": 2},
+    2: {"name": "Coastal Waters", "cost": 2000, "bank": 8, "trickle": 3, "wishes": 4},
+    3: {"name": "Azure Ocean", "cost": 8000, "bank": 10, "trickle": 6, "wishes": 6},
+    4: {"name": "Blue Sea", "cost": 14000, "bank": 11, "trickle": 8, "wishes": 8},
+    5: {"name": "Deep Sea", "cost": 22000, "bank": 12, "trickle": 10, "wishes": 10},
+    6: {"name": "Dark Sea", "cost": 32000, "bank": 13, "trickle": 12, "wishes": 12},
+    7: {"name": "Abyss Waters", "cost": 45000, "bank": 15, "trickle": 15, "wishes": 14},
 }
 MAX_TANK = max(TANK_TIERS)
+STREAK_SAVE_TIER = 5
+STREAK_SAVE_DAYS = 7
 
 # ── Daily ────────────────────────────────────────────────────────────────────
 # Bait pays in bands rather than a per-day drip, so there is a rung to aim at
@@ -232,6 +228,7 @@ SCHEMA = [
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS tank_tier SMALLINT NOT NULL DEFAULT 1',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS streak INT NOT NULL DEFAULT 0',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_daily DATE',
+    'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_streak_save DATE',
     'ALTER TABLE card_wallet ADD COLUMN IF NOT EXISTS last_trickle TIMESTAMPTZ NOT NULL DEFAULT NOW()',
     # Reels from bait sit outside the bank so a full bank cannot swallow them.
     # They never exceed one day's worth, because you cannot bait again while
@@ -692,50 +689,111 @@ def db_get_balance(user_id: int) -> int:
     return db_get_wallet(user_id)["total_reels"]
 
 
-def db_complete_pull(user_id: int, slug: str, pearls: int = 0) -> dict | None:
-    """Spend one reel and grant its card and pearls in one transaction."""
+@dataclass(frozen=True)
+class ReelPlan:
+    cards: list[dict]
+    members: list[tuple]
+
+
+class ReelGrant(TypedDict):
+    total: int
+    count: int
+    gained: int
+    pearls: int
+
+
+def db_prepare_reels(user_id: int, limit: int) -> ReelPlan:
+    if not 1 <= limit <= 10:
+        raise ValueError("Reel count must be between 1 and 10")
+    db = DB()
+    db.connect()
+    try:
+        window = current_window()
+        _ensure_wallet(db, user_id, window)
+        db.cursor.execute(_refresh_sql(), {
+            "w": window, "per": REELS_PER_WINDOW, "uid": user_id,
+        })
+        wallet = db.cursor.fetchone()
+        count = min(limit, wallet[0] + wallet[5]) if wallet else 0
+        cards, members = [], []
+        if count:
+            db.cursor.execute('SELECT card FROM card_wishlist WHERE "user" = %s',
+                              (user_id,))
+            wishes = {row[0] for row in db.cursor.fetchall()}
+            candidates = None
+            for _ in range(count):
+                card = roll_card(wishes=wishes)
+                if card.get("tier") == "member":
+                    if candidates is None:
+                        candidates = _unminted_members(db)
+                    if candidates:
+                        member = random.choice(candidates)
+                        candidates.remove(member)
+                        members.append(member)
+                        discord_id, ign, uuid, rank = member
+                        card = member_card_dict((member_slug(ign), discord_id,
+                                                 uuid, ign, rank, user_id, False))
+                    else:
+                        card = roll_card(wishes=wishes)
+                        if card.get("tier") == "member":
+                            card = roll_in_tier(roll_tier(), wishes)
+                cards.append(card)
+        db.connection.commit()
+        return ReelPlan(cards, members)
+    finally:
+        db.close()
+
+
+def db_complete_reels(user_id: int, plan: ReelPlan) -> ReelGrant | None:
+    count = len(plan.cards)
+    if not 1 <= count <= 10:
+        raise ValueError("Reel count must be between 1 and 10")
+    amounts = Counter(card["slug"] for card in plan.cards)
     window = current_window()
-    cap = _bank_cap_sql()
-    fresh = (f'LEAST({cap}, w.reels + '
+    fresh = (f'LEAST({_bank_cap_sql("w.tank_tier")}, w.reels + '
              'GREATEST(0, %(w)s - w.window_idx) * %(per)s)')
     db = DB()
     db.connect()
     try:
-        _ensure_wallet(db, user_id, window)
         db.cursor.execute(
             'WITH locked AS ('
             '    SELECT "user", bait_reels FROM card_wallet '
             '    WHERE "user" = %(uid)s FOR UPDATE'
             ') '
             'UPDATE card_wallet w SET '
-            f'  reels = {fresh} - CASE WHEN l.bait_reels > 0 THEN 0 ELSE 1 END, '
-            '  bait_reels = GREATEST(0, w.bait_reels - 1), '
+            f'  reels = {fresh} - GREATEST(0, %(count)s - l.bait_reels), '
+            '  bait_reels = GREATEST(0, w.bait_reels - %(count)s), '
             '  window_idx = %(w)s, '
-            '  total_reeled = w.total_reeled + 1, '
+            '  total_reeled = w.total_reeled + %(count)s, '
             '  pearls = w.pearls + %(pearls)s '
             'FROM locked l '
             'WHERE w."user" = l."user" '
-            f'  AND (l.bait_reels > 0 OR {fresh} > 0) '
-            'RETURNING w.reels, w.bait_reels, w.pearls',
-            {"w": window, "per": REELS_PER_WINDOW, "uid": user_id,
-             "pearls": pearls},
-        )
+            f'  AND ({fresh} + l.bait_reels) >= %(count)s '
+            'RETURNING w.reels + w.bait_reels, w.pearls',
+            {"uid": user_id, "w": window, "per": REELS_PER_WINDOW,
+             "count": count, "pearls": sum(pull_value(c) for c in plan.cards)})
         wallet = db.cursor.fetchone()
-        if not wallet:
-            db.connection.commit()
+        if wallet is None:
+            db.connection.rollback()
             return None
-        db.cursor.execute(
-            'INSERT INTO card_collection ("user", card, stars) '
-            'VALUES (%s, %s, 0) '
+        for member in plan.members:
+            if _insert_member_card(db, member, user_id) is None:
+                raise ValueError("Limited card was minted by another pull")
+        execute_values(
+            db.cursor,
+            'INSERT INTO card_collection ("user", card, stars, count) VALUES %s '
             'ON CONFLICT ("user", card, stars) '
-            'DO UPDATE SET count = card_collection.count + 1 '
-            'RETURNING count',
-            (user_id, slug))
-        card = db.cursor.fetchone()
+            'DO UPDATE SET count = card_collection.count + EXCLUDED.count '
+            'RETURNING card, count',
+            [(user_id, slug, 0, amount) for slug, amount in sorted(amounts.items())])
+        copies = dict(db.cursor.fetchall())
         db.connection.commit()
-        return {"reels": wallet[0], "bait_reels": wallet[1],
-                "total": wallet[0] + wallet[1],
-                "count": card[0], "gained": pearls, "pearls": wallet[2]}
+        last = plan.cards[-1]
+        return {"total": wallet[0], "pearls": wallet[1],
+                "count": copies[last["slug"]], "gained": pull_value(last)}
+    except Exception:
+        db.connection.rollback()
+        raise
     finally:
         db.close()
 
@@ -837,13 +895,16 @@ def db_claim_daily(user_id: int) -> dict:
     at one day's worth without needing a cap, and it keeps bait from becoming
     a second bank people sit on.
 
-    The streak continues when the last claim was yesterday and resets
-    otherwise, decided in SQL so two fast clicks cannot both land. What it
-    pays comes off that same expression, so the streak reported back and the
-    band it was paid at can never disagree.
+    Streak continuation, saving and payouts use the same SQL expression so
+    concurrent claims cannot spend the save or pay the daily twice.
     """
     window = current_window()
-    new_streak = ('(CASE WHEN last_daily = CURRENT_DATE - 1 '
+    save_streak = (
+        '(tank_tier >= %(save_tier)s AND streak > 0 '
+        'AND last_daily = CURRENT_DATE - 2 '
+        'AND (last_streak_save IS NULL '
+        'OR last_streak_save <= CURRENT_DATE - %(save_days)s))')
+    new_streak = (f'(CASE WHEN last_daily = CURRENT_DATE - 1 OR {save_streak} '
                   'THEN streak + 1 ELSE 1 END)')
     db = DB()
     db.connect()
@@ -857,14 +918,18 @@ def db_claim_daily(user_id: int) -> dict:
         db.cursor.execute(
             'UPDATE card_wallet SET '
             f'  streak = {new_streak}, '
+            f'  last_streak_save = CASE WHEN {save_streak} THEN CURRENT_DATE '
+            '    ELSE last_streak_save END, '
             '  last_daily = CURRENT_DATE, '
             f'  pearls = pearls + {_daily_case_sql("pearls", new_streak)}, '
             f'  bait_reels = {_daily_case_sql("reels", new_streak)} '
+            '    + CASE WHEN tank_tier = %(max_tank)s THEN 1 ELSE 0 END '
             'WHERE "user" = %(uid)s '
             '  AND (last_daily IS NULL OR last_daily < CURRENT_DATE) '
             '  AND bait_reels = 0 '
-            'RETURNING streak, pearls, reels, bait_reels',
-            {"uid": user_id},
+            'RETURNING streak, pearls, reels, bait_reels, last_streak_save = CURRENT_DATE',
+            {"uid": user_id, "max_tank": MAX_TANK,
+             "save_tier": STREAK_SAVE_TIER, "save_days": STREAK_SAVE_DAYS},
         )
         row = db.cursor.fetchone()
         if not row:
@@ -888,6 +953,7 @@ def db_claim_daily(user_id: int) -> dict:
             "bait_reels": row[3],
             "total_reels": row[2] + row[3],
             "gained": daily_tier(streak)["pearls"],
+            "streak_saved": bool(row[4]),
         }
     finally:
         db.close()
@@ -1382,28 +1448,6 @@ def _insert_member_card(db, member: tuple, owner_id: int) -> dict | None:
     return member_card_dict(row) if row else None
 
 
-def db_mint_member_card(owner_id: int) -> dict | None:
-    """Mint the card of a random eligible member who doesn't have one yet.
-
-    Returns None when every eligible member already has a card in circulation,
-    in which case the caller should fall back to a normal card.
-    """
-    db = DB()
-    db.connect()
-    try:
-        candidates = _unminted_members(db)
-        if not candidates:
-            return None
-        minted = _insert_member_card(db, random.choice(candidates), owner_id)
-        if minted is None:
-            db.connection.rollback()
-            return None
-        db.connection.commit()
-        return minted
-    finally:
-        db.close()
-
-
 def draw_limited(candidates: list, inputs: list, rng: random.Random | None = None):
     r = rng or random
     tickets = [("new", c) for c in candidates] + [("kept", i) for i in inputs]
@@ -1472,26 +1516,6 @@ def db_merge_limited(user_id: int, slugs: list, rng: random.Random | None = None
     except Exception:
         db.connection.rollback()
         raise
-    finally:
-        db.close()
-
-
-def db_release_member_card(slug: str, owner_id: int) -> bool:
-    """Undo a mint whose pull never landed, so the member can be minted again.
-
-    Only a card that no collection holds is released: once a copy has landed
-    anywhere the mint is real, and it stays.
-    """
-    db = DB()
-    db.connect()
-    try:
-        db.cursor.execute(
-            'DELETE FROM card_members m WHERE m.slug = %s AND m.owner = %s '
-            '  AND NOT EXISTS (SELECT 1 FROM card_collection c WHERE c.card = m.slug)',
-            (slug, owner_id))
-        released = db.cursor.rowcount == 1
-        db.connection.commit()
-        return released
     finally:
         db.close()
 

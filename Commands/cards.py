@@ -153,10 +153,13 @@ def _pile_name(card: dict, star: int, count: int) -> str:
     return f"{name} ×{count}" if count > 1 else name
 
 
-def _stack_label(card: dict, star: int, count: int) -> str:
+def _stack_label(card: dict, star: int, count: int, show_tier=False) -> str:
     """How one stack reads in a picker: the card, its level, how many."""
     label = _level_label(card, star)
-    return f"{card['name']}{' ' + label if label else ''} ×{count}"
+    name = card["name"]
+    if show_tier:
+        name += f" ({_tier_label(_tier_of(card))})"
+    return f"{name}{' ' + label if label else ''} ×{count}"
 
 
 def _parse_stack(value: str) -> tuple[str, int] | None:
@@ -186,7 +189,7 @@ async def _held_stacks(user_id: int, typed: str = "", resolve_member=True):
 
 
 async def _stack_choices(user_id: int, typed: str, resolve_member=True,
-                         keep=None, by_copies=False):
+                         keep=None, by_copies=False, show_tier=False):
     """Every stack a user holds, one entry per star level."""
     stacks = await _held_stacks(user_id, typed, resolve_member)
     if keep:
@@ -195,7 +198,7 @@ async def _stack_choices(user_id: int, typed: str, resolve_member=True,
         stacks.sort(key=lambda s: (-s[2], s[0]["name"].lower()))
     else:
         stacks.sort(key=lambda s: _stack_label(*s).lower())
-    return [discord.OptionChoice(name=_stack_label(card, star, count),
+    return [discord.OptionChoice(name=_stack_label(card, star, count, show_tier),
                                  value=f"{card['slug']}:{star}")
             for card, star, count in stacks[:25]]
 
@@ -261,7 +264,7 @@ async def _autocomplete_fusable(ctx: discord.AutocompleteContext):
         if star is None:
             continue
         choice = discord.OptionChoice(
-            name=_stack_label(card, star, levels[slug][star]),
+            name=_stack_label(card, star, levels[slug][star], show_tier=True),
             value=slug)
         out.append((star, choice))
     out.sort(key=lambda entry: (-entry[0], entry[1].name.lower()))
@@ -278,7 +281,7 @@ async def _autocomplete_mergeable(ctx: discord.AutocompleteContext):
             wanted = _tier_of(card)
         return await _stack_choices(
             ctx.interaction.user.id, (ctx.value or "").lower(),
-            by_copies=True,
+            by_copies=True, show_tier=True,
             keep=lambda card, star, count: (
                 star == 0 and (not wanted or _tier_of(card) == wanted)))
     except Exception:
@@ -571,65 +574,38 @@ def _history_content(history: list) -> str:
 
 
 async def _do_reel(user_id: int, who: str):
-    """Roll and render a card, then atomically spend and bank it.
+    embed, file, info, cards = await _do_reels(user_id, who, 1)
+    return embed, file, info, cards[-1] if cards else None
 
-    Returns (embed, file, remaining, card) on success, or (None, None, reason,
-    None) where reason is 'out', 'render' or 'failed'. Nothing is charged
-    until the rendered card can be granted in the same database transaction.
-    """
-    card, minted, stage = None, None, "balance"
+
+async def _do_reels(user_id: int, who: str, limit: int):
+    card, file, stage = None, None, "prepare"
     try:
-        balance = await asyncio.to_thread(cardlib.db_get_balance, user_id)
-        if balance <= 0:
+        plan = await asyncio.to_thread(cardlib.db_prepare_reels, user_id, limit)
+        if not plan.cards:
             return None, None, "out", None
-
-        stage = "roll"
-        wishes = set(await asyncio.to_thread(cardlib.db_get_wishes, user_id))
-        card = cardlib.roll_card(wishes=wishes)
-
-        if card.get("tier") == "member":
-            minted = await asyncio.to_thread(cardlib.db_mint_member_card,
-                                             user_id)
-            # Every eligible member already holds a card: fall back to a normal
-            # pull rather than silently eating the reel.
-            card = minted or cardlib.roll_card(wishes=wishes)
-            if card.get("tier") == "member":
-                card = cardlib.roll_card()
-
+        card = plan.cards[-1]
         stage = "render"
-        # Spelled out rather than left to defaults: a fresh pull is always
-        # unfused, and that is worth saying at the call site.
         file = await asyncio.to_thread(card_file, card, None, 0,
                                        cardlib.tier_max_stars(card))
-
         stage = "grant"
-        pearls = cardlib.pull_value(card)
-        result = await asyncio.to_thread(cardlib.db_complete_pull, user_id,
-                                         card["slug"], pearls)
+        result = await asyncio.to_thread(cardlib.db_complete_reels, user_id, plan)
         if result is None:
-            await _release_mint(user_id, minted)
-            return None, None, "out", None
+            file.close()
+            balance = await asyncio.to_thread(cardlib.db_get_balance, user_id)
+            return None, None, "out" if balance <= 0 else "failed", None
     except Exception as e:
+        if file is not None:
+            file.close()
         slug = card.get("slug") if card else None
         log(ERROR, f"Reel failed at {stage} for {user_id} ({slug}): {e}",
             context="cards")
-        await _release_mint(user_id, minted)
         return None, None, ("render" if stage == "render" else "failed"), None
 
     remaining = result["total"]
     embed = _card_embed(card, result["count"], remaining, file.filename, who,
                         gained=result["gained"])
-    return embed, file, remaining, card
-
-
-async def _release_mint(user_id: int, minted: dict | None):
-    if minted:
-        try:
-            await asyncio.to_thread(cardlib.db_release_member_card,
-                                    minted["slug"], user_id)
-        except Exception as e:
-            log(ERROR, f"Member card {minted['slug']} not released after a "
-                f"failed pull by {user_id}: {e}", context="cards")
+    return embed, file, remaining, plan.cards
 
 
 def _failure_text(reason: str) -> str:
@@ -657,23 +633,26 @@ def _milestone_embed(user, kind: str, subject, pearls: int) -> discord.Embed:
         color=color)
 
 
-async def _announce_and_reward(channel, user, card):
-    """Shout about a member card and hand out any milestones the pull just
-    completed."""
+async def _announce_and_reward(channel, user, cards: list[dict]):
     try:
-        if card and card.get("member"):
-            await channel.send(embed=discord.Embed(
-                title="Limited card found",
-                description=f"{user.mention} pulled **{card['name']}** ({card['rank']})",
-                color=cardlib.TIER_COLORS["member"]))
-
         collection = await asyncio.to_thread(cardlib.db_get_collection, user.id)
         earned = await asyncio.to_thread(cardlib.check_milestones, user.id,
                                          collection)
-        for award in earned:
-            await channel.send(embed=_milestone_embed(user, *award))
     except Exception as e:
-        log(ERROR, f"Post-reel announce failed: {e}", context="cards")
+        log(ERROR, f"Post-reel rewards failed: {e}", context="cards")
+        earned = []
+
+    notices = [discord.Embed(
+        title="Limited card found",
+        description=f"{user.mention} pulled **{card['name']}** ({card['rank']})",
+        color=cardlib.TIER_COLORS["member"])
+        for card in cards if card.get("member")]
+    notices.extend(_milestone_embed(user, *award) for award in earned)
+    for embed in notices:
+        try:
+            await channel.send(embed=embed)
+        except Exception as e:
+            log(ERROR, f"Post-reel notice failed: {e}", context="cards")
 
 
 class ReelCoordinator:
@@ -785,7 +764,7 @@ class ReelView(discord.ui.View):
                 self.owner_id, busy=True, skip=self)
             try:
                 await interaction.edit_original_response(view=self)
-                await self._run_reel(interaction, limit)
+                cards = await self._run_reel(interaction, limit)
             except Exception:
                 await self.coordinator.update_views(
                     self.owner_id, exhausted=False, skip=self)
@@ -794,44 +773,44 @@ class ReelView(discord.ui.View):
                 except discord.HTTPException:
                     pass
                 raise
+        if cards:
+            await _announce_and_reward(interaction.channel, interaction.user, cards)
 
     async def _run_reel(self, interaction: discord.Interaction, limit: int):
-        pulls = []
-        failure = None
-        for _ in range(limit):
+        if limit == 1:
             embed, file, info, card = await _do_reel(
                 self.owner_id, self.owner_name)
-            if embed is None:
-                failure = info
-                break
-            pulls.append((embed, file, info, card))
-            if info == 0:
-                break
+            cards = [card] if card else None
+        else:
+            embed, file, info, cards = await _do_reels(
+                self.owner_id, self.owner_name, limit)
 
-        if not pulls:
-            if failure == "out":
+        if embed is None:
+            if info == "out":
                 await self.coordinator.update_views(
                     self.owner_id, exhausted=True, skip=self)
                 refresh = cardlib.next_refresh_ts()
                 await interaction.edit_original_response(view=self)
-                return await interaction.followup.send(
+                await interaction.followup.send(
                     embed=_notice(ctext.no_reels(refresh)),
                     ephemeral=True)
+                return
             await self.coordinator.update_views(
                 self.owner_id, exhausted=False, skip=self)
             await interaction.edit_original_response(view=self)
-            return await interaction.followup.send(
-                embed=_notice(_failure_text(failure)), ephemeral=True)
+            await interaction.followup.send(
+                embed=_notice(_failure_text(info)), ephemeral=True)
+            return
 
-        for _, _, _, pulled_card in pulls:
+        for pulled_card in cards:
             if self.current is not None:
                 self.history.append(self.current)
             self.current = pulled_card
 
-        embed, file, remaining, card = pulls[-1]
+        remaining, card = info, cards[-1]
         await self.coordinator.update_views(
             self.owner_id,
-            exhausted=remaining == 0 or failure == "out",
+            exhausted=remaining == 0,
             skip=self)
         try:
             # attachments=[] drops the previous card image; the new file
@@ -848,13 +827,7 @@ class ReelView(discord.ui.View):
                     ephemeral=True)
             except discord.HTTPException:
                 pass
-        for _, _, _, pulled_card in pulls:
-            await _announce_and_reward(interaction.channel, interaction.user,
-                                       pulled_card)
-
-        if failure and failure != "out":
-            await interaction.followup.send(
-                embed=_notice(_failure_text(failure)), ephemeral=True)
+        return cards
 
 
 @dataclass(frozen=True)
@@ -1439,7 +1412,7 @@ class TradeView(discord.ui.View):
             await self._edit(interaction, self._done_text())
         # Trading for the last missing card is how most sets will get finished.
         for user in (self.proposer, self.target):
-            await _announce_and_reward(interaction.channel, user, None)
+            await _announce_and_reward(interaction.channel, user, [])
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.secondary)
     async def decline(self, button: discord.ui.Button,
@@ -1656,7 +1629,8 @@ class LimitedMergeView(discord.ui.View):
         embed, file, announce = await _do_merge_limited(self.owner_id, self.cards)
         await interaction.edit_original_response(
             content=None, embed=embed, file=file, attachments=[], view=None)
-        await _announce_and_reward(interaction.channel, interaction.user, announce)
+        await _announce_and_reward(interaction.channel, interaction.user,
+                                   [announce] if announce else [])
 
     @discord.ui.button(label="Keep", style=discord.ButtonStyle.secondary)
     async def cancel(self, button: discord.ui.Button,
@@ -1706,7 +1680,7 @@ class DiscardView(discord.ui.View):
                 embed=_notice("Copies changed"), view=None)
         await interaction.edit_original_response(
             content=None, embed=embed, file=file, attachments=[], view=None)
-        await _announce_and_reward(interaction.channel, interaction.user, None)
+        await _announce_and_reward(interaction.channel, interaction.user, [])
 
     @discord.ui.button(label="Keep", style=discord.ButtonStyle.secondary)
     async def cancel(self, button: discord.ui.Button,
@@ -1785,7 +1759,7 @@ class Cards(commands.Cog):
             view.message = await ctx.followup.send(
                 content=_history_content([]),
                 embed=embed, file=file, view=view, wait=True)
-        await _announce_and_reward(ctx.channel, ctx.author, card)
+        await _announce_and_reward(ctx.channel, ctx.author, [card])
 
     # ── /bait ────────────────────────────────────────────────────────────────
 
@@ -1816,10 +1790,11 @@ class Cards(commands.Cog):
             description=(f"**+{result['bait_reels']}** Reels, "
                          f"**+{result['gained']:,}** Pearls"),
             color=ctext.ACCENT)
-        if cardlib.next_daily_tier(streak):
-            embed.set_footer(text=f"{streak} Day Streak")
-        else:
-            embed.set_footer(text="Max Streak")
+        footer = (f"{streak} Day Streak" if cardlib.next_daily_tier(streak)
+                  else "Max Streak")
+        if result["streak_saved"]:
+            footer += " (saved)"
+        embed.set_footer(text=footer)
         reset = await asyncio.to_thread(cardlib.db_next_daily_reset)
         await ctx.followup.send(
             content=f"-# {ctext.next_line('Bait refresh', reset)}", embed=embed)
@@ -1848,8 +1823,15 @@ class Cards(commands.Cog):
                    "goes to waste)\n\n"
                    "`/bait` Claim daily Reels and Pearls (stronger with streak)\n"
                    f"Caps at **{cardlib.MAX_BAIT_REELS}** Reels and "
-                   f"**{cardlib.DAILY_TIERS[-1]['pearls']}** Pearls\n\n"
+                   f"**{cardlib.DAILY_TIERS[-1]['pearls']}** Pearls\n"
+                   f"+1 daily Reel at {cardlib.TANK_TIERS[cardlib.MAX_TANK]['name']} Tank Tier\n\n"
                    "`/tank ping` Toggle refresh pings"),
+            inline=False)
+        embed.add_field(
+            name="Streak save",
+            value=(f"Tank Tier {cardlib.STREAK_SAVE_TIER} "
+                   f"({cardlib.TANK_TIERS[cardlib.STREAK_SAVE_TIER]['name']}) "
+                   f"saves your streak on one missed bait day every {cardlib.STREAK_SAVE_DAYS} days"),
             inline=False)
         embed.add_field(
             name="Your tank",
@@ -2101,6 +2083,9 @@ class Cards(commands.Cog):
                         value=f"{cardlib.collection_rating(owned):,}")
         embed.add_field(name="Streak", value=f"{wallet['streak']} day"
                         f"{'' if wallet['streak'] == 1 else 's'}")
+        if tier >= cardlib.STREAK_SAVE_TIER:
+            embed.add_field(name="Streak save",
+                            value=f"One missed day every {cardlib.STREAK_SAVE_DAYS} days")
         embed.add_field(name="Pulled",
                         value=f"{wallet['total_reeled']:,} all time")
         progress = cardlib.set_progress(owned)
@@ -2111,6 +2096,8 @@ class Cards(commands.Cog):
         embed.add_field(
             name="Passive Pearls",
             value=ctext.passive_value(spec["trickle"]))
+        if tier == cardlib.MAX_TANK:
+            embed.add_field(name="Bait bonus", value="+1 daily Reel")
         embed.add_field(
             name=f"Wishes ({len(wishes)}/{spec['wishes']})",
             value=", ".join((cardlib.get_card(w) or {"name": w})["name"]
@@ -2185,6 +2172,11 @@ class Cards(commands.Cog):
                          f"Passive Pearls: **{ctext.per_hour(nxt['trickle'])}**\n"
                          f"Wishes: **{nxt['wishes']}**"),
             color=ctext.ACCENT)
+        if tier + 1 == cardlib.MAX_TANK:
+            embed.add_field(name="Bait bonus", value="+1 daily Reel")
+        if tier + 1 == cardlib.STREAK_SAVE_TIER:
+            embed.add_field(name="Streak save",
+                            value=f"One missed day every {cardlib.STREAK_SAVE_DAYS} days")
         if tier + 1 < cardlib.MAX_TANK:
             after = cardlib.TANK_TIERS[tier + 2]
             embed.set_footer(
@@ -2371,7 +2363,7 @@ class Cards(commands.Cog):
                 embed=_notice("Copies changed"),
                 ephemeral=True)
         await ctx.followup.send(embed=embed, file=file)
-        await _announce_and_reward(ctx.channel, ctx.author, None)
+        await _announce_and_reward(ctx.channel, ctx.author, [])
 
     @card.command(
         name="merge",
@@ -2438,7 +2430,7 @@ class Cards(commands.Cog):
             return await ctx.followup.send(
                 embed=_notice("Merge changed\nTry again"), ephemeral=True)
         await ctx.followup.send(embed=embed, file=file)
-        await _announce_and_reward(ctx.channel, ctx.author, None)
+        await _announce_and_reward(ctx.channel, ctx.author, [])
 
     @card.command(name="trade", description="Trade cards with other collectors")
     async def card_trade(

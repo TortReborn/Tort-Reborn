@@ -29,9 +29,9 @@ BUCKETS = ["Reef", "Coastal Waters", "Azure Ocean", "Blue Sea", "Deep Sea",
 # What rungs 1-3 cost before the ladder grew to seven. Everyone on prod sat
 # on one of these when the extra buckets went in.
 FROZEN = {
-    1: {"name": "Reef", "cost": 0, "bank": 6, "trickle": 0, "wishes": 1},
-    2: {"name": "Coastal Waters", "cost": 2000, "bank": 8, "trickle": 3, "wishes": 2},
-    3: {"name": "Azure Ocean", "cost": 8000, "bank": 10, "trickle": 6, "wishes": 3},
+    1: {"name": "Reef", "cost": 0, "bank": 6, "trickle": 0},
+    2: {"name": "Coastal Waters", "cost": 2000, "bank": 8, "trickle": 3},
+    3: {"name": "Azure Ocean", "cost": 8000, "bank": 10, "trickle": 6},
 }
 
 
@@ -66,7 +66,7 @@ def test_the_role_info_embed_spells_the_buckets_the_same_way():
 def test_the_bottom_three_rungs_never_move():
     """Renumbering these would regrade a tank somebody already bought."""
     for tier, spec in FROZEN.items():
-        assert cardlib.TANK_TIERS[tier] == spec, tier
+        assert {key: cardlib.TANK_TIERS[tier][key] for key in spec} == spec, tier
     assert cardlib.TANK_TIERS[1]["cost"] == 0, "the first tank is free"
 
 
@@ -76,7 +76,7 @@ def test_every_rung_climbs_and_pays_for_itself():
         assert high["cost"] > low["cost"]
         assert high["bank"] > low["bank"]
         assert high["trickle"] > low["trickle"]
-        assert high["wishes"] >= low["wishes"]
+        assert high["wishes"] == low["wishes"] + 2
         # A rung that granted nothing but a bigger bill would be a trap.
         assert (high["bank"], high["trickle"], high["wishes"]) != \
                (low["bank"], low["trickle"], low["wishes"])
@@ -85,7 +85,7 @@ def test_every_rung_climbs_and_pays_for_itself():
 def test_bank_cap_and_wish_slots_answer_for_every_rung():
     for tier, spec in cardlib.TANK_TIERS.items():
         assert cardlib.bank_cap(tier) == spec["bank"]
-        assert cardlib.wish_slots(tier) == spec["wishes"]
+        assert cardlib.wish_slots(tier) == spec["wishes"] == tier * 2
     # An unknown rung falls back to the first rather than raising at a player.
     assert cardlib.bank_cap(99) == cardlib.TANK_TIERS[1]["bank"]
     assert cardlib.wish_slots(0) == cardlib.TANK_TIERS[1]["wishes"]
