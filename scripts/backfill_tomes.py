@@ -331,7 +331,10 @@ def build_plan(data: dict, cursor, aliases: dict) -> tuple[list[dict], list[dict
             if bucket == "dormant" and here:
                 review.append(f"list {section} {name}: {n}: back in the guild, so queued at low priority")
                 bucket = "give_when_full" if section == "last_resort" else "queue"
-            reqs.append(dict(uuid=uuid, ign=ign, bucket=bucket, count=n, priority="low",
+            # Where it goes if they rejoin, as the two lines above place it.
+            back = ("give_when_full" if section == "last_resort" else "queue" if section == "owed" else section)
+            reqs.append(dict(uuid=uuid, ign=ign, bucket=bucket, left_from=back if bucket == "dormant" else None,
+                             count=n, priority="low",
                              note=f"from the list: {section.replace('_', ' ')}" + (f" ({note})" if note else "")))
     return events, reqs, review
 
@@ -364,9 +367,9 @@ def apply(db, events, reqs):
         )
     for r in reqs:
         c.execute(
-            "INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket, source, note) "
-            "VALUES (%s, %s, NULL, %s, %s, %s, 'backfill', %s) RETURNING id",
-            (r["uuid"], r["ign"], r["count"], r["priority"], r["bucket"], r["note"]),
+            "INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket, left_from, source, note) "
+            "VALUES (%s, %s, NULL, %s, %s, %s, %s, 'backfill', %s) RETURNING id",
+            (r["uuid"], r["ign"], r["count"], r["priority"], r["bucket"], r["left_from"], r["note"]),
         )
         rid = c.fetchone()[0]
         c.execute(

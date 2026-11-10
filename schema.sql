@@ -257,6 +257,7 @@ CREATE TABLE IF NOT EXISTS tome_requests (
   -- someone no longer in the guild, back in the queue if they rejoin
   bucket       VARCHAR(24)  NOT NULL DEFAULT 'queue'
                CHECK (bucket IN ('queue', 'give_when_available', 'give_when_full', 'dormant')),
+  left_from    VARCHAR(24),  -- the bucket a dormant request returns to when its member rejoins
   status       VARCHAR(12)  NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done', 'cancelled')),
   shells_spent INT          NOT NULL DEFAULT 0,
   source       VARCHAR(12)  NOT NULL DEFAULT 'request' CHECK (source IN ('request', 'backfill', 'adjustment')),

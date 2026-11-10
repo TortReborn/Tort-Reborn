@@ -42,7 +42,13 @@ STEP_TIMEOUT = 300
 def _member(discord_id: int):
     db = DB(); db.connect()
     try:
-        db.cursor.execute("SELECT uuid::text, ign FROM discord_links WHERE discord_id = %s AND uuid IS NOT NULL", (discord_id,))
+        db.cursor.execute(
+            """
+            SELECT l.uuid::text, l.ign, EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = l.uuid)
+            FROM discord_links l WHERE l.discord_id = %s AND l.uuid IS NOT NULL
+            """,
+            (discord_id,),
+        )
         return db.cursor.fetchone()
     finally:
         db.close()
@@ -205,7 +211,9 @@ class TomeRequestView(discord.ui.View):
         row = await asyncio.to_thread(_member, interaction.user.id)
         if not row:
             return await interaction.followup.send("❌ You don't have a linked game account. Please use `/link` first.", ephemeral=True)
-        uuid, ign = row
+        uuid, ign, in_guild = row
+        if not in_guild:
+            return await interaction.followup.send("❌ You need to be in the guild to request tomes.", ephemeral=True)
         wars, from_snapshot = await asyncio.to_thread(_lifetime_wars, uuid)
         s = await asyncio.to_thread(_standing, uuid, interaction.user.id, wars)
         req = _Request(uuid, interaction.user.id, ign, wars, s)
@@ -233,6 +241,16 @@ def _unannounced():
             """
         )
         return int(row[0]), db.cursor.fetchall()
+    finally:
+        db.close()
+
+
+def _sync_membership():
+    db = DB(); db.connect()
+    try:
+        moved = tomes.sync_membership(db)
+        db.connection.commit()
+        return moved
     finally:
         db.close()
 
@@ -306,6 +324,10 @@ class Tomes(commands.Cog):
 
     @tasks.loop(seconds=ANNOUNCE_SECONDS)
     async def announce(self):
+        try:
+            await asyncio.to_thread(_sync_membership)
+        except Exception as e:
+            log(ERROR, f"Tome membership sync failed: {e}", context="tomes")
         try:
             channel_id, rows = await asyncio.to_thread(_unannounced)
             if not channel_id or not rows:

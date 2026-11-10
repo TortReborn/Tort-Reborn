@@ -220,7 +220,12 @@ def _shells(db, balance):
                       (str(DISCORD), balance, balance, "Thundderr"))
 
 
+def _in_guild(db, uuid=UUID):
+    db.cursor.execute("INSERT INTO guild_roster (uuid, ign, in_game_rank) VALUES (%s, 'x', 'recruit') ON CONFLICT DO NOTHING", (uuid,))
+
+
 def _ask(db, kind, count, wars=None, priority="medium"):
+    _in_guild(db)
     return tomes.request_tomes(db, uuid=UUID, discord_id=DISCORD, ign="Thundderr",
                                kind=kind, count=count, priority=priority, wars=wars)
 
@@ -263,6 +268,44 @@ def test_a_request_of_any_size_joins_the_queue_whole(temp_db):
     assert made["count"] == 120
     temp_db.cursor.execute("SELECT bucket, count FROM tome_requests WHERE id = %s", (made["id"],))
     assert temp_db.cursor.fetchone() == ("queue", 120)
+
+
+def test_a_member_who_is_not_in_the_guild_cant_request(temp_db):
+    _shells(temp_db, 100)
+    with pytest.raises(tomes.TomeError, match="in the guild"):
+        tomes.request_tomes(temp_db, uuid=UUID, discord_id=DISCORD, ign="x", kind="raid", count=1, priority="low", wars=None)
+    temp_db.cursor.execute('SELECT balance FROM shells WHERE "user" = %s', (str(DISCORD),))
+    assert temp_db.cursor.fetchone()[0] == 100
+
+
+def _buckets(db):
+    db.cursor.execute("SELECT ign, bucket, left_from FROM tome_requests ORDER BY id")
+    return db.cursor.fetchall()
+
+
+def test_leaving_makes_requests_dormant_and_returning_puts_them_back(temp_db):
+    c, other = temp_db.cursor, "11111111-2222-3333-4444-666666666666"
+    _in_guild(temp_db, other)
+    for ign, uuid, bucket in (("a", UUID, "queue"), ("b", UUID, "give_when_full"), ("stays", other, "queue"), ("by_hand", other, "dormant")):
+        c.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket) VALUES (%s, %s, 'war', 1, 'low', %s)", (uuid, ign, bucket))
+    c.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket, status) VALUES (%s, 'done', 'war', 1, 'low', 'queue', 'done')", (UUID,))
+
+    assert tomes.sync_membership(temp_db) == (2, 0)  # UUID was never in the roster
+    assert _buckets(temp_db)[:2] == [("a", "dormant", "queue"), ("b", "dormant", "give_when_full")]
+    assert tomes.sync_membership(temp_db) == (0, 0)
+    c.execute("SELECT note FROM tome_events WHERE action = 'moved'")
+    assert {r[0] for r in c.fetchall()} == {"queue -> dormant (left the guild)", "give_when_full -> dormant (left the guild)"}
+
+    _in_guild(temp_db)
+    assert tomes.sync_membership(temp_db) == (0, 2)
+    assert _buckets(temp_db) == [("a", "queue", None), ("b", "give_when_full", None), ("stays", "queue", None),
+                                 ("by_hand", "dormant", None), ("done", "queue", None)]
+
+
+def test_an_empty_roster_moves_nobody(temp_db):
+    temp_db.cursor.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority) VALUES (%s, 'a', 'war', 1, 'low')", (UUID,))
+    assert tomes.sync_membership(temp_db) == (0, 0)
+    assert _buckets(temp_db) == [("a", "queue", None)]
 
 
 def test_bad_input_is_refused(temp_db):

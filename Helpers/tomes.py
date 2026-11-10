@@ -11,7 +11,9 @@ A tome is earned one of two ways, and a request is for one of them:
   the milestones. Stored as kind 'raid'; members only ever see "shell".
 
 Every request joins the queue; only exec moves one to 'give when available'
-or 'give when full', on the website. Tomes given before they were earned are recorded as debt and count as war tomes received, so
+or 'give when full', on the website. A member who leaves the guild still has
+their tomes owed: sync_membership moves their requests to 'dormant', and back
+where they were if they return. Tomes given before they were earned are recorded as debt and count as war tomes received, so
 later wars pay them off.
 
 Keep in step with TAq-Website/lib/tomes.ts, which shows the same numbers on
@@ -168,6 +170,9 @@ def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int,
         raise TomeError("Ask for at least one tome.")
 
     c = db.cursor
+    c.execute("SELECT 1 FROM guild_roster WHERE uuid = %s", (str(uuid),))
+    if c.fetchone() is None:
+        raise TomeError("You need to be in the guild to request tomes.")
     # One request at a time per member: two clicks can't spend the same
     # milestones or shells twice.
     c.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 116))", (str(uuid),))
@@ -278,3 +283,38 @@ def load_queue_text() -> str:
         return queue_text(open_queue(db.cursor))
     finally:
         db.close()
+
+
+def sync_membership(db) -> tuple[int, int]:
+    """Move open requests of members who left the guild to 'dormant', and those
+    of members who returned back where they were. Returns (moved out, moved
+    back). An empty roster means the roster failed, not that everyone left.
+    Requests exec made dormant by hand stay put. Nothing here commits."""
+    c = db.cursor
+    c.execute(
+        """
+        UPDATE tome_requests r SET left_from = r.bucket, bucket = 'dormant', updated_at = NOW()
+        WHERE r.status = 'open' AND r.bucket <> 'dormant'
+          AND NOT EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = r.uuid)
+          AND EXISTS (SELECT 1 FROM guild_roster)
+        RETURNING r.id, r.uuid::text, r.ign, r.left_from
+        """
+    )
+    out = c.fetchall()
+    c.execute(
+        """
+        UPDATE tome_requests r SET bucket = r.left_from, left_from = NULL, updated_at = NOW()
+        WHERE r.status = 'open' AND r.bucket = 'dormant' AND r.left_from IS NOT NULL
+          AND EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = r.uuid)
+        RETURNING r.id, r.uuid::text, r.ign, r.bucket
+        """
+    )
+    back = c.fetchall()
+    for rows, describe in ((out, lambda b: f"{b} -> dormant (left the guild)"),
+                           (back, lambda b: f"dormant -> {b} (back in the guild)")):
+        for rid, uuid, ign, bucket in rows:
+            note = describe(bucket)
+            c.execute("INSERT INTO tome_events (uuid, request_id, action, note) VALUES (%s, %s, 'moved', %s)", (uuid, rid, note))
+            c.execute("INSERT INTO audit_log (log_type, actor_name, action) VALUES ('tome', 'Bot', %s)",
+                      (f"Moved {ign}'s request #{rid}: {note}",))
+    return len(out), len(back)
