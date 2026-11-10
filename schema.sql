@@ -1213,3 +1213,20 @@ CREATE TABLE IF NOT EXISTS card_trades (
     to_user      BIGINT      NOT NULL,
     completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- One row per reel, written in the same transaction that spends it. Holdings
+-- drift from what was pulled (fusion, discards, trades), so this is the only
+-- record of the raw rolls. tier is the card's tier at pull time, since cards
+-- are occasionally re-tiered; wishes is the wishlist as it stood then.
+CREATE TABLE IF NOT EXISTS card_pulls (
+    id        BIGSERIAL     PRIMARY KEY,
+    "user"    BIGINT        NOT NULL,
+    card      VARCHAR(64)   NOT NULL,
+    tier      VARCHAR(16)   NOT NULL,
+    pearls    INT           NOT NULL,
+    bait      BOOLEAN       NOT NULL,
+    wishes    VARCHAR(64)[] NOT NULL DEFAULT '{}',
+    pulled_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS card_pulls_user_at_idx
+  ON card_pulls ("user", pulled_at);

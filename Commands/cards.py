@@ -605,7 +605,8 @@ async def _do_reel(user_id: int, who: str):
         stage = "grant"
         pearls = cardlib.pull_value(card)
         result = await asyncio.to_thread(cardlib.db_complete_pull, user_id,
-                                         card["slug"], pearls)
+                                         card["slug"], pearls,
+                                         _tier_of(card), wishes)
         if result is None:
             await _release_mint(user_id, minted)
             return None, None, "out", None
