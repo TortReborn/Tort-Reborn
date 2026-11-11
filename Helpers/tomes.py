@@ -10,8 +10,9 @@ A tome is earned one of two ways, and a request is for one of them:
   after. Only shell tomes count towards that price, and only war tomes towards
   the milestones. Stored as kind 'raid'; members only ever see "shell".
 
-Every request joins the queue; only exec moves one to 'give when available'
-or 'give when full', on the website. A member who leaves the guild still has
+Every request joins 'give when available'; only exec moves one to 'give when
+full' or 'give if no other option' (last_resort), on the website. Tomes go out
+in that order, by priority then age within each. A member who leaves the guild still has
 their tomes owed: sync_membership moves their requests to 'dormant', and back
 where they were if they return. Tomes given before they were earned are recorded as debt and count as war tomes received, so
 later wars pay them off.
@@ -29,7 +30,9 @@ from Helpers.database import DB, apply_shell_delta
 KINDS = ("war", "raid")
 KIND_LABELS = {"war": "War tomes", "raid": "Shell tomes"}
 KIND_WORDS = {"war": "war", "raid": "shell"}
-BUCKET_LABELS = {"give_when_available": "Give when available", "give_when_full": "Give when full"}
+BUCKETS = ("give_when_available", "give_when_full", "last_resort")  # serving order; dormant waits
+BUCKET_LABELS = {"give_when_available": "Give when available", "give_when_full": "Give when full",
+                 "last_resort": "Give if no other option"}
 
 # The priorities members choose from, as the old pinned post described them.
 PRIORITIES = {
@@ -212,7 +215,7 @@ def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int,
     c.execute(
         """
         INSERT INTO tome_requests (uuid, discord_id, ign, kind, count, priority, bucket, shells_spent)
-        VALUES (%s, %s, %s, %s, %s, %s, 'queue', %s) RETURNING id
+        VALUES (%s, %s, %s, %s, %s, %s, 'give_when_available', %s) RETURNING id
         """,
         (str(uuid), discord_id, ign, kind, count, priority, shells),
     )
@@ -246,7 +249,7 @@ def open_queue(cursor) -> list[tuple]:
         FROM tome_requests r
         WHERE r.status = 'open' AND r.bucket <> 'dormant' AND r.count > r.given
           AND EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = r.uuid)
-        ORDER BY array_position(ARRAY['queue', 'give_when_available', 'give_when_full']::varchar[], r.bucket::varchar),
+        ORDER BY array_position(ARRAY['give_when_available', 'give_when_full', 'last_resort']::varchar[], r.bucket::varchar),
                  array_position(ARRAY['very_high', 'high', 'medium', 'low', 'very_low']::varchar[], r.priority::varchar),
                  r.created_at, r.id
         """
@@ -255,28 +258,28 @@ def open_queue(cursor) -> list[tuple]:
 
 
 def queue_text(rows) -> str:
-    """The queue as the panels' {{tome_queue}} shows it: one line a member per
-    section, with what would not fit counted at the end. Members are mentioned
-    (a mention in an embed never pings), or named if they have no linked Discord
-    account. Keep in step with
-    queueText in TAq-Website/lib/tomes.ts."""
+    """The queue as the panels' {{tome_queue}} shows it: a heading per bucket,
+    in serving order, and one line a member under it, marked with the heart of
+    their highest priority there. What would not fit is counted at the end.
+    Members are mentioned (a mention in an embed never pings), or named if they
+    have no linked Discord account. Keep in step with queueText in
+    TAq-Website/lib/tomes.ts."""
     if not rows:
         return "Nothing is waiting."
-    sections: dict[tuple, dict[str, int]] = {}
+    sections: dict[str, dict[str, list]] = {}
     for ign, left, priority, bucket, discord_id in rows:
-        members = sections.setdefault((bucket, priority if bucket == "queue" else None), {})
+        members = sections.setdefault(bucket, {})
         who = f"<@{discord_id}>" if discord_id else f"`{ign}`"
-        members[who] = members.get(who, 0) + left
+        if who in members:
+            members[who][0] += left
+        else:  # rows come in serving order, so the first priority seen is the highest
+            members[who] = [left, priority]
 
     lines: list[tuple[str, str | None, int]] = []
-    for (bucket, priority), members in sections.items():
-        if bucket == "queue":
-            label, emoji, _ = PRIORITIES[priority]
-            lines.append((f"\n{emoji} **{label}**", None, 0))
-        else:
-            lines.append((f"\n**{BUCKET_LABELS[bucket]}**", None, 0))
-        for who, n in members.items():
-            lines.append((f"{who}: {n}", who, n))
+    for bucket, members in sections.items():
+        lines.append((f"\n__**{BUCKET_LABELS[bucket]}**__", None, 0))
+        for who, (n, priority) in members.items():
+            lines.append((f"{PRIORITIES[priority][1]} {who}: {n}", who, n))
 
     text = ""
     for i, (line, _, _) in enumerate(lines):

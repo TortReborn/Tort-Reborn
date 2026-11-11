@@ -326,15 +326,15 @@ def build_plan(data: dict, cursor, aliases: dict) -> tuple[list[dict], list[dict
                 events.append(dict(uuid=uuid, ign=ign, action="adjusted", kind=None, count=n, note=f"special case: {note}"))
                 review.append(f"list special {name}: {n} recorded as received, no kind ({note})")
                 continue
-            bucket = {"owed": "dormant", "last_resort": "give_when_full"}.get(section, section)
+            bucket = {"owed": "dormant"}.get(section, section)
             if bucket != "dormant" and not here:
                 review.append(f"list {section} {name}: {n}: not in the guild now, so dormant")
                 bucket = "dormant"
             if bucket == "dormant" and here:
-                review.append(f"list {section} {name}: {n}: back in the guild, so queued at low priority")
-                bucket = "give_when_full" if section == "last_resort" else "queue"
+                review.append(f"list {section} {name}: {n}: back in the guild, so give when available, low priority")
+                bucket = "give_when_available" if section == "owed" else section
             # Where it goes if they rejoin, as the two lines above place it.
-            back = ("give_when_full" if section == "last_resort" else "queue" if section == "owed" else section)
+            back = "give_when_available" if section == "owed" else section
             reqs.append(dict(uuid=uuid, ign=ign, bucket=bucket, left_from=back if bucket == "dormant" else None,
                              count=n, priority="low",
                              note=f"from the list: {section.replace('_', ' ')}" + (f" ({note})" if note else "")))
