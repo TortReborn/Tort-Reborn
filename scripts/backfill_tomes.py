@@ -18,7 +18,9 @@ Discord to an export file you keep outside it.
 
 aliases.json maps a name as written to a current IGN or a UUID, for renames
 and typos the lookups can't place ({"Kenji": "Kenji121"}). Names that still
-can't be placed are listed and left out. apply refuses to run twice.
+can't be placed are listed and left out. given.json (--given) maps a name to
+tomes handed out from their list request after the ledger was last updated,
+so they're kept as given ({"Name": 8}). apply refuses to run twice.
 """
 
 import argparse
@@ -339,6 +341,24 @@ def build_plan(data: dict, cursor, aliases: dict) -> tuple[list[dict], list[dict
     return events, reqs, review
 
 
+def add_given(reqs, given: dict) -> list[str]:
+    """Tomes handed out from a member's list request after the ledger was last
+    updated: ``given`` maps a name as it appears in the plan to the number given.
+    The request grows by that many with them marked given, so the history keeps
+    them and the remainder still waits. Returns what needs a person."""
+    review = []
+    for name, n in given.items():
+        hits = [r for r in reqs if r["ign"].lower() == name.lower() and r["bucket"] != "dormant"]
+        if len(hits) != 1:
+            review.append(f"given {name} {n}: {len(hits)} open list requests match, so nothing was added")
+            continue
+        r = hits[0]
+        r["count"] += n
+        r["given"] = n
+        r["note"] += f"; {n} given after the ledger was last updated"
+    return review
+
+
 def show(events, reqs, review):
     per = defaultdict(Counter)
     for e in events:
@@ -348,7 +368,8 @@ def show(events, reqs, review):
         print(f"  {ign}: " + ", ".join(f"{k} {v}" for k, v in sorted(per[ign].items())))
     print(f"\n== Queue: {len(reqs)} request(s)")
     for r in reqs:
-        print(f"  {r['ign']}: {r['count']} -> {r['bucket']} | {r['note']}")
+        given = f" ({r['given']} given)" if r.get("given") else ""
+        print(f"  {r['ign']}: {r['count']}{given} -> {r['bucket']} | {r['note']}")
     print(f"\n== Needs a person ({len(review)})")
     for line in review:
         print(f"  - {line}")
@@ -367,9 +388,9 @@ def apply(db, events, reqs):
         )
     for r in reqs:
         c.execute(
-            "INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket, left_from, source, note) "
-            "VALUES (%s, %s, NULL, %s, %s, %s, %s, 'backfill', %s) RETURNING id",
-            (r["uuid"], r["ign"], r["count"], r["priority"], r["bucket"], r["left_from"], r["note"]),
+            "INSERT INTO tome_requests (uuid, ign, kind, count, given, priority, bucket, left_from, source, note) "
+            "VALUES (%s, %s, NULL, %s, %s, %s, %s, %s, 'backfill', %s) RETURNING id",
+            (r["uuid"], r["ign"], r["count"], r.get("given", 0), r["priority"], r["bucket"], r["left_from"], r["note"]),
         )
         rid = c.fetchone()[0]
         c.execute(
@@ -378,6 +399,12 @@ def apply(db, events, reqs):
             "VALUES (%s, %s, 'requested', %s, %s, %s, NOW())",
             (r["uuid"], rid, r["count"], ACTOR, r["note"]),
         )
+        if r.get("given"):
+            c.execute(
+                "INSERT INTO tome_events (uuid, request_id, action, count, actor_name, note, announced_at) "
+                "VALUES (%s, %s, 'given', %s, %s, %s, NOW())",
+                (r["uuid"], rid, r["given"], ACTOR, "given after the ledger was last updated"),
+            )
     c.execute(
         "INSERT INTO audit_log (log_type, actor_name, action) VALUES ('tome', %s, %s)",
         (ACTOR, f"Backfilled {sum(e['count'] for e in events)} tomes received and {len(reqs)} queued request(s)"),
@@ -391,16 +418,18 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("export"); s.add_argument("out")
     for name in ("plan", "apply"):
-        s = sub.add_parser(name); s.add_argument("export"); s.add_argument("--aliases")
+        s = sub.add_parser(name); s.add_argument("export"); s.add_argument("--aliases"); s.add_argument("--given")
     a = ap.parse_args()
     if a.cmd == "export":
         return export(a.out)
     from Helpers.database import DB
     data = json.load(open(a.export, encoding="utf-8"))
     aliases = json.load(open(a.aliases, encoding="utf-8")) if a.aliases else {}
+    given = json.load(open(a.given, encoding="utf-8")) if a.given else {}
     db = DB(); db.connect()
     try:
         events, reqs, review = build_plan(data, db.cursor, aliases)
+        review += add_given(reqs, given)
         show(events, reqs, review)
         if a.cmd == "apply":
             apply(db, events, reqs)

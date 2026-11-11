@@ -134,3 +134,13 @@ def test_two_close_players_are_suggested_not_picked():
     r._mojang = lambda name: None
     assert r("Waffle3") is None
     assert "Waffle1" in r.why_not("Waffle3") and "Waffle2" in r.why_not("Waffle3")
+
+
+def test_tomes_given_after_the_ledger_stay_given():
+    reqs = [dict(ign="Echo", bucket="give_when_full", count=10, note="from the list: give when full"),
+            dict(ign="Echo", bucket="dormant", count=3, note="owed"),
+            dict(ign="Foxtrot", bucket="queue", count=2, note="from the list: queue")]
+    review = bf.add_given(reqs, {"echo": 8, "Nobody": 1})
+    assert (reqs[0]["count"], reqs[0]["given"]) == (18, 8)
+    assert "given" not in reqs[1] and "given" not in reqs[2]
+    assert review == ["given Nobody 1: 0 open list requests match, so nothing was added"]
