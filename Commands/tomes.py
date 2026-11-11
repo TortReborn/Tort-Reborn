@@ -54,16 +54,15 @@ def _member(discord_id: int):
         db.close()
 
 
-def _lifetime_wars(uuid: str) -> tuple[int | None, bool]:
-    """(wars, from a snapshot). The API's count, or the bot's latest snapshot
-    when the member hides it."""
+def _taq_wars(uuid: str) -> tuple[int | None, bool]:
+    """(wars done in TAq, from a snapshot). War tomes reward TAq wars only:
+    counted from the API's live total, or the bot's last reading while the
+    member hides it."""
     data = getPlayerDatav3(uuid)
-    wars = (data.get("globalData") or {}).get("wars") if data else None
-    if wars is not None:
-        return int(wars), False
+    live = (data.get("globalData") or {}).get("wars") if data else None
     db = DB(); db.connect()
     try:
-        return tomes.snapshot_wars(db.cursor, uuid), True
+        return tomes.taq_wars_for(db.cursor, uuid, int(live) if live is not None else None), live is None
     finally:
         db.close()
 
@@ -96,7 +95,7 @@ def _summary(ign: str, s: tomes.Standing, from_snapshot: bool) -> discord.Embed:
     if s.wars is None:
         war = "Your war count is hidden. Make your stats public in Wynncraft's privacy settings to request war tomes."
     else:
-        war = (f"{s.war_earned} earned from {s.wars:,} lifetime wars{' (last count the bot saw)' if from_snapshot else ''}, "
+        war = (f"{s.war_earned} earned from {s.wars:,} TAq wars{' (last count the bot saw)' if from_snapshot else ''}, "
                f"{s.war_received} received, {s.war_queued} queued.\n"
                f"**You can request {s.war_available}.** The next needs {s.next_war_tome_at:,} wars.")
     raid = (f"{s.raid_received} received, {s.raid_queued} queued. The next costs {s.next_raid_price} shells "
@@ -214,7 +213,7 @@ class TomeRequestView(discord.ui.View):
         uuid, ign, in_guild = row
         if not in_guild:
             return await interaction.followup.send("❌ You need to be in the guild to request tomes.", ephemeral=True)
-        wars, from_snapshot = await asyncio.to_thread(_lifetime_wars, uuid)
+        wars, from_snapshot = await asyncio.to_thread(_taq_wars, uuid)
         s = await asyncio.to_thread(_standing, uuid, interaction.user.id, wars)
         req = _Request(uuid, interaction.user.id, ign, wars, s)
         await interaction.followup.send(embed=_summary(ign, s, from_snapshot), view=KindView(req), ephemeral=True)

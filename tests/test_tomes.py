@@ -3,7 +3,7 @@
 What matters here:
 
 1. The rules match the old pinned post: war milestones 10/25/50/100 then
-   every 50 more lifetime wars; raid tomes 10 shells for the first four, 20
+   every 50 more TAq wars; raid tomes 10 shells for the first four, 20
    after, counting raid tomes only.
 2. A request can't take more than the member has earned or can afford, and
    counts what they have received, what is queued and any debt.
@@ -268,6 +268,23 @@ def test_a_request_of_any_size_joins_the_queue_whole(temp_db):
     assert made["count"] == 120
     temp_db.cursor.execute("SELECT bucket, count FROM tome_requests WHERE id = %s", (made["id"],))
     assert temp_db.cursor.fetchone() == ("queue", 120)
+
+
+def test_war_tomes_count_taq_wars_only(temp_db):
+    c = temp_db.cursor
+    # 1000 wars elsewhere first, 40 in a first stint, 500 elsewhere, then the current stint from 1540.
+    c.execute(
+        "INSERT INTO membership_stints (uuid, joined_at, left_at, wars_on_join, wars_on_leave, source) VALUES"
+        " (%s::uuid, '2025-08-01T00:00:00Z', '2025-09-01T00:00:00Z', 1000, 1040, 'backfill'),"
+        " (%s::uuid, '2026-01-01T00:00:00Z', NULL, 1540, NULL, 'live')",
+        (UUID, UUID),
+    )
+    c.execute("INSERT INTO player_activity (uuid, playtime, wars, snapshot_date) VALUES (%s::uuid, 0, 1590, '2026-03-01')", (UUID,))
+    assert tomes.taq_wars_for(c, UUID, 1600) == 100
+    # Hidden now: the open stint runs to the bot's last reading.
+    assert tomes.taq_wars_for(c, UUID, None) == 90
+    assert tomes.war_tomes_earned(tomes.taq_wars_for(c, UUID, 1600)) == 4
+    assert tomes.taq_wars_for(c, "11111111-2222-3333-4444-666666666666", 1600) is None
 
 
 def test_a_member_who_is_not_in_the_guild_cant_request(temp_db):

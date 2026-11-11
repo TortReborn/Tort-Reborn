@@ -3,9 +3,9 @@ Tome requests (TAQ-116): the rules, a member's standing, and making a request.
 
 A tome is earned one of two ways, and a request is for one of them:
 
-- **War tomes** cost nothing beyond the milestone: lifetime wars (the API's
-  `globalData.wars`, every guild) of 10, 25, 50 and 100 for the first four,
-  then every additional 50.
+- **War tomes** cost nothing beyond the milestone: wars done in TAq (across
+  every stint, Helpers/roster.taq_wars; wars in other guilds don't count) of
+  10, 25, 50 and 100 for the first four, then every additional 50.
 - **Shell tomes** are bought with shells: 10 each for the first four, 20 each
   after. Only shell tomes count towards that price, and only war tomes towards
   the milestones. Stored as kind 'raid'; members only ever see "shell".
@@ -23,6 +23,7 @@ its shell spend land together or not at all.
 
 from dataclasses import dataclass
 
+from Helpers import roster
 from Helpers.database import DB, apply_shell_delta
 
 KINDS = ("war", "raid")
@@ -50,14 +51,14 @@ class TomeError(ValueError):
 
 
 def wars_needed(k: int) -> int:
-    """Lifetime wars needed for the k-th war tome (1-based)."""
+    """TAq wars needed for the k-th war tome (1-based)."""
     if k <= len(WAR_MILESTONES):
         return WAR_MILESTONES[k - 1]
     return WAR_MILESTONES[-1] + WAR_STEP * (k - len(WAR_MILESTONES))
 
 
 def war_tomes_earned(wars: int) -> int:
-    """How many war tomes `wars` lifetime wars have earned."""
+    """How many war tomes `wars` TAq wars have earned."""
     earned = sum(1 for m in WAR_MILESTONES if wars >= m)
     if earned == len(WAR_MILESTONES):
         earned += (wars - WAR_MILESTONES[-1]) // WAR_STEP
@@ -95,7 +96,7 @@ class Standing:
 
     @property
     def next_war_tome_at(self) -> int:
-        """Lifetime wars needed for the next war tome they could request."""
+        """TAq wars needed for the next war tome they could request."""
         return wars_needed(max(self.war_earned, self.war_received + self.war_queued) + 1)
 
     @property
@@ -118,14 +119,24 @@ class Standing:
 
 
 def snapshot_wars(cursor, uuid) -> int | None:
-    """The latest war count the bot's daily snapshots hold, for members
-    whose count is hidden in the API right now."""
+    """The latest lifetime war count the bot's daily snapshots hold, for
+    members whose count is hidden in the API right now."""
     cursor.execute(
         "SELECT wars FROM player_activity WHERE uuid = %s AND wars > 0 ORDER BY snapshot_date DESC LIMIT 1",
         (str(uuid),),
     )
     row = cursor.fetchone()
     return row[0] if row else None
+
+
+def taq_wars_for(cursor, uuid, live_wars: int | None) -> int | None:
+    """Wars done in TAq, which is what war tomes reward. The open stint runs
+    to ``live_wars``, the API's lifetime count, or while that is hidden to the
+    bot's last reading. None when nothing can be counted: no stint, or wars
+    hidden since joining (no baseline yet)."""
+    current = live_wars if live_wars is not None else snapshot_wars(cursor, uuid)
+    result = roster.taq_wars(cursor, uuid, current)
+    return result.total if result else None
 
 
 def standing(cursor, uuid, discord_id, wars: int | None) -> Standing:
@@ -187,7 +198,7 @@ def request_tomes(db, *, uuid, discord_id: int, ign: str, kind: str, count: int,
         if count > s.war_available:
             raise TomeError(
                 f"You can request {s.war_available} war tome(s) right now. "
-                f"The next one needs {s.next_war_tome_at} lifetime wars (you have {s.wars})."
+                f"The next one needs {s.next_war_tome_at} TAq wars (you have {s.wars})."
             )
     else:
         shells = raid_tomes_cost(s.raid_bought, count)
