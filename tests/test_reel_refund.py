@@ -52,7 +52,7 @@ class Wallet:
     def balance(self, uid):
         return self.reels + self.bait
 
-    def complete(self, uid, slug, pearls=0):
+    def complete(self, uid, slug, pearls=0, tier="", wishes=()):
         if self.reels + self.bait == 0:
             return None
         if self.bait > 0:
@@ -180,7 +180,7 @@ def pull_db(_dev_db, monkeypatch):
     connection = _dev_db._connection
     connection.autocommit = True
     cursor = connection.cursor()
-    for table in ("card_wallet", "card_collection"):
+    for table in ("card_wallet", "card_collection", "card_pulls"):
         cursor.execute(f"CREATE TEMP TABLE IF NOT EXISTS {table} "
                        f"(LIKE public.{table} INCLUDING ALL)")
         cursor.execute(f"TRUNCATE {table}")
@@ -242,6 +242,28 @@ def test_failed_card_grant_rolls_back_the_reel(pull_db):
             'WHERE "user" = %s', (OWNER,))
         assert cursor.fetchone() == (1, 0, 0)
         cursor.execute('SELECT count(*) FROM card_collection')
+        assert cursor.fetchone() == (0,)
+
+
+def test_pull_is_logged_with_tier_wishes_and_source(pull_db):
+    _seed_pull_wallet(pull_db, reels=1, bait=1)
+    cardlib.db_complete_pull(OWNER, CARD["slug"], 10, "rare", {"b", "a"})
+    cardlib.db_complete_pull(OWNER, CARD["slug"], 10, "rare")
+    with pull_db.cursor() as cursor:
+        cursor.execute(
+            'SELECT card, tier, pearls, bait, wishes FROM card_pulls '
+            'WHERE "user" = %s ORDER BY id', (OWNER,))
+        assert cursor.fetchall() == [
+            (CARD["slug"], "rare", 10, True, ["a", "b"]),
+            (CARD["slug"], "rare", 10, False, []),
+        ]
+
+
+def test_pull_with_no_reels_logs_nothing(pull_db):
+    _seed_pull_wallet(pull_db, reels=0)
+    assert cardlib.db_complete_pull(OWNER, CARD["slug"], 10, "rare") is None
+    with pull_db.cursor() as cursor:
+        cursor.execute('SELECT count(*) FROM card_pulls')
         assert cursor.fetchone() == (0,)
 
 

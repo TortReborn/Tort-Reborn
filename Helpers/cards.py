@@ -309,6 +309,20 @@ SCHEMA = [
     WHERE award IN ('tier-common', 'tier-uncommon', 'tier-epic',
                     'tier-legendary', 'tier-fabled');
     """,
+    """
+    CREATE TABLE IF NOT EXISTS card_pulls (
+        id        BIGSERIAL     PRIMARY KEY,
+        "user"    BIGINT        NOT NULL,
+        card      VARCHAR(64)   NOT NULL,
+        tier      VARCHAR(16)   NOT NULL,
+        pearls    INT           NOT NULL,
+        bait      BOOLEAN       NOT NULL,
+        wishes    VARCHAR(64)[] NOT NULL DEFAULT '{}',
+        pulled_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+    )
+    """,
+    'CREATE INDEX IF NOT EXISTS card_pulls_user_at_idx '
+    'ON card_pulls ("user", pulled_at)',
 ]
 
 _CARD_SET = None
@@ -674,8 +688,10 @@ def db_get_balance(user_id: int) -> int:
     return db_get_wallet(user_id)["total_reels"]
 
 
-def db_complete_pull(user_id: int, slug: str, pearls: int = 0) -> dict | None:
-    """Spend one reel and grant its card and pearls in one transaction."""
+def db_complete_pull(user_id: int, slug: str, pearls: int = 0,
+                     tier: str = "", wishes=()) -> dict | None:
+    """Spend one reel, grant its card and pearls, and log the pull, all in
+    one transaction."""
     window = current_window()
     cap = _bank_cap_sql()
     fresh = (f'LEAST({cap}, w.reels + '
@@ -698,7 +714,7 @@ def db_complete_pull(user_id: int, slug: str, pearls: int = 0) -> dict | None:
             'FROM locked l '
             'WHERE w."user" = l."user" '
             f'  AND (l.bait_reels > 0 OR {fresh} > 0) '
-            'RETURNING w.reels, w.bait_reels, w.pearls',
+            'RETURNING w.reels, w.bait_reels, w.pearls, l.bait_reels > 0',
             {"w": window, "per": REELS_PER_WINDOW, "uid": user_id,
              "pearls": pearls},
         )
@@ -714,6 +730,10 @@ def db_complete_pull(user_id: int, slug: str, pearls: int = 0) -> dict | None:
             'RETURNING count',
             (user_id, slug))
         card = db.cursor.fetchone()
+        db.cursor.execute(
+            'INSERT INTO card_pulls ("user", card, tier, pearls, bait, wishes) '
+            'VALUES (%s, %s, %s, %s, %s, %s)',
+            (user_id, slug, tier, pearls, wallet[3], sorted(wishes)))
         db.connection.commit()
         return {"reels": wallet[0], "bait_reels": wallet[1],
                 "total": wallet[0] + wallet[1],
