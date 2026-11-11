@@ -282,7 +282,8 @@ def pull_db(_dev_db, monkeypatch):
     connection = _dev_db._connection
     connection.autocommit = True
     cursor = connection.cursor()
-    for table in ("card_wallet", "card_collection", "card_members", "card_wishlist"):
+    for table in ("card_wallet", "card_collection", "card_members", "card_wishlist",
+                  "card_pulls"):
         cursor.execute(f"CREATE TEMP TABLE IF NOT EXISTS {table} "
                        f"(LIKE public.{table} INCLUDING ALL)")
         cursor.execute(f"TRUNCATE {table}")
@@ -345,6 +346,33 @@ def test_failed_card_grant_rolls_back_the_reel(pull_db):
             'WHERE "user" = %s', (OWNER,))
         assert cursor.fetchone() == (1, 0, 0)
         cursor.execute('SELECT count(*) FROM card_collection')
+        assert cursor.fetchone() == (0,)
+        cursor.execute('SELECT count(*) FROM card_pulls')
+        assert cursor.fetchone() == (0,)
+
+
+def test_each_reel_is_logged_with_tier_wishes_and_source(pull_db):
+    _seed_pull_wallet(pull_db, reels=2, bait=1)
+    other = dict(CARD, slug="other")
+    plan = cardlib.ReelPlan([CARD, other, CARD], [], ("a", "b"))
+    cardlib.db_complete_reels(OWNER, plan)
+    value = cardlib.pull_value(CARD)
+    with pull_db.cursor() as cursor:
+        cursor.execute(
+            'SELECT card, tier, pearls, bait, wishes FROM card_pulls '
+            'WHERE "user" = %s ORDER BY id', (OWNER,))
+        assert cursor.fetchall() == [
+            (CARD["slug"], CARD["tier"], value, True, ["a", "b"]),
+            ("other", CARD["tier"], value, False, ["a", "b"]),
+            (CARD["slug"], CARD["tier"], value, False, ["a", "b"]),
+        ]
+
+
+def test_refused_reel_logs_nothing(pull_db):
+    _seed_pull_wallet(pull_db, reels=0)
+    assert cardlib.db_complete_reels(OWNER, cardlib.ReelPlan([CARD], [])) is None
+    with pull_db.cursor() as cursor:
+        cursor.execute('SELECT count(*) FROM card_pulls')
         assert cursor.fetchone() == (0,)
 
 
@@ -476,7 +504,7 @@ def test_concurrent_claims_cannot_overspend_or_reuse_a_save(monkeypatch, operati
     try:
         with admin.cursor() as cursor:
             cursor.execute(sql.SQL('CREATE SCHEMA {}').format(schema))
-            for table in ("card_wallet", "card_collection"):
+            for table in ("card_wallet", "card_collection", "card_pulls"):
                 cursor.execute(sql.SQL('CREATE TABLE {}.{} (LIKE public.{} INCLUDING ALL)')
                                .format(schema, sql.Identifier(table), sql.Identifier(table)))
             cursor.execute(sql.SQL(
@@ -509,6 +537,8 @@ def test_concurrent_claims_cannot_overspend_or_reuse_a_save(monkeypatch, operati
                 assert cursor.fetchone() == (4, 6)
                 cursor.execute(sql.SQL('SELECT count FROM {}.card_collection').format(schema))
                 assert cursor.fetchall() == [(6,)]
+                cursor.execute(sql.SQL('SELECT count(*) FROM {}.card_pulls').format(schema))
+                assert cursor.fetchone() == (6,)
     finally:
         with admin.cursor() as cursor:
             cursor.execute(sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(schema))
