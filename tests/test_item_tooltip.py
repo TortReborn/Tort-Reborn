@@ -107,6 +107,42 @@ PROWESS_ENTRY = {
         "rawIntelligence": 4,
     },
 }
+IDOL_ENTRY = {
+    "displayName": "Idol",
+    "internalName": "Idol",
+    "tier": "legendary",
+    "identifications": {
+        "manaRegen": {"min": 3, "raw": 10, "max": 13},
+        "reflection": {"min": 9, "raw": 30, "max": 39},
+        "waterDefence": {"min": 5, "raw": 15, "max": 20},
+        "rawIntelligence": 26,
+        "rawSpellDamage": {"min": 79, "raw": 264, "max": 343},
+        "raw2ndSpellCost": {"min": -15, "raw": -50, "max": -65},
+    },
+}
+MASTERWORK_IDOL_ENTRY = {
+    "displayName": "Idol",
+    "internalName": "Masterwork Idol",
+    "tier": "legendary",
+    "identifications": {
+        "manaRegen": {"min": 5, "raw": 18, "max": 23},
+        "reflection": {"min": 9, "raw": 30, "max": 39},
+        "waterDefence": {"min": 8, "raw": 28, "max": 36},
+        "rawIntelligence": 26,
+        "rawSpellDamage": {"min": 113, "raw": 377, "max": 490},
+        "raw2ndSpellCost": {"min": -18, "raw": -60, "max": -78},
+    },
+}
+
+
+def _idol_roll(meters: dict) -> list[dict]:
+    """A roll every value of which fits both Idol variants' ranges."""
+    values = {"manaRegen": 10, "reflection": 30, "waterDefence": 14,
+              "rawSpellDamage": 250, "raw2ndSpellCost": 45}
+    return [{"key": key, "value": value, "kind": "actual", "meter": meters[key]}
+            for key, value in values.items()]
+
+
 CRAFTED_RING = (
     "\U000F0002\U000F0103\U000F0705\U000F0886\U000F013A\U000F0967"
     "\U000F0005\U000F0028\U000F0148\U000F0264\U000F0300\U000F0400"
@@ -426,6 +462,42 @@ class TestWynnItemIndex:
         decoded = decode_gear(VOLATILITY_CODE)
         with pytest.raises(ValueError, match="Ambiguous"):
             index.resolve(decoded["itemName"], decoded["identifications"])
+
+    def test_shared_display_name_resolves_by_meter_to_original(self):
+        index = self._index(IDOL_ENTRY, MASTERWORK_IDOL_ENTRY)
+        roll = _idol_roll({"manaRegen": 24, "reflection": 24, "waterDefence": 21,
+                           "rawSpellDamage": 23, "raw2ndSpellCost": 21})
+        assert index.resolve("Idol", roll)["internalName"] == "Idol"
+
+    def test_shared_display_name_resolves_by_meter_to_masterwork(self):
+        index = self._index(IDOL_ENTRY, MASTERWORK_IDOL_ENTRY)
+        roll = _idol_roll({"manaRegen": 10, "reflection": 24, "waterDefence": 7,
+                           "rawSpellDamage": 13, "raw2ndSpellCost": 16})
+        assert index.resolve("Idol", roll)["internalName"] == "Masterwork Idol"
+
+    def test_shared_display_name_without_meters_stays_ambiguous(self):
+        index = self._index(IDOL_ENTRY, MASTERWORK_IDOL_ENTRY)
+        roll = _idol_roll(dict.fromkeys(
+            ("manaRegen", "reflection", "waterDefence", "rawSpellDamage", "raw2ndSpellCost")))
+        with pytest.raises(ValueError, match="Ambiguous"):
+            index.resolve("Idol", roll)
+
+    def test_decoded_meters_track_the_items_own_ranges(self):
+        decoded = decode_gear(WILD_GROWTH_CODE)
+        assert {stat["key"]: stat["meter"] for stat in decoded["identifications"]} == {
+            "manaRegen": 13, "healthRegenRaw": 31, "rawEarthDamage": 13,
+            "spellDamage": 25, "walkSpeed": 29,
+        }
+        # Same start, twice the span: every value still fits, so only the meter can decide.
+        rival = {**WILD_GROWTH_ENTRY, "internalName": "Wild Growth Rival", "identifications": {
+            key: {"min": r["min"], "raw": r["raw"], "max": 2 * r["max"] - r["min"]}
+            for key, r in WILD_GROWTH_ENTRY["identifications"].items()
+        }}
+        index = self._index(WILD_GROWTH_ENTRY, rival)
+        entry = index.resolve(decoded["itemName"], decoded["identifications"])
+        assert entry["internalName"] == "Wild Growth"
+        index = self._index(rival, WILD_GROWTH_ENTRY)
+        assert index.resolve(decoded["itemName"], decoded["identifications"]) is not rival
 
     def test_rejects_empty_database(self):
         with pytest.raises(ValueError):
