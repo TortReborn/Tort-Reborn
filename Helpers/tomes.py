@@ -33,6 +33,7 @@ BUCKET_LABELS = {"give_when_available": "Give when available", "give_when_full":
 
 # The priorities members choose from, as the old pinned post described them.
 PRIORITIES = {
+    "very_low": ("Very Low", "\U0001FA76", "Only if there are tomes to spare"),
     "low": ("Low", "💚", "Want a tome but have no current use for it"),
     "medium": ("Medium", "💛", "Need it for a non-war build or class"),
     "high": ("High", "🧡", "Need it for a war build, to boost DPS or general stats"),
@@ -246,7 +247,7 @@ def open_queue(cursor) -> list[tuple]:
         WHERE r.status = 'open' AND r.bucket <> 'dormant' AND r.count > r.given
           AND EXISTS (SELECT 1 FROM guild_roster g WHERE g.uuid = r.uuid)
         ORDER BY array_position(ARRAY['queue', 'give_when_available', 'give_when_full']::varchar[], r.bucket::varchar),
-                 array_position(ARRAY['very_high', 'high', 'medium', 'low']::varchar[], r.priority::varchar),
+                 array_position(ARRAY['very_high', 'high', 'medium', 'low', 'very_low']::varchar[], r.priority::varchar),
                  r.created_at, r.id
         """
     )

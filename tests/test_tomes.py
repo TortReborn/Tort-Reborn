@@ -341,3 +341,18 @@ def test_request_button_is_a_panel_action_and_the_grant_log_reads_well():
     assert grant_line(3, "war", "Thundderr", 170719819715313665, "Kenji121") == \
         "\U0001F4D8 <@170719819715313665> (Thundderr) was given **3 war tomes** by Kenji121."
     assert grant_line(1, None, "OldMember", None, None) == "\U0001F4D8 OldMember was given **1 tome**."
+
+
+def test_very_low_is_served_and_listed_after_low(temp_db):
+    assert tomes.PRIORITIES['very_low'][:2] == ('Very Low', '\U0001FA76')
+    c = temp_db.cursor
+    _in_guild(temp_db)
+    for ign, priority, age in (('vl', 'very_low', 3), ('lo', 'low', 1), ('hi', 'high', 2)):
+        c.execute("""INSERT INTO tome_requests (uuid, ign, kind, count, priority, created_at)
+                     VALUES (%s, %s, 'war', 1, %s, NOW() - %s * INTERVAL '1 hour')""", (UUID, ign, priority, age))
+    assert [r[0] for r in tomes.open_queue(c)] == ['hi', 'lo', 'vl']
+    text = tomes.queue_text(tomes.open_queue(c))
+    assert text.index('**Low**') < text.index('**Very Low**')
+    made = _ask(temp_db, 'war', 1, wars=tomes.wars_needed(10), priority='very_low')
+    c.execute('SELECT priority FROM tome_requests WHERE id = %s', (made['id'],))
+    assert c.fetchone()[0] == 'very_low'
