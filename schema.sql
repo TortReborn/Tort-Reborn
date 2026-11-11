@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS distribution_log (
 -- =============================================================================
 -- Tome Requests (TAQ-116)
 -- =============================================================================
--- A tome is earned with lifetime wars (kind 'war', milestones in
+-- A tome is earned with wars done in TAq (kind 'war', milestones in
 -- Helpers/tomes.py) or bought with shells (kind 'raid'). A request is one kind
 -- and a number of tomes; exec gives them out from the website, all at once or
 -- in parts. kind is NULL only on backfilled rows whose source the old records
@@ -257,6 +257,7 @@ CREATE TABLE IF NOT EXISTS tome_requests (
   -- someone no longer in the guild, back in the queue if they rejoin
   bucket       VARCHAR(24)  NOT NULL DEFAULT 'queue'
                CHECK (bucket IN ('queue', 'give_when_available', 'give_when_full', 'dormant')),
+  left_from    VARCHAR(24),  -- the bucket a dormant request returns to when its member rejoins
   status       VARCHAR(12)  NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done', 'cancelled')),
   shells_spent INT          NOT NULL DEFAULT 0,
   source       VARCHAR(12)  NOT NULL DEFAULT 'request' CHECK (source IN ('request', 'backfill', 'adjustment')),
@@ -272,8 +273,8 @@ CREATE INDEX IF NOT EXISTS idx_tome_requests_uuid ON tome_requests (uuid);
 
 -- Everything that happened to a member's tomes. Tomes received per kind are
 -- the sum of 'given', 'debt' and 'adjusted' counts; 'debt' is tomes given
--- before they were earned, so later wars pay it off. The bot posts given
--- tomes to the tomes channel and stamps announced_at.
+-- before they were earned, so later wars pay it off. The bot posts requests,
+-- gives and cancellations to the tome log channel and stamps announced_at.
 CREATE TABLE IF NOT EXISTS tome_events (
   id           SERIAL       PRIMARY KEY,
   uuid         UUID         NOT NULL,
@@ -285,13 +286,15 @@ CREATE TABLE IF NOT EXISTS tome_events (
   actor_id     BIGINT,
   actor_name   VARCHAR(100),
   note         TEXT,
+  screenshots  TEXT[]       NOT NULL DEFAULT '{}',
+  shells       INT          NOT NULL DEFAULT 0,  -- spent ('requested') or refunded ('cancelled')
   announced_at TIMESTAMPTZ,
   created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_tome_events_uuid ON tome_events (uuid, created_at);
 CREATE INDEX IF NOT EXISTS idx_tome_events_unannounced
-  ON tome_events (created_at) WHERE action = 'given' AND announced_at IS NULL;
+  ON tome_events (created_at) WHERE action IN ('requested', 'given', 'cancelled') AND announced_at IS NULL;
 
 -- =============================================================================
 -- Guild Raid Events
