@@ -139,7 +139,7 @@ def test_two_close_players_are_suggested_not_picked():
 def test_tomes_given_after_the_ledger_stay_given():
     reqs = [dict(ign="Echo", bucket="give_when_full", count=10, note="from the list: give when full"),
             dict(ign="Echo", bucket="dormant", count=3, note="owed"),
-            dict(ign="Foxtrot", bucket="queue", count=2, note="from the list: queue")]
+            dict(ign="Foxtrot", bucket="give_when_available", count=2, note="from the list: give when available")]
     review = bf.add_given(reqs, {"echo": 8, "Nobody": 1})
     assert (reqs[0]["count"], reqs[0]["given"]) == (18, 8)
     assert "given" not in reqs[1] and "given" not in reqs[2]

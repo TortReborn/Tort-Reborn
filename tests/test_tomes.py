@@ -62,25 +62,23 @@ def test_log_lines_ping_the_member():
 # The same table as queueText in TAq-Website/lib/tomes.test.ts: the two must agree,
 # but for the preview writing a mention as @IGN.
 QUEUE_ROWS = [
-    ("Ann_1", 3, "very_high", "queue", 101),
-    ("Bob", 2, "very_high", "queue", 102),
-    ("Bob", 1, "very_high", "queue", 102),
-    ("Cy", 5, "high", "queue", None),
-    ("Dee", 4, "low", "give_when_available", 104),
-    ("Eve", 20, "high", "give_when_full", 105),
+    ("Ann_1", 3, "very_high", "give_when_available", 101),
+    ("Bob", 2, "very_high", "give_when_available", 102),
+    ("Bob", 1, "high", "give_when_available", 102),
+    ("Cy", 5, "high", "give_when_available", None),
+    ("Dee", 4, "low", "give_when_full", 104),
+    ("Eve", 20, "high", "last_resort", 105),
 ]
-QUEUE_TEXT = """\u2764\ufe0f **Very High**
-<@101>: 3
-<@102>: 3
+QUEUE_TEXT = """__**Give when available**__
+\u2764\ufe0f <@101>: 3
+\u2764\ufe0f <@102>: 3
+\U0001F9E1 `Cy`: 5
 
-\U0001F9E1 **High**
-`Cy`: 5
+__**Give when full**__
+\U0001F49A <@104>: 4
 
-**Give when available**
-<@104>: 4
-
-**Give when full**
-<@105>: 20"""
+__**Give if no other option**__
+\U0001F9E1 <@105>: 20"""
 
 
 def test_queue_text_reads_in_serving_order_with_one_line_a_member():
@@ -89,12 +87,12 @@ def test_queue_text_reads_in_serving_order_with_one_line_a_member():
 
 
 def test_queue_text_counts_what_would_not_fit():
-    rows = [(f"Member{i:04}", 2, "low", "queue", None) for i in range(400)]
+    rows = [(f"Member{i:04}", 2, "low", "give_when_available", None) for i in range(400)]
     text = tomes.queue_text(rows)
     assert len(text) <= tomes.QUEUE_TEXT_LIMIT
     shown = text.count("`") // 2
     assert text.endswith(f"\u2026and {400 - shown} more members ({(400 - shown) * 2} tomes)")
-    assert text.startswith("\U0001F49A **Low**")
+    assert text.startswith("__**Give when available**__")
 
 
 def test_open_queue_serves_the_order_a_give_does_and_skips_who_a_give_skips(temp_db):
@@ -103,12 +101,12 @@ def test_open_queue_serves_the_order_a_give_does_and_skips_who_a_give_skips(temp
     c.execute("INSERT INTO guild_roster (uuid, ign, in_game_rank) VALUES (%s, 'x', 'recruit')", (UUID,))
     for ign, uuid, priority, bucket, status, count, given, age in (
         ("late", UUID, "low", "give_when_full", "open", 1, 0, 1),
-        ("low", UUID, "low", "queue", "open", 1, 0, 2),
-        ("newer", UUID, "high", "queue", "open", 3, 1, 3),
-        ("older", UUID, "high", "queue", "open", 1, 0, 4),
+        ("low", UUID, "low", "give_when_available", "open", 1, 0, 2),
+        ("newer", UUID, "high", "give_when_available", "open", 3, 1, 3),
+        ("older", UUID, "high", "give_when_available", "open", 1, 0, 4),
         ("sleeping", UUID, "high", "dormant", "open", 1, 0, 5),
-        ("left", other, "high", "queue", "open", 1, 0, 6),
-        ("done", UUID, "high", "queue", "done", 1, 1, 7),
+        ("left", other, "high", "give_when_available", "open", 1, 0, 6),
+        ("done", UUID, "high", "give_when_available", "done", 1, 1, 7),
     ):
         c.execute(
             """INSERT INTO tome_requests (uuid, ign, kind, count, given, priority, bucket, status, created_at)
@@ -267,7 +265,7 @@ def test_a_request_of_any_size_joins_the_queue_whole(temp_db):
     made = _ask(temp_db, "war", 120, wars=tomes.wars_needed(125))
     assert made["count"] == 120
     temp_db.cursor.execute("SELECT bucket, count FROM tome_requests WHERE id = %s", (made["id"],))
-    assert temp_db.cursor.fetchone() == ("queue", 120)
+    assert temp_db.cursor.fetchone() == ("give_when_available", 120)
 
 
 def test_war_tomes_count_taq_wars_only(temp_db):
@@ -303,26 +301,26 @@ def _buckets(db):
 def test_leaving_makes_requests_dormant_and_returning_puts_them_back(temp_db):
     c, other = temp_db.cursor, "11111111-2222-3333-4444-666666666666"
     _in_guild(temp_db, other)
-    for ign, uuid, bucket in (("a", UUID, "queue"), ("b", UUID, "give_when_full"), ("stays", other, "queue"), ("by_hand", other, "dormant")):
+    for ign, uuid, bucket in (("a", UUID, "give_when_available"), ("b", UUID, "give_when_full"), ("stays", other, "give_when_available"), ("by_hand", other, "dormant")):
         c.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket) VALUES (%s, %s, 'war', 1, 'low', %s)", (uuid, ign, bucket))
-    c.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket, status) VALUES (%s, 'done', 'war', 1, 'low', 'queue', 'done')", (UUID,))
+    c.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority, bucket, status) VALUES (%s, 'done', 'war', 1, 'low', 'give_when_available', 'done')", (UUID,))
 
     assert tomes.sync_membership(temp_db) == (2, 0)  # UUID was never in the roster
-    assert _buckets(temp_db)[:2] == [("a", "dormant", "queue"), ("b", "dormant", "give_when_full")]
+    assert _buckets(temp_db)[:2] == [("a", "dormant", "give_when_available"), ("b", "dormant", "give_when_full")]
     assert tomes.sync_membership(temp_db) == (0, 0)
     c.execute("SELECT note FROM tome_events WHERE action = 'moved'")
-    assert {r[0] for r in c.fetchall()} == {"queue -> dormant (left the guild)", "give_when_full -> dormant (left the guild)"}
+    assert {r[0] for r in c.fetchall()} == {"give_when_available -> dormant (left the guild)", "give_when_full -> dormant (left the guild)"}
 
     _in_guild(temp_db)
     assert tomes.sync_membership(temp_db) == (0, 2)
-    assert _buckets(temp_db) == [("a", "queue", None), ("b", "give_when_full", None), ("stays", "queue", None),
-                                 ("by_hand", "dormant", None), ("done", "queue", None)]
+    assert _buckets(temp_db) == [("a", "give_when_available", None), ("b", "give_when_full", None), ("stays", "give_when_available", None),
+                                 ("by_hand", "dormant", None), ("done", "give_when_available", None)]
 
 
 def test_an_empty_roster_moves_nobody(temp_db):
     temp_db.cursor.execute("INSERT INTO tome_requests (uuid, ign, kind, count, priority) VALUES (%s, 'a', 'war', 1, 'low')", (UUID,))
     assert tomes.sync_membership(temp_db) == (0, 0)
-    assert _buckets(temp_db) == [("a", "queue", None)]
+    assert _buckets(temp_db) == [("a", "give_when_available", None)]
 
 
 def test_bad_input_is_refused(temp_db):
@@ -352,7 +350,7 @@ def test_very_low_is_served_and_listed_after_low(temp_db):
                      VALUES (%s, %s, 'war', 1, %s, NOW() - %s * INTERVAL '1 hour')""", (UUID, ign, priority, age))
     assert [r[0] for r in tomes.open_queue(c)] == ['hi', 'lo', 'vl']
     text = tomes.queue_text(tomes.open_queue(c))
-    assert text.index('**Low**') < text.index('**Very Low**')
+    assert text.index('`lo`') < text.index('`vl`') and '\U0001FA76 `vl`' in text
     made = _ask(temp_db, 'war', 1, wars=tomes.wars_needed(10), priority='very_low')
     c.execute('SELECT priority FROM tome_requests WHERE id = %s', (made['id'],))
     assert c.fetchone()[0] == 'very_low'

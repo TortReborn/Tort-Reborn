@@ -252,11 +252,12 @@ CREATE TABLE IF NOT EXISTS tome_requests (
   count        INT          NOT NULL CHECK (count > 0),
   given        INT          NOT NULL DEFAULT 0 CHECK (given >= 0 AND given <= count),
   priority     VARCHAR(12)  NOT NULL CHECK (priority IN ('very_low', 'low', 'medium', 'high', 'very_high')),
-  -- queue: served first, by priority then age; give_when_available next;
-  -- give_when_full only when neither has anything waiting; dormant: owed to
-  -- someone no longer in the guild, back in the queue if they rejoin
-  bucket       VARCHAR(24)  NOT NULL DEFAULT 'queue'
-               CHECK (bucket IN ('queue', 'give_when_available', 'give_when_full', 'dormant')),
+  -- served in this order, by priority then age within each: give_when_available
+  -- (every request starts here), give_when_full, then last_resort ("give if no
+  -- other option"); dormant: owed to someone no longer in the guild, back where
+  -- it was (left_from) if they rejoin
+  bucket       VARCHAR(24)  NOT NULL DEFAULT 'give_when_available'
+               CHECK (bucket IN ('give_when_available', 'give_when_full', 'last_resort', 'dormant')),
   left_from    VARCHAR(24),  -- the bucket a dormant request returns to when its member rejoins
   status       VARCHAR(12)  NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done', 'cancelled')),
   shells_spent INT          NOT NULL DEFAULT 0,
