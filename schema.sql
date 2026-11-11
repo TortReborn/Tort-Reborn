@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS distribution_log (
 -- =============================================================================
 -- Tome Requests (TAQ-116)
 -- =============================================================================
--- A tome is earned with lifetime wars (kind 'war', milestones in
+-- A tome is earned with wars done in TAq (kind 'war', milestones in
 -- Helpers/tomes.py) or bought with shells (kind 'raid'). A request is one kind
 -- and a number of tomes; exec gives them out from the website, all at once or
 -- in parts. kind is NULL only on backfilled rows whose source the old records
@@ -273,8 +273,8 @@ CREATE INDEX IF NOT EXISTS idx_tome_requests_uuid ON tome_requests (uuid);
 
 -- Everything that happened to a member's tomes. Tomes received per kind are
 -- the sum of 'given', 'debt' and 'adjusted' counts; 'debt' is tomes given
--- before they were earned, so later wars pay it off. The bot posts given
--- tomes to the tomes channel and stamps announced_at.
+-- before they were earned, so later wars pay it off. The bot posts requests,
+-- gives and cancellations to the tome log channel and stamps announced_at.
 CREATE TABLE IF NOT EXISTS tome_events (
   id           SERIAL       PRIMARY KEY,
   uuid         UUID         NOT NULL,
