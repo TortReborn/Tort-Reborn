@@ -324,6 +324,20 @@ SCHEMA = [
     WHERE award IN ('tier-common', 'tier-uncommon', 'tier-epic',
                     'tier-legendary', 'tier-fabled');
     """,
+    """
+    CREATE TABLE IF NOT EXISTS card_pulls (
+        id        BIGSERIAL     PRIMARY KEY,
+        "user"    BIGINT        NOT NULL,
+        card      VARCHAR(64)   NOT NULL,
+        tier      VARCHAR(16)   NOT NULL,
+        pearls    INT           NOT NULL,
+        bait      BOOLEAN       NOT NULL,
+        wishes    VARCHAR(64)[] NOT NULL DEFAULT '{}',
+        pulled_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+    )
+    """,
+    'CREATE INDEX IF NOT EXISTS card_pulls_user_at_idx '
+    'ON card_pulls ("user", pulled_at)',
 ]
 
 _CARD_SET = None
@@ -693,6 +707,7 @@ def db_get_balance(user_id: int) -> int:
 class ReelPlan:
     cards: list[dict]
     members: list[tuple]
+    wishes: tuple[str, ...] = ()   # the wishlist the cards were rolled under
 
 
 class ReelGrant(TypedDict):
@@ -739,7 +754,7 @@ def db_prepare_reels(user_id: int, limit: int) -> ReelPlan:
                             card = roll_in_tier(roll_tier(), wishes)
                 cards.append(card)
         db.connection.commit()
-        return ReelPlan(cards, members)
+        return ReelPlan(cards, members, tuple(sorted(wishes)) if count else ())
     finally:
         db.close()
 
@@ -769,7 +784,7 @@ def db_complete_reels(user_id: int, plan: ReelPlan) -> ReelGrant | None:
             'FROM locked l '
             'WHERE w."user" = l."user" '
             f'  AND ({fresh} + l.bait_reels) >= %(count)s '
-            'RETURNING w.reels + w.bait_reels, w.pearls',
+            'RETURNING w.reels + w.bait_reels, w.pearls, l.bait_reels',
             {"uid": user_id, "w": window, "per": REELS_PER_WINDOW,
              "count": count, "pearls": sum(pull_value(c) for c in plan.cards)})
         wallet = db.cursor.fetchone()
@@ -787,6 +802,15 @@ def db_complete_reels(user_id: int, plan: ReelPlan) -> ReelGrant | None:
             'RETURNING card, count',
             [(user_id, slug, 0, amount) for slug, amount in sorted(amounts.items())])
         copies = dict(db.cursor.fetchall())
+        # Bait reels are spent before banked ones, so they cover the first cards.
+        bait = min(wallet[2], count)
+        execute_values(
+            db.cursor,
+            'INSERT INTO card_pulls ("user", card, tier, pearls, bait, wishes) '
+            'VALUES %s',
+            [(user_id, c["slug"], "member" if c.get("member") else c["tier"],
+              pull_value(c), i < bait, list(plan.wishes))
+             for i, c in enumerate(plan.cards)])
         db.connection.commit()
         last = plan.cards[-1]
         return {"total": wallet[0], "pearls": wallet[1],
