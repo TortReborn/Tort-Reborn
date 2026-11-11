@@ -251,7 +251,7 @@ CREATE TABLE IF NOT EXISTS tome_requests (
   kind         VARCHAR(8)   CHECK (kind IN ('war', 'raid')),
   count        INT          NOT NULL CHECK (count > 0),
   given        INT          NOT NULL DEFAULT 0 CHECK (given >= 0 AND given <= count),
-  priority     VARCHAR(12)  NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'very_high')),
+  priority     VARCHAR(12)  NOT NULL CHECK (priority IN ('very_low', 'low', 'medium', 'high', 'very_high')),
   -- queue: served first, by priority then age; give_when_available next;
   -- give_when_full only when neither has anything waiting; dormant: owed to
   -- someone no longer in the guild, back in the queue if they rejoin
