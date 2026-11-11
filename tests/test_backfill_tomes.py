@@ -59,6 +59,14 @@ def test_ledger_blocks():
     assert e["Delta"].war == 2 and e["Delta"].notes == ["Information: +175 Wars through alts"]
 
 
+def test_a_ledger_split_over_two_messages_reads_as_one():
+    # The export joins the parts with a newline, oldest first.
+    first = "**\n__Alpha: 7__\nShells: 3\nWars: 4(100)**"
+    second = "**__Echo: 2__\nShells: 2**"
+    e = {x.name: x for x in bf.parse_ledger(first + "\n" + second)}
+    assert (e['Alpha'].raid, e['Alpha'].war, e['Echo'].raid) == (3, 4, 2)
+
+
 def test_list_sections():
     s = bf.parse_list(LIST)
     assert s["owed"] == [("Echo", 2, "not in guild")]

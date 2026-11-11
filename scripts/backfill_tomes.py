@@ -48,13 +48,17 @@ def export(out: str):
     api = "https://discord.com/api/v10"
     main = requests.get(f"{api}/channels/{CHANNEL_ID}/messages/{MESSAGE_ID}", headers=h, timeout=30).json()
     thread = requests.get(f"{api}/channels/{MESSAGE_ID}/messages?limit=100", headers=h, timeout=30).json()
-    ledger = max((m for m in thread if "Shells:" in (m.get("content") or "")), key=lambda m: len(m["content"]))
+    # The ledger outgrew one message (Discord's 2000 characters) and goes on in
+    # the next, so every part is read, oldest first.
+    parts = sorted((m for m in thread if "Shells:" in (m.get("content") or "")), key=lambda m: m["timestamp"])
+    edited = max((m.get("edited_timestamp") or m["timestamp"]) for m in parts)
     with open(out, "w", encoding="utf-8") as f:
         json.dump({"list": {"id": main["id"], "edited": main.get("edited_timestamp"), "content": main["content"]},
-                   "ledger": {"id": ledger["id"], "edited": ledger.get("edited_timestamp"), "content": ledger["content"]}},
+                   "ledger": {"ids": [m["id"] for m in parts], "edited": edited,
+                              "content": "\n".join(m["content"] for m in parts)}},
                   f, ensure_ascii=False)
     print(f"Exported the list message (edited {main.get('edited_timestamp')}) and the ledger "
-          f"(edited {ledger.get('edited_timestamp')}) to {out}")
+          f"({len(parts)} message(s), last edited {edited}) to {out}")
 
 
 # ---- parsing ----
