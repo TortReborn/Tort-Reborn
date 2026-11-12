@@ -21,7 +21,7 @@ from Helpers.item_tooltip_render import (
     render_crafted_tooltip,
     render_item_tooltip,
 )
-from Helpers.logger import WARN, log
+from Helpers.logger import ERROR, log
 from Helpers.wynn_items import (
     MAX_DATABASE_RESPONSE,
     WYNN_ITEM_DATABASE_URL,
@@ -183,7 +183,8 @@ class ItemTooltipBridge:
                     )
                     self._items.load_wynntils_names(gear)
                 except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
-                    log(WARN, f"Wynntils gear list unavailable, keeping the previous one: {error}",
+                    # Escalated: if this repeats, WYNNTILS_GEAR_URL has likely moved and needs updating.
+                    log(ERROR, f"Wynntils gear list unavailable, keeping the previous one: {error}",
                         context="item_tooltip")
         return self._items
 
