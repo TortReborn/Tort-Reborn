@@ -21,7 +21,13 @@ from Helpers.item_tooltip_render import (
     render_crafted_tooltip,
     render_item_tooltip,
 )
-from Helpers.wynn_items import MAX_DATABASE_RESPONSE, WYNN_ITEM_DATABASE_URL, WynnItemIndex
+from Helpers.logger import WARN, log
+from Helpers.wynn_items import (
+    MAX_DATABASE_RESPONSE,
+    WYNN_ITEM_DATABASE_URL,
+    WYNNTILS_GEAR_URL,
+    WynnItemIndex,
+)
 
 PUA_RUN = re.compile(r"[\U000F0000-\U000FFFFD\U00100000-\U0010FFFD]+")
 START = re.compile(r"[\U000F0000-\U000F0002][\U000F0100-\U000F0103]")
@@ -170,6 +176,15 @@ class ItemTooltipBridge:
                     max_bytes=MAX_DATABASE_RESPONSE, timeout=DATABASE_TIMEOUT,
                 )
                 self._items.load(entries)
+                try:
+                    gear = await self._json_request(
+                        "GET", WYNNTILS_GEAR_URL,
+                        max_bytes=MAX_DATABASE_RESPONSE, timeout=DATABASE_TIMEOUT,
+                    )
+                    self._items.load_wynntils_names(gear)
+                except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+                    log(WARN, f"Wynntils gear list unavailable, keeping the previous one: {error}",
+                        context="item_tooltip")
         return self._items
 
     async def _get_weights(self, name: str) -> list[dict]:

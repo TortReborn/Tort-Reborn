@@ -231,13 +231,13 @@ def _gear_identifications(reader: _Reader, version: int) -> list[dict]:
         if version == 2:
             value = reader.variable_integer()
             flags = reader.read()
-            meter = reader.read() if flags & VANILLA_METER_FLAG else None
-            if meter is not None and meter > MAX_VANILLA_METER_OFFSET:
+            if flags & VANILLA_METER_FLAG and reader.read() > MAX_VANILLA_METER_OFFSET:
                 raise ValueError("Invalid gear identification meter offset")
-            identifications.append({"key": keys[stat_id], "value": value, "kind": "actual", "meter": meter})
-            continue
-        value = reader.read()
-        identifications.append({"key": keys[stat_id], "value": value, "kind": "roll"})
+            kind = "actual"
+        else:
+            value = reader.read()
+            kind = "roll"
+        identifications.append({"key": keys[stat_id], "value": value, "kind": kind})
     return identifications
 
 
