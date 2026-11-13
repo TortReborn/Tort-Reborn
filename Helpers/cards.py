@@ -59,11 +59,11 @@ CARD_TIERS = ["mythic", "fabled", "legendary", "rare", "unique", "normal"]
 
 @dataclass(frozen=True)
 class TradeRateLimit:
-    cards: int
+    trades: int
     period: Literal["day", "week"]
 
 
-TRADE_RATE_LIMIT = TradeRateLimit(cards=15, period="day")
+TRADE_RATE_LIMIT = TradeRateLimit(trades=2, period="day")
 
 TIER_COLORS = {
     "normal": 0xFFFFFF,
@@ -1129,7 +1129,6 @@ class TradeLimitedResult(TypedDict):
     status: Literal["limited"]
     owner: int
     used: int
-    attempted: int
     limit: int
     period: Literal["day", "week"]
 
@@ -1139,12 +1138,11 @@ TradeResult = TradeDoneResult | TradeChangedResult | TradeLimitedResult
 
 def _trade_usage(db: DB, user_id: int, period: str) -> int:
     db.cursor.execute(
-        "SELECT COALESCE(SUM(CASE WHEN from_user = %s THEN from_cards "
-        "ELSE to_cards END), 0) FROM card_trades "
+        "SELECT COUNT(*) FROM card_trades "
         "WHERE completed_at >= "
         "date_trunc(%s, CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' "
         "AND (from_user = %s OR to_user = %s)",
-        (user_id, period, user_id, user_id))
+        (period, user_id, user_id))
     return db.cursor.fetchone()[0]
 
 
@@ -1206,10 +1204,10 @@ def db_trade(trade_id: str, from_user: int, to_user: int,
         policy = TRADE_RATE_LIMIT
         for owner in sorted(sent):
             used = _trade_usage(db, owner, policy.period)
-            if used + sent[owner] > policy.cards:
+            if used >= policy.trades:
                 db.connection.rollback()
                 return {"status": "limited", "owner": owner, "used": used,
-                        "attempted": sent[owner], "limit": policy.cards,
+                        "limit": policy.trades,
                         "period": policy.period}
 
         # Commit the receipt with the transfer so replays cannot move cards twice.
