@@ -107,6 +107,46 @@ PROWESS_ENTRY = {
         "rawIntelligence": 4,
     },
 }
+IDOL_ENTRY = {
+    "displayName": "Idol",
+    "internalName": "Idol",
+    "tier": "mythic",
+    "identifications": {
+        "manaRegen": {"min": 3, "raw": 10, "max": 13},
+        "reflection": {"min": 9, "raw": 30, "max": 39},
+        "waterDefence": {"min": 5, "raw": 15, "max": 20},
+        "rawIntelligence": 26,
+        "rawSpellDamage": {"min": 79, "raw": 264, "max": 343},
+        "raw2ndSpellCost": {"min": -15, "raw": -50, "max": -65},
+    },
+}
+MASTERWORK_IDOL_ENTRY = {
+    "displayName": "Idol",
+    "internalName": "Masterwork Idol",
+    "tier": "mythic",
+    "identifications": {
+        "manaRegen": {"min": 5, "raw": 18, "max": 23},
+        "reflection": {"min": 9, "raw": 30, "max": 39},
+        "waterDefence": {"min": 8, "raw": 28, "max": 36},
+        "rawIntelligence": 26,
+        "rawSpellDamage": {"min": 113, "raw": 377, "max": 490},
+        "raw2ndSpellCost": {"min": -18, "raw": -60, "max": -78},
+    },
+}
+# Keys as in Wynntils' gear list: unique per item, with Ascended kept as an alias.
+WYNNTILS_GEAR = {
+    "Idol": {"internalName": "Idol"},
+    "Masterwork Idol": {"internalName": "Masterwork Idol"},
+    "Ascended Idol": {"internalName": "Masterwork Idol"},
+    "Volatility": {"internalName": "Volatility2"},
+    "Ionic Spark": {"internalName": "Volatility"},
+}
+# Fits both Idols' ranges, so stats alone can't tell them apart.
+IDOL_ROLL = [
+    {"key": key, "value": value, "kind": "actual"}
+    for key, value in {"manaRegen": 10, "reflection": 30, "waterDefence": 14,
+                       "rawSpellDamage": 250, "raw2ndSpellCost": 45}.items()
+]
 CRAFTED_RING = (
     "\U000F0002\U000F0103\U000F0705\U000F0886\U000F013A\U000F0967"
     "\U000F0005\U000F0028\U000F0148\U000F0264\U000F0300\U000F0400"
@@ -427,6 +467,38 @@ class TestWynnItemIndex:
         with pytest.raises(ValueError, match="Ambiguous"):
             index.resolve(decoded["itemName"], decoded["identifications"])
 
+    def _idol_index(self):
+        index = self._index(IDOL_ENTRY, MASTERWORK_IDOL_ENTRY, IONIC_SPARK_ENTRY, VOLATILITY_ENTRY)
+        index.load_wynntils_names(WYNNTILS_GEAR)
+        return index
+
+    def test_shared_display_name_without_wynntils_names_is_ambiguous(self):
+        index = self._index(IDOL_ENTRY, MASTERWORK_IDOL_ENTRY)
+        with pytest.raises(ValueError, match="Ambiguous"):
+            index.resolve("Idol", IDOL_ROLL)
+
+    def test_wynntils_name_resolves_base_item(self):
+        assert self._idol_index().resolve("Idol", IDOL_ROLL)["internalName"] == "Idol"
+
+    @pytest.mark.parametrize("name", ["Masterwork Idol", "Ascended Idol"])
+    def test_wynntils_name_resolves_upgraded_item(self, name):
+        assert self._idol_index().resolve(name, IDOL_ROLL)["internalName"] == "Masterwork Idol"
+
+    def test_wynntils_name_follows_reused_internal_name(self):
+        decoded = decode_gear(VOLATILITY_CODE)
+        entry = self._idol_index().resolve(decoded["itemName"], decoded["identifications"])
+        assert entry["internalName"] == "Volatility2"
+
+    def test_name_missing_from_wynntils_falls_back_to_wynncraft_names(self):
+        index = self._idol_index()
+        index.load([IDOL_ENTRY, MASTERWORK_IDOL_ENTRY, WILD_GROWTH_ENTRY])
+        decoded = decode_gear(WILD_GROWTH_CODE)
+        assert index.resolve("Wild Growth", decoded["identifications"]) is WILD_GROWTH_ENTRY
+
+    def test_rejects_invalid_wynntils_list(self):
+        with pytest.raises(ValueError):
+            WynnItemIndex().load_wynntils_names([])
+
     def test_rejects_empty_database(self):
         with pytest.raises(ValueError):
             WynnItemIndex().load([])
@@ -492,6 +564,34 @@ class TestItemFromGear:
         assert negative.draw is not None
         assert negative.final_draw is not None
         assert negative.right[0].value == "-5"
+
+
+class TestItemIndexLoading:
+    @pytest.mark.asyncio
+    async def test_loads_wynntils_names_with_the_database(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+
+        async def fake_json_request(method, url, payload=None, **kwargs):
+            return [IDOL_ENTRY, MASTERWORK_IDOL_ENTRY] if "wynncraft" in url else WYNNTILS_GEAR
+
+        monkeypatch.setattr(bridge, "_json_request", fake_json_request)
+        index = await bridge._item_index()
+        assert index.resolve("Idol", IDOL_ROLL)["internalName"] == "Idol"
+
+    @pytest.mark.asyncio
+    async def test_wynntils_outage_still_loads_the_database(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+
+        async def fake_json_request(method, url, payload=None, **kwargs):
+            if "wynncraft" in url:
+                return [IDOL_ENTRY, MASTERWORK_IDOL_ENTRY, WILD_GROWTH_ENTRY]
+            raise ValueError("Item API returned HTTP 503")
+
+        monkeypatch.setattr(bridge, "_json_request", fake_json_request)
+        monkeypatch.setattr("Helpers.item_tooltip.log", lambda *args, **kwargs: None)
+        index = await bridge._item_index()
+        assert index.fresh
+        assert index.resolve("Wild Growth", [])["internalName"] == "Wild Growth"
 
 
 class TestRenderNameHint:
