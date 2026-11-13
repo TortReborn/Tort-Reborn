@@ -1364,10 +1364,8 @@ class TradeView(discord.ui.View):
         owner = ("You" if result["owner"] == self.target.id
                  else self.proposer.display_name)
         period = "today" if result["period"] == "day" else "this week"
-        return (f"Trade limit reached\n{owner} already sent "
-                f"**{result['used']}/{result['limit']} cards** {period}\n"
-                f"This trade would send "
-                f"**{result['attempted']}** more")
+        return (f"Trade limit reached\n{owner} already completed "
+                f"**{result['used']}/{result['limit']} trades** {period}")
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.success)
     async def accept(self, button: discord.ui.Button,
@@ -1859,9 +1857,9 @@ class Cards(commands.Cog):
                    "`/card discard` Discard plain dupes into lower-tier rolls "
                    "(wishlist does not apply)\n"
                    f"{_yield_line()}\n"
-                   f"`/card trade` Trade up to "
-                   f"**{cardlib.TRADE_RATE_LIMIT.cards} cards sent per "
-                   f"{cardlib.TRADE_RATE_LIMIT.period}**\n"
+                   f"`/card trade` Complete up to "
+                   f"**{cardlib.TRADE_RATE_LIMIT.trades} trades per "
+                   f"{cardlib.TRADE_RATE_LIMIT.period}** (resets at 00:00 UTC)\n"
                    "`/card sets` View progress in card sets"),
             inline=False)
         embed.add_field(

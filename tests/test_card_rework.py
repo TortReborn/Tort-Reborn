@@ -725,32 +725,73 @@ def test_replaying_a_completed_trade_moves_nothing(card_db):
     assert held(card_db, USER, "b") == {0: 1}
     assert held(card_db, OTHER, "a") == {0: 1}
     assert held(card_db, OTHER, "b") == {0: 1}
+    assert trade([("a", 0, 1)], [("b", 0, 1)])["status"] == "completed"
+    card_db.execute('SELECT COUNT(*) FROM card_trades')
+    assert card_db.fetchone()[0] == 2
 
 
-def test_each_player_can_send_up_to_the_trade_limit_per_day(card_db):
-    limit = cardlib.TRADE_RATE_LIMIT.cards
-    give(card_db, USER, "a", limit + 1)
-    give(card_db, OTHER, "b", 2)
-    assert trade([("a", 0, limit)], [("b", 0, 1)])["status"] == "completed"
+def test_two_daily_trades_allow_any_card_quantity(card_db):
+    assert cardlib.TRADE_RATE_LIMIT == cardlib.TradeRateLimit(trades=2, period="day")
+    give(card_db, USER, "a", 41)
+    give(card_db, OTHER, "b", 3)
+    for _ in range(2):
+        assert trade([("a", 0, 20)], [("b", 0, 1)])["status"] == "completed"
     result = trade([("a", 0, 1)], [("b", 0, 1)])
-    assert result == {"status": "limited", "owner": USER, "used": limit,
-                      "attempted": 1, "limit": limit, "period": "day"}
+    assert result == {"status": "limited", "owner": USER, "used": 2,
+                      "limit": 2, "period": "day"}
     assert held(card_db, USER, "a") == {0: 1}
     assert held(card_db, OTHER, "b") == {0: 1}
+    card_db.execute('SELECT from_cards, to_cards FROM card_trades')
+    assert card_db.fetchall() == [(20, 1), (20, 1)]
+
+
+@pytest.mark.parametrize("owner", [USER, OTHER])
+def test_either_players_prior_trades_in_both_roles_count(card_db, owner):
+    third = 333333333333333333
+    card_db.executemany(
+        'INSERT INTO card_trades (trade_id, from_user, to_user) VALUES (%s, %s, %s)',
+        [(str(uuid.uuid4()), owner, third),
+         (str(uuid.uuid4()), third, owner)])
+    give(card_db, USER, "a", 1)
+    give(card_db, OTHER, "b", 1)
+    assert trade([("a", 0, 1)], [("b", 0, 1)]) == {
+        "status": "limited", "owner": owner, "used": 2,
+        "limit": 2, "period": "day"}
+    assert held(card_db, USER, "a") == {0: 1}
+    assert held(card_db, OTHER, "b") == {0: 1}
+    card_db.execute('SELECT COUNT(*) FROM card_trades')
+    assert card_db.fetchone()[0] == 2
+
+
+def test_daily_trades_reset_at_midnight_utc(card_db):
+    card_db.execute("SET TIME ZONE 'Pacific/Honolulu'")
+    for offset in ("-1 microsecond", "0 seconds"):
+        card_db.execute(
+            "INSERT INTO card_trades (trade_id, from_user, to_user, completed_at) "
+            "VALUES (%s, %s, %s, "
+            "(date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') "
+            "AT TIME ZONE 'UTC') + %s::interval)",
+            (str(uuid.uuid4()), USER, OTHER, offset))
+    give(card_db, USER, "a", 2)
+    give(card_db, OTHER, "b", 2)
+    assert trade([("a", 0, 1)], [("b", 0, 1)])["status"] == "completed"
+    assert trade([("a", 0, 1)], [("b", 0, 1)])["status"] == "limited"
 
 
 def test_a_failed_trade_does_not_use_the_daily_allowance(card_db):
-    limit = cardlib.TRADE_RATE_LIMIT.cards
-    give(card_db, USER, "a", limit)
-    give(card_db, OTHER, "b", 1)
-    assert trade([("a", 0, limit + 1)], [("b", 0, 1)])["status"] == "changed"
-    assert trade([("a", 0, limit)], [("b", 0, 1)])["status"] == "completed"
+    give(card_db, USER, "a", 2)
+    give(card_db, OTHER, "b", 2)
+    assert trade([("a", 0, 3)], [("b", 0, 1)])["status"] == "changed"
+    for _ in range(2):
+        assert trade([("a", 0, 1)], [("b", 0, 1)])["status"] == "completed"
+    card_db.execute('SELECT COUNT(*) FROM card_trades')
+    assert card_db.fetchone()[0] == 2
 
 
 def test_trade_period_can_be_changed_to_week(card_db, monkeypatch):
     monkeypatch.setattr(
         cardlib, "TRADE_RATE_LIMIT",
-        cardlib.TradeRateLimit(cards=1, period="week"))
+        cardlib.TradeRateLimit(trades=1, period="week"))
     give(card_db, USER, "a", 2)
     give(card_db, OTHER, "b", 2)
     assert trade([("a", 0, 1)], [("b", 0, 1)])["status"] == "completed"
@@ -1263,8 +1304,8 @@ async def test_concurrent_accepts_execute_the_trade_once(monkeypatch):
 async def test_a_rate_limited_trade_closes_with_the_usage(monkeypatch):
     monkeypatch.setattr(
         cardlib, "db_trade",
-        lambda *args: {"status": "limited", "owner": USER, "used": 14,
-                       "attempted": 2, "limit": 15, "period": "day"})
+        lambda *args: {"status": "limited", "owner": USER, "used": 2,
+                       "limit": 2, "period": "day"})
     view = cmd.TradeView(
         types.SimpleNamespace(id=USER, mention="<@1>", display_name="Ann"),
         types.SimpleNamespace(id=OTHER, mention="<@2>", display_name="Bob"),
@@ -1273,7 +1314,7 @@ async def test_a_rate_limited_trade_closes_with_the_usage(monkeypatch):
     reply = Reply()
     await view.accept.callback(reply)
     assert view.state == "limited"
-    assert "Ann already sent **14/15 cards** today" in \
+    assert "Ann already completed **2/2 trades** today" in \
         reply.edits[-1]["embed"].description
     assert all(child.disabled for child in view.children)
 
