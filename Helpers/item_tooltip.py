@@ -21,7 +21,14 @@ from Helpers.item_tooltip_render import (
     render_crafted_tooltip,
     render_item_tooltip,
 )
-from Helpers.wynn_items import MAX_DATABASE_RESPONSE, WYNN_ITEM_DATABASE_URL, WynnItemIndex
+from Helpers.logger import WARN, log
+from Helpers.wynn_items import (
+    MAX_DATABASE_RESPONSE,
+    WYNN_ITEM_DATABASE_URL,
+    WYNNTILS_GEAR_URL,
+    WYNNTILS_RETRY_SECONDS,
+    WynnItemIndex,
+)
 
 PUA_RUN = re.compile(r"[\U000F0000-\U000FFFFD\U00100000-\U0010FFFD]+")
 START = re.compile(r"[\U000F0000-\U000F0002][\U000F0100-\U000F0103]")
@@ -72,6 +79,7 @@ class ItemTooltipBridge:
         self._weights: OrderedDict[str, tuple[float, list[dict]]] = OrderedDict()
         self._items = WynnItemIndex()
         self._items_lock = asyncio.Lock()
+        self._wynntils_retry_at = 0.0
 
     async def close(self):
         if self._session is not None and not self._session.closed:
@@ -161,7 +169,7 @@ class ItemTooltipBridge:
         return item["itemName"], png
 
     async def _item_index(self) -> WynnItemIndex:
-        if self._items.fresh:
+        if self._items.fresh and not self._wynntils_names_due():
             return self._items
         async with self._items_lock:
             if not self._items.fresh:
@@ -170,7 +178,25 @@ class ItemTooltipBridge:
                     max_bytes=MAX_DATABASE_RESPONSE, timeout=DATABASE_TIMEOUT,
                 )
                 self._items.load(entries)
+                await self._load_wynntils_names()
+            elif self._wynntils_names_due():
+                await self._load_wynntils_names()
         return self._items
+
+    def _wynntils_names_due(self) -> bool:
+        return not self._items.has_wynntils_names and monotonic() >= self._wynntils_retry_at
+
+    async def _load_wynntils_names(self) -> None:
+        try:
+            gear = await self._json_request(
+                "GET", WYNNTILS_GEAR_URL,
+                max_bytes=MAX_DATABASE_RESPONSE, timeout=DATABASE_TIMEOUT,
+            )
+            self._items.load_wynntils_names(gear)
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+            self._wynntils_retry_at = monotonic() + WYNNTILS_RETRY_SECONDS
+            log(WARN, f"Wynntils gear list unavailable, keeping the previous one: {error}",
+                context="item_tooltip")
 
     async def _get_weights(self, name: str) -> list[dict]:
         cached = self._weights.get(name)
