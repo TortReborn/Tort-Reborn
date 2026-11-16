@@ -1,11 +1,10 @@
 from time import monotonic
 
 WYNN_ITEM_DATABASE_URL = "https://api.wynncraft.com/v3/item/database?fullResult"
-# The gear list the Wynntils mod loads. Shared item codes carry its keys as the item
-# name, and those keys stay unique where Wynncraft display names collide (Masterwork
-# Idol shows as "Idol" in game but is keyed "Masterwork Idol" or "Ascended Idol").
+# Shared item codes name items by these keys, which stay unique where display names collide.
 WYNNTILS_GEAR_URL = "https://cdn.wynntils.com/static/Reference/gear.json"
 DATABASE_TTL_SECONDS = 6 * 60 * 60
+WYNNTILS_RETRY_SECONDS = 10 * 60
 MAX_DATABASE_RESPONSE = 24 * 1024 * 1024
 
 
@@ -44,6 +43,10 @@ class WynnItemIndex:
     @property
     def fresh(self) -> bool:
         return bool(self._by_name) and self._expires > monotonic()
+
+    @property
+    def has_wynntils_names(self) -> bool:
+        return bool(self._wynntils_names)
 
     def load(self, entries) -> None:
         if not isinstance(entries, list) or not entries:

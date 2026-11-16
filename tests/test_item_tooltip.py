@@ -133,7 +133,6 @@ MASTERWORK_IDOL_ENTRY = {
         "raw2ndSpellCost": {"min": -18, "raw": -60, "max": -78},
     },
 }
-# Keys as in Wynntils' gear list: unique per item, with Ascended kept as an alias.
 WYNNTILS_GEAR = {
     "Idol": {"internalName": "Idol"},
     "Masterwork Idol": {"internalName": "Masterwork Idol"},
@@ -141,7 +140,6 @@ WYNNTILS_GEAR = {
     "Volatility": {"internalName": "Volatility2"},
     "Ionic Spark": {"internalName": "Volatility"},
 }
-# Fits both Idols' ranges, so stats alone can't tell them apart.
 IDOL_ROLL = [
     {"key": key, "value": value, "kind": "actual"}
     for key, value in {"manaRegen": 10, "reflection": 30, "waterDefence": 14,
@@ -593,11 +591,38 @@ class TestItemIndexLoading:
         assert index.fresh
         assert index.resolve("Wild Growth", [])["internalName"] == "Wild Growth"
 
+    @pytest.mark.asyncio
+    async def test_retries_the_wynntils_list_without_refetching_the_database(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+        requests = []
+        wynntils_up = False
+
+        async def fake_json_request(method, url, payload=None, **kwargs):
+            requests.append("wynncraft" if "wynncraft" in url else "wynntils")
+            if "wynncraft" in url:
+                return [IDOL_ENTRY, MASTERWORK_IDOL_ENTRY]
+            if not wynntils_up:
+                raise ValueError("Item API returned HTTP 503")
+            return WYNNTILS_GEAR
+
+        monkeypatch.setattr(bridge, "_json_request", fake_json_request)
+        monkeypatch.setattr("Helpers.item_tooltip.log", lambda *args, **kwargs: None)
+        await bridge._item_index()
+        await bridge._item_index()
+        assert requests == ["wynncraft", "wynntils"]
+
+        wynntils_up = True
+        bridge._wynntils_retry_at = 0.0
+        index = await bridge._item_index()
+        assert requests == ["wynncraft", "wynntils", "wynntils"]
+        assert index.resolve("Idol", IDOL_ROLL)["internalName"] == "Idol"
+
 
 class TestRenderNameHint:
     def _stub_bridge(self, monkeypatch):
         bridge = ItemTooltipBridge()
         bridge._items.load([VOLATILITY_ENTRY, WILD_GROWTH_ENTRY, PROWESS_ENTRY])
+        bridge._items.load_wynntils_names(WYNNTILS_GEAR)
 
         async def fake_json_request(method, url, payload=None, **kwargs):
             raise AssertionError("gear items must resolve from the cached item index")
