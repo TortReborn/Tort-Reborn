@@ -385,3 +385,21 @@ async def test_service_assignment_lookup_error_does_not_fall_back_to_username(mo
     monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: pytest.fail("must fail closed"))
     with pytest.raises(RuntimeError, match="offline"):
         await object.__new__(GuildChatBridge)._resolve_poster(SimpleNamespace(), "Woealer")
+
+
+@pytest.mark.asyncio
+async def test_busy_item_renderer_never_posts_encoded_item_characters(monkeypatch):
+    monkeypatch.setattr(bridge_module, "log", lambda *args, **kwargs: None)
+    monkeypatch.setattr(bridge_module, "_resolve_ign_mentions", AsyncMock(side_effect=lambda text: text))
+    webhook = SimpleNamespace(send=AsyncMock(return_value=None))
+    bridge = object.__new__(GuildChatBridge)
+    bridge.webhook = webhook
+    bridge._channel = lambda: SimpleNamespace(guild=SimpleNamespace())
+    bridge._resolve_poster = AsyncMock(return_value=bridge_module.BridgePoster("Player", "avatar"))
+    bridge.item_bridge = SimpleNamespace(prepare=AsyncMock(side_effect=ValueError("Item renderer is busy")))
+    shared_tome = "\U000F0003\U000F0101\U000F0253\U000F00FF"
+
+    await bridge._handle_worker_packet({"type": "minecraft_chat_message", "data": {
+        "guildTag": bridge_module.TAQ_GUILD_TAG, "username": "Player", "message": f"we take those {shared_tome}"}})
+
+    assert webhook.send.await_args.args[0] == "we take those [shared item]"

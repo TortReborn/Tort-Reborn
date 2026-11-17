@@ -31,7 +31,8 @@ from Helpers.wynn_items import (
 )
 
 PUA_RUN = re.compile(r"[\U000F0000-\U000FFFFD\U00100000-\U0010FFFD]+")
-START = re.compile(r"[\U000F0000-\U000F0002][\U000F0100-\U000F0103]")
+START = re.compile(r"[\U000F0000-\U000F0003][\U000F0100-\U000F0105]")
+UNREADABLE_ITEM = "[shared item]"
 NAME_SUFFIX = re.compile(r'\s?"([^"\n]*)"')
 MAX_RESPONSE = 2 * 1024 * 1024
 MAX_ITEMS = 4
@@ -72,6 +73,19 @@ def find_item_codes(text: str) -> list[tuple[int, int, str, str | None]]:
     return matches
 
 
+def without_item_codes(text: str) -> str:
+    return PUA_RUN.sub(UNREADABLE_ITEM, text)
+
+
+def unrecognised_encodings(text: str) -> tuple[str, ...]:
+    errors = []
+    for run in PUA_RUN.finditer(text):
+        high, low = divmod(ord(run.group()[0]) - 0xF0000, 256)
+        version = f"version byte {low}" if high == 0 else "no start block"
+        errors.append(f"Unrecognised Wynntils item encoding ({version})")
+    return tuple(errors)
+
+
 class ItemTooltipBridge:
     def __init__(self):
         self._slots = asyncio.Semaphore(2)
@@ -90,7 +104,7 @@ class ItemTooltipBridge:
         if not matches:
             if len(text.encode("utf-16-le")) // 2 > 2000 or not text:
                 raise ValueError("Forwarded content must contain 1..2000 UTF-16 characters")
-            return PreparedMessage(text, (), ())
+            return PreparedMessage(without_item_codes(text), (), unrecognised_encodings(text))
         if self._slots.locked():
             raise ValueError("Item renderer is busy; retry through Tort's existing queue")
         async with self._slots:
@@ -104,7 +118,8 @@ class ItemTooltipBridge:
         position = 0
         attempts = 0
         for left, right, code, name_hint in matches:
-            parts.append(text[position:left])
+            parts.append(without_item_codes(text[position:left]))
+            errors.extend(unrecognised_encodings(text[position:left]))
             key = (code, name_hint)
             if key in rendered:
                 replacement = rendered[key]
@@ -123,7 +138,8 @@ class ItemTooltipBridge:
                 rendered[key] = replacement
             parts.append(replacement)
             position = right
-        parts.append(text[position:])
+        parts.append(without_item_codes(text[position:]))
+        errors.extend(unrecognised_encodings(text[position:]))
         content = "".join(parts)
         if len(content.encode("utf-16-le")) // 2 > 2000:
             raise ValueError("Rendered message exceeds Discord's 2000-character content limit")
