@@ -5,8 +5,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from Helpers.item_tooltip import ItemTooltipBridge, find_item_codes
-from Helpers.artemis_item import decode_crafted_gear, decode_gear
+from Helpers.item_tooltip import ItemTooltipBridge, find_item_codes, without_item_codes
+from Helpers.artemis_item import decode_crafted_gear, decode_gear, item_type
 from Helpers.item_tooltip_render import (
     build_crafted_lines,
     build_lines,
@@ -145,6 +145,42 @@ IDOL_ROLL = [
     for key, value in {"manaRegen": 10, "reflection": 30, "waterDefence": 14,
                        "rawSpellDamage": 250, "raw2ndSpellCost": 45}.items()
 ]
+# Real Wynntils 4.2.17 guild chat shares (version byte 0x03, Wynntils' VERSION_4).
+V4_TOME_CODE = (
+    "\U000F0003\U000F0101\U000F0253\U000F6569\U000F736D\U000F6963"
+    "\U000F2054\U000F6F6D\U000F6520\U000F6F66\U000F2043\U000F6F6D"
+    "\U000F6261\U000F7420\U000F4D61\U000F7374\U000F6572\U000F7920"
+    "\U000F4949\U000F4900\U000F0302\U000F0066\U000F0A24\U000F0009"
+    "\U000F101D\U000F00FF"
+)
+V4_ASCENDED_PURE_CODE = (
+    "\U000F0003\U000F0100\U000F0241\U000F7363\U000F656E\U000F6465"
+    "\U000F6420\U000F5075\U000F7265\U000F0003\U000F0600\U000F793C"
+    "\U000F1800\U000F232A\U000F1900\U000F4524\U000F1400\U000F4894"
+    "\U000F0A24\U000F0121\U000F2108\U000F0027\U000F0C24\U000F0005"
+    "\U000F0506\U000F0101\U000F8A01\U0010FFEE"
+)
+
+
+def _encode(data: bytes) -> str:
+    """Wynntils' chat text encoding: two bytes per private-use character."""
+    characters = []
+    for index in range(0, len(data) - 1, 2):
+        pair = data[index:index + 2]
+        if pair in (b"\xff\xfe", b"\xff\xff"):
+            characters.append(chr(0x100000 + pair[1] - 0xFE))
+        else:
+            characters.append(chr(0xF0000 + (pair[0] << 8) + pair[1]))
+    if len(data) % 2:
+        characters.append(chr(0x100000 + (data[-1] << 8) + 0xEE))
+    return "".join(characters)
+
+
+def _stat_id(key: str) -> int:
+    from Helpers.artemis_item import stat_id_keys
+    return stat_id_keys().index(key)
+
+
 CRAFTED_RING = (
     "\U000F0002\U000F0103\U000F0705\U000F0886\U000F013A\U000F0967"
     "\U000F0005\U000F0028\U000F0148\U000F0264\U000F0300\U000F0400"
@@ -192,9 +228,21 @@ class TestFindItemCodes:
         assert len(matches) == 1
         assert matches[0][2] == TOME_CODE
 
+    @pytest.mark.parametrize("code", [V4_TOME_CODE, V4_ASCENDED_PURE_CODE])
+    def test_version_4_shares_are_detected(self, code):
+        assert find_item_codes(f"we take those {code}") == [(14, 14 + len(code), code, None)]
+
     def test_oversized_message_rejected(self):
         with pytest.raises(ValueError):
             find_item_codes("x" * 4001)
+
+
+class TestWithoutItemCodes:
+    def test_replaces_encoded_runs(self):
+        assert without_item_codes(f"look {V4_TOME_CODE} nice") == "look [shared item] nice"
+
+    def test_keeps_plain_text(self):
+        assert without_item_codes("just chatting") == "just chatting"
 
 
 class TestItemFromApi:
@@ -335,6 +383,23 @@ class TestCraftedItem:
         assert any(line.text == "+5% Spell Damage" for line in lines)
         assert render_crafted_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
 
+    def test_decodes_version_4_crafted_ring(self):
+        data = (
+            b"\x00\x03\x01\x03"
+            b"\x07\x05"                      # ring
+            b"\x08\x86\x01\x3a"              # durability 67 / 29
+            b"\x09\x67\x00\x00"              # level 103, no class, no skills
+            + bytes([0x0C, 2,
+                     _stat_id("rawStrength"), 0x08, 0xFF, 0x00,
+                     _stat_id("spellDamage"), 0x0A, 0x24, 0x01])
+            + b"\x04\x01\x01\x58\x00"         # one Fire 1 powder (22), no special
+            + b"\xff"
+        )
+        item = decode_crafted_gear(_encode(data), "Embodiment of Scam")
+        assert item["durability"] == {"effectStrength": 100, "max": 67, "current": 29}
+        assert item["identifications"] == [("rawStrength", 4), ("spellDamage", 5)]
+        assert item["powders"] == {"slots": 1, "powders": ["Fire 1"]}
+
 
 class TestItemTooltipBridgePrepare:
     def _bridge(self, monkeypatch, render_result=None, render_error=None, calls=None):
@@ -401,6 +466,15 @@ class TestItemTooltipBridgePrepare:
         assert calls == [(code, "Divzer qol")]
 
     @pytest.mark.asyncio
+    async def test_unknown_encoding_never_reaches_discord_raw(self, monkeypatch):
+        calls = []
+        bridge = self._bridge(monkeypatch, calls=calls)
+        future_version = "\U000F0004\U000F0100\U000F0011"
+        prepared = await bridge.prepare(f"what is {future_version}")
+        assert calls == []
+        assert prepared.content == "what is [shared item]"
+
+    @pytest.mark.asyncio
     async def test_busy_semaphore_raises(self, monkeypatch):
         bridge = self._bridge(monkeypatch)
         await bridge._slots.acquire()
@@ -428,9 +502,44 @@ class TestDecodeGear:
         ]
         assert all(stat["kind"] == "actual" for stat in decoded["identifications"])
 
+    def test_decodes_version_4_share(self):
+        decoded = decode_gear(V4_ASCENDED_PURE_CODE)
+        assert decoded["itemName"] == "Ascended Pure"
+        assert decoded["rerollCount"] == 5
+        assert decoded["shiny"] == {"key": "Mobs Killed", "value": 69}
+        assert [(stat["key"], stat["value"]) for stat in decoded["identifications"]] == [
+            ("combatExperience", 30),
+            ("manaSteal", 21),
+            ("reflection", 18),
+            ("spellDamage", 650),
+            ("mainAttackDamage", -17),
+            ("raw3rdSpellCost", 6),
+        ]
+        assert all(stat["kind"] == "actual" for stat in decoded["identifications"])
+
+    def test_version_4_tome_header_is_read(self):
+        assert item_type(V4_TOME_CODE) == 1
+
+    def test_decodes_version_4_powders_and_skips_special(self):
+        # Earth 7 (7) and Air 1 (29), 6 bits each, then special Quake tier 3.
+        powders = bytes([0x04, 3, 2, 0b00011101, 0b11010000, 0x01, 0x03])
+        code = _encode(b"\x00\x03\x01\x00\x02Prowess\x00" + powders + b"\xff")
+        assert decode_gear(code)["powders"] == {"slots": 3, "powders": ["Earth 7", "Air 1"]}
+
+    def test_version_4_powder_without_special_has_no_tier_byte(self):
+        code = _encode(b"\x00\x03\x01\x00\x02Prowess\x00\x04\x01\x00\x00\xff")
+        assert decode_gear(code)["powders"] == {"slots": 1, "powders": []}
+
+    def test_rejects_unknown_powder_special(self):
+        code = _encode(b"\x00\x03\x01\x00\x02Prowess\x00\x04\x01\x00\x0b\x01\xff")
+        with pytest.raises(ValueError, match="powder special"):
+            decode_gear(code)
+
     def test_rejects_unsupported_version(self):
         with pytest.raises(ValueError, match="version"):
             decode_gear("\U000F0000\U000F0100\U000F0011")
+        with pytest.raises(ValueError, match="version"):
+            decode_gear("\U000F0004\U000F0100\U000F0011")
 
     def test_rejects_crafted_code(self):
         with pytest.raises(ValueError):

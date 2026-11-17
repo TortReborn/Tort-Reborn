@@ -13,7 +13,7 @@ import emoji
 from discord.ext import commands, tasks
 
 from Helpers.database import DB
-from Helpers.item_tooltip import ItemTooltipBridge
+from Helpers.item_tooltip import ItemTooltipBridge, without_item_codes
 from Helpers.logger import ERROR, INFO, WARN, log
 from Helpers.variables import (
     GUILD_CHAT_BRIDGE_TOKEN,
@@ -277,7 +277,7 @@ class GuildChatBridge(commands.Cog):
         for error in prepared.errors if prepared else ():
             log(WARN, error, context="guild_chat_bridge")
 
-        content = _discord_safe_text(prepared.content if prepared else message)
+        content = _discord_safe_text(prepared.content if prepared else without_item_codes(message))
         content = await _resolve_ign_mentions(content)
         attachments = prepared.attachments if prepared else ()
 
