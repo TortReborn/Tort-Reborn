@@ -473,6 +473,7 @@ class TestItemTooltipBridgePrepare:
         prepared = await bridge.prepare(f"what is {future_version}")
         assert calls == []
         assert prepared.content == "what is [shared item]"
+        assert prepared.errors == ("Unrecognised Wynntils item encoding (version byte 4)",)
 
     @pytest.mark.asyncio
     async def test_busy_semaphore_raises(self, monkeypatch):

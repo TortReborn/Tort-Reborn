@@ -78,6 +78,15 @@ def without_item_codes(text: str) -> str:
     return PUA_RUN.sub(UNREADABLE_ITEM, text)
 
 
+def unrecognised_encodings(text: str) -> tuple[str, ...]:
+    errors = []
+    for run in PUA_RUN.finditer(text):
+        high, low = divmod(ord(run.group()[0]) - 0xF0000, 256)
+        version = f"version byte {low}" if high == 0 else "no start block"
+        errors.append(f"Unrecognised Wynntils item encoding ({version})")
+    return tuple(errors)
+
+
 class ItemTooltipBridge:
     def __init__(self):
         self._slots = asyncio.Semaphore(2)
@@ -96,7 +105,7 @@ class ItemTooltipBridge:
         if not matches:
             if len(text.encode("utf-16-le")) // 2 > 2000 or not text:
                 raise ValueError("Forwarded content must contain 1..2000 UTF-16 characters")
-            return PreparedMessage(without_item_codes(text), (), ())
+            return PreparedMessage(without_item_codes(text), (), unrecognised_encodings(text))
         if self._slots.locked():
             raise ValueError("Item renderer is busy; retry through Tort's existing queue")
         async with self._slots:

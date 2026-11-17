@@ -89,6 +89,8 @@
   "jumpHeight": "Jump Height",
   "lootQuality": "Loot Quality %",
   "gatherXpBonus": "Gather XP Bonus %",
+  "combatExperience": "Combat Experience %",
+  "gatheringExperience": "Gathering Experience %",
   "gatherSpeed": "Gather Speed %",
   "healingEfficiency": "Healing Efficiency %",
   "knockback": "Knockback %",
