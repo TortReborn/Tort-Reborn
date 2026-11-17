@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from Helpers.item_tooltip import ItemTooltipBridge, find_item_codes, without_item_codes
+from Helpers.item_tooltip import START, ItemTooltipBridge, find_item_codes, without_item_codes
 from Helpers.artemis_item import decode_crafted_gear, decode_gear, item_type
 from Helpers.item_tooltip_render import (
     build_crafted_lines,
@@ -230,6 +230,19 @@ class TestFindItemCodes:
     @pytest.mark.parametrize("code", [V4_TOME_CODE, V4_ASCENDED_PURE_CODE])
     def test_version_4_shares_are_detected(self, code):
         assert find_item_codes(f"we take those {code}") == [(14, 14 + len(code), code, None)]
+
+    def test_header_like_bytes_inside_an_item_do_not_split_it(self):
+        # A perfect byte of 00, then stat 03 with value -1 and meter 5, reads as "00 03 01 05".
+        data = (b"\x00\x03\x01\x00\x02Pure\x00\x03\x02\x00"
+                + bytes([_stat_id("manaRegen"), 0x0A, 0x18, 0x00, 0x03, 0x01, 0x05, 0x00])
+                + b"\xff")
+        code = _encode(data)
+        assert len(list(START.finditer(code))) == 2, "fixture must contain a second header-like pair"
+        assert find_item_codes(f"look {code}") == [(5, 5 + len(code), code, None)]
+        assert decode_gear(code)["itemName"] == "Pure"
+
+    def test_run_without_a_header_is_not_an_item(self):
+        assert find_item_codes("\U000F6869\U000F0003\U000F0100") == []
 
     def test_oversized_message_rejected(self):
         with pytest.raises(ValueError):
