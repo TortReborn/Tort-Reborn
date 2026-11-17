@@ -9,10 +9,10 @@ SHINY_STATS_PATH = os.path.join(BASE, "data", "shiny-stats.json")
 
 GEAR_ITEM_TYPE = 0
 CRAFTED_GEAR_ITEM_TYPE = 3
-# Version bytes; Wynntils numbers them from 1, so byte 3 is its VERSION_4.
-SUPPORTED_VERSIONS = (0, 1, 2, 3)
-METER_FLAGS_VERSION = 2
-METER_PERFECT_VERSION = 3
+# Wynntils' VERSION_n is written as version byte n - 1.
+WYNNTILS_VERSION_3 = 2
+WYNNTILS_VERSION_4 = 3
+SUPPORTED_VERSIONS = (0, 1, WYNNTILS_VERSION_3, WYNNTILS_VERSION_4)
 VANILLA_METER_FLAG = 4
 MAX_POWDER_SPECIAL_ID = 10
 MAX_POWDER_TIER = 7
@@ -158,7 +158,7 @@ def _requirements(reader: _Reader) -> dict:
 
 
 def _damage(reader: _Reader, version: int) -> dict:
-    dps = reader.variable_integer() if version >= METER_FLAGS_VERSION else None
+    dps = reader.variable_integer() if version >= WYNNTILS_VERSION_3 else None
     attack_speed_id = reader.read()
     if attack_speed_id not in ATTACK_SPEEDS:
         raise ValueError("Invalid crafted item attack speed")
@@ -190,27 +190,22 @@ def _identifications(reader: _Reader, version: int) -> list[tuple[str, int]]:
         if stat_id >= len(keys):
             raise ValueError(f"Unknown crafted identification id: {stat_id}")
         value = reader.variable_integer()
-        if version == METER_FLAGS_VERSION:
+        if version == WYNNTILS_VERSION_3:
             flags = reader.read()
             if flags & 4:
                 meter = reader.read()
                 if meter > 35:
                     raise ValueError("Invalid crafted identification meter")
-        elif version == METER_PERFECT_VERSION:
-            _skip_meter_and_perfect(reader)
+        elif version == WYNNTILS_VERSION_4:
+            reader.read_bytes(2)  # meter, perfect
         identifications.append((keys[stat_id], value))
     return identifications
-
-
-def _skip_meter_and_perfect(reader: _Reader) -> None:
-    reader.read()
-    reader.read()
 
 
 def _powders(reader: _Reader, version: int) -> dict:
     slots = reader.read()
     count = reader.read()
-    width = 6 if version >= METER_PERFECT_VERSION else 5
+    width = 6 if version == WYNNTILS_VERSION_4 else 5
     encoded = reader.read_bytes(math.ceil(count * width / 8))
     bits = "".join(f"{byte:08b}" for byte in encoded)
     powders = []
@@ -218,7 +213,7 @@ def _powders(reader: _Reader, version: int) -> dict:
         value = int(bits[index * width:index * width + width], 2)
         if value == 0:
             continue
-        if width == 6:
+        if version == WYNNTILS_VERSION_4:
             element, tier = divmod(value - 1, MAX_POWDER_TIER)
             tier += 1
         else:
@@ -229,11 +224,12 @@ def _powders(reader: _Reader, version: int) -> dict:
         if element not in ELEMENTS or not 1 <= tier <= MAX_POWDER_TIER:
             raise ValueError("Invalid item powder")
         powders.append(f"{ELEMENTS[element]} {tier}")
-    if width == 6:
+    if version == WYNNTILS_VERSION_4:
         special_id = reader.read()
-        if special_id and (special_id > MAX_POWDER_SPECIAL_ID
-                           or not 1 <= reader.read() <= MAX_POWDER_TIER):
+        if special_id > MAX_POWDER_SPECIAL_ID:
             raise ValueError("Invalid powder special")
+        if special_id and not 1 <= reader.read() <= MAX_POWDER_TIER:
+            raise ValueError("Invalid powder special tier")
     return {"slots": slots, "powders": powders}
 
 
@@ -251,14 +247,14 @@ def _gear_identifications(reader: _Reader, version: int) -> list[dict]:
         if index < pre_identified_count:
             identifications.append({"key": keys[stat_id], "value": base_value, "kind": "fixed"})
             continue
-        if version >= METER_FLAGS_VERSION:
+        if version >= WYNNTILS_VERSION_3:
             value = reader.variable_integer()
-            if version == METER_FLAGS_VERSION:
+            if version == WYNNTILS_VERSION_3:
                 flags = reader.read()
                 if flags & VANILLA_METER_FLAG and reader.read() > MAX_VANILLA_METER_OFFSET:
                     raise ValueError("Invalid gear identification meter offset")
             else:
-                _skip_meter_and_perfect(reader)
+                reader.read_bytes(2)  # meter, perfect
             kind = "actual"
         else:
             value = reader.read()
@@ -281,7 +277,7 @@ def decode_gear(code: str) -> dict:
     if reader.read() != 0:
         raise ValueError("Artemis item is missing its start block")
     version = reader.read()
-    if version not in (METER_FLAGS_VERSION, METER_PERFECT_VERSION):
+    if version not in (WYNNTILS_VERSION_3, WYNNTILS_VERSION_4):
         raise ValueError(f"Unsupported Artemis gear version: {version + 1}")
 
     item = {
@@ -373,7 +369,7 @@ def decode_crafted_gear(code: str, name_hint: str | None) -> dict:
         elif block == 11:
             item["defense"] = _defense(reader)
         elif block == 12:
-            if version >= METER_FLAGS_VERSION:
+            if version >= WYNNTILS_VERSION_3:
                 item["identifications"] = _identifications(reader, version)
             else:
                 keys = stat_id_keys()

@@ -163,7 +163,6 @@ V4_ASCENDED_PURE_CODE = (
 
 
 def _encode(data: bytes) -> str:
-    """Wynntils' chat text encoding: two bytes per private-use character."""
     characters = []
     for index in range(0, len(data) - 1, 2):
         pair = data[index:index + 2]

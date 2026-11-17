@@ -74,7 +74,6 @@ def find_item_codes(text: str) -> list[tuple[int, int, str, str | None]]:
 
 
 def without_item_codes(text: str) -> str:
-    """Discord can't display encoded item characters, so name what was there."""
     return PUA_RUN.sub(UNREADABLE_ITEM, text)
 
 
@@ -120,6 +119,7 @@ class ItemTooltipBridge:
         attempts = 0
         for left, right, code, name_hint in matches:
             parts.append(without_item_codes(text[position:left]))
+            errors.extend(unrecognised_encodings(text[position:left]))
             key = (code, name_hint)
             if key in rendered:
                 replacement = rendered[key]
@@ -139,6 +139,7 @@ class ItemTooltipBridge:
             parts.append(replacement)
             position = right
         parts.append(without_item_codes(text[position:]))
+        errors.extend(unrecognised_encodings(text[position:]))
         content = "".join(parts)
         if len(content.encode("utf-16-le")) // 2 > 2000:
             raise ValueError("Rendered message exceeds Discord's 2000-character content limit")
