@@ -61,15 +61,13 @@ def find_item_codes(text: str) -> list[tuple[int, int, str, str | None]]:
     if not isinstance(text, str) or len(text.encode("utf-16-le")) // 2 > 4000:
         raise ValueError("Expected a chat message of at most 4000 UTF-16 characters")
     matches = []
+    # Wynntils reads one unbroken run as one item; item data can contain a header-like pair.
     for run in PUA_RUN.finditer(text):
-        starts = list(START.finditer(run.group()))
-        for index, start in enumerate(starts):
-            left = run.start() + start.start()
-            right = run.start() + starts[index + 1].start() if index + 1 < len(starts) else run.end()
-            code = text[left:right]
-            suffix = NAME_SUFFIX.match(text, right)
-            name_hint = suffix.group(1).strip() if suffix else None
-            matches.append((left, suffix.end() if suffix else right, code, name_hint or None))
+        if not START.match(run.group()):
+            continue
+        suffix = NAME_SUFFIX.match(text, run.end())
+        name_hint = suffix.group(1).strip() if suffix else None
+        matches.append((run.start(), suffix.end() if suffix else run.end(), run.group(), name_hint or None))
     return matches
 
 
