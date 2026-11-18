@@ -458,10 +458,10 @@ class TestItemTooltipBridgePrepare:
     @pytest.mark.asyncio
     async def test_render_failure_falls_back_to_placeholder(self, monkeypatch):
         bridge = self._bridge(monkeypatch, render_error=ValueError("wynnpool is down"))
-        prepared = await bridge.prepare(_item_code(1))
+        prepared = await bridge.prepare(f'{_item_code(1)} "Divzer qol"')
         assert prepared.content == "[item preview unavailable]"
         assert prepared.attachments == ()
-        assert prepared.errors
+        assert prepared.errors == ("Item 1 (type 0, 'Divzer qol'): wynnpool is down",)
 
     @pytest.mark.asyncio
     async def test_quoted_name_suffix_not_duplicated(self, monkeypatch):

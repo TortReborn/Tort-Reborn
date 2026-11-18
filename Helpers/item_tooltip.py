@@ -84,6 +84,14 @@ def unrecognised_encodings(text: str) -> tuple[str, ...]:
     return tuple(errors)
 
 
+def _describe(code: str, name_hint: str | None) -> str:
+    try:
+        kind = f"type {item_type(code)}"
+    except ValueError:
+        kind = "unreadable header"
+    return f"{kind}, {name_hint!r}" if name_hint else kind
+
+
 class ItemTooltipBridge:
     def __init__(self):
         self._slots = asyncio.Semaphore(2)
@@ -132,7 +140,7 @@ class ItemTooltipBridge:
                     attachments.append(Attachment(f"item_{len(attachments) + 1}.png", png))
                 except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
                     replacement = "[item preview unavailable]"
-                    errors.append(f"Item {attempts}: {error}")
+                    errors.append(f"Item {attempts} ({_describe(code, name_hint)}): {error}")
                 rendered[key] = replacement
             parts.append(replacement)
             position = right
@@ -239,7 +247,10 @@ class ItemTooltipBridge:
             headers={"Accept": "application/json"},
         ) as response:
             if response.status not in (200, 201):
-                raise ValueError(f"Item API returned HTTP {response.status}")
+                detail = (await response.text(errors="replace"))[:200].strip()
+                raise ValueError(
+                    f"{method} {url} returned HTTP {response.status}" + (f": {detail}" if detail else "")
+                )
             body = bytearray()
             async for chunk in response.content.iter_chunked(65536):
                 body.extend(chunk)
