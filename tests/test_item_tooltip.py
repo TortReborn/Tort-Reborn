@@ -6,15 +6,23 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from Helpers.item_tooltip import START, ItemTooltipBridge, find_item_codes, without_item_codes
-from Helpers.artemis_item import decode_crafted_gear, decode_gear, item_type
+from Helpers.artemis_item import (
+    decode_crafted_consumable,
+    decode_crafted_gear,
+    decode_gear,
+    decode_mount,
+    item_type,
+)
 from Helpers.item_tooltip_render import (
     build_crafted_lines,
     build_lines,
     calculate_custom_scales,
     item_from_api,
     item_from_gear,
+    render_crafted_consumable_tooltip,
     render_crafted_tooltip,
     render_item_tooltip,
+    render_mount_tooltip,
     stat_names,
 )
 from Helpers.minecraft_tooltip import _stats
@@ -794,3 +802,139 @@ class TestRenderNameHint:
         name, png = await bridge._render(CRAFTED_RING, "Embodiment of Scam")
         assert name == "Embodiment of Scam"
         assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def _varint(value: int) -> bytes:
+    value = (value << 1) ^ (value >> 63)
+    output = bytearray()
+    while True:
+        byte, value = value & 0x7F, value >> 7
+        if not value:
+            output.append(byte)
+            return bytes(output)
+        output.append(byte | 0x80)
+
+
+def _consumable_code(kind: int = 0, version: int = 3) -> str:
+    identifications = bytes([0x0C, 2, _stat_id("manaRegen")]) + _varint(12)
+    identifications += (b"\xff\x00" if version == 3 else b"") + bytes([_stat_id("healthRegenRaw")]) + _varint(180)
+    identifications += b"\xff\x00" if version == 3 else b""
+    return _encode(
+        bytes([0, version, 1, 4, 13, kind, 14, 2, 3, 9, 95, 0, 0, 15, 2, 0]) + _varint(2400)
+        + bytes([2]) + _varint(90) + identifications + b"\xff"
+    )
+
+
+MOUNT_STATS = {0: (30, 40), 1: (25, 35), 2: (10, 20), 4: (40, 50), 5: (12, 30), 6: (5, 15), 7: (20, 25), 8: (8, 10)}
+MOUNT_LIMITS = {0: 60, 1: 50, 2: 40, 4: 70, 5: 45, 6: 35, 7: 40, 8: 30}
+
+
+def _mount_code(mount_type: int = 0, stats=None, limits=None, potential: int = 1250) -> str:
+    stats = MOUNT_STATS if stats is None else stats
+    limits = MOUNT_LIMITS if limits is None else limits
+    data = bytes([0, 3, 1, 5, 16, mount_type, 17]) + _varint(potential) + bytes([18, 1, 2, 19])
+    data += _varint(45) + _varint(60) + bytes([20, len(stats)])
+    for stat, (current, maximum) in stats.items():
+        data += bytes([stat]) + _varint(current) + _varint(maximum)
+    data += bytes([21, 0, len(limits)])
+    for stat, limit in limits.items():
+        data += bytes([stat]) + _varint(limit)
+    return _encode(data + b"\xff")
+
+
+class TestCraftedConsumable:
+    def test_decodes_version_4_potion(self):
+        item = decode_crafted_consumable(_consumable_code(), "Divzer Mana Pot")
+        assert item["itemName"] == "Divzer Mana Pot"
+        assert item["consumableType"] == "Potion"
+        assert item["uses"] == {"current": 2, "max": 3}
+        assert item["level"] == 95
+        assert item["effects"] == {"heal": 2400, "duration": 90}
+        assert item["identifications"] == [("manaRegen", 12), ("healthRegenRaw", 180)]
+        assert render_crafted_consumable_tooltip(item)[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_version_2_reads_identification_maximums(self):
+        item = decode_crafted_consumable(_consumable_code(version=1), None)
+        assert item["identifications"] == [("manaRegen", 12), ("healthRegenRaw", 180)]
+
+    def test_unnamed_share_falls_back_to_its_type(self):
+        assert decode_crafted_consumable(_consumable_code(kind=2), None)["itemName"] == "Crafted Scroll"
+
+    def test_rejects_unknown_consumable_type(self):
+        with pytest.raises(ValueError, match="consumable type"):
+            decode_crafted_consumable(_consumable_code(kind=9), None)
+
+
+class TestMount:
+    def test_decodes_and_renders_horse(self):
+        item = decode_mount(_mount_code(), "Bucephalus")
+        assert item["itemName"] == "Bucephalus' Saddle"
+        assert item["level"] == 9
+        assert item["quest"] == "Stable Story"
+        assert item["potential"] == 1250
+        assert item["colorIds"] == (1, 2)
+        assert item["energy"] == {"current": 45, "max": 60}
+        assert item["stats"]["Jump Height"] == {"current": 10, "max": 20}
+        assert item["maxStats"]["Training"] == 30
+        assert render_mount_tooltip({**item, "colorNames": ("Cherry", "Bay")})[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_unnamed_mount_uses_its_type(self):
+        assert decode_mount(_mount_code(), None)["itemName"] == "Horse's Saddle"
+
+    def test_rejects_stat_above_its_limit(self):
+        with pytest.raises(ValueError, match="Speed exceeds"):
+            decode_mount(_mount_code(stats={**MOUNT_STATS, 0: (30, 70)}), None)
+
+    def test_rejects_altitude_on_a_horse(self):
+        stats = {**{k: v for k, v in MOUNT_STATS.items() if k != 2}, 3: (10, 20)}
+        limits = {**{k: v for k, v in MOUNT_LIMITS.items() if k != 2}, 3: 40}
+        with pytest.raises(ValueError, match="cannot have"):
+            decode_mount(_mount_code(stats=stats, limits=limits), None)
+
+    def test_rejects_missing_stat(self):
+        stats = {k: v for k, v in MOUNT_STATS.items() if k != 8}
+        with pytest.raises(ValueError, match="all stats"):
+            decode_mount(_mount_code(stats=stats), None)
+
+
+class TestLocalOnlyItemTypes:
+    @pytest.mark.asyncio
+    async def test_consumable_renders_without_requests(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+
+        async def unexpected_request(*args, **kwargs):
+            raise AssertionError("crafted consumables must render locally")
+
+        monkeypatch.setattr(bridge, "_json_request", unexpected_request)
+        name, png = await bridge._render(_consumable_code(), "Divzer Mana Pot")
+        assert name == "Divzer Mana Pot"
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+    @pytest.mark.asyncio
+    async def test_mount_reads_colour_names_from_wynntils_once(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+        calls = []
+
+        async def colours(method, url, payload=None, **kwargs):
+            calls.append(url)
+            return [{"id": 1, "key": "cherry", "displayName": "Cherry"},
+                    {"id": 2, "key": "bay", "displayName": "Bay"}]
+
+        monkeypatch.setattr(bridge, "_json_request", colours)
+        assert await bridge._mount_color_names((1, 2)) == ("Cherry", "Bay")
+        name, png = await bridge._render(_mount_code(), "Bucephalus")
+        assert name == "Bucephalus' Saddle"
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
+        assert len(calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_mount_still_renders_when_colours_are_unavailable(self, monkeypatch):
+        bridge = ItemTooltipBridge()
+
+        async def outage(*args, **kwargs):
+            raise ValueError("GET colours returned HTTP 503")
+
+        monkeypatch.setattr(bridge, "_json_request", outage)
+        assert await bridge._mount_color_names((1, 2)) == ("Unknown", "Unknown")
+        name, _ = await bridge._render(_mount_code(), None)
+        assert name == "Horse's Saddle"

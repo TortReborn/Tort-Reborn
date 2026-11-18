@@ -9,20 +9,27 @@ from urllib.parse import quote
 import aiohttp
 
 from Helpers.artemis_item import (
+    CRAFTED_CONSUMABLE_ITEM_TYPE,
     CRAFTED_GEAR_ITEM_TYPE,
     GEAR_ITEM_TYPE,
+    MOUNT_ITEM_TYPE,
+    decode_crafted_consumable,
     decode_crafted_gear,
     decode_gear,
+    decode_mount,
     item_type,
 )
 from Helpers.item_tooltip_render import (
     item_from_api,
     item_from_gear,
+    render_crafted_consumable_tooltip,
     render_crafted_tooltip,
     render_item_tooltip,
+    render_mount_tooltip,
 )
 from Helpers.logger import WARN, log
 from Helpers.wynn_items import (
+    DATABASE_TTL_SECONDS,
     MAX_DATABASE_RESPONSE,
     WYNN_ITEM_DATABASE_URL,
     WYNNTILS_GEAR_URL,
@@ -38,6 +45,8 @@ MAX_RESPONSE = 2 * 1024 * 1024
 MAX_ITEMS = 4
 WYNNPOOL_DECODE_URL = "https://api.wynnpool.com/item/full-decode"
 WYNNPOOL_WEIGHT_URL = "https://api.wynnpool.com/item/{}/weight"
+MOUNT_COLORS_URL = "https://cdn.wynntils.com/static/Data-Storage/mount_colors.json"
+MAX_TOOLTIP_BYTES = 8 * 1024 * 1024
 WEIGHT_CACHE_TTL_SECONDS = 300
 WEIGHT_CACHE_MAX_ENTRIES = 128
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=15)
@@ -92,6 +101,13 @@ def _describe(code: str, name_hint: str | None) -> str:
     return f"{kind}, {name_hint!r}" if name_hint else kind
 
 
+async def _draw(render, item: dict) -> bytes:
+    png = await asyncio.to_thread(render, item)
+    if len(png) > MAX_TOOLTIP_BYTES:
+        raise ValueError("Tooltip PNG exceeds 8 MiB")
+    return png
+
+
 class ItemTooltipBridge:
     def __init__(self):
         self._slots = asyncio.Semaphore(2)
@@ -100,6 +116,8 @@ class ItemTooltipBridge:
         self._items = WynnItemIndex()
         self._items_lock = asyncio.Lock()
         self._wynntils_retry_at = 0.0
+        self._mount_colors: dict[int, str] = {}
+        self._mount_colors_due_at = 0.0
 
     async def close(self):
         if self._session is not None and not self._session.closed:
@@ -157,10 +175,15 @@ class ItemTooltipBridge:
         kind = item_type(code)
         if kind == CRAFTED_GEAR_ITEM_TYPE:
             item = decode_crafted_gear(code, name_hint)
-            png = await asyncio.to_thread(render_crafted_tooltip, item)
-            if len(png) > 8 * 1024 * 1024:
-                raise ValueError("Tooltip PNG exceeds 8 MiB")
-            return item["itemName"], png
+            return item["itemName"], await _draw(render_crafted_tooltip, item)
+        # Wynntils leaves consumable and mount names out of the code, so Wynnpool can't look them up.
+        if kind == CRAFTED_CONSUMABLE_ITEM_TYPE:
+            item = decode_crafted_consumable(code, name_hint)
+            return item["itemName"], await _draw(render_crafted_consumable_tooltip, item)
+        if kind == MOUNT_ITEM_TYPE:
+            item = decode_mount(code, name_hint)
+            item["colorNames"] = await self._mount_color_names(item["colorIds"])
+            return item["itemName"], await _draw(render_mount_tooltip, item)
         if kind == GEAR_ITEM_TYPE:
             return await self._render_gear(code, name_hint)
         decoded = await self._json_request("POST", WYNNPOOL_DECODE_URL, {"item": code})
@@ -173,10 +196,7 @@ class ItemTooltipBridge:
         item = item_from_api(decoded, weights)
         if name_hint:
             item["itemName"] = name_hint
-        png = await asyncio.to_thread(render_item_tooltip, item)
-        if len(png) > 8 * 1024 * 1024:
-            raise ValueError("Tooltip PNG exceeds 8 MiB")
-        return item["itemName"], png
+        return item["itemName"], await _draw(render_item_tooltip, item)
 
     async def _render_gear(self, code: str, name_hint: str | None) -> tuple[str, bytes]:
         decoded = decode_gear(code)
@@ -185,10 +205,25 @@ class ItemTooltipBridge:
         item = item_from_gear(decoded, entry, weights)
         if name_hint:
             item["itemName"] = name_hint
-        png = await asyncio.to_thread(render_item_tooltip, item)
-        if len(png) > 8 * 1024 * 1024:
-            raise ValueError("Tooltip PNG exceeds 8 MiB")
-        return item["itemName"], png
+        return item["itemName"], await _draw(render_item_tooltip, item)
+
+    async def _mount_color_names(self, color_ids: tuple[int, int]) -> tuple[str, str]:
+        if monotonic() >= self._mount_colors_due_at:
+            try:
+                entries = await self._json_request("GET", MOUNT_COLORS_URL)
+                if not isinstance(entries, list) or not all(
+                    isinstance(entry, dict) and isinstance(entry.get("id"), int)
+                    and isinstance(entry.get("displayName"), str) for entry in entries
+                ):
+                    raise ValueError("Invalid Wynntils mount colour list")
+                self._mount_colors = {entry["id"]: entry["displayName"] for entry in entries}
+                self._mount_colors_due_at = monotonic() + DATABASE_TTL_SECONDS
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+                self._mount_colors_due_at = monotonic() + WYNNTILS_RETRY_SECONDS
+                log(WARN, f"Wynntils mount colours unavailable, showing them as Unknown: {error}",
+                    context="item_tooltip")
+        primary, secondary = (self._mount_colors.get(color_id, "Unknown") for color_id in color_ids)
+        return primary, secondary
 
     async def _item_index(self) -> WynnItemIndex:
         if self._items.fresh and not self._wynntils_names_due():

@@ -8,7 +8,7 @@ from decimal import ROUND_HALF_DOWN, ROUND_HALF_UP, Decimal
 from functools import lru_cache
 from typing import Any
 
-from Helpers.minecraft_tooltip import render_crafted, render_item
+from Helpers.minecraft_tooltip import render_crafted, render_crafted_consumable, render_item, render_mount
 
 Color = tuple[int, int, int]
 WHITE: Color = (255, 255, 255)
@@ -443,12 +443,22 @@ def render_item_tooltip(item: Mapping[str, Any]) -> bytes:
     return render_item(item)
 
 
-def render_crafted_tooltip(item: Mapping[str, Any]) -> bytes:
-    lines = build_crafted_lines(item)
-    crafted = dict(item)
+def _crafted_render_stats(item: Mapping[str, Any]) -> list[dict[str, Any]]:
     mapping = stat_names()
-    crafted["renderStats"] = [
+    return [
         {"key": key, "label": mapping.get(key, key), "value": value, "rate": None}
         for key, value in item.get("identifications", [])
     ]
-    return render_crafted(crafted, lines)
+
+
+def render_crafted_tooltip(item: Mapping[str, Any]) -> bytes:
+    lines = build_crafted_lines(item)
+    return render_crafted({**item, "renderStats": _crafted_render_stats(item)}, lines)
+
+
+def render_crafted_consumable_tooltip(item: Mapping[str, Any]) -> bytes:
+    return render_crafted_consumable({**item, "renderStats": _crafted_render_stats(item)})
+
+
+def render_mount_tooltip(item: Mapping[str, Any]) -> bytes:
+    return render_mount(item)
