@@ -9,6 +9,8 @@ SHINY_STATS_PATH = os.path.join(BASE, "data", "shiny-stats.json")
 
 GEAR_ITEM_TYPE = 0
 CRAFTED_GEAR_ITEM_TYPE = 3
+CRAFTED_CONSUMABLE_ITEM_TYPE = 4
+MOUNT_ITEM_TYPE = 5
 # Wynntils' VERSION_n is written as version byte n - 1.
 WYNNTILS_VERSION_3 = 2
 WYNNTILS_VERSION_4 = 3
@@ -46,6 +48,27 @@ ATTACK_SPEEDS = {
 ELEMENTS = {0: "Earth", 1: "Thunder", 2: "Water", 3: "Fire", 4: "Air"}
 DAMAGE_TYPES = {**ELEMENTS, 5: "Neutral"}
 CLASSES = {0: None, 1: "Mage", 2: "Archer", 3: "Warrior", 4: "Assassin", 5: "Shaman"}
+CONSUMABLE_TYPES = {0: "Potion", 1: "Food", 2: "Scroll", 3: "Consumable"}
+CONSUMABLE_EFFECTS = {0: "heal", 1: "mana", 2: "duration"}
+# name, item suffix, combat level, unlocking quest
+MOUNT_TYPES = {
+    0: ("Horse", "Saddle", 9, "Stable Story"),
+    1: ("Wyvern", "Reins", 84, "The Canyon Guides"),
+    2: ("Adasaur", "Harness", 115, "Burning Bonds"),
+}
+MOUNT_STATS = {
+    0: "Speed",
+    1: "Acceleration",
+    2: "Jump Height",
+    3: "Altitude",
+    4: "Energy",
+    5: "Handling",
+    6: "Toughness",
+    7: "Boost",
+    8: "Training",
+}
+MAX_MOUNT_POTENTIAL = 80_000
+MAX_MOUNT_STAT = 10_000
 
 
 @lru_cache(maxsize=1)
@@ -199,6 +222,18 @@ def _identifications(reader: _Reader, version: int) -> list[tuple[str, int]]:
         elif version == WYNNTILS_VERSION_4:
             reader.read_bytes(2)  # meter, perfect
         identifications.append((keys[stat_id], value))
+    return identifications
+
+
+def _possible_identifications(reader: _Reader) -> list[tuple[str, int]]:
+    """Versions 1 and 2 share each crafted identification's maximum, not its value."""
+    keys = stat_id_keys()
+    identifications = []
+    for _ in range(reader.read()):
+        stat_id = reader.read()
+        if stat_id >= len(keys):
+            raise ValueError(f"Unknown crafted identification id: {stat_id}")
+        identifications.append((keys[stat_id], reader.variable_integer()))
     return identifications
 
 
@@ -372,12 +407,7 @@ def decode_crafted_gear(code: str, name_hint: str | None) -> dict:
             if version >= WYNNTILS_VERSION_3:
                 item["identifications"] = _identifications(reader, version)
             else:
-                keys = stat_id_keys()
-                for _ in range(reader.read()):
-                    stat_id = reader.read()
-                    if stat_id >= len(keys):
-                        raise ValueError(f"Unknown crafted identification id: {stat_id}")
-                    possible_identifications.append((keys[stat_id], reader.variable_integer()))
+                possible_identifications = _possible_identifications(reader)
         else:
             raise ValueError(f"Unsupported crafted item data block: {block}")
 
@@ -397,4 +427,170 @@ def decode_crafted_gear(code: str, name_hint: str | None) -> dict:
         item["itemName"] = name_hint
     if not isinstance(item["itemName"], str) or not item["itemName"] or len(item["itemName"]) > 200:
         raise ValueError("Missing or invalid crafted item name")
+    return item
+
+
+def _start(reader: _Reader) -> int:
+    if reader.read() != 0:
+        raise ValueError("Artemis item is missing its start block")
+    version = reader.read()
+    if version not in SUPPORTED_VERSIONS:
+        raise ValueError(f"Unsupported Artemis item version: {version + 1}")
+    return version
+
+
+def _finish(reader: _Reader, found_end: bool) -> None:
+    if not found_end or reader.position != len(reader.data):
+        raise ValueError("Invalid Artemis item end block")
+
+
+def _checked_name(name: str) -> str:
+    if not isinstance(name, str) or not name or len(name) > 200:
+        raise ValueError("Missing or invalid item name")
+    return name
+
+
+def decode_crafted_consumable(code: str, name_hint: str | None) -> dict:
+    reader = _Reader(_encoded_bytes(code))
+    version = _start(reader)
+    item = {
+        "itemName": None,
+        "consumableType": None,
+        "uses": None,
+        "level": None,
+        "effects": {},
+        "identifications": [],
+    }
+    item_type_id = None
+    found_end = False
+    while reader.position < len(reader.data):
+        block = reader.read()
+        if block == 255:
+            found_end = True
+            break
+        if block == 1:
+            item_type_id = reader.read()
+        elif block == 2:
+            item["itemName"] = reader.ascii_string()
+        elif block == 9:
+            item["level"] = _requirements(reader)["level"]
+        elif block == 12:
+            if version >= WYNNTILS_VERSION_3:
+                item["identifications"] = _identifications(reader, version)
+            else:
+                item["identifications"] = _possible_identifications(reader)
+        elif block == 13:
+            type_id = reader.read()
+            if type_id not in CONSUMABLE_TYPES:
+                raise ValueError(f"Unknown consumable type id: {type_id}")
+            item["consumableType"] = CONSUMABLE_TYPES[type_id]
+        elif block == 14:
+            item["uses"] = {"current": reader.read(), "max": reader.read()}
+        elif block == 15:
+            for _ in range(reader.read()):
+                effect_id = reader.read()
+                if effect_id not in CONSUMABLE_EFFECTS:
+                    raise ValueError(f"Unknown consumable effect id: {effect_id}")
+                item["effects"][CONSUMABLE_EFFECTS[effect_id]] = reader.variable_integer()
+        else:
+            raise ValueError(f"Unsupported crafted consumable data block: {block}")
+
+    _finish(reader, found_end)
+    if item_type_id != CRAFTED_CONSUMABLE_ITEM_TYPE:
+        raise ValueError("Artemis item is not a crafted consumable")
+    if item["consumableType"] is None or item["uses"] is None or item["level"] is None:
+        raise ValueError("Incomplete crafted consumable data")
+    item["itemName"] = _checked_name(name_hint or item["itemName"] or f"Crafted {item['consumableType']}")
+    return item
+
+
+def _capped(reader: _Reader, label: str) -> dict:
+    current, maximum = reader.variable_integer(), reader.variable_integer()
+    if current < 0 or maximum < 0:
+        raise ValueError(f"Mount {label} cannot be negative")
+    return {"current": current, "max": maximum}
+
+
+def _mount_stat(reader: _Reader) -> str:
+    stat_id = reader.read()
+    if stat_id not in MOUNT_STATS:
+        raise ValueError(f"Unknown mount stat id: {stat_id}")
+    return MOUNT_STATS[stat_id]
+
+
+def decode_mount(code: str, name_hint: str | None) -> dict:
+    reader = _Reader(_encoded_bytes(code))
+    _start(reader)
+    item = {
+        "mountType": None,
+        "potential": None,
+        "colorIds": None,
+        "energy": None,
+        "stats": None,
+        "maxStats": None,
+        "estimatedMaxStats": False,
+    }
+    item_type_id = None
+    found_end = False
+    while reader.position < len(reader.data):
+        block = reader.read()
+        if block == 255:
+            found_end = True
+            break
+        if block == 1:
+            item_type_id = reader.read()
+        elif block == 2:
+            # Wynntils shares the mount's name as chat text; it ignores any encoded copy.
+            reader.ascii_string()
+        elif block == 16:
+            type_id = reader.read()
+            if type_id not in MOUNT_TYPES:
+                raise ValueError(f"Unknown mount type id: {type_id}")
+            item["mountType"] = type_id
+        elif block == 17:
+            item["potential"] = reader.variable_integer()
+        elif block == 18:
+            item["colorIds"] = (reader.read(), reader.read())
+        elif block == 19:
+            item["energy"] = _capped(reader, "energy")
+        elif block == 20:
+            item["stats"] = {}
+            for _ in range(reader.read()):
+                stat = _mount_stat(reader)
+                item["stats"][stat] = _capped(reader, "stat")
+        elif block == 21:
+            item["estimatedMaxStats"] = reader.read() != 0
+            item["maxStats"] = {}
+            for _ in range(reader.read()):
+                stat = _mount_stat(reader)
+                item["maxStats"][stat] = reader.variable_integer()
+        else:
+            raise ValueError(f"Unsupported mount data block: {block}")
+
+    _finish(reader, found_end)
+    if item_type_id != MOUNT_ITEM_TYPE:
+        raise ValueError("Artemis item is not a mount")
+    if None in (item["mountType"], item["potential"], item["colorIds"], item["energy"],
+                item["stats"], item["maxStats"]):
+        raise ValueError("Incomplete mount data")
+    if not 0 <= item["potential"] <= MAX_MOUNT_POTENTIAL:
+        raise ValueError("Mount potential is out of range")
+    flier = item["mountType"] == 1
+    for stats in (item["stats"], item["maxStats"]):
+        if ("Altitude" if not flier else "Jump Height") in stats:
+            raise ValueError("Mount has a stat its type cannot have")
+        if len(stats) != len(MOUNT_STATS) - 1:
+            raise ValueError("Mount item does not contain all stats")
+    for stat, value in item["stats"].items():
+        limit = item["maxStats"][stat]
+        if not value["current"] <= value["max"] <= limit <= MAX_MOUNT_STAT:
+            raise ValueError(f"Mount {stat} exceeds its limit")
+    name, suffix, level, quest = MOUNT_TYPES[item["mountType"]]
+    owner = name_hint or name
+    item.update({
+        "itemName": _checked_name(owner + ("'" if owner.lower().endswith("s") else "'s") + " " + suffix),
+        "mountName": name,
+        "level": level,
+        "quest": quest,
+    })
     return item

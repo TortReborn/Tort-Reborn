@@ -509,12 +509,18 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
             variant = max(1, min(6, int(emblem[1])))
         except (IndexError, ValueError):
             variant = 1
-    shape_index = {"diamond": 0, "square": 1, "hexagon": 2, "shield": 3, "sticker": 4, "circle": 5}.get(shape, 0)
+    shape_index = {
+        "diamond": 0, "square": 1, "hexagon": 2, "shield": 3, "badge": 4, "sticker": 4, "circle": 5,
+    }.get(shape, 0)
     frame = _crop_grid("font/tooltip/emblem/frame.png", 6, 6, (variant - 1) * 6 + shape_index)
-    sprite_index = 26 if category == "tome" else TYPE_SPRITES.get(str(entry.get("subType") or "").lower(), 6)
+    sprite_index = entry.get("spriteIndex")
+    if sprite_index is None:
+        sprite_index = 26 if category == "tome" else TYPE_SPRITES.get(str(entry.get("subType") or "").lower(), 6)
     sprite = _crop_grid("font/tooltip/emblem/sprite.png", 9, 5, sprite_index)
     tier_color = TIER_COLORS.get(tier, WHITE)
     divider_color = DIVIDER_COLORS.get(tier, WHITE)
+    tier_banner_text, tier_banner_color = entry.get("tierBanner") or (tier.upper(), tier_color)
+    type_banner_text, type_banner_color = entry.get("typeBanner") or (item_type, divider_color)
     restriction = str(entry.get("restriction") or "none").lower().replace("_", " ")
     restriction_row = RESTRICTION_BANNER_ROWS.get(restriction)
 
@@ -526,10 +532,10 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
 
     def type_line(image: Image.Image, width: int, y: int) -> None:
         x = 48
-        tier_banner = _banner(tier.upper(), tier_color)
+        tier_banner = _banner(tier_banner_text, tier_banner_color)
         image.alpha_composite(tier_banner, (x, y))
         x += tier_banner.width + 1
-        type_banner = _banner(item_type, divider_color)
+        type_banner = _banner(type_banner_text, type_banner_color)
         image.alpha_composite(type_banner, (x, y))
 
     def restriction_icon(image: Image.Image, width: int, y: int) -> None:
@@ -540,7 +546,8 @@ def _header(item: Mapping[str, Any], tier: str) -> list[Line]:
         overlay = atlas.crop((24, restriction_row * 12, 48, (restriction_row + 1) * 12))
         background = _tinted(background.resize((28, 14), Image.Resampling.NEAREST), (255, 66, 66))
         overlay = overlay.resize((28, 14), Image.Resampling.NEAREST)
-        x = (48 + _banner(tier.upper(), tier_color).width + _banner(item_type, divider_color).width + 2) * 2
+        x = (48 + _banner(tier_banner_text, tier_banner_color).width
+             + _banner(type_banner_text, type_banner_color).width + 2) * 2
         image.alpha_composite(background, (x, y))
         image.alpha_composite(overlay, (x, y))
 
@@ -995,3 +1002,181 @@ def render_crafted(item: Mapping[str, Any], fallback_lines: list[Any]) -> bytes:
     lines.append(_divider("crafted"))
     lines.extend(_stats(crafted, entry, False))
     return _render(lines, "crafted")
+
+
+CRAFTED_SECONDARY: Color = (174, 212, 212)
+NORMAL_SECONDARY: Color = (224, 224, 224)
+WYNNCRAFT_GREEN: Color = (172, 250, 198)
+METER_STAGES = 36
+METER_ADVANCE = 9
+CONSUMABLE_SPRITES = {"Food": 30, "Scroll": 29}
+POTION_SPRITE = 25
+MOUNT_SPRITE = 34
+HEAL_ICON = 6
+HEAL_COLOR: Color = (255, 85, 85)
+MANA_COLOR: Color = (85, 255, 255)
+DURATION_ICON = 12
+AREA_ICON = 13
+MOUNT_COLOR_ICON = 14
+
+
+def _meter_stage(current: int, maximum: int) -> int:
+    if maximum <= 0:
+        return 0
+    return max(0, min(METER_STAGES, int(current * METER_STAGES / maximum)))
+
+
+def _draw_meter(image: Image.Image, x: int, y: int, layers: list[tuple[int, Color]]) -> None:
+    """Draws the counter-clockwise identification meter, one tinted ring per layer, on the 2x canvas."""
+    for stage, color in layers:
+        if stage <= 0:
+            continue
+        glyph = _crop_grid("font/tooltip/identification/meter_counter.png", METER_STAGES, 1, stage - 1)
+        image.alpha_composite(_tinted(glyph, color).resize((16, 16), Image.Resampling.NEAREST), (x, y))
+
+
+def _icon_line(icon: int, segments: tuple[Text, ...]) -> Line:
+    def text(image: Image.Image, width: int, y: int) -> None:
+        _draw_segments(image, 24, y, segments)
+
+    def sprite(image: Image.Image, width: int, y: int) -> None:
+        _draw_attribute_sprite(image, 20, y, icon)
+
+    return Line(draw=text, final_draw=sprite, minimum_width=14 + _segments_width(segments))
+
+
+def _meter_text_line(layers: list[tuple[int, Color]], gap: int, segments: tuple[Text, ...]) -> Line:
+    def text(image: Image.Image, width: int, y: int) -> None:
+        _draw_segments(image, 10 + METER_ADVANCE + gap, y, segments)
+
+    def meter(image: Image.Image, width: int, y: int) -> None:
+        _draw_meter(image, 20, y, layers)
+
+    return Line(draw=text, final_draw=meter, minimum_width=METER_ADVANCE + gap + _segments_width(segments))
+
+
+def _requirement_line(label: str, value: str, mark: int) -> Line:
+    def text(image: Image.Image, width: int, y: int) -> None:
+        FONT.draw(image, (18, y), label)
+        FONT.draw(image, (width - 10 - FONT.width(value), y), value, GRAY)
+
+    def icon(image: Image.Image, width: int, y: int) -> None:
+        _draw_requirement_mark(image, 20, y - 1, mark)
+
+    return Line(draw=text, final_draw=icon, minimum_width=12 + FONT.width(f"{label} {value}"))
+
+
+def _highlight_line(value: str, label: str, color: Color) -> Line:
+    def text(image: Image.Image, width: int, y: int) -> None:
+        FONT.draw(image, (10 + QUAD_FONT.width(value) + 4, y), label)
+
+    def digits(image: Image.Image, width: int, y: int) -> None:
+        QUAD_FONT.draw_final(image, (20, y - 8), value, color)
+
+    return Line(draw=text, final_draw=digits, minimum_width=QUAD_FONT.width(value) + 4 + FONT.width(label))
+
+
+def _duration(seconds: int) -> str:
+    hours, remainder = divmod(max(0, seconds), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours}h {minutes}m {seconds}s"
+    if minutes:
+        return f"{minutes}m {seconds}s"
+    return f"{seconds}s"
+
+
+def _short_number(value: int) -> str:
+    if value < 1000:
+        return str(value)
+    exponent = min(int(math.log(value, 1000)), 6)
+    scaled = f"{value / 1000 ** exponent:.1f}".rstrip("0").rstrip(".")
+    return scaled + "kMBTPE"[exponent - 1]
+
+
+def render_crafted_consumable(item: Mapping[str, Any]) -> bytes:
+    kind = str(item["consumableType"])
+    entry = {
+        "type": "consumable",
+        "emblem": "hexagon_4",
+        "spriteIndex": CONSUMABLE_SPRITES.get(kind, POTION_SPRITE),
+        "tierBanner": ("CRAFTED", TIER_COLORS["crafted"]),
+        "typeBanner": (kind.upper(), CRAFTED_SECONDARY),
+    }
+    uses = item["uses"]
+    lines = _header({**item, "entry": entry, "rate": {}}, "crafted")
+    lines.append(Line())
+    lines.append(_meter_text_line(
+        [(METER_STAGES, DARK_GRAY), (_meter_stage(uses["current"], uses["max"]), CRAFTED_SECONDARY)],
+        0, (Text(f" {uses['current']}/{uses['max']}"), Text(" Charges", GRAY)),
+    ))
+    heal, mana = int(item["effects"].get("heal", 0)), int(item["effects"].get("mana", 0))
+    if heal:
+        lines.append(_icon_line(HEAL_ICON, (Text(f"{heal:+,} ", HEAL_COLOR), Text("Heal", GRAY))))
+    if mana:
+        mana_text = (Text(f"{mana:+,} ", MANA_COLOR), Text("Mana", GRAY))
+        lines.append(Line(
+            draw=lambda image, width, y: _draw_segments(image, 24, y, mana_text),
+            minimum_width=14 + _segments_width(mana_text),
+        ))
+    duration = _duration(int(item["effects"].get("duration", 0)))
+    lines.append(_icon_line(DURATION_ICON, (Text(duration + " "), Text("Duration", GRAY))))
+    if kind == "Scroll":
+        lines.append(_icon_line(AREA_ICON, (Text("10 Blocks "), Text("Area of Effect", GRAY))))
+    lines.append(_divider("crafted"))
+    if item["level"] > 0:
+        lines.append(_requirement_line("Combat Level", str(item["level"]), 1))
+    lines.append(_divider("crafted"))
+    lines.extend(_stats(item, entry, False))
+    return _render(lines, "crafted")
+
+
+def render_mount(item: Mapping[str, Any]) -> bytes:
+    entry = {
+        "type": "mount",
+        "emblem": "badge_4",
+        "spriteIndex": MOUNT_SPRITE,
+        "tierBanner": ("MOUNT", WHITE),
+        "typeBanner": (str(item["mountName"]).upper(), NORMAL_SECONDARY),
+    }
+    energy = item["energy"]
+    primary, secondary = item.get("colorNames") or ("Unknown", "Unknown")
+    lines = _header({**item, "entry": entry, "rate": {}}, "normal")
+    lines.append(Line())
+    lines.append(_highlight_line(_short_number(int(item["potential"])), "Potential", NORMAL_SECONDARY))
+    lines.append(_icon_line(MOUNT_COLOR_ICON, (Text(f"{primary}-{secondary}", GRAY),)))
+    lines.append(_meter_text_line(
+        [(METER_STAGES, DARK_GRAY), (_meter_stage(energy["current"], energy["max"]), NORMAL_SECONDARY)],
+        5, (Text(f"Energy {energy['current']}", GRAY),),
+    ))
+    lines.append(_divider("normal"))
+    lines.append(_requirement_line("Combat Level", str(item["level"]), 1))
+    lines.append(_requirement_line("Quest", str(item["quest"]), 0))
+    lines.append(_divider("normal"))
+    lines.append(Line(right=(Text("Level/Limit ", GRAY), Text("(Max)", DARK_GRAY))))
+    for stat, value in item["stats"].items():
+        limit = int(item["maxStats"].get(stat, value["max"]))
+        right = (
+            Text(str(value["current"]), WYNNCRAFT_GREEN),
+            Text(f"/{value['max']}", GRAY),
+            Text(f" ({limit})", DARK_GRAY),
+        )
+        secondary_stage = _meter_stage(value["max"], limit)
+        layers = [
+            (METER_STAGES, GRAY),
+            (secondary_stage, DARK_GRAY),
+            (min(_meter_stage(value["current"], value["max"]), secondary_stage), GREEN),
+        ]
+
+        def stat_line(image: Image.Image, width: int, y: int, stat=stat, right=right) -> None:
+            FONT.draw(image, (10, y), stat)
+            _draw_segments(image, width - 10 - METER_ADVANCE - 4 - _segments_width(right), y, right)
+
+        def stat_meter(image: Image.Image, width: int, y: int, layers=layers) -> None:
+            _draw_meter(image, width - 20 - 16, y, layers)
+
+        lines.append(Line(
+            draw=stat_line, final_draw=stat_meter,
+            minimum_width=FONT.width(stat) + 8 + _segments_width(right) + 4 + METER_ADVANCE,
+        ))
+    return _render(lines, "normal")
