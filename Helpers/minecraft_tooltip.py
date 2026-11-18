@@ -1012,6 +1012,9 @@ METER_ADVANCE = 9
 CONSUMABLE_SPRITES = {"Food": 30, "Scroll": 29}
 POTION_SPRITE = 25
 MOUNT_SPRITE = 34
+HEAL_ICON = 6
+HEAL_COLOR: Color = (255, 85, 85)
+MANA_COLOR: Color = (85, 255, 255)
 DURATION_ICON = 12
 AREA_ICON = 13
 MOUNT_COLOR_ICON = 14
@@ -1107,6 +1110,15 @@ def render_crafted_consumable(item: Mapping[str, Any]) -> bytes:
         [(METER_STAGES, DARK_GRAY), (_meter_stage(uses["current"], uses["max"]), CRAFTED_SECONDARY)],
         0, (Text(f" {uses['current']}/{uses['max']}"), Text(" Charges", GRAY)),
     ))
+    heal, mana = int(item["effects"].get("heal", 0)), int(item["effects"].get("mana", 0))
+    if heal:
+        lines.append(_icon_line(HEAL_ICON, (Text(f"{heal:+,} ", HEAL_COLOR), Text("Heal", GRAY))))
+    if mana:
+        mana_text = (Text(f"{mana:+,} ", MANA_COLOR), Text("Mana", GRAY))
+        lines.append(Line(
+            draw=lambda image, width, y: _draw_segments(image, 24, y, mana_text),
+            minimum_width=14 + _segments_width(mana_text),
+        ))
     duration = _duration(int(item["effects"].get("duration", 0)))
     lines.append(_icon_line(DURATION_ICON, (Text(duration + " "), Text("Duration", GRAY))))
     if kind == "Scroll":
