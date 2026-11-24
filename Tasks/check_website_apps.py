@@ -24,7 +24,11 @@ from Helpers.variables import (
 from Helpers.views import ApplicationVoteView, ThreadVoteView
 
 # ---------------------------------------------------------------------------
-# Question ID → Label mappings (must match website question IDs)
+# Question labels. Since TAQ-217 each submission carries the questions as the
+# applicant saw them (applications.questions, written by the website, where
+# the forms are edited), and that copy labels the answers. The fixed labels
+# below only serve applications submitted before then, so they stay worded
+# the way those applicants were asked.
 # ---------------------------------------------------------------------------
 
 GUILD_QUESTION_LABELS = {
@@ -127,12 +131,66 @@ HAMMERHEAD_FINAL_LABELS = {
 HAMMERHEAD_FINAL_ORDER = ["hh_dedication", "hh_expertise"]
 
 
-def _format_hammerhead_sections(answers: dict) -> list[str]:
+def _selected_tasks(answers: dict) -> list[str]:
+    selected = answers.get("hh_tasks", [])
+    if isinstance(selected, str):
+        selected = json.loads(selected) if selected.startswith("[") else [selected]
+    return selected
+
+
+def _snapshot_sections(questions) -> list[dict] | None:
+    """The question copy a submission carries, or None for an older row."""
+    if isinstance(questions, str):
+        try:
+            questions = json.loads(questions)
+        except ValueError:
+            return None
+    sections = questions.get("sections") if isinstance(questions, dict) else None
+    return sections if isinstance(sections, list) and sections else None
+
+
+def _format_from_snapshot(answers: dict, sections: list[dict], *, show_blank: bool) -> list[str]:
+    """One text block per section of the submission's own question copy.
+
+    A Hammerhead task area (task: true) shows only when the applicant picked
+    it; a titled section gets its title as a heading. Blank answers read
+    "No response" when show_blank, and are left out otherwise.
+    """
+    picked = _selected_tasks(answers)
+    out = []
+    for section in sections:
+        if section.get("task") and section.get("title") not in picked:
+            continue
+        blocks = []
+        for q in section.get("questions") or []:
+            value = answers.get(q.get("id"), "")
+            if isinstance(value, list):
+                value = ", ".join(str(v) for v in value)
+            value = str(value).strip() if value is not None else ""
+            if not value:
+                if not show_blank:
+                    continue
+                value = "No response"
+            blocks.append(f"**{q.get('label') or q.get('id')}**\n{value}")
+        if not blocks:
+            continue
+        text = "\n\n".join(blocks)
+        if section.get("title"):
+            text = f"__**{section['title']}**__\n\n{text}"
+        out.append(text)
+    return out
+
+
+def _format_hammerhead_sections(answers: dict, questions=None) -> list[str]:
     """Format hammerhead application answers into sections for embedding.
 
     Returns a list of text sections:
     [general_text, section1_text, ..., final_text]
     """
+    snapshot = _snapshot_sections(questions)
+    if snapshot:
+        return _format_from_snapshot(answers, snapshot, show_blank=True)
+
     sections = []
 
     # General questions
@@ -146,9 +204,7 @@ def _format_hammerhead_sections(answers: dict) -> list[str]:
     sections.append("\n\n".join(blocks))
 
     # Task selector
-    selected_tasks = answers.get("hh_tasks", [])
-    if isinstance(selected_tasks, str):
-        selected_tasks = json.loads(selected_tasks) if selected_tasks.startswith("[") else [selected_tasks]
+    selected_tasks = _selected_tasks(answers)
 
     tasks_display = ", ".join(selected_tasks) if selected_tasks else "None"
     sections[0] += f"\n\n**What kinds of Hammerhead tasks would you like to focus on?**\n{tasks_display}"
@@ -183,8 +239,12 @@ def _format_hammerhead_sections(answers: dict) -> list[str]:
     return sections
 
 
-def _format_answers(answers: dict, app_type: str) -> str:
+def _format_answers(answers: dict, app_type: str, questions=None) -> str:
     """Format JSONB answers into a readable string with bold questions and answers on new lines."""
+    snapshot = _snapshot_sections(questions)
+    if snapshot:
+        return "\n\n".join(_format_from_snapshot(answers, snapshot, show_blank=False))
+
     if app_type == "guild":
         labels = GUILD_QUESTION_LABELS
         order = GUILD_QUESTION_ORDER
@@ -209,11 +269,12 @@ def _format_answers(answers: dict, app_type: str) -> str:
     return "\n\n".join(blocks)
 
 
-async def _send_chunked(channel, text: str, limit: int = 2000, allowed_mentions=None):
-    """Send *text* to *channel*, splitting on paragraph boundaries if needed."""
+def _chunks(text: str, limit: int) -> list[str]:
+    """Split *text* into pieces of at most *limit*, on paragraph boundaries where possible."""
+    pieces = []
     while text:
         if len(text) <= limit:
-            await channel.send(text, allowed_mentions=allowed_mentions)
+            pieces.append(text)
             break
         # Try to split at a double-newline (paragraph break)
         cut = text.rfind("\n\n", 0, limit)
@@ -223,8 +284,15 @@ async def _send_chunked(channel, text: str, limit: int = 2000, allowed_mentions=
         if cut <= 0:
             # Last resort: hard cut at limit
             cut = limit
-        await channel.send(text[:cut], allowed_mentions=allowed_mentions)
+        pieces.append(text[:cut])
         text = text[cut:].lstrip("\n")
+    return pieces
+
+
+async def _send_chunked(channel, text: str, limit: int = 2000, allowed_mentions=None):
+    """Send *text* to *channel*, splitting on paragraph boundaries if needed."""
+    for piece in _chunks(text, limit):
+        await channel.send(piece, allowed_mentions=allowed_mentions)
 
 
 class CheckWebsiteApps(commands.Cog):
@@ -262,7 +330,7 @@ class CheckWebsiteApps(commands.Cog):
                     FOR UPDATE SKIP LOCKED
                 )
                 RETURNING id, application_type, discord_id, discord_username,
-                          discord_avatar, answers, submitted_at
+                          discord_avatar, answers, submitted_at, questions
                 """
             )
             rows = db.cursor.fetchall()
@@ -272,7 +340,7 @@ class CheckWebsiteApps(commands.Cog):
             db.close()
 
     async def _process_application(self, row):
-        app_id, app_type, discord_id, discord_username, discord_avatar, answers, submitted_at = row
+        app_id, app_type, discord_id, discord_username, discord_avatar, answers, submitted_at, questions = row
 
         # Parse answers if it's a string
         if isinstance(answers, str):
@@ -280,7 +348,7 @@ class CheckWebsiteApps(commands.Cog):
 
         if app_type == "hammerhead":
             await self._process_hammerhead_application(
-                app_id, discord_id, discord_username, discord_avatar, answers, submitted_at
+                app_id, discord_id, discord_username, discord_avatar, answers, submitted_at, questions
             )
             return
 
@@ -346,7 +414,7 @@ class CheckWebsiteApps(commands.Cog):
         mention = applicant.mention if applicant else f"<@{discord_id}>"
         # Answers are the applicant's own text, so only the applicant gets pinged.
         only_applicant = user_ping(discord_id)
-        formatted = _format_answers(answers, app_type)
+        formatted = _format_answers(answers, app_type, questions)
 
         intro = (
             f"Hi {mention}, thank you for applying! \U0001F420\n"
@@ -451,7 +519,7 @@ class CheckWebsiteApps(commands.Cog):
         await asyncio.to_thread(self._update_application, app_id, channel.id, thread.id, poll_msg.id, app_number)
 
     async def _process_hammerhead_application(
-        self, app_id, discord_id, discord_username, discord_avatar, answers, submitted_at
+        self, app_id, discord_id, discord_username, discord_avatar, answers, submitted_at, questions=None
     ):
         """Process a Hammerhead (HR) application — send embeds to exec channel."""
         # Extract IGN from the ign_rank answer (format: "IGN, Rank")
@@ -467,7 +535,13 @@ class CheckWebsiteApps(commands.Cog):
             return
 
         # Format the application into sections
-        sections = _format_hammerhead_sections(answers)
+        # Forms are editable now, so one section can outgrow an embed; split
+        # those on paragraph boundaries before packing.
+        sections = [
+            piece
+            for section in _format_hammerhead_sections(answers, questions)
+            for piece in _chunks(section, 4000)
+        ]
 
         # Build embeds from sections, respecting Discord's 4096-char description limit
         embeds_data = []  # list of description strings, each ≤ 4096 chars
