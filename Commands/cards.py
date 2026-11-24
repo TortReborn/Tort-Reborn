@@ -518,7 +518,7 @@ class SetPickView(discord.ui.View):
             description=s["description"],
             color=_card_color(cards[0]))
         embed.set_image(url=f"attachment://{file.filename}")
-        who = "You" if self.target.id == self.owner_id else self.target.display_name
+        who = "You" if self.target.id == self.owner_id else discord.utils.escape_markdown(self.target.display_name)
         if p["complete"]:
             state = f"{who}: complete"
         else:
@@ -567,7 +567,7 @@ def _history_content(history: list) -> str:
         lines.append(f"-# +{len(history) - HISTORY_LINES} earlier")
     for c in shown:
         tier = _tier_label(_tier_of(c))
-        lines.append(f"-# {tier}: {c['name']}")
+        lines.append(f"-# {tier}: {discord.utils.escape_markdown(c['name'])}")
     refresh = cardlib.next_refresh_ts()
     lines.append(f"-# {ctext.next_line('Reels refresh', refresh)}")
     return "\n".join(lines)
@@ -644,7 +644,7 @@ async def _announce_and_reward(channel, user, cards: list[dict]):
 
     notices = [discord.Embed(
         title="Limited card found",
-        description=f"{user.mention} pulled **{card['name']}** ({card['rank']})",
+        description=f"{user.mention} pulled **{discord.utils.escape_markdown(card['name'])}** ({card['rank']})",
         color=cardlib.TIER_COLORS["member"])
         for card in cards if card.get("member")]
     notices.extend(_milestone_embed(user, *award) for award in earned)
@@ -823,7 +823,7 @@ class ReelView(discord.ui.View):
                 f"{card['slug']} is banked: {e}", context="cards")
             try:
                 await interaction.followup.send(
-                    embed=_notice(ctext.pull_unshown(card["name"])),
+                    embed=_notice(ctext.pull_unshown(discord.utils.escape_markdown(card["name"]))),
                     ephemeral=True)
             except discord.HTTPException:
                 pass
@@ -844,7 +844,7 @@ class TradeLine:
 
 
 def _lines_text(lines, sep="\n", limit=None) -> str:
-    names = [line.name() for line in lines]
+    names = [discord.utils.escape_markdown(line.name()) for line in lines]
     text = sep.join(names)
     if limit is None or len(text) <= limit:
         return text
@@ -870,7 +870,7 @@ def _trade_overview_text(lines: list[TradeLine], recipient_owned: set[str],
             owned = ("Owned" if line.card["slug"] in recipient_owned
                      else "Not owned")
             rows.append(([header] if i == 0 else [])
-                        + [f"{line.name()} ({owned})"])
+                        + [f"{discord.utils.escape_markdown(line.name())} ({owned})"])
 
     rendered = []
     shown = 0
@@ -984,8 +984,8 @@ class TradeBuilderView(discord.ui.View):
         return "your cards" if side == "give" else f"{self.target.display_name}'s cards"
 
     def embed(self) -> discord.Embed:
-        title = (f"Review trade with {self.target.display_name}" if self.reviewing
-                 else f"Trade with {self.target.display_name}")
+        title = (f"Review trade with {discord.utils.escape_markdown(self.target.display_name)}" if self.reviewing
+                 else f"Trade with {discord.utils.escape_markdown(self.target.display_name)}")
         embed = discord.Embed(title=title,
                               color=ctext.ACCENT)
         if not self.reviewing:
@@ -995,7 +995,7 @@ class TradeBuilderView(discord.ui.View):
                 "all": "Every card, including the last copy",
             }[scope]
         for side, title in (("give", "Your side"),
-                            ("want", f"{self.target.display_name}'s side")):
+                            ("want", f"{discord.utils.escape_markdown(self.target.display_name)}'s side")):
             lines = list(self.lines[side].values())
             copies = sum(line.count for line in lines)
             embed.add_field(
@@ -1252,8 +1252,8 @@ class TradeBuilderView(discord.ui.View):
                 levels = owned.get(line.card["slug"], {}).get("levels", {})
                 if levels.get(line.star, 0) < line.count:
                     who = ("You lack" if user.id == self.proposer.id
-                           else f"{user.display_name} lacks")
-                    return f"{who} **{line.name()}**"
+                           else f"{discord.utils.escape_markdown(user.display_name)} lacks")
+                    return f"{who} **{discord.utils.escape_markdown(line.name())}**"
         return None
 
     async def _send(self, interaction: discord.Interaction):
@@ -1280,7 +1280,7 @@ class TradeBuilderView(discord.ui.View):
             content=self.target.mention, embed=trade.embed(), view=trade)
         self.stop()
         await interaction.edit_original_response(
-            embed=_notice(f"Sent to {self.target.display_name}"), view=None)
+            embed=_notice(f"Sent to {discord.utils.escape_markdown(self.target.display_name)}"), view=None)
 
 
 class TradeView(discord.ui.View):
@@ -1303,10 +1303,10 @@ class TradeView(discord.ui.View):
 
     def embed(self) -> discord.Embed:
         embed = discord.Embed(title="Trade", color=ctext.ACCENT)
-        embed.add_field(name=f"{self.proposer.display_name}'s side",
+        embed.add_field(name=f"{discord.utils.escape_markdown(self.proposer.display_name)}'s side",
                         value=_trade_overview_text(
                             self.give, self.target_owned), inline=True)
-        embed.add_field(name=f"{self.target.display_name}'s side",
+        embed.add_field(name=f"{discord.utils.escape_markdown(self.target.display_name)}'s side",
                         value=_trade_overview_text(
                             self.want, self.proposer_owned), inline=True)
         embed.set_footer(text="Recipient only, 5 min")
@@ -1356,13 +1356,13 @@ class TradeView(discord.ui.View):
                      if line.card["slug"] == result["slug"]
                      and line.star == result["star"]), None)
         owner = ("You" if result["owner"] == self.target.id
-                 else self.proposer.display_name)
-        card = line.name() if line else result["slug"]
+                 else discord.utils.escape_markdown(self.proposer.display_name))
+        card = discord.utils.escape_markdown(line.name()) if line else result["slug"]
         return f"Trade changed\n{owner} no longer has **{card}**"
 
     def _limited_text(self, result):
         owner = ("You" if result["owner"] == self.target.id
-                 else self.proposer.display_name)
+                 else discord.utils.escape_markdown(self.proposer.display_name))
         period = "today" if result["period"] == "day" else "this week"
         return (f"Trade limit reached\n{owner} already completed "
                 f"**{result['used']}/{result['limit']} trades** {period}")
@@ -1583,10 +1583,10 @@ async def _do_merge_limited(user_id: int, cards: list):
     file = await asyncio.to_thread(card_file, card, None, 0, 0)
     if result["kept"]:
         lost = next(c["name"] for c in cards if c["slug"] in result["lost"])
-        title, body = f"{card['name']} came back", f"Lost **{lost}**"
+        title, body = f"{discord.utils.escape_markdown(card['name'])} came back", f"Lost **{discord.utils.escape_markdown(lost)}**"
     else:
-        title = card["name"]
-        body = f"Lost **{cards[0]['name']}** and **{cards[1]['name']}**"
+        title = discord.utils.escape_markdown(card["name"])
+        body = f"Lost **{discord.utils.escape_markdown(cards[0]['name'])}** and **{discord.utils.escape_markdown(cards[1]['name'])}**"
     embed = discord.Embed(title=title, description=body,
                           color=cardlib.TIER_COLORS["member"])
     embed.set_image(url=f"attachment://{file.filename}")
@@ -1900,7 +1900,7 @@ class Cards(commands.Cog):
         # is unminted, or a typo, the answer is the same: it is not in here.
         if not entry:
             return await ctx.followup.send(
-                embed=_notice(f"**{card.strip()}** isn't in your tank"),
+                embed=_notice(f"**{discord.utils.escape_markdown(card.strip())}** isn't in your tank"),
                 ephemeral=True)
 
         stars = entry["best"]
@@ -1955,14 +1955,14 @@ class Cards(commands.Cog):
 
         if not owned:
             if tier:
-                whose = "your" if mine else f"{target.display_name}'s"
+                whose = "your" if mine else f"{discord.utils.escape_markdown(target.display_name)}'s"
                 return await ctx.followup.send(
                     embed=_notice(f"No {_tier_label(tier)} cards "
                                   f"in {whose} tank"),
                     ephemeral=True)
             if not mine:
                 return await ctx.followup.send(
-                    embed=_notice(f"{target.display_name} has no cards"),
+                    embed=_notice(f"{discord.utils.escape_markdown(target.display_name)} has no cards"),
                     ephemeral=True)
             return await ctx.followup.send(
                 embed=_notice(f"Empty tank\n{wallet['total_reels']} Reel"
@@ -2043,7 +2043,7 @@ class Cards(commands.Cog):
         if earned:
             header += f"\n**+{earned}** Rating"
         embed = discord.Embed(
-            title=f"{'Your' if mine else target.display_name + chr(39) + 's'} sets",
+            title=f"{'Your' if mine else discord.utils.escape_markdown(target.display_name) + chr(39) + 's'} sets",
             description=header + "\n\n"
                         + "\n".join(_set_line(p) for p in progress),
             color=ctext.ACCENT)
@@ -2066,7 +2066,7 @@ class Cards(commands.Cog):
         spec = cardlib.TANK_TIERS[tier]
         copies = sum(e["total"] for e in owned.values()) if owned else 0
 
-        embed = discord.Embed(title=f"{ctx.author.display_name}'s tank",
+        embed = discord.Embed(title=f"{discord.utils.escape_markdown(ctx.author.display_name)}'s tank",
                               color=ctext.ACCENT)
         embed.add_field(name="Tank", value=f"{spec['name']} (Tier {tier})")
         embed.add_field(name="Pearls", value=f"{wallet['pearls']:,}")
@@ -2200,7 +2200,7 @@ class Cards(commands.Cog):
             lines = []
             for r in standings[i:i + LEADERBOARD_SIZE]:
                 member = ctx.guild.get_member(r["user"]) if ctx.guild else None
-                name = member.display_name if member else f"User {r['user']}"
+                name = discord.utils.escape_markdown(member.display_name) if member else f"User {r['user']}"
                 lines.append(f"`{r['rank']:2}` **{name}**: "
                              f"{r['rating']:,} Rating, "
                              f"{r['uniques']}/{len(cs['cards'])}, "
@@ -2400,7 +2400,7 @@ class Cards(commands.Cog):
             have = owned.get(card["slug"], {}).get("levels", {}).get(0, 0)
             if have < slugs.count(card["slug"]):
                 return await ctx.followup.send(
-                    embed=_notice(f"Not enough Plain **{card['name']}**"),
+                    embed=_notice(f"Not enough Plain **{discord.utils.escape_markdown(card['name'])}**"),
                     ephemeral=True)
 
         if cards[0].get("member"):
@@ -2417,7 +2417,7 @@ class Cards(commands.Cog):
             view = LimitedMergeView(ctx.author.id, cards)
             view.message = await ctx.followup.send(
                 embed=_notice(
-                    f"Merge **{cards[0]['name']}** and **{cards[1]['name']}**\n"
+                    f"Merge **{discord.utils.escape_markdown(cards[0]['name'])}** and **{discord.utils.escape_markdown(cards[1]['name'])}**\n"
                     f"**{chance:.0%}** chance of a new Limited card\n"
                     "Otherwise one of them comes back and the other is lost"),
                 view=view, wait=True)
@@ -2450,7 +2450,7 @@ class Cards(commands.Cog):
                                            ephemeral=True)
         if not theirs:
             return await ctx.followup.send(
-                embed=_notice(f"{member.display_name} has no cards"),
+                embed=_notice(f"{discord.utils.escape_markdown(member.display_name)} has no cards"),
                 ephemeral=True)
 
         view = TradeBuilderView(ctx.author, member, mine, theirs,
@@ -2492,7 +2492,7 @@ class Cards(commands.Cog):
         card = member or _find_card(name)
         if card is None:
             return await ctx.followup.send(
-                embed=_notice(f"No drop named **{name.strip()}**"),
+                embed=_notice(f"No drop named **{discord.utils.escape_markdown(name.strip())}**"),
                 ephemeral=True)
 
         entry = await asyncio.to_thread(cardlib.db_get_entry, ctx.author.id,
@@ -2536,19 +2536,19 @@ class Cards(commands.Cog):
                 or _find_card(name))
         if card is None:
             return await ctx.followup.send(
-                embed=_notice(f"No drop named **{name.strip()}**"),
+                embed=_notice(f"No drop named **{discord.utils.escape_markdown(name.strip())}**"),
                 ephemeral=True)
 
         owners = await asyncio.to_thread(cardlib.db_get_owners, card["slug"])
         if not owners:
             return await ctx.followup.send(
-                embed=_notice(f"Nobody holds **{card['name']}** yet"),
+                embed=_notice(f"Nobody holds **{discord.utils.escape_markdown(card['name'])}** yet"),
                 ephemeral=True)
 
         lines = []
         for i, o in enumerate(owners[:OWNERS_SHOWN], 1):
             member = ctx.guild.get_member(o["user"]) if ctx.guild else None
-            who = member.display_name if member else f"<@{o['user']}>"
+            who = discord.utils.escape_markdown(member.display_name) if member else f"<@{o['user']}>"
             best = _level_label(card, o["best"])
             copies = ctext.count(o["copies"], "copy", "copies")
             lines.append(f"`{i:2}` **{who}**: {copies}"
@@ -2558,7 +2558,7 @@ class Cards(commands.Cog):
 
         total = sum(o["copies"] for o in owners)
         embed = discord.Embed(
-            title=f"{card['name']} ({ctext.count(len(owners), 'owner')})",
+            title=f"{discord.utils.escape_markdown(card['name'])} ({ctext.count(len(owners), 'owner')})",
             description="\n".join(lines),
             color=_card_color(card))
         embed.set_footer(text=_credit(
@@ -2612,7 +2612,7 @@ class Cards(commands.Cog):
                         tail = f"Held by <@{e['owner']}>"
                     else:
                         tail = "Unminted"
-                    lines.append(f"`{ctext.LIMITED:9}` **{e['name']}**{mark}, {tail}")
+                    lines.append(f"`{ctext.LIMITED:9}` **{discord.utils.escape_markdown(e['name'])}**{mark}, {tail}")
                 else:
                     lines.append(f"`{_tier_label(e['tier']):9}` "
                                  f"**{e['name']}**{mark}")
@@ -2684,7 +2684,7 @@ class Cards(commands.Cog):
         match = await asyncio.to_thread(_resolve, card)
         if match is None:
             return await ctx.followup.send(
-                embed=_notice(f"No card named **{card}**"))
+                embed=_notice(f"No card named **{discord.utils.escape_markdown(card)}**"))
         if not cardlib.is_wishable(match):
             return await ctx.followup.send(
                 embed=_notice("Member cards cannot be wished"))
@@ -2718,12 +2718,12 @@ class Cards(commands.Cog):
         match = await asyncio.to_thread(_resolve, card)
         if match is None:
             return await ctx.followup.send(
-                embed=_notice(f"No card named **{card}**"))
+                embed=_notice(f"No card named **{discord.utils.escape_markdown(card)}**"))
         ok = await asyncio.to_thread(cardlib.db_remove_wish, ctx.author.id,
                                      match["slug"])
         await ctx.followup.send(embed=_notice(
-            f"Removed **{match['name']}**" if ok
-            else f"**{match['name']}** not wished"))
+            f"Removed **{discord.utils.escape_markdown(match['name'])}**" if ok
+            else f"**{discord.utils.escape_markdown(match['name'])}** not wished"))
 
     @wish.command(name="list", description="View your wishlist")
     async def wish_list(self, ctx: discord.ApplicationContext):

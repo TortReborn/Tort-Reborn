@@ -100,7 +100,7 @@ def _summary(ign: str, s: tomes.Standing, from_snapshot: bool) -> discord.Embed:
                f"**You can request {s.war_available}.** The next needs {s.next_war_tome_at:,} wars.")
     raid = (f"{s.raid_received} received, {s.raid_queued} queued. The next costs {s.next_raid_price} shells "
             f"and you have {s.shells}.\n**You can afford {s.raid_affordable}.**")
-    e = discord.Embed(title=f"\U0001F4D8 Tomes for {ign}", color=0x94C1FF)
+    e = discord.Embed(title=f"\U0001F4D8 Tomes for {discord.utils.escape_markdown(ign)}", color=0x94C1FF)
     e.add_field(name="War tomes", value=war, inline=False)
     e.add_field(name="Shell tomes", value=raid, inline=False)
     return e
@@ -268,19 +268,19 @@ def _tomes(count, kind) -> str:
 
 
 def grant_line(count, kind, ign, discord_id, actor) -> str:
-    who = f"<@{discord_id}> ({ign})" if discord_id else ign
-    return f"\U0001F4D8 {who} was given **{_tomes(count, kind)}**" + (f" by {actor}" if actor else "") + "."
+    who = f"<@{discord_id}> ({discord.utils.escape_markdown(str(ign))})" if discord_id else discord.utils.escape_markdown(str(ign))
+    return f"\U0001F4D8 {who} was given **{_tomes(count, kind)}**" + (f" by {discord.utils.escape_markdown(actor)}" if actor else "") + "."
 
 
 def request_line(count, kind, ign, discord_id, priority, shells) -> str:
-    who = f"<@{discord_id}> ({ign})" if discord_id else ign
+    who = f"<@{discord_id}> ({discord.utils.escape_markdown(str(ign))})" if discord_id else discord.utils.escape_markdown(str(ign))
     at = f" at {tomes.PRIORITIES[priority][0]} priority" if priority in tomes.PRIORITIES else ""
     return f"\U0001F4DD {who} requested **{_tomes(count, kind)}**{at}" + (f" ({shells} shells)" if shells else "") + "."
 
 
 def cancel_line(count, kind, ign, discord_id, actor, shells, reason) -> str:
-    who = f"<@{discord_id}> ({ign})" if discord_id else ign
-    return (f"\u274C {who}: request for **{_tomes(count, kind)}** was cancelled" + (f" by {actor}" if actor else "")
+    who = f"<@{discord_id}> ({discord.utils.escape_markdown(str(ign))})" if discord_id else discord.utils.escape_markdown(str(ign))
+    return (f"\u274C {who}: request for **{_tomes(count, kind)}** was cancelled" + (f" by {discord.utils.escape_markdown(actor)}" if actor else "")
             + (f", {shells} shells refunded" if shells else "") + "." + (f" Reason: {reason}" if reason else ""))
 
 

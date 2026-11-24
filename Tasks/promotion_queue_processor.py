@@ -430,7 +430,7 @@ class PromotionQueueProcessor(commands.Cog):
             embed.add_field(name="Completed", value="\n".join(lines)[:1024], inline=False)
 
         if failures:
-            lines = [f"**{discord.utils.escape_markdown(ign)}** ({action_type}): {err[:100]}" for ign, action_type, err in failures]
+            lines = [f"**{discord.utils.escape_markdown(ign)}** ({action_type}): {discord.utils.escape_markdown(err[:100])}" for ign, action_type, err in failures]
             embed.add_field(name="Failed", value="\n".join(lines)[:1024], inline=False)
 
         await promo_ch.send(embed=embed)

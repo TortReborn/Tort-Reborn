@@ -128,7 +128,7 @@ async def post_transcript(client, channel, app):
     embed.add_field(name="Status", value=app["status"].title(), inline=True)
     embed.add_field(name="Applicant", value=f"<@{app['discord_id']}>", inline=True)
     if ign:
-        embed.add_field(name="IGN", value=ign, inline=True)
+        embed.add_field(name="IGN", value=discord.utils.escape_markdown(ign), inline=True)
     embed.add_field(name="Messages", value=str(len(messages)), inline=True)
 
     buf = BytesIO(transcript_text.encode("utf-8"))

@@ -12,6 +12,8 @@ Until the TAQ-76 overhaul the uniqueness was partial (``WHERE linked``) and
 a row exists iff the identity is established, and unlinking is a delete.
 """
 
+import discord
+
 
 class LinkConflictError(Exception):
     """Raised when a uuid is already linked to a different Discord account."""
@@ -28,7 +30,7 @@ class LinkConflictError(Exception):
     def user_message(self):
         """Standard operator-facing explanation for command responses."""
         return (
-            f":no_entry: **{self.other_ign}** is already linked to "
+            f":no_entry: **{discord.utils.escape_markdown(self.other_ign)}** is already linked to "
             f"<@{self.other_discord_id}>. Unlink that account first "
             f"(`/manage unlink`) before linking it elsewhere."
         )

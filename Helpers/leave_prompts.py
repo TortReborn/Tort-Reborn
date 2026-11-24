@@ -272,7 +272,7 @@ class LeavePromptView(discord.ui.View):
         except (discord.Forbidden, discord.HTTPException) as e:
             err_ch = interaction.client.get_channel(ERROR_CHANNEL_ID)
             if err_ch:
-                await err_ch.send(f"## Leave prompt — Discord error\n**Member:** {prompt['ign']} (<@{prompt['discord_id']}>)\n```\n{str(e)[:500]}\n```")
+                await err_ch.send(f"## Leave prompt — Discord error\n**Member:** {discord.utils.escape_markdown(prompt['ign'])} (<@{prompt['discord_id']}>)\n```\n{str(e)[:500]}\n```")
             await interaction.followup.send(f'Discord refused the change: `{e}`. Buttons stay active; try again.', ephemeral=True)
             return
 

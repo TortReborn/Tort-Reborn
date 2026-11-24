@@ -202,7 +202,7 @@ class Progress(commands.Cog):
                       fill='#91e896' if prof['level'] == max_prof else '#ffffff')
 
             possessive_noun = '\'s' if playerdata.username[-1] != 's' else '\''
-            embed = discord.Embed(title=playerdata.username.replace("_", "\\_") + f'{possessive_noun} progress card',
+            embed = discord.Embed(title=discord.utils.escape_markdown(playerdata.username) + f'{possessive_noun} progress card',
                                   description=f'<:discordlinked:1023567645817188402> <@{playerdata.discord}>' if playerdata.linked else '',
                                   color=int(color[1:], 16))
             with BytesIO() as file:
