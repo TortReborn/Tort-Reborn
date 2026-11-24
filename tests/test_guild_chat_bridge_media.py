@@ -350,6 +350,22 @@ async def test_normal_linked_poster_keeps_discord_name_and_avatar(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("message,expected", [
+    ("hi @Some_Player_Name!", "hi <@123>!"),
+    ("hi @Some_Player", "hi <@123>"),
+    ("@Some_Player_Name and @Nobody_At_All", "<@123> and @Nobody\\_At_All"),
+    ("@ab and @Way_Too_Long_For_An_Ign", None),  # not IGN length: left as escaped
+])
+async def test_mentions_resolve_after_underscores_are_escaped(monkeypatch, message, expected):
+    """Escaping turns @Some_Player_Name into @Some\\_Player_Name; the mention
+    still names the whole IGN, never a player called Some (TAQ-219)."""
+    linked = {"some_player_name": 123, "some_player": 123, "some": 999}
+    monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: linked.get(name.lower()))
+    text = _discord_safe_text(message)
+    assert await bridge_module._resolve_ign_mentions(text) == (text if expected is None else expected)
+
+
+@pytest.mark.asyncio
 async def test_unassigned_unlinked_poster_is_still_rejected(monkeypatch):
     monkeypatch.setattr(bridge_module, "_service_poster", lambda name: None)
     monkeypatch.setattr(bridge_module, "_linked_discord_id", lambda name: None)
