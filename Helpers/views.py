@@ -394,7 +394,7 @@ class _SetRecruiterModal(discord.ui.Modal):
             return
 
         embed.color = 0x3ED63E
-        value = f"{recruiter_ign} (by {interaction.user.mention})"
+        value = f"{discord.utils.escape_markdown(recruiter_ign)} (by {interaction.user.mention})"
         for i, field in enumerate(embed.fields):
             if field.name == "Recruiter set":
                 embed.set_field_at(i, name="Recruiter set", value=value, inline=False)
@@ -402,7 +402,7 @@ class _SetRecruiterModal(discord.ui.Modal):
         else:
             embed.add_field(name="Recruiter set", value=value, inline=False)
         await interaction.message.edit(embed=embed)
-        await interaction.followup.send(f"Recruiter set to **{recruiter_ign}**.", ephemeral=True)
+        await interaction.followup.send(f"Recruiter set to **{discord.utils.escape_markdown(recruiter_ign)}**.", ephemeral=True)
 
 
 class RecruiterReviewView(discord.ui.View):
@@ -425,9 +425,9 @@ class RecruiterReviewView(discord.ui.View):
         embed = interaction.message.embeds[0]
         set_field = discord.utils.get(embed.fields, name="Recruiter set")
         if set_field:
-            default = set_field.value.split(" (by ")[0]
+            default = set_field.value.split(" (by ")[0].replace("\\", "")
         else:
             parsed_field = discord.utils.get(embed.fields, name="Parsed recruiter")
-            default = parsed_field.value if parsed_field and parsed_field.value != "*none*" else ""
+            default = parsed_field.value.replace("\\", "") if parsed_field and parsed_field.value != "*none*" else ""
 
         await interaction.response.send_modal(_SetRecruiterModal(default=default))

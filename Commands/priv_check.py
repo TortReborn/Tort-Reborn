@@ -263,7 +263,7 @@ class PrivCheck(commands.Cog):
         if status == 300:
             return {"error": self._format_multi_selector(profile)}
         if status == 404:
-            return {"error": f"`{discord.utils.escape_markdown(str(player))}` was not found."}
+            return {"error": f"`{player}` was not found."}
         if status != 200 or not isinstance(profile, dict) or not profile.get("uuid"):
             detail = profile.get("detail") if isinstance(profile, dict) else None
             suffix = f"\n`{detail}`" if detail else ""
@@ -467,7 +467,7 @@ class PrivCheck(commands.Cog):
             hidden_summary = "None"
 
         embed = discord.Embed(
-            title=f"{report['username']} privacy",
+            title=f"{discord.utils.escape_markdown(report['username'])} privacy",
             color=DEFAULT_EMBED_COLOR,
         )
         embed.add_field(name="Access", value=f"```text\n{chr(10).join(rule_lines)[:1000]}\n```", inline=False)

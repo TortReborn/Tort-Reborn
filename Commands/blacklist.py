@@ -54,7 +54,7 @@ class Blacklist(commands.Cog):
             if player['UUID'] == UUID[1]:
                 if UUID[0] == player['ign'] and player.get('reason') == reason:
                     embed = discord.Embed(title=':no_entry: Oops! Something did not go as intended.',
-                                          description=f'{UUID[0]} is already blacklisted.',
+                                          description=f'{discord.utils.escape_markdown(UUID[0])} is already blacklisted.',
                                           color=0xe33232)
                     await message.respond(embed=embed, ephemeral=True)
                     return

@@ -500,7 +500,7 @@ class ProcessWebsiteDecisions(commands.Cog):
         if app_type:
             embed.add_field(name="Type", value=app_type, inline=True)
         if ign:
-            embed.add_field(name="IGN", value=ign, inline=True)
+            embed.add_field(name="IGN", value=discord.utils.escape_markdown(ign), inline=True)
 
         await thread.send(embed=embed)
 

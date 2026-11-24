@@ -134,7 +134,7 @@ def summary_embed(profile, entries, website_url):
         description = description[:3990].rsplit('\n', 1)[0] + '\n…'
 
     embed = discord.Embed(
-        title=profile['ign'],
+        title=discord.utils.escape_markdown(profile['ign']),
         url=f"{website_url}/exec/warnings/{profile['uuid']}",
         description=description,
         color=KIND_COLORS['formal'] if counts['total'] else 0x64748B,
@@ -156,7 +156,7 @@ def entry_embed(entry):
     )
     embed.add_field(name='Issued by', value=f"<@{entry['issued_by']}>", inline=True)
     if entry.get('ign') and entry.get('profile_ign') and entry['ign'] != entry['profile_ign']:
-        embed.add_field(name='Name at the time', value=entry['ign'], inline=True)
+        embed.add_field(name='Name at the time', value=discord.utils.escape_markdown(entry['ign']), inline=True)
     if entry.get('notes'):
         embed.add_field(name='Notes', value=_clip(entry['notes'], 1000), inline=False)
     if revoked:

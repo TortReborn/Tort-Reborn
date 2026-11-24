@@ -289,7 +289,7 @@ class WarningForumSync(commands.Cog):
             if ch:
                 await ch.send(
                     "## Dishonored Fish holders not in the warning tracker\n"
-                    + '\n'.join(f"- {m.mention} ({m.name})" for m in unknown)
+                    + '\n'.join(f"- {m.mention} ({discord.utils.escape_markdown(m.name)})" for m in unknown)
                     + "\nAdd an entry on the website if they should keep it. The bot won't remove the role.",
                     allowed_mentions=discord.AllowedMentions.none(),
                 )

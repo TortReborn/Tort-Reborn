@@ -275,8 +275,8 @@ async def credit_piranha_promotion(client: discord.Client, ign: str) -> None:
         return
 
     embed = discord.Embed(title="Recruiter Payout", color=0xAAF64A)
-    embed.add_field(name="Recruiter", value=result["recruiter_ign"], inline=True)
-    embed.add_field(name="Recruit", value=result["recruit_ign"], inline=True)
+    embed.add_field(name="Recruiter", value=discord.utils.escape_markdown(result["recruiter_ign"]), inline=True)
+    embed.add_field(name="Recruit", value=discord.utils.escape_markdown(result["recruit_ign"]), inline=True)
     embed.add_field(name="Recruit #", value=str(result["recruit_number"]), inline=True)
     embed.add_field(name="Payout", value=f"{result['payout_le']} LE", inline=True)
 

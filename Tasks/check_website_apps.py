@@ -171,6 +171,8 @@ def _format_from_snapshot(answers: dict, sections: list[dict], *, show_blank: bo
                 if not show_blank:
                     continue
                 value = "No response"
+            elif q.get("id") in ("ign", "hh_ign_rank"):
+                value = discord.utils.escape_markdown(value)
             blocks.append(f"**{q.get('label') or q.get('id')}**\n{value}")
         if not blocks:
             continue
@@ -199,6 +201,8 @@ def _format_hammerhead_sections(answers: dict, questions=None) -> list[str]:
         value = answers.get(key, "")
         if not value:
             value = "No response"
+        elif key == "hh_ign_rank":
+            value = discord.utils.escape_markdown(str(value))
         label = HAMMERHEAD_GENERAL_LABELS.get(key, key)
         blocks.append(f"**{label}**\n{value}")
     sections.append("\n\n".join(blocks))
@@ -257,6 +261,8 @@ def _format_answers(answers: dict, app_type: str, questions=None) -> str:
         value = answers.get(key, "")
         if not value:
             continue
+        if key == "ign":
+            value = discord.utils.escape_markdown(str(value))
         label = labels.get(key, key)
         blocks.append(f"**{label}**\n{value}")
 
@@ -436,7 +442,7 @@ class CheckWebsiteApps(commands.Cog):
             return
 
         poll_embed = discord.Embed(
-            title=f"Application {channel_label}",
+            title=f"Application {discord.utils.escape_markdown(channel_label)}",
             description="",
             colour=0x3ED63E,
         )
@@ -457,7 +463,7 @@ class CheckWebsiteApps(commands.Cog):
                     filename = f"{channel_label}-{pdata.UUID}.png"
                     player_info_file = discord.File(buf, filename=filename)
                     poll_embed.set_image(url=f"attachment://{filename}")
-                    poll_embed.title = f"Application {channel_label} ({discord.utils.escape_markdown(pdata.username)})"
+                    poll_embed.title = f"Application {discord.utils.escape_markdown(channel_label)} ({discord.utils.escape_markdown(pdata.username)})"
 
                     # Check blacklist
                     blacklist = get_blacklist()

@@ -199,7 +199,14 @@ def _check_len(where: str, label: str, value: str, limit: int):
         raise PanelError(f"{where}: {label} is {len(value)} characters (Discord allows {limit}).")
 
 
-def fill_values(where: str, data, values: dict[str, str]):
+# Names go into markdown text escaped, so an IGN like A_B_C isn't italicised.
+# Author, footer and buttons aren't markdown, so they keep the raw name.
+ESCAPED_VALUES = {"ign"}
+_MARKDOWN_KEYS = {"content", "title", "description", "name", "value"}
+_PLAIN_PARTS = {"author", "footer", "rows", "post"}
+
+
+def fill_values(where: str, data, values: dict[str, str], *, _markdown=False, _plain=False):
     """Replace {{key}} everywhere in a message with the database value (see
     Helpers/panel_values.py). An unknown key stops the publish rather than
     posting raw braces."""
@@ -207,12 +214,18 @@ def fill_values(where: str, data, values: dict[str, str]):
         def one(m):
             if m.group(1) not in values:
                 raise PanelError(f"{where}: {m.group(0)} isn't a value panels can use.")
-            return values[m.group(1)]
+            value = values[m.group(1)]
+            if _markdown and not _plain and m.group(1) in ESCAPED_VALUES:
+                return discord.utils.escape_markdown(value)
+            return value
         return VALUE_RE.sub(one, data)
     if isinstance(data, list):
-        return [fill_values(where, v, values) for v in data]
+        return [fill_values(where, v, values, _markdown=_markdown, _plain=_plain) for v in data]
     if isinstance(data, dict):
-        return {k: fill_values(where, v, values) for k, v in data.items()}
+        return {
+            k: fill_values(where, v, values, _markdown=k in _MARKDOWN_KEYS, _plain=_plain or k in _PLAIN_PARTS)
+            for k, v in data.items()
+        }
     return data
 
 

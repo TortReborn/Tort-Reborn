@@ -57,14 +57,14 @@ class WebAppCommands(commands.Cog):
         await ctx.defer(ephemeral=True)
         stats = await asyncio.to_thread(get_recruiter_stats, ign)
         if stats["total_recruits"] == 0:
-            await ctx.followup.send(f"No credited recruits found for **{ign}**.", ephemeral=True)
+            await ctx.followup.send(f"No credited recruits found for **{discord.utils.escape_markdown(ign)}**.", ephemeral=True)
             return
         paid_le = stats["total_le"] - stats["unpaid_le"]
         recruits_line = f"Credited recruits: **{stats['total_recruits']}**"
         if stats["excluded_recruits"]:
             recruits_line += f" ({stats['excluded_recruits']} as staff, not eligible for payout)"
         await ctx.followup.send(
-            f"**{ign}**\n"
+            f"**{discord.utils.escape_markdown(ign)}**\n"
             f"{recruits_line}\n"
             f"Unpaid: **{stats['unpaid_le']} LE**\n"
             f"Paid out (all-time): **{paid_le} LE**",
@@ -708,7 +708,7 @@ class WebAppCommands(commands.Cog):
         if app_type:
             embed.add_field(name="Type", value=app_type, inline=True)
         if ign:
-            embed.add_field(name="IGN", value=ign, inline=True)
+            embed.add_field(name="IGN", value=discord.utils.escape_markdown(ign), inline=True)
 
         await thread.send(embed=embed)
 
@@ -780,8 +780,8 @@ class WebAppCommands(commands.Cog):
                     description=f"Ticket **{channel.name}**",
                     color=0xEBDB34,
                 )
-                embed.add_field(name="IGN", value=ign or "?", inline=True)
-                embed.add_field(name="Parsed recruiter", value=recruiter or "*none*", inline=True)
+                embed.add_field(name="IGN", value=discord.utils.escape_markdown(ign) if ign else "?", inline=True)
+                embed.add_field(name="Parsed recruiter", value=discord.utils.escape_markdown(recruiter) if recruiter else "*none*", inline=True)
                 embed.add_field(name="Certainty", value=f"{certainty:.0%}", inline=True)
                 embed.set_footer(text=f"{app_id}|{applicant_discord_id or ''}|{ign}")
                 await review_ch.send(

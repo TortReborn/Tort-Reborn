@@ -135,6 +135,30 @@ def test_publishing_a_template_checks_it_and_posts_nothing(published):
         asyncio.run(PublishBotPanels(None)._publish(job))
 
 
+def test_ign_is_escaped_only_where_discord_renders_markdown():
+    """An IGN like A_B_C would lose its underscores to italics in text (TAQ-218),
+    but the author, footer and buttons show it as typed."""
+    from Helpers.bot_panels import render_message
+    message = {
+        "content": "Hi {{ign}}",
+        "embeds": [{
+            "title": "{{ign}}", "description": "{{ign}}",
+            "fields": [{"name": "{{ign}}", "value": "{{ign}}"}],
+            "author": {"name": "{{ign}}"}, "footer": {"text": "{{ign}}"},
+        }],
+        "rows": [[{"kind": "link", "label": "{{ign}}", "url": "https://a.b/{{ign}}"}]],
+    }
+    async def render():  # a View needs a running loop
+        return render_message(0, message, actions={}, values=member_values("<@1>", "A_B_C", AVATAR), fetch_asset={}.get)
+    out = asyncio.run(render())
+    embed = out.embeds[0]
+    assert out.content == r"Hi A\_B\_C"
+    assert {embed.title, embed.description, embed.fields[0].name, embed.fields[0].value} == {r"A\_B\_C"}
+    assert embed.author.name == embed.footer.text == "A_B_C"
+    button = out.view.children[0]
+    assert (button.label, button.url) == ("A_B_C", "https://a.b/A_B_C")
+
+
 def test_sample_values_cover_every_member_value():
     assert SAMPLE_MEMBER_VALUES.keys() == member_values("", "", "").keys()
 
