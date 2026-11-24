@@ -969,6 +969,27 @@ CREATE TABLE IF NOT EXISTS applications (
   transcribed_at    TIMESTAMPTZ,
   channel_deleted_at TIMESTAMPTZ
 );
+-- TAQ-217: the questions as the applicant saw them ({sections: [{title, task,
+-- questions: [{id, label}]}]}), written by the website on submit; the bot
+-- labels answers from it. NULL on older rows, which use the fixed labels in
+-- Tasks/check_website_apps.py.
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS questions JSONB;
+
+-- TAQ-217: application forms edited on the website (/exec/application-forms).
+-- Every save is a revision and the newest per form is live; a form with no
+-- revision uses the website's defaults (TAq-Website lib/application-questions.ts).
+CREATE TABLE IF NOT EXISTS application_form_revisions (
+  id            SERIAL       PRIMARY KEY,
+  form_type     VARCHAR(20)  NOT NULL CHECK (form_type IN ('guild', 'community', 'hammerhead')),
+  rev_number    INT          NOT NULL,
+  content       JSONB        NOT NULL,
+  note          VARCHAR(200) NOT NULL DEFAULT '',
+  restored_from INT,                             -- rev_number this one restored
+  author_id     BIGINT,
+  author_name   VARCHAR(64),
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  UNIQUE (form_type, rev_number)
+);
 
 CREATE TABLE IF NOT EXISTS application_votes (
   id               SERIAL      PRIMARY KEY,
