@@ -39,7 +39,9 @@ BRIDGE_WEBHOOK_NAME = "Tort Guild Bridge"
 STICKER_PROVIDER = "Discord Sticker"
 WEBHOOK_NAME_FORBIDDEN = ("discord", "clyde")
 CUSTOM_EMOJI_PATTERN = re.compile(r"<a?:(\w+):\d+>")
-IGN_MENTION_PATTERN = re.compile(r"(?<![\w@])@(\w{3,16})(?!\w)")
+# Runs on escaped chat text, where A_B_C can arrive as A\_B_C, so an
+# underscore may carry its escape; the length is checked once it's removed.
+IGN_MENTION_PATTERN = re.compile(r"(?<![\w@\\])@((?:\w|\\_)+)")
 RANK_TAG_PATTERN = re.compile(r"^(?:" + "|".join(re.escape(rank) for rank in discord_ranks) + r")\s+")
 URL_PATTERN = re.compile(r"https://[^\s<>]+", re.IGNORECASE)
 EMBED_REFRESH_DELAYS = (0.25, 0.5, 0.75)
@@ -634,8 +636,13 @@ def _linked_discord_id(ign: str) -> int | None:
     return int(row[0]) if row else None
 
 
+def _mentioned_ign(match: re.Match) -> str | None:
+    ign = match.group(1).replace("\\_", "_")
+    return ign if 3 <= len(ign) <= 16 else None
+
+
 async def _resolve_ign_mentions(text: str) -> str:
-    tokens = {match.group(1) for match in IGN_MENTION_PATTERN.finditer(text)}
+    tokens = {ign for match in IGN_MENTION_PATTERN.finditer(text) if (ign := _mentioned_ign(match))}
     if not tokens:
         return text
 
@@ -648,7 +655,8 @@ async def _resolve_ign_mentions(text: str) -> str:
         return text
 
     def replace(match: re.Match) -> str:
-        discord_id = resolved.get(match.group(1).lower())
+        ign = _mentioned_ign(match)
+        discord_id = resolved.get(ign.lower()) if ign else None
         return f"<@{discord_id}>" if discord_id is not None else match.group(0)
 
     return IGN_MENTION_PATTERN.sub(replace, text)
